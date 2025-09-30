@@ -1,0 +1,3 @@
+{"fmu-file": "", "modeldescription": "",
+ "inputs": [{"name": "pos_2", "unit": "m", "description": "", "required": "false"}, {"name": "speed_2", "unit": "m/s", "description": "", "required": "false"}],
+ "outputs": [{ "name": "pos_1", "unit": "m", "description": ""}, { "name": "speed_1", "unit": "m/s", "description": ""}]}

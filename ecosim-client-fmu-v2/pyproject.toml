@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecosim-client-fmu-v2"
+version = "0.11.0"
+description = "The FMU v2 client for the eCoSim project"
+authors = [
+    { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
+]
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: eCoSim :: FMU client",
+#    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "art==6.5",
+    "ecosim-common>=0.11.0",
+    "setuptools==80.8.0",
+    "fmpy==0.3.25",
+    "pydantic==2.11.9",
+]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov==6.1.1",
+    "pytest-html==4.1.1",
+    "mypy==1.18.2",
+    "uv==0.8.22",
+]
+
+#[project.urls]
+#Homepage = "https://github.com/yourusername/myapp"
+#Repository = "https://github.com/yourusername/myapp"

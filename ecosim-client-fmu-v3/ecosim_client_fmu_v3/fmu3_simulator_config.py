@@ -1,0 +1,128 @@
+from __future__ import annotations
+
+import dataclasses
+from typing import Dict, Any, ClassVar
+from uuid import uuid4
+
+import fmpy
+from fmpy.fmi3 import FMU3Slave
+from fmpy.model_description import ModelDescription, ScalarVariable
+
+from ecosim_client_fmu_v3.fmu3_config import FMU3Config
+from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
+from ecosim_common.tech.logger.logger import ESPLogger
+
+
+@dataclasses.dataclass(frozen=True)
+class FMU3SimulatorConfig:
+    _logger: ClassVar[ESPLogger] = ESPLogger("SimulationConfig")
+
+    simulator_name: str
+    unzip_dir: str
+    _model_description: ModelDescription
+    _input_scalar_by_name: Dict[str, ScalarVariable]
+    _output_scalar_by_name: Dict[str, ScalarVariable]
+
+    @classmethod
+    def of(cls,
+           simulator_name: str,
+           fmu_config: FMU3Config,
+           ) -> FMU3SimulatorConfig:
+        model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
+        input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
+        output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+        return FMU3SimulatorConfig(
+            simulator_name=simulator_name,
+            unzip_dir=fmpy.extract(fmu_config.fmu_file),
+            _model_description=model_description,
+            _input_scalar_by_name={var.name: var for var in input_variables},
+            _output_scalar_by_name={var.name: var for var in output_variables},
+        )
+
+    def is_fmi_version(self,
+                       version: str,
+                       ) -> bool:
+        return self._model_description.fmiVersion == version  # type: ignore
+
+    def model_name(self) -> str:
+        return self._model_description.modelName  # type: ignore
+
+    def model_description(self) -> str:
+        return self._model_description.description  # type: ignore
+
+    def model_guid(self) -> str:
+        return self._model_description.guid  # type: ignore
+
+    def model_identifier(self) -> str:
+        return self._model_description.coSimulation.modelIdentifier  # type: ignore
+
+    def input_value_references(self,
+                               name: str,
+                               ) -> Any:
+        return self._input_scalar_by_name[name].valueReference
+
+    def output_value_references(self,
+                                name: str,
+                                ) -> Any:
+        return self._output_scalar_by_name[name].valueReference
+
+    def output_type(self,
+                    name: str,
+                    ) -> FMU3VariableType:
+        return FMU3VariableType.type_of(self._output_scalar_by_name[name])
+
+    def fmi_version(self) -> str | None:
+        return self._model_description.fmiVersion  # type: ignore
+
+    def create_fmu_instance(self) -> FMU3Slave:
+        return FMU3Slave(guid=self.model_guid(),
+                         unzipDirectory=self.unzip_dir,
+                         modelIdentifier=self.model_identifier(),
+                         instanceName=str(uuid4()))
+
+    def output_matrix_config(self,
+                             name: str,
+                             ) -> MatrixConfig:
+        scalar = self._output_scalar_by_name[name]
+        if scalar.dimensions is None or len(scalar.dimensions) == 0:
+            raise RuntimeError(f"Output matrix {name} has no dimensions")
+        if len(scalar.dimensions) == 1:
+            return MatrixConfig(
+                m_start_value=scalar.dimensions[0].start,
+                m_value_reference=scalar.dimensions[0].valueReference,
+                m_type=scalar.dimensions[0].variable.type,
+                n_start_value=1,
+                n_value_reference=None,
+                n_type=None,
+            )
+        if len(scalar.dimensions) == 2:
+            return MatrixConfig(
+                m_start_value=scalar.dimensions[0].start,
+                m_value_reference=scalar.dimensions[0].valueReference,
+                m_type=scalar.dimensions[0].type,
+                n_start_value=scalar.dimensions[1].start,
+                n_value_reference=scalar.dimensions[1].valueReference,
+                n_type=scalar.dimensions[1].variable.type,
+            )
+        else:
+            raise RuntimeError(f"Output matrix {name} has unsupported dimensions: {len(scalar.dimensions)}")
+
+
+@dataclasses.dataclass(frozen=True)
+class MatrixConfig:
+    m_start_value: int | None
+    m_value_reference: Any | None
+    m_type: str
+    n_start_value: int | None
+    n_value_reference: Any | None
+    n_type: str | None
+
+    def fix_m(self) -> int | None:
+        if self.m_start_value is None or self.m_value_reference is not None:
+            return None
+        return self.m_start_value
+
+    def fix_n(self) -> int | None:
+        if self.n_start_value is None or self.n_value_reference is not None:
+            return None
+        return self.n_start_value
