@@ -1,0 +1,19 @@
+{
+    "fmu-file": "",
+    "modeldescription": "",
+    "inputs": [
+        {
+            "name": "u",
+            "unit": "",
+            "description": "u",
+            "required": "true"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "y",
+            "unit": "",
+            "description": "y"
+        }
+    ]
+}

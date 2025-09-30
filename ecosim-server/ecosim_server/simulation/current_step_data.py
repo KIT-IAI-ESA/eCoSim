@@ -1,0 +1,180 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import List, Tuple
+
+from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, ProtocolInterfaceValueMutable
+from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.config.model_interface_server import ConnectedToData
+from ecosim_common.simulation.model_interface_id import ModelInterfaceId
+from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.config.client_id import ClientID
+from ecosim_server.config.simulation_config import SimulationConfig
+
+
+class CurrentStepData:
+    _logger = ESPLogger("CurrentStepData")
+
+    def __init__(self,
+                 simulation_config: SimulationConfig,
+                 ):
+        self._step: int = 0
+        self._simulation_config: SimulationConfig = simulation_config
+        self._data_by_client: dict[ClientID, CurrentStepClientData] = {}
+        self._logical_delays: dict[int, CurrentStepLogicalDelay] = {}
+        self._init_logical_delays()
+
+    def reset_for_new_step(self,
+                           step: int,
+                           ):
+        self._step = step
+        self._reset_interfaces_by_client()
+
+    def _init_logical_delays(self):
+        for logical_delay in self._simulation_config.logical_delays:
+            delayed_time_steps = logical_delay.delayed_time_steps
+            if delayed_time_steps not in self._logical_delays:
+                self._logical_delays[delayed_time_steps] = (
+                    CurrentStepLogicalDelay(delayed_time_steps=delayed_time_steps, connections=[]))
+            for logical_delay_connection in logical_delay.logical_delay_connections:
+                self._logical_delays[delayed_time_steps].connections.append(
+                    CurrentStepLogicalDelayConnection(
+                        current_value=logical_delay_connection.start_value,
+                        output_interface=logical_delay_connection.output_interface,
+                        input_interface=logical_delay_connection.input_interface,
+                        set_in_step=[],
+                    )
+                )
+
+    def _reset_interfaces_by_client(self):
+        self._data_by_client = {}
+        for client in self._simulation_config.clients:
+            self._data_by_client[client.client_id] = CurrentStepClientData(executed=False, interface_data=[])
+            for interface in client.interfaces:
+                if interface.type == InterfaceType.OUTPUT:
+                    continue
+                self._data_by_client[client.client_id].interface_data.append(
+                    CurrentStepClientDataInterface(
+                        interface_value=ProtocolInterfaceValueMutable(name=interface.name, value=None),
+                        connected_to=tuple(interface.connected_to),
+                    )
+                )
+
+    def set_value(self,
+                  interface: SimulatorInterfaceId,
+                  value: float,
+                  ):
+        client_data = self._data_by_client[interface.client_id()]
+        if client_data.executed:
+            CurrentStepData._logger.error(
+                f"(CurrentStep: {self._step}): Setting value for execution for interface {interface} but it is already executed")
+            return
+        for interface_data in client_data.interface_data:
+            if interface_data.interface_value.name == interface.model_interface_id.interface:
+                if interface_data.interface_value.value is not None:
+                    CurrentStepData._logger.warning(
+                        f"(CurrentStep: {self._step})Setting value for execution for interface {interface} but it is already set => " +
+                        f"overwriting old value of {interface_data.interface_value.value} with {value}")
+                    return
+                interface_data.interface_value.value = value
+                return
+        CurrentStepData._logger.error(
+            f"(CurrentStep: {self._step}) Could not find {interface} to set execution value to {value}")
+
+    def get_ready_for_execution(self) -> dict[ClientID, List[ProtocolInterfaceValue]]:
+        result: dict[ClientID, List[ProtocolInterfaceValue]] = {}
+        for client_id in self._data_by_client:
+            client_data: CurrentStepClientData = self._data_by_client[client_id]
+            if client_data.executed or any(
+                    interface_data_entry.interface_value.value is None for interface_data_entry in
+                    client_data.interface_data):
+                continue
+            result[client_id] = [interface_data_entry.interface_value.to_immutable() for interface_data_entry in
+                                 client_data.interface_data]
+        return result
+
+    def add_received_data(self,
+                          client_id_sender: ClientID,
+                          interface_values: Tuple[ProtocolInterfaceValue, ...],
+                          ):
+        client_config_sender = self._simulation_config.client_simulator_config_for(client_id_sender)
+
+        for interface_value in interface_values:
+            simulator_interface_id_sender = SimulatorInterfaceId(
+                simulator_name=client_config_sender.simulator_name,
+                model_interface_id=ModelInterfaceId(model_name=client_config_sender.model_name,
+                                                    interface=interface_value.name)
+            )
+            new_value = interface_value.value
+            for client_id_receiver in self._data_by_client.keys():
+                if client_id_receiver == client_id_sender:
+                    continue
+                client_config_receiver = self._simulation_config.client_simulator_config_for(client_id_receiver)
+                for interface_data_entry in self._data_by_client[client_id_receiver].interface_data:
+                    if interface_data_entry.settable_by(simulator_interface_id_sender):
+                        self.set_value(SimulatorInterfaceId(
+                            simulator_name=client_config_receiver.simulator_name,
+                            model_interface_id=ModelInterfaceId(model_name=client_config_receiver.model_name,
+                                                                interface=interface_data_entry.interface_value.name)
+                        ), new_value)
+
+            for logical_delay in self._logical_delays.values():
+                for logical_delay_connection in logical_delay.connections:
+                    if logical_delay_connection.settable_by(simulator_interface_id_sender):
+                        if self._step in logical_delay_connection.set_in_step:
+                            CurrentStepData._logger.warning(
+                                f"Connection {logical_delay_connection.input_interface} in logical delay {logical_delay.delayed_time_steps} was " +
+                                f"already set in time step {self._step}. This should not happen. The current value " +
+                                f"{logical_delay_connection.current_value} will be overwritten with {new_value}.")
+                        logical_delay_connection.current_value = new_value
+
+    def all_clients_executed(self):
+        return all([self._data_by_client[client_id].executed for client_id in self._data_by_client.keys()])
+
+    def set_is_executed(self,
+                        client_id: ClientID
+                        ):
+        self._data_by_client[client_id].executed = True
+
+    def logical_delays_by_delay_step(self) -> dict[int, CurrentStepLogicalDelay]:
+        return self._logical_delays
+
+
+@dataclass
+class CurrentStepClientData:
+    executed: bool
+    interface_data: List[CurrentStepClientDataInterface]
+
+
+@dataclass
+class CurrentStepClientDataInterface:
+    interface_value: ProtocolInterfaceValueMutable
+    connected_to: Tuple[ConnectedToData, ...]
+
+    def settable_by(self,
+                    simulator_interface_id: SimulatorInterfaceId
+                    ) -> bool:
+        return any(
+            (matched_interface.simulator_interface_id == simulator_interface_id and
+             len(matched_interface.delay_path) == 0) for matched_interface in self.connected_to
+        )
+
+
+@dataclass
+class CurrentStepLogicalDelay:
+    delayed_time_steps: int
+    connections: List[CurrentStepLogicalDelayConnection]
+
+
+@dataclass
+class CurrentStepLogicalDelayConnection:
+    current_value: float
+    output_interface: SimulatorInterfaceId
+    input_interface: SimulatorInterfaceId
+    set_in_step: List[int]
+
+    def settable_by(self,
+                    simulator_interface_id: SimulatorInterfaceId
+                    ) -> bool:
+        return self.input_interface == simulator_interface_id

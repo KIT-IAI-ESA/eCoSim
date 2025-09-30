@@ -1,0 +1,10 @@
+{"fmu-file": "", "modeldescription": "",
+ "inputs": [
+    {"name": "input_1", "unit": "m", "description": "non required value", "required": "false"},
+    {"name": "input_2", "unit": "m/s", "description": "required value", "required": "true"},
+    {"name": "input_3", "unit": "m/s", "description": "missing required attribute"}
+    ],
+ "outputs": [
+    { "name": "output_1", "unit": "m", "description": "output 1"},
+    { "name": "output_2", "unit": "m/s", "description": "output 2"}
+    ]}
