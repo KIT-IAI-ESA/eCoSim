@@ -1,0 +1,2 @@
+source /home/user/Documents/ecosim/ecosimpy/ecosim/venv/bin/activate 
+python /home/user/Documents/ecosim/ecosimpy/ecosim/ecosim-server/ecosim_server/main.py --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --steps 100 --database-schema temp_schema --database-drop-existing-schema
