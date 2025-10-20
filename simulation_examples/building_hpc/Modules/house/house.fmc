@@ -1,0 +1,128 @@
+{
+    "fmu-file": "",
+    "modeldescription": "",
+    "inputs": [
+        {
+            "name": "weatherBus_TDryBul",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_HDifHor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_HDirNor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_HGloHor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_alt",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_cloTim",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_lat",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_pAtm",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_relHum",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_solTim",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus_solZen",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_Qdot_sen_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_Qdot_lat_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_CO2_flow_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_Pe_appliances",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_Qdot_appliances",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_m_airflow_RH",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus_m_waterflow_DHW",
+            "unit": "",
+            "description": ""
+        }
+    ],
+    "outputs": [
+        {
+            "name": "T_indoor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "Pe_gen",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "Pe_load",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "Pe_feed_to_grid",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "CO2_emi",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "Cost_flow",
+            "unit": "",
+            "description": ""
+        }
+    ]
+}
