@@ -41,3 +41,14 @@ ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 
 [tool.mypy]
 mypy_path = ["../ecosim-common", "../ecosim-server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
