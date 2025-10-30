@@ -70,12 +70,13 @@ publish_artifacts:
   extends: .sub-project-template
   stage: artifacts
   script:
-    - uv sync --extra dev
+    - uv sync
     - uv build
     - uv publish \
       --publish-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi \
       --username gitlab-ci-token \
-      --password ${CI_JOB_TOKEN}
+      --password ${CI_JOB_TOKEN} \
+      $PROJECT_DIR/dist/*
   artifacts:
     expire_in: 7 days
     paths:
