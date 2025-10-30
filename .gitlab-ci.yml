@@ -16,7 +16,7 @@ cache:
     - "$VENV_DIR"
 
 .image-template:
-  image: astral/uv:python3.14-alpine
+  image: astral/uv:python3.14-trixi-slim
 
 .sub-project-template:
   extends: .image-template
