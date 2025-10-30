@@ -45,3 +45,25 @@ dev = [
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"
 #Repository = "https://github.com/yourusername/myapp"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_server",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_server"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
