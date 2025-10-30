@@ -24,9 +24,9 @@ cache:
     matrix:
       - PROJECT_DIR:
           - $SRC_DIR/ecosim-common
-          - $SRC_DIR/cosim-client-fmu-v2
-          - $SRC_DIR/cosim-client-fmu-v3
-          - $SRC_DIR/cosim-server
+          - $SRC_DIR/ecosim-client-fmu-v2
+          - $SRC_DIR/ecosim-client-fmu-v3
+          - $SRC_DIR/ecosim-server
   before_script:
     - cd ${PROJECT_DIR}
 
@@ -46,9 +46,9 @@ test:
         path: $PROJECT_DIR/coverage.xml
       junit: $PROJECT_DIR/report.xml
     paths:
-      - $PROJECT_DIR/overage.xml
-      - $PROJECT_DIR/eport.xml
-      - $PROJECT_DIR/tmlcov/
+      - $PROJECT_DIR/coverage.xml
+      - $PROJECT_DIR/report.xml
+      - $PROJECT_DIR/htmlcov/
     when: always  # always = collect artifacts even if the job (i.e. the tests) fail
 
 integration_test_ecosim:
