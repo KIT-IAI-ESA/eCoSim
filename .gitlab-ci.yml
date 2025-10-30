@@ -43,12 +43,12 @@ test:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
-      junit: report.xml
+        path: $PROJECT_DIR/coverage.xml
+      junit: $PROJECT_DIR/report.xml
     paths:
-      - coverage.xml
-      - report.xml
-      - htmlcov/
+      - $PROJECT_DIR/overage.xml
+      - $PROJECT_DIR/eport.xml
+      - $PROJECT_DIR/tmlcov/
     when: always  # always = collect artifacts even if the job (i.e. the tests) fail
 
 integration_test_ecosim:
@@ -60,9 +60,9 @@ integration_test_ecosim:
     - uv run pytest
   artifacts:
     reports:
-      junit: report.xml
+      junit: integration-tests/report.xml
     paths:
-      - report.xml
+      - integration-tests/report.xml
     when: always  # always = collect artifacts even if the job (i.e. the tests) fail
 
 
@@ -70,7 +70,6 @@ publish_artifacts:
   extends: .sub-project-template
   stage: artifacts
   script:
-    - cd $SRC_DIR/ecosim-client-fmu-v2
     - uv sync --extra dev
     - uv build
     - uv publish \
