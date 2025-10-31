@@ -70,7 +70,6 @@ publish_artifacts:
   extends: .sub-project-template
   stage: artifacts
   script:
-    - cd $SRC_DIR
     - uv sync
     - uv build
     - cd dist
