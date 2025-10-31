@@ -13,28 +13,32 @@ class InterfaceValueHistory:
     _logger = ESPLogger("InterfaceValueHistory")
     _default_values_marker = -1.0
 
-    def __init__(self,
-                 repositories: Repositories,
-                 simulation_config: SimulationConfig,
-                 ):
+    def __init__(
+        self,
+        repositories: Repositories,
+        simulation_config: SimulationConfig,
+    ):
         self.__thread_lock = threading.Lock()
         self._entries: dict[float, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
         self._repositories = repositories
         self._simulation_config = simulation_config
 
-    def add_default_values(self,
-                           client_id: ClientID,
-                           client_sim_step_data: ClientSimStepData,
-                           ) -> None:
+    def add_default_values(
+        self,
+        client_id: ClientID,
+        client_sim_step_data: ClientSimStepData,
+    ) -> None:
         self.add(InterfaceValueHistory._default_values_marker, client_id, tuple(client_sim_step_data.interface_values))
 
-    def add(self,
-            time_step: float,
-            client_id: ClientID,
-            interface_values: Tuple[ProtocolInterfaceValue, ...],
-            ) -> None:
+    def add(
+        self,
+        time_step: float,
+        client_id: ClientID,
+        interface_values: Tuple[ProtocolInterfaceValue, ...],
+    ) -> None:
         InterfaceValueHistory._logger.debug(
-            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values}")
+            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values}",
+        )
         values = tuple(interface_values)
         with self.__thread_lock:
             if time_step not in self._entries:
@@ -43,16 +47,20 @@ class InterfaceValueHistory:
                 self._entries[time_step][client_id] = []
             self._entries[time_step][client_id].extend(values)
             if time_step != InterfaceValueHistory._default_values_marker:
-                self._repositories.measurement_repository(client_id).add(values=values,
-                                                                         timestamp=self._simulation_config.date_time_for_step(
-                                                                             time_step))
+                self._repositories.measurement_repository(client_id).add(
+                    values=values,
+                    timestamp=self._simulation_config.date_time_for_step(
+                        time_step,
+                    ),
+                )
 
 
 class InterfaceValueHistoryEntry:
 
-    def __init__(self,
-                 time_step: float,
-                 interface_values: List[ProtocolInterfaceValue],
-                 ):
+    def __init__(
+        self,
+        time_step: float,
+        interface_values: List[ProtocolInterfaceValue],
+    ):
         self.time = time_step
         self.interface_values = interface_values

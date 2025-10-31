@@ -37,7 +37,8 @@ class RenderingImageMessage(RenderingMessage, AppBaseModel):
             raise ValueError(f"The given json is not a valid rendering message: {data}")
         if message_type != RenderingMessageType.RENDERING_IMAGE:
             raise ValueError(
-                f"Wrong message type. Expected {RenderingMessageType.RENDERING_IMAGE.value} and got {message_type}")
+                f"Wrong message type. Expected {RenderingMessageType.RENDERING_IMAGE.value} and got {message_type}",
+            )
         return RenderingImageMessage(
             message_type=message_type,
             time_step=data["time_step"],
@@ -56,7 +57,8 @@ class RenderingImageReplyMessage(RenderingMessage, AppBaseModel):
             raise ValueError(f"The given json is not a valid rendering message: {data}")
         if message_type != RenderingMessageType.RENDERING_IMAGE_REPLY:
             raise ValueError(
-                f"Wrong message type. Expected {RenderingMessageType.RENDERING_IMAGE_REPLY.value} and got {message_type}")
+                f"Wrong message type. Expected {RenderingMessageType.RENDERING_IMAGE_REPLY.value} and got {message_type}",
+            )
         return RenderingImageReplyMessage(
             message_type=message_type,
             time_step=data["time_step"],
@@ -77,7 +79,8 @@ class ImagesAtTimeStep(RenderingMessage, AppBaseModel):
             raise ValueError(f"The given json is not a valid rendering message: {data}")
         if message_type != RenderingMessageType.IMAGES_AT_TIME_STEP:
             raise ValueError(
-                f"Wrong message type. Expected {RenderingMessageType.IMAGES_AT_TIME_STEP.value} and got {message_type}")
+                f"Wrong message type. Expected {RenderingMessageType.IMAGES_AT_TIME_STEP.value} and got {message_type}",
+            )
         return ImagesAtTimeStep(
             message_type=message_type,
             time_step=data["time_step"],
@@ -92,9 +95,10 @@ class RawRenderingMessageHandler:
         RenderingMessageType.IMAGES_AT_TIME_STEP: ImagesAtTimeStep,
     }
 
-    def __init__(self,
-                 raw_message: Any
-                 ):
+    def __init__(
+        self,
+        raw_message: Any,
+    ):
         try:
             self._raw_json: Any = json.loads(raw_message)
         except json.decoder.JSONDecodeError:
@@ -107,24 +111,29 @@ class RawRenderingMessageHandler:
     def raw_json(self) -> Any:
         return self._raw_json
 
-    def cast[T: RenderingMessage](self,
-                                  message_class: Type[T],
-                                  ) -> T:
+    def cast[T: RenderingMessage](
+        self,
+        message_class: Type[T],
+    ) -> T:
         if not issubclass(message_class, RenderingMessage):
             raise TypeError("message_class must be a subclass of RenderingMessage")
         if self._message_type is None:
             raise ValueError("Message type could not be determined from raw message")
         if RawRenderingMessageHandler.message_type_to_class[self._message_type] != message_class:
             raise ValueError(
-                f"Message type '{self._message_type}' does not match casting type '{message_class.__name__}'.")
+                f"Message type '{self._message_type}' does not match casting type '{message_class.__name__}'.",
+            )
         match self._message_type:
             case RenderingMessageType.RENDERING_IMAGE:
                 return RenderingImageMessage.from_json(
-                    self._raw_json)  # type: ignore  # at this point the type is known so we can ignore the mypy error
+                    self._raw_json,
+                )  # type: ignore  # at this point the type is known so we can ignore the mypy error
             case RenderingMessageType.RENDERING_IMAGE_REPLY:
                 return RenderingImageReplyMessage.from_json(
-                    self._raw_json)  # type: ignore  # at this point the type is known so we can ignore the mypy error
+                    self._raw_json,
+                )  # type: ignore  # at this point the type is known so we can ignore the mypy error
             case RenderingMessageType.IMAGES_AT_TIME_STEP:
                 return ImagesAtTimeStep.from_json(
-                    self._raw_json)  # type: ignore  # at this point the type is known so we can ignore the mypy error
+                    self._raw_json,
+                )  # type: ignore  # at this point the type is known so we can ignore the mypy error
         raise ValueError(f"Unsupported message type {self._message_type}")

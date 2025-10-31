@@ -20,11 +20,12 @@ class FMU3Simulator(ShutdownListener):
     _logger = ESPLogger("FMUSimulatorV3")
 
     @classmethod
-    def of(cls,
-           simulator_name: str,
-           fmu_config: FMU3Config,
-           execution_config: ExecutionConfig,
-           ) -> FMU3Simulator:
+    def of(
+        cls,
+        simulator_name: str,
+        fmu_config: FMU3Config,
+        execution_config: ExecutionConfig,
+    ) -> FMU3Simulator:
         simulator_config: FMU3SimulatorConfig = FMU3SimulatorConfig.of(
             simulator_name=simulator_name,
             fmu_config=fmu_config,
@@ -35,17 +36,18 @@ class FMU3Simulator(ShutdownListener):
             fmu_instance=simulator_config.create_fmu_instance(),
         )
 
-    def __init__(self,
-                 simulation_config: FMU3SimulatorConfig,
-                 execution_config: ExecutionConfig,
-                 fmu_instance: fmpy.fmi3.FMU3Slave
-                 ) -> None:
+    def __init__(
+        self,
+        simulation_config: FMU3SimulatorConfig,
+        execution_config: ExecutionConfig,
+        fmu_instance: fmpy.fmi3.FMU3Slave,
+    ) -> None:
         GlobalLogger.print_values(
             header="FMU CONFIG",
             value_pairs={
                 "FMU instance": fmu_instance.instanceName,
                 "FMI version": simulation_config.fmi_version(),
-            }
+            },
         )
         self._simulation_config: FMU3SimulatorConfig = simulation_config
         self._execution_config: ExecutionConfig = execution_config
@@ -56,9 +58,10 @@ class FMU3Simulator(ShutdownListener):
         self._current_simulation_time: float = 0.0
         ShutdownManager().register_listener(self)
 
-    def initialize(self,
-                   start_time: float = 0.0
-                   ) -> None:
+    def initialize(
+        self,
+        start_time: float = 0.0,
+    ) -> None:
         if self._is_initialized:
             FMU3Simulator._logger.warning("Already initialized ... aborting second initialization.")
             return
@@ -71,41 +74,46 @@ class FMU3Simulator(ShutdownListener):
         self._current_simulation_time = start_time
         FMU3Simulator._logger.debug("Initializing... finished.")
 
-    def set_input_float(self,
-                        name: str,
-                        value: InterfaceValueType,
-                        ) -> None:
+    def set_input_float(
+        self,
+        name: str,
+        value: InterfaceValueType,
+    ) -> None:
         if not isinstance(value, (float, int, complex)):
             raise TypeError(f"Expected a float but got {type(value)}.")
         FMU3Simulator._logger.debug(f"Setting float input {name} to {value}")
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], [value])
 
-    def set_input_float_matrix(self,
-                               name: str,
-                               value: InterfaceValueType,
-                               ) -> None:
+    def set_input_float_matrix(
+        self,
+        name: str,
+        value: InterfaceValueType,
+    ) -> None:
         if not isinstance(value, list):
             raise TypeError(f"Expected a list but got {type(value)}.")
         FMU3Simulator._logger.debug(f"Setting float vector input {name} to {value}")
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], value)
 
-    def set_input_string(self,
-                         name: str,
-                         value: str,
-                         ) -> None:
+    def set_input_string(
+        self,
+        name: str,
+        value: str,
+    ) -> None:
         FMU3Simulator._logger.debug(f"Setting string input {name} to {value}")
         self._fmu_instance.setString([self._simulation_config.input_value_references(name)], [value])
 
-    def set_input_boolean(self,
-                          name: str,
-                          value: bool
-                          ) -> None:
+    def set_input_boolean(
+        self,
+        name: str,
+        value: bool,
+    ) -> None:
         FMU3Simulator._logger.debug(f"Setting bool input {name} to {value}")
         self._fmu_instance.setBoolean([self._simulation_config.input_value_references(name)], [value])
 
-    def get_output(self,
-                   name: str,
-                   ) -> InterfaceValueType:
+    def get_output(
+        self,
+        name: str,
+    ) -> InterfaceValueType:
         var_type = self._simulation_config.output_type(name)
         if var_type == FMU3VariableType.Float64:
             return self.get_output_float(name)
@@ -113,28 +121,31 @@ class FMU3Simulator(ShutdownListener):
             return self.get_output_float_matrix(name)  # type: ignore # mypy cannot correctly verify the type
         raise RuntimeError(f"Unsupported output type {var_type}")
 
-    def get_output_float(self,
-                         name: str,
-                         ) -> float:
+    def get_output_float(
+        self,
+        name: str,
+    ) -> float:
         value: float = self._fmu_instance.getFloat64([self._simulation_config.output_value_references(name)])[0]
         FMU3Simulator._logger.debug(f"Getting float output {name}: {value}")
         return value
 
-    def get_output_float_matrix(self,
-                                name: str,
-                                m_dimension: int | None = None,
-                                n_dimension: int | None = None,
-                                ) -> List[float]:
+    def get_output_float_matrix(
+        self,
+        name: str,
+        m_dimension: int | None = None,
+        n_dimension: int | None = None,
+    ) -> List[float]:
         dimension = self._matrix_dimension(name, m_dimension, n_dimension)
         value: List[float] = self._fmu_instance.getFloat64([self._simulation_config.output_value_references(name)], dimension[0] * dimension[1])
         FMU3Simulator._logger.debug(f"Getting matrix[{m_dimension}x{n_dimension}] output {name}: {value}")
         return value
 
-    def _matrix_dimension(self,
-                          name: str,
-                          default_m: int | None = None,
-                          default_n: int | None = None,
-                          ) -> Tuple[int, int]:
+    def _matrix_dimension(
+        self,
+        name: str,
+        default_m: int | None = None,
+        default_n: int | None = None,
+    ) -> Tuple[int, int]:
         m_dimension = default_m
         n_dimension = default_n
         if not m_dimension:
@@ -143,10 +154,11 @@ class FMU3Simulator(ShutdownListener):
             n_dimension = n_dimension or config.fix_n() or self._get_any_int(config.n_value_reference, config.n_type)
         return m_dimension, n_dimension or 1
 
-    def _get_any_int(self,
-                     value_reference: Any,
-                     variable_type: str | None,
-                     ) -> int:
+    def _get_any_int(
+        self,
+        value_reference: Any,
+        variable_type: str | None,
+    ) -> int:
         type_getters = {
             'Int8': self._fmu_instance.getInt8,
             'Int16': self._fmu_instance.getInt16,
@@ -162,43 +174,52 @@ class FMU3Simulator(ShutdownListener):
         else:
             raise ValueError(f"Variable {value_reference} is not an integer type (found: {variable_type})")
 
-    def get_output_string(self,
-                          name: str,
-                          ) -> str:
+    def get_output_string(
+        self,
+        name: str,
+    ) -> str:
         value: str = self._fmu_instance.getString([self._simulation_config.output_value_references(name)])
         FMU3Simulator._logger.debug(f"Getting string output {name}: {value}")
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
         return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(name=interface_name,
-                                   value=self.get_output(interface_name))
+            ProtocolInterfaceValue(
+                name=interface_name,
+                value=self.get_output(interface_name),
+            )
             for interface_name in self._execution_config.server_used_outputs()
         ])
 
-    def get_output_boolean(self,
-                           name: str,
-                           ) -> bool:
+    def get_output_boolean(
+        self,
+        name: str,
+    ) -> bool:
         value: bool = self._fmu_instance.getBoolean([self._simulation_config.output_value_references(name)])
         FMU3Simulator._logger.debug(f"Getting bool output {name}: {value}")
         return value
 
-    def do_step(self,
-                input_values: dict[InterfaceId, InterfaceValueType],
-                step_size_in_seconds: float,
-                ) -> None:
+    def do_step(
+        self,
+        input_values: dict[InterfaceId, InterfaceValueType],
+        step_size_in_seconds: float,
+    ) -> None:
         for interface_id, value in input_values.items():
             if isinstance(value, list):
                 self.set_input_float_matrix(interface_id, value)
             else:
                 self.set_input_float(interface_id, value)
         FMU3Simulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...")
-        self._fmu_instance.doStep(currentCommunicationPoint=self._current_simulation_time,
-                                  communicationStepSize=step_size_in_seconds)
+            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+        )
+        self._fmu_instance.doStep(
+            currentCommunicationPoint=self._current_simulation_time,
+            communicationStepSize=step_size_in_seconds,
+        )
         self._current_simulation_time += step_size_in_seconds
         FMU3Simulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).")
+            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
+        )
 
     def clear(self) -> None:
         if self._is_cleared:

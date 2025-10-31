@@ -59,9 +59,10 @@ class ESPChannelMessageJson(ESPChannelMessage):
         )
 
     @override
-    def payload(self,
-                clazz: Type[MESSAGE_DATA] | None = None,
-                ) -> MESSAGE_DATA | Any:
+    def payload(
+        self,
+        clazz: Type[MESSAGE_DATA] | None = None,
+    ) -> MESSAGE_DATA | Any:
         if clazz is None:
             return self._payload
         return clazz.of_json(self._payload)

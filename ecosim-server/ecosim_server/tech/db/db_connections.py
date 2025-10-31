@@ -19,11 +19,12 @@ class DBConnections(metaclass=Singleton):
         return DBConnections(None)  # type: ignore
 
     # noinspection PyUnusedLocal
-    def __init__(self,
-                 server_config: ServerConfig,
-                 *args: Any,
-                 **kwargs: Any,
-                 ) -> None:
+    def __init__(
+        self,
+        server_config: ServerConfig,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         # Prevent __init__ from running more than once in the singleton pattern
         if hasattr(self, '_initialized'):
             DBConnections._logger.warning("Init method called multiple times.")
@@ -35,9 +36,10 @@ class DBConnections(metaclass=Singleton):
         self._initialized = True
         self.main: DBConnection = db_tech.db_connection()
 
-    def _get_db_tech(self,
-                     server_config: ServerConfig,
-                     ) -> DbTechAbstract:
+    def _get_db_tech(
+        self,
+        server_config: ServerConfig,
+    ) -> DbTechAbstract:
         match server_config.database.type:
             case "postgres":
                 return PostgresTech(server_config)

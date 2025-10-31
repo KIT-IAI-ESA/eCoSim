@@ -9,7 +9,8 @@ from ecosim_server.simulation.state.simulation_state_repository import Simulatio
 class SimulationStateRepositoryInMemory(SimulationStateRepository):
     _states: List[SimulationState] = field(default_factory=list)
 
-    def update(self,
-               state: SimulationState,
-               ):
+    def update(
+        self,
+        state: SimulationState,
+    ):
         self._states.append(state)

@@ -13,9 +13,10 @@ from ecosim_server.config.simulation_config import SimulationConfig, ClientSimul
 
 class ClientState:
 
-    def __init__(self,
-                 client_config: ClientSimulatorConfig
-                 ):
+    def __init__(
+        self,
+        client_config: ClientSimulatorConfig,
+    ):
         self.client_id: ClientID = client_config.client_id
         self.connection: ClientConnection | None = None
         self.connected: bool = False
@@ -42,9 +43,10 @@ class ClientStates(ShutdownListener):
     _logger = ESPLogger("ClientStates")
     thread_lock = threading.Lock()
 
-    def __init__(self,
-                 simulation_config: SimulationConfig
-                 ):
+    def __init__(
+        self,
+        simulation_config: SimulationConfig,
+    ):
         ShutdownManager().register_listener(self)
         self.client_states: dict[ClientID, ClientState] = {}
         for client in simulation_config.clients:
@@ -54,29 +56,33 @@ class ClientStates(ShutdownListener):
         self._all_clients_stopped_simulation_event = threading.Event()
         self._shutdown_triggered = False
 
-    def add_if_needed(self,
-                      client_config: ClientMetaData,
-                      client_connection: ClientConnection,
-                      ) -> bool:
+    def add_if_needed(
+        self,
+        client_config: ClientMetaData,
+        client_connection: ClientConnection,
+    ) -> bool:
         with ClientStates.thread_lock:
             client = self.client_states.get(client_config.client_id(), None)
             if not client:
                 ClientStates._logger.debug(
-                    f"Client {client_config.client_id()} ({client_connection.address}) connected but is not needed.")
+                    f"Client {client_config.client_id()} ({client_connection.address}) connected but is not needed.",
+                )
                 return False
             if client.connected:
                 ClientStates._logger.debug(
                     f"Client {client_config.client_id()} ({client_connection.address}) connected but " +
-                    f"another client ({client.connection_address}) already fulfills this required.")
+                    f"another client ({client.connection_address}) already fulfills this required.",
+                )
                 return False
             ClientStates._logger.info(f"Client {client_config.client_id()} ({client_connection.address}) connected.")
             client.connection = client_connection
             client.connected = True
             return True
 
-    def reset_state(self,
-                    client_id: ClientID,
-                    ) -> None:
+    def reset_state(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             ClientStates._logger.debug(f"Resetting client state of {client_id}.")
             self.client_states[client_id].close_connection()
@@ -87,21 +93,24 @@ class ClientStates(ShutdownListener):
             self.client_states[client_id].simulation_started = False
             self.client_states[client_id].ready_for_simulation = False
 
-    def interfaces_validated(self,
-                             client_id: ClientID,
-                             ) -> None:
+    def interfaces_validated(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             self.client_states[client_id].interfaces_validated = True
 
-    def step_size_accepted(self,
-                           client_id: ClientID,
-                           ) -> None:
+    def step_size_accepted(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             self.client_states[client_id].step_size_accepted = True
 
-    def simulation_started(self,
-                           client_id: ClientID
-                           ) -> None:
+    def simulation_started(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             self.client_states[client_id].simulation_started = True
             if all(state.simulation_started for state in self.client_states.values()):
@@ -112,7 +121,8 @@ class ClientStates(ShutdownListener):
             sleep(2)
             ClientStates._logger.debug(
                 "Waiting for all clients starting simulation: " +
-                f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}")
+                f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
+            )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
 
@@ -129,26 +139,29 @@ class ClientStates(ShutdownListener):
     def on_app_shutdown(self) -> None:
         self._shutdown_triggered = True
 
-    def is_connected(self,
-                     client_id: ClientID,
-                     ) -> bool:
+    def is_connected(
+        self,
+        client_id: ClientID,
+    ) -> bool:
         return self.client_states[client_id] is not None and self.client_states[client_id].connected
 
     def are_all_clients_connected_and_ready(self) -> bool:
         with ClientStates.thread_lock:
             return all((state.connected and state.ready_for_simulation) for state in self.client_states.values())
 
-    def set_client_ready_for_simulation(self,
-                                        client_id: ClientID
-                                        ) -> None:
+    def set_client_ready_for_simulation(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             self.client_states[client_id].ready_for_simulation = True
             if all(state.ready_for_simulation for state in self.client_states.values()):
                 self._all_clients_ready_for_simulation.set()
 
-    def simulation_stopped(self,
-                           client_id: ClientID
-                           ) -> None:
+    def simulation_stopped(
+        self,
+        client_id: ClientID,
+    ) -> None:
         with ClientStates.thread_lock:
             self.client_states[client_id].stopped_simulation = True
             if all((state.stopped_simulation or state.connected is False) for state in self.client_states.values()):
@@ -157,10 +170,15 @@ class ClientStates(ShutdownListener):
     def wait_for_all_clients_connected_and_ready(self) -> None:
         while not self.are_all_clients_connected_and_ready():
             sleep(2)
-            ClientStates._logger.info(message="Waiting for all clients to connect: " +
-                                              f"{sum(1 for state in self.client_states.values()
-                                                     if (state.connected and state.ready_for_simulation))}/{len(self.client_states.values())}",
-                                      )
+            ClientStates._logger.info(
+                message="Waiting for all clients to connect: " +
+                        f"{
+                            sum(
+                                1 for state in self.client_states.values()
+                                if (state.connected and state.ready_for_simulation)
+                            )
+                        }/{len(self.client_states.values())}",
+            )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
 

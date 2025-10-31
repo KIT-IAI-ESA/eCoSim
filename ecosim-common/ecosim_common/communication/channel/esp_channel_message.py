@@ -13,9 +13,10 @@ class ESPChannelMessage(ABC):
         pass
 
     @abstractmethod
-    def payload(self,
-                clazz: Type[MESSAGE_DATA] | None = None,
-                ) -> MESSAGE_DATA | Any:
+    def payload(
+        self,
+        clazz: Type[MESSAGE_DATA] | None = None,
+    ) -> MESSAGE_DATA | Any:
         """
         :param clazz: the type the payload should be transformed to
         :return: returns either the transformed payload or (if the parameter is not given) the raw payload
