@@ -31,6 +31,7 @@ cache:
     - cd ${PROJECT_DIR}
 
 test:
+  when: manual
   extends: .sub-project-template
   stage: test
   script:
@@ -52,6 +53,7 @@ test:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fail
 
 integration_test_ecosim:
+  when: manual
   extends: .image-template
   stage: integration_test
   script:
@@ -77,7 +79,8 @@ publish_artifacts:
     - uv publish \
       --publish-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi \
       --username gitlab-ci-token \
-      --password ${CI_JOB_TOKEN}
+      --password ${CI_JOB_TOKEN} \
+      dist/*.whl dist/*.tar.gz
   artifacts:
     expire_in: 7 days
     paths:
