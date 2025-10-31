@@ -13,21 +13,24 @@ class ESPChannel(ABC):
         pass
 
     @abstractmethod
-    def listen_async(self,
-                     on_message: Callable[[ESPChannelMessage], None],
-                     ) -> None:
+    def listen_async(
+        self,
+        on_message: Callable[[ESPChannelMessage], None],
+    ) -> None:
         pass
 
     @abstractmethod
-    def listen_blocking(self,
-                        timeout_in_seconds: int | None = None,
-                        ) -> ESPChannelMessage | None:
+    def listen_blocking(
+        self,
+        timeout_in_seconds: int | None = None,
+    ) -> ESPChannelMessage | None:
         pass
 
     @abstractmethod
-    def send(self,
-             message: ESPChannelMessage,
-             ) -> None:
+    def send(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
         pass
 
     @abstractmethod

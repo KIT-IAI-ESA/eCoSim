@@ -15,21 +15,24 @@ T = TypeVar('T')
 
 
 class OptionalAccess(Generic[T]):
-    def __init__(self,
-                 obj: T,
-                 ) -> None:
+    def __init__(
+        self,
+        obj: T,
+    ) -> None:
         self.obj = obj
 
-    def __getattr__(self,
-                    name: str,
-                    ) -> Any:
+    def __getattr__(
+        self,
+        name: str,
+    ) -> Any:
         if self.obj is None:
             return None
         return getattr(self.obj, name, None)
 
-    def __or__(self,
-               default: T,
-               ) -> T:
+    def __or__(
+        self,
+        default: T,
+    ) -> T:
         return self.obj or default
 
 

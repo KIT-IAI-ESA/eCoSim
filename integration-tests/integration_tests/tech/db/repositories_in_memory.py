@@ -20,11 +20,13 @@ class RepositoriesInMemory(Repositories):
 
     simulation_state_repository: SimulationStateRepository = field(default_factory=SimulationStateRepositoryInMemory)
     server_time_measurement_repository: ServerTimeMeasurementRepository = field(
-        default_factory=ServerTimeMeasurementRepositoryInMemory)
+        default_factory=ServerTimeMeasurementRepositoryInMemory,
+    )
 
-    def measurement_repository(self,
-                               client_id: ClientID
-                               ) -> MeasurementRepositoryInMemory:
+    def measurement_repository(
+        self,
+        client_id: ClientID,
+    ) -> MeasurementRepositoryInMemory:
         with self._thread_lock:
             if client_id not in self._client_id_to_measurement_repository:
                 self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryInMemory()

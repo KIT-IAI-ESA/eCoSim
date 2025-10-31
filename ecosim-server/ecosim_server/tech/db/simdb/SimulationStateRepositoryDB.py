@@ -23,15 +23,18 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
         )
         self._state_id = self._db_connection.insert_into(state)
 
-    def update(self,
-               state: SimulationState,
-               ):
+    def update(
+        self,
+        state: SimulationState,
+    ):
         with self._thread_lock:
-            self._db_connection.update(SimulationStateDTO(
-                state_id=self._state_id,
-                variation_id=0,
-                state=state.db_entry,
-            ))
+            self._db_connection.update(
+                SimulationStateDTO(
+                    state_id=self._state_id,
+                    variation_id=0,
+                    state=state.db_entry,
+                ),
+            )
 
     def current(self) -> SimulationState:
         return SimulationState.of_db_entry(self._db_connection.select_by_id(SimulationStateDTO, self._state_id).state)

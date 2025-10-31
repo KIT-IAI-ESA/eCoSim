@@ -27,7 +27,8 @@ class ServerConfig:
                 config_parser=config,
                 config_override=args.config_overrides(),
                 image_renderer_port=args.image_renderer_port(),
-                image_renderer_interval=args.image_renderer_interval()),
+                image_renderer_interval=args.image_renderer_interval(),
+            ),
             database=DatabaseConfig.from_config(config, args.db_config_overwrite()),
         )
 
@@ -41,7 +42,7 @@ class ServerConfig:
                 "Database server": f"{self.database.host}:{self.database.port} ({self.database.type})",
                 "Database name": self.database.name,
                 "Database schema": self.database.schema,
-            }
+            },
         )
 
 
@@ -67,15 +68,17 @@ class MainConfig:
         )
 
     @staticmethod
-    def _get_port(config: ConfigParser,
-                  config_override: ServerConfigOverride,
-                  ) -> int:
+    def _get_port(
+        config: ConfigParser,
+        config_override: ServerConfigOverride,
+    ) -> int:
         # This method is mainly responsible for getting a meaningful info log if the port is overridden
         if config.contains('server', 'port') and config_override.server_port is not None:
             config_port = config.get_int('server', 'port')
             ServerConfig.logger.info(
                 f'Port was passed as an CLI argument. The port in the config file ({config_port}) is therefor '
-                f'overridden with {config_override.server_port}')
+                f'overridden with {config_override.server_port}',
+            )
             return config_override.server_port
         if config_override.server_port is not None:
             return config_override.server_port
@@ -103,10 +106,11 @@ class DatabaseConfig:
     type: str = "postgres"
 
     @classmethod
-    def from_config(cls,
-                    config: ConfigParser,
-                    db_overwrite: DbConfigOverwrite = DbConfigOverwrite(),
-                    ) -> DatabaseConfig:
+    def from_config(
+        cls,
+        config: ConfigParser,
+        db_overwrite: DbConfigOverwrite = DbConfigOverwrite(),
+    ) -> DatabaseConfig:
         return cls(
             host=db_overwrite.host(default=config.get_string('database', 'server')),
             port=int(db_overwrite.port(default=config.get_string('database', 'port'))),

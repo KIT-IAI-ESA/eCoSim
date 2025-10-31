@@ -14,28 +14,33 @@ class MeasurementRepositoryInMemory(MeasurementRepository):
     _records: Dict[datetime, Tuple[ProtocolInterfaceValue, ...]] = field(default_factory=dict)
 
     @override
-    def add(self,
-            values: Tuple[ProtocolInterfaceValue, ...],
-            timestamp: datetime,
-            ) -> None:
+    def add(
+        self,
+        values: Tuple[ProtocolInterfaceValue, ...],
+        timestamp: datetime,
+    ) -> None:
         self._records[timestamp] = values
 
     @override
     def all(self) -> List[MeasurementEntry]:
-        return [MeasurementEntry(
-            timestamp=timestamp,
-            values=values,
-        ) for timestamp, values in self._records.items()]
+        return [
+            MeasurementEntry(
+                timestamp=timestamp,
+                values=values,
+            ) for timestamp, values in self._records.items()
+        ]
 
-    def assert_entry_count(self,
-                           entry_count: int,
-                           ) -> MeasurementRepositoryInMemory:
+    def assert_entry_count(
+        self,
+        entry_count: int,
+    ) -> MeasurementRepositoryInMemory:
         assert len(self._records) == entry_count
         return self
 
-    def assert_for_each_record(self,
-                               assertion: Callable[[datetime, Tuple[ProtocolInterfaceValue, ...]], bool],
-                               ) -> MeasurementRepositoryInMemory:
+    def assert_for_each_record(
+        self,
+        assertion: Callable[[datetime, Tuple[ProtocolInterfaceValue, ...]], bool],
+    ) -> MeasurementRepositoryInMemory:
         for timestamp, values in self._records.items():
             assert assertion(timestamp, values)
         return self

@@ -16,10 +16,12 @@ def test_feedthrough() -> None:
     unzipdir = extract(fmu_file)
 
     if model_description.fmiVersion == '3.0':
-        fmu_instance = FMU3Slave(guid=model_description.guid,
-                                 unzipDirectory=unzipdir,
-                                 modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                 instanceName='instance1')
+        fmu_instance = FMU3Slave(
+            guid=model_description.guid,
+            unzipDirectory=unzipdir,
+            modelIdentifier=model_description.coSimulation.modelIdentifier,
+            instanceName='instance1',
+        )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
 
@@ -63,8 +65,10 @@ def test_feedthrough() -> None:
     print(f"After set (output): {output_values}")
 
     step_size = 10  # Define the step size
-    fmu_instance.doStep(currentCommunicationPoint=start_time,
-                        communicationStepSize=step_size)
+    fmu_instance.doStep(
+        currentCommunicationPoint=start_time,
+        communicationStepSize=step_size,
+    )
 
     # Get the FMU state after the first step
     time = start_time + step_size
@@ -91,10 +95,12 @@ def test_state_space() -> None:
     unzipdir = extract(fmu_file)
 
     if model_description.fmiVersion == '3.0':
-        fmu_instance = FMU3Slave(guid=model_description.guid,
-                                 unzipDirectory=unzipdir,
-                                 modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                 instanceName='instance1')
+        fmu_instance = FMU3Slave(
+            guid=model_description.guid,
+            unzipDirectory=unzipdir,
+            modelIdentifier=model_description.coSimulation.modelIdentifier,
+            instanceName='instance1',
+        )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
 
@@ -121,7 +127,7 @@ def test_state_space() -> None:
         u_values = [
             111 * (time + 1),  # u[1]
             222 * (time + 1),  # u[2]
-            333 * (time + 1)  # u[3]
+            333 * (time + 1),  # u[3]
         ]
 
         # Set the input vector u (value reference 9)
@@ -142,7 +148,7 @@ def test_state_space() -> None:
         outputs.append({
             'y': y_values.copy(),
             'x': x_values.copy(),
-            'u': u_values.copy()
+            'u': u_values.copy(),
         })
 
         # Advance time
