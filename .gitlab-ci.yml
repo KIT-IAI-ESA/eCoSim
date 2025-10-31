@@ -8,6 +8,10 @@ variables:
   # Change pip's cache directory to be inside the project directory since we can
   # only cache local items.
   PIP_CACHE_DIR: "$GIT_CLONE_PATH/.cache/pip"
+  UV_PUBLISH_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
+  UV_PUBLISH_USERNAME: "gitlab-ci-token"
+  UV_PUBLISH_PASSWORD: "${CI_JOB_TOKEN}"
+
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
@@ -74,7 +78,7 @@ publish_artifacts:
   script:
     - uv sync
     - uv build
-    - uv publish --publish-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --token ${CI_JOB_TOKEN}
+    - uv publish
   artifacts:
     expire_in: 7 days
     paths:
