@@ -28,9 +28,9 @@ cache:
     matrix:
       - PROJECT_DIR:
           - $SRC_DIR/ecosim-common
-#          - $SRC_DIR/ecosim-client-fmu-v2
-#          - $SRC_DIR/ecosim-client-fmu-v3
-#          - $SRC_DIR/ecosim-server
+          - $SRC_DIR/ecosim-client-fmu-v2
+          - $SRC_DIR/ecosim-client-fmu-v3
+          - $SRC_DIR/ecosim-server
   before_script:
     - cd ${PROJECT_DIR}
 
@@ -76,6 +76,11 @@ publish_artifacts:
   extends: .sub-project-template
   stage: artifacts
   script:
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "release" ]; then
+      DEV_VERSION="dev.$(date +%Y%m%d).${CI_COMMIT_BRANCH}+${CI_COMMIT_SHORT_SHA}"
+      sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
+      fi
     - uv sync
     - uv build
     - uv publish
