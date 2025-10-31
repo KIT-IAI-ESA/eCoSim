@@ -70,9 +70,10 @@ publish_artifacts:
   extends: .sub-project-template
   stage: artifacts
   script:
-    - cd $SRC_DIR/integration-tests
+    - cd $SRC_DIR
     - uv sync
     - uv build
+    - cd dist
     - uv publish \
       --publish-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi \
       --username gitlab-ci-token \
