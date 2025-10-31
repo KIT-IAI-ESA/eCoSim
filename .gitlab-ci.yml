@@ -78,7 +78,7 @@ publish_artifacts:
   script:
     - |
       if [ "$CI_COMMIT_BRANCH" != "release" ]; then
-      DEV_VERSION="dev.$(date +%Y%m%d).${CI_COMMIT_BRANCH}+${CI_COMMIT_SHORT_SHA}"
+      DEV_VERSION="$(date +%Y%m%d).dev.${CI_COMMIT_BRANCH}+${CI_COMMIT_SHORT_SHA}"
       sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
       fi
     - uv sync
