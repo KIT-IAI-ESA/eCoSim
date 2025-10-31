@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-server"
+requires-pyton = ">=3.13"
 version = "0.11.0"
 description = "The server to handle the eCoSim clients"
 authors = [

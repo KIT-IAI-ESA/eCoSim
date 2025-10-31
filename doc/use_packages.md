@@ -36,3 +36,19 @@
   ```
 - check, if you can access the repo
     - e.g. add the required ecosim dependencies and run `uv sync`
+    - minimal `pyproject.toml`
+      ```toml
+      [project]
+      name = "ecosim-test"
+      version = "0.123"
+      requires-python = ">=3.13"
+
+      dependencies = [
+          "ecosim-common>=1", # if you need a specific version, set it here
+      ]
+
+      [[tool.uv.index]]
+      name= "ecosim-registry"
+      url = "https://gitlab.kit.edu/api/v4/projects/187427/packages/pypi/simple"
+      authenticate = "always"
+      ```
