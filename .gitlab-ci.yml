@@ -35,7 +35,6 @@ cache:
     - cd ${PROJECT_DIR}
 
 test:
-  when: manual
   extends: .sub-project-template
   stage: test
   script:
@@ -45,6 +44,7 @@ test:
   # NOTE: the coverage is extracted from stdout - not from the file specified below
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   artifacts:
+    expire_in: 14 days
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -54,10 +54,9 @@ test:
       - $PROJECT_DIR/coverage.xml
       - $PROJECT_DIR/report.xml
       - $PROJECT_DIR/htmlcov/
-    when: always  # always = collect artifacts even if the job (i.e. the tests) fail
+    when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 integration_test_ecosim:
-  when: manual
   extends: .image-template
   stage: integration_test
   script:
@@ -65,12 +64,12 @@ integration_test_ecosim:
     - uv sync
     - uv run pytest
   artifacts:
+    expire_in: 14 days
     reports:
       junit: integration-tests/report.xml
     paths:
       - integration-tests/report.xml
-    when: always  # always = collect artifacts even if the job (i.e. the tests) fail
-
+    when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 publish_artifacts:
   extends: .sub-project-template
@@ -88,8 +87,3 @@ publish_artifacts:
     expire_in: 7 days
     paths:
       - $PROJECT_DIR/dist/*
-#  rules:
-#    - if: '$CI_COMMIT_BRANCH == "main"'
-#      when: on_success
-#  only:
-#    - main
