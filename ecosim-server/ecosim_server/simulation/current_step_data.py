@@ -111,6 +111,10 @@ class CurrentStepData:
     ):
         client_config_sender = self._simulation_config.client_simulator_config_for(client_id_sender)
 
+        if client_config_sender is None:
+            CurrentStepData._logger.error(f"CurrentStepData#add_received_data: Cannot find client sender for client {client_id_sender}")
+            return
+
         for interface_value in interface_values:
             simulator_interface_id_sender = SimulatorInterfaceId(
                 simulator_name=client_config_sender.simulator_name,
@@ -124,6 +128,9 @@ class CurrentStepData:
                 if client_id_receiver == client_id_sender:
                     continue
                 client_config_receiver = self._simulation_config.client_simulator_config_for(client_id_receiver)
+                if client_config_receiver is None:
+                    CurrentStepData._logger.error(f"CurrentStepData#add_received_data: Cannot find client receiver for client {client_id_receiver}")
+                    return
                 for interface_data_entry in self._data_by_client[client_id_receiver].interface_data:
                     if interface_data_entry.settable_by(simulator_interface_id_sender):
                         self.set_value(
