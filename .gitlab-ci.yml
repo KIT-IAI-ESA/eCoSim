@@ -186,7 +186,7 @@ cleanup:old-dev-packages:
 
                 HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
                   --request DELETE \
-                  --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+                  --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
                   "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PACKAGE_ID}")
 
                 if [ "$HTTP_CODE" -eq 204 ] || [ "$HTTP_CODE" -eq 200 ]; then
