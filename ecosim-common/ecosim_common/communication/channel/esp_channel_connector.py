@@ -9,8 +9,9 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 class ESPChannelConnector(ABC):
 
     @abstractmethod
-    def connect(self,
-                connection_address: ConnectionAddress,
-                timeout_in_seconds: int = 30,
-                ) -> ESPChannel:
+    def connect(
+        self,
+        connection_address: ConnectionAddress,
+        timeout_in_seconds: int = 30,
+    ) -> ESPChannel:
         pass

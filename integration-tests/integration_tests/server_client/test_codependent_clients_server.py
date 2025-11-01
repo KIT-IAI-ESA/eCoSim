@@ -22,8 +22,10 @@ def test_codependent_clients_server() -> None:
     server_port = 23921
     steps = 100
     step_size_in_ms = 2_000
-    simulation_start_date: datetime = datetime(year=2025, month=1, day=1, hour=0, minute=0, second=0,
-                                               microsecond=0)
+    simulation_start_date: datetime = datetime(
+        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        microsecond=0,
+    )
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -35,109 +37,119 @@ def test_codependent_clients_server() -> None:
                 simulator_name="TestSimulator_1",
                 model_name="TestModel_1",
                 client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
-                interfaces=[ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_1",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_1",
-                            interface="TestInterface_1",
+                interfaces=[
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_1",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="TestModel_1",
+                                interface="TestInterface_1",
+                            ),
                         ),
+                        name="TestInterface_1",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[],
                     ),
-                    name="TestInterface_1",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.OUTPUT,
-                    required=True,
-                    connected_to=[],
-                )],
+                ],
             ),
             ClientSimulatorConfig(
                 simulator_name="TestSimulator_2",
                 model_name="TestModel_2",
                 client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-                interfaces=[ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_2",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_2",
-                            interface="TestInterface_2",
-                        ),
-                    ),
-                    name="TestInterface_2",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.INPUT,
-                    required=True,
-                    connected_to=[ConnectedToData(
-                        simulator_interface_id=SimulatorInterfaceId(
-                            simulator_name="TestSimulator_1",
+                interfaces=[
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_2",
                             model_interface_id=ModelInterfaceId(
-                                interface="TestInterface_1",
-                                model_name="TestModel_1",
+                                model_name="TestModel_2",
+                                interface="TestInterface_2",
                             ),
                         ),
-                        delay_path=[],
-                    )],
-                ), ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_2",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_2",
-                            interface="TestInterface_2_2",
+                        name="TestInterface_2",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.INPUT,
+                        required=True,
+                        connected_to=[
+                            ConnectedToData(
+                                simulator_interface_id=SimulatorInterfaceId(
+                                    simulator_name="TestSimulator_1",
+                                    model_interface_id=ModelInterfaceId(
+                                        interface="TestInterface_1",
+                                        model_name="TestModel_1",
+                                    ),
+                                ),
+                                delay_path=[],
+                            ),
+                        ],
+                    ), ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_2",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="TestModel_2",
+                                interface="TestInterface_2_2",
+                            ),
                         ),
+                        name="TestInterface_2_2",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[],
                     ),
-                    name="TestInterface_2_2",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.OUTPUT,
-                    required=True,
-                    connected_to=[],
-                )],
+                ],
             ),
             ClientSimulatorConfig(
                 simulator_name="TestSimulator_3",
                 model_name="TestModel_3",
                 client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
-                interfaces=[ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_3",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_3",
-                            interface="TestInterface_3",
-                        ),
-                    ),
-                    name="TestInterface_3",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.INPUT,
-                    required=True,
-                    connected_to=[ConnectedToData(
-                        simulator_interface_id=SimulatorInterfaceId(
-                            simulator_name="TestSimulator_2",
+                interfaces=[
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_3",
                             model_interface_id=ModelInterfaceId(
-                                interface="TestInterface_2_2",
-                                model_name="TestModel_2",
+                                model_name="TestModel_3",
+                                interface="TestInterface_3",
                             ),
                         ),
-                        delay_path=[],
-                    )],
-                ), ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_3",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_3",
-                            interface="TestInterface_3_2",
+                        name="TestInterface_3",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.INPUT,
+                        required=True,
+                        connected_to=[
+                            ConnectedToData(
+                                simulator_interface_id=SimulatorInterfaceId(
+                                    simulator_name="TestSimulator_2",
+                                    model_interface_id=ModelInterfaceId(
+                                        interface="TestInterface_2_2",
+                                        model_name="TestModel_2",
+                                    ),
+                                ),
+                                delay_path=[],
+                            ),
+                        ],
+                    ), ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_3",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="TestModel_3",
+                                interface="TestInterface_3_2",
+                            ),
                         ),
+                        name="TestInterface_3_2",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[],
                     ),
-                    name="TestInterface_3_2",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.OUTPUT,
-                    required=True,
-                    connected_to=[],
-                )],
+                ],
             ),
-        ]
+        ],
     )
     repositories = server.repositories
 
@@ -159,7 +171,7 @@ def test_codependent_clients_server() -> None:
                     description="TestDescription_1",
                     unit="TestUnit",
                 ),
-            ]
+            ],
         ),
         on_simulation_step_return=lambda _self,
                                          received_inputs,
@@ -169,8 +181,8 @@ def test_codependent_clients_server() -> None:
                     name="TestInterface_1",
                     value=add_floats(_self.accumulated_step_sizes_in_seconds.value, 0.11),
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
     client_2 = SimpleTestClient.generate(
         server_host=server_host,
@@ -201,7 +213,7 @@ def test_codependent_clients_server() -> None:
                     description="TestDescription_2",
                     unit="TestUnit",
                 ),
-            ]
+            ],
         ),
         on_simulation_step_return=lambda _self,
                                          received_inputs,
@@ -209,11 +221,13 @@ def test_codependent_clients_server() -> None:
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_2_2",
-                    value=add_floats(_self.accumulated_step_sizes_in_seconds.value, 0.22,
-                                     get_decimal_part(list(received_inputs.values())[0])),
+                    value=add_floats(
+                        _self.accumulated_step_sizes_in_seconds.value, 0.22,
+                        get_decimal_part(list(received_inputs.values())[0]),
+                    ),
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
     client_3 = SimpleTestClient.generate(
         server_host=server_host,
@@ -244,7 +258,7 @@ def test_codependent_clients_server() -> None:
                     description="TestDescription_3",
                     unit="TestUnit",
                 ),
-            ]
+            ],
         ),
         on_simulation_step_return=lambda _self,
                                          received_inputs,
@@ -252,11 +266,14 @@ def test_codependent_clients_server() -> None:
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_3_2",
-                    value=add_floats(_self.accumulated_step_sizes_in_seconds.value, 0.33, get_decimal_part(
-                        list(received_inputs.values())[0]) % 1),
+                    value=add_floats(
+                        _self.accumulated_step_sizes_in_seconds.value, 0.33, get_decimal_part(
+                        list(received_inputs.values())[0],
+                        ) % 1,
+                    ),
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -274,38 +291,53 @@ def test_codependent_clients_server() -> None:
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    (client_1_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    values: add_floats(((timestamp - simulation_start_date).total_seconds()),
-                                                       step_size_in_seconds,
-                                                       0.11) ==  # adding the offset of the lambda from TestClient_1
-                                            values[0].value)
-     )
+    (
+        client_1_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            values: add_floats(
+                ((timestamp - simulation_start_date).total_seconds()),
+                step_size_in_seconds,
+                0.11,
+            ) ==  # adding the offset of the lambda from TestClient_1
+                    values[0].value,
+        )
+    )
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_2_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    # adding the offset of the lambda from TestClient_2 and adding the decimal part of the return of TestClient_1
-                                    values: add_floats((timestamp - simulation_start_date).total_seconds(),
-                                                       step_size_in_seconds, 0.22, 0.11) == values[0].value)
-     )
+    (
+        client_2_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            # adding the offset of the lambda from TestClient_2 and adding the decimal part of the return of TestClient_1
+            values: add_floats(
+                (timestamp - simulation_start_date).total_seconds(),
+                step_size_in_seconds, 0.22, 0.11,
+            ) == values[0].value,
+        )
+    )
 
     client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_3_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    # adding the offset of the lambda from TestClient_3 and adding the decimal part of the return of TestClient_2
-                                    values: add_floats((timestamp - simulation_start_date).total_seconds(),
-                                                       step_size_in_seconds, 0.33, 0.33) == values[0].value)
-     )
+    (
+        client_3_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            # adding the offset of the lambda from TestClient_3 and adding the decimal part of the return of TestClient_2
+            values: add_floats(
+                (timestamp - simulation_start_date).total_seconds(),
+                step_size_in_seconds, 0.33, 0.33,
+            ) == values[0].value,
+        )
+    )
 
 
 def get_decimal_part(value: float) -> float:

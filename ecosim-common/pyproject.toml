@@ -15,12 +15,13 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Common Code",
-#    "License :: OSI Approved :: MIT License",
+    #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "art==6.5",
     "pydantic==2.11.9",
+    "websockets==15.0.1",
 ]
 
 [tool.setuptools.package-data]
@@ -39,3 +40,25 @@ dev = [
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"
 #Repository = "https://github.com/yourusername/myapp"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_common",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_common"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []

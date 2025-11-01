@@ -17,7 +17,7 @@ def test_app_config_defaults():
                 name="string-with-default-value",
                 required=False,
                 help_text="a simple string",
-                default_value="Hello world"
+                default_value="Hello world",
             ),
             AppConfigParameter(
                 name="int-value",
@@ -33,7 +33,7 @@ def test_app_config_defaults():
                 default_value="1737028198",
                 transform=lambda x: datetime.fromtimestamp(int(x)),
             ),
-        ]
+        ],
     )
 
     assert app_config._args.simple_string is None
@@ -55,7 +55,7 @@ def test_app_config_overwrites():
                 default_value="Hello world",
                 enable_environment_variable=True,
             ),
-        ]
+        ],
     )
     assert app_config._args.string_with_default_value == "override"
 
@@ -71,7 +71,7 @@ def test_app_config_transform_none():
                 help_text="a simple string",
                 transform=lambda x: int(x),
             ),
-        ]
+        ],
     )
     assert app_config._args.transform is None
 
@@ -92,7 +92,7 @@ def test_app_config_flags():
                 is_flag=True,
                 help_text="a simple flag",
             ),
-        ]
+        ],
     )
     assert app_config._args.flag_required is True
     assert app_config._args.flag_absent is False
@@ -108,6 +108,6 @@ def test_app_config_passed_argument_override():
                 default_value="222",
                 help_text="simple test",
             ),
-        ]
+        ],
     )
     assert app_config._args.value_override == "333"

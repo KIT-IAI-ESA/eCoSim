@@ -9,7 +9,8 @@ from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurem
 class ServerTimeMeasurementRepositoryInMemory(ServerTimeMeasurementRepository):
     _measurements: List[ServerTimeMeasurement] = field(default_factory=list)
 
-    def put(self,
-            server_time_measurement: ServerTimeMeasurement,
-            ):
+    def put(
+        self,
+        server_time_measurement: ServerTimeMeasurement,
+    ):
         self._measurements.append(server_time_measurement)

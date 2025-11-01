@@ -29,10 +29,12 @@ def test_sim() -> None:
     unzipdir = extract(fmu_file)
 
     if model_description.fmiVersion == '2.0':
-        fmu_instance = FMU2Slave(guid=model_description.guid,
-                                 unzipDirectory=unzipdir,
-                                 modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                 instanceName='instance1')
+        fmu_instance = FMU2Slave(
+            guid=model_description.guid,
+            unzipDirectory=unzipdir,
+            modelIdentifier=model_description.coSimulation.modelIdentifier,
+            instanceName='instance1',
+        )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
 
@@ -53,15 +55,17 @@ def test_sim() -> None:
     input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
     input_values = {
         'pos_2': 0.3,
-        'speed_2': 0.9
+        'speed_2': 0.9,
     }
     # input_values = {
     #     'inputs': 99999
     # }
     input_refs = {var.name: var.valueReference for var in input_variables}
     for var_name, value in input_values.items():
-        fmu_instance.setReal([input_refs[var_name]],
-                             [value])
+        fmu_instance.setReal(
+            [input_refs[var_name]],
+            [value],
+        )
         print(f"Set {var_name} to {value}")
 
     # set inputs
@@ -70,8 +74,10 @@ def test_sim() -> None:
         print(f"After set {var_name}: {value_after_set}")
 
     step_size = 0.1  # Define the step size
-    fmu_instance.doStep(currentCommunicationPoint=start_time,
-                        communicationStepSize=step_size)
+    fmu_instance.doStep(
+        currentCommunicationPoint=start_time,
+        communicationStepSize=step_size,
+    )
 
     # Get the FMU state after the first step
     time = start_time + step_size
@@ -86,8 +92,10 @@ def test_sim() -> None:
         value_after_set = fmu_instance.getReal([input_refs[var_name]])
         print(f"After set {var_name}: {value_after_set}")
 
-    fmu_instance.doStep(time,
-                        communicationStepSize=step_size)
+    fmu_instance.doStep(
+        time,
+        communicationStepSize=step_size,
+    )
     output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
     output_values = {var.name: fmu_instance.getReal([var.valueReference])[0] for var in output_variables}
 
@@ -114,28 +122,36 @@ def test_fmpy() -> None:
     output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
     output_value_references = {var.name: var.valueReference for var in output_variables}
 
-    fmu_instance = fmpy.fmi2.FMU2Slave(guid=model_description.guid,
-                                       unzipDirectory=unzip_dir,
-                                       modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                       instanceName=str(uuid4()))
+    fmu_instance = fmpy.fmi2.FMU2Slave(
+        guid=model_description.guid,
+        unzipDirectory=unzip_dir,
+        modelIdentifier=model_description.coSimulation.modelIdentifier,
+        instanceName=str(uuid4()),
+    )
 
     fmu_instance.instantiate()
     fmu_instance.setupExperiment(startTime=0.0)
     fmu_instance.enterInitializationMode()
     fmu_instance.exitInitializationMode()
 
-    fmu_instance.setReal([input_value_references["pos1"]],
-                         [1.0])
-    fmu_instance.setReal([input_value_references["speed1"]],
-                         [1.0])
+    fmu_instance.setReal(
+        [input_value_references["pos1"]],
+        [1.0],
+    )
+    fmu_instance.setReal(
+        [input_value_references["speed1"]],
+        [1.0],
+    )
 
     print("=== INPUT")
     print(f"Pos1: {fmu_instance.getReal([input_value_references["pos1"]])}")
     print(f"Speed1: {fmu_instance.getReal([input_value_references["speed1"]])}")
     print(f"Step size: {step_size}")
 
-    fmu_instance.doStep(currentCommunicationPoint=0.0,
-                        communicationStepSize=step_size)
+    fmu_instance.doStep(
+        currentCommunicationPoint=0.0,
+        communicationStepSize=step_size,
+    )
 
     print("=== RESULT")
     print(f"Pos2: {fmu_instance.getReal([output_value_references["pos2"]])}")
@@ -160,25 +176,31 @@ def test_fmpy_coupled_clutches() -> None:
     output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
     output_value_references = {var.name: var.valueReference for var in output_variables}
 
-    fmu_instance = fmpy.fmi2.FMU2Slave(guid=model_description.guid,
-                                       unzipDirectory=unzip_dir,
-                                       modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                       instanceName=str(uuid4()))
+    fmu_instance = fmpy.fmi2.FMU2Slave(
+        guid=model_description.guid,
+        unzipDirectory=unzip_dir,
+        modelIdentifier=model_description.coSimulation.modelIdentifier,
+        instanceName=str(uuid4()),
+    )
 
     fmu_instance.instantiate()
     fmu_instance.setupExperiment(startTime=0.0)
     fmu_instance.enterInitializationMode()
     fmu_instance.exitInitializationMode()
 
-    fmu_instance.setReal([input_value_references["inputs"]],
-                         [1.0])
+    fmu_instance.setReal(
+        [input_value_references["inputs"]],
+        [1.0],
+    )
 
     print("=== INPUT")
     print(f"Inputs: {fmu_instance.getReal([input_value_references["inputs"]])}")
     print(f"Step size: {step_size}")
 
-    fmu_instance.doStep(currentCommunicationPoint=0.0,
-                        communicationStepSize=step_size)
+    fmu_instance.doStep(
+        currentCommunicationPoint=0.0,
+        communicationStepSize=step_size,
+    )
 
     print("=== RESULT")
     print(f"Outputs[1]: {fmu_instance.getReal([output_value_references["outputs[1]"]])}")
@@ -195,7 +217,7 @@ def test_fmpy_houses_weather() -> None:
         steps=12,
         step_size=60000,
         inputs=[],
-        outputs=["dir_sol_irradiance", "T_out"]
+        outputs=["dir_sol_irradiance", "T_out"],
     )
 
 
@@ -232,7 +254,7 @@ def test_fmpy_houses_house() -> None:
                 increase_by_step=0.8,
             ),
         ],
-        outputs=["room_temperature"]
+        outputs=["room_temperature"],
     )
 
 
@@ -248,7 +270,7 @@ def test_fmpy_houses_heating() -> None:
                 increase_by_step=20.0,
             ),
         ],
-        outputs=["heating_control_signal"]
+        outputs=["heating_control_signal"],
     )
 
 
@@ -264,7 +286,7 @@ def test_fmpy_houses_ventilation() -> None:
                 increase_by_step=10.0,
             ),
         ],
-        outputs=["ventilation_pressure_control_signal", "ventilation_valve_control_signal"]
+        outputs=["ventilation_pressure_control_signal", "ventilation_valve_control_signal"],
     )
 
 
@@ -281,10 +303,12 @@ def _execute_fmu(
     unzip_dir = fmpy.extract(full_path)
     model_description = fmpy.read_model_description(full_path)
 
-    fmu_instance = fmpy.fmi2.FMU2Slave(guid=model_description.guid,
-                                       unzipDirectory=unzip_dir,
-                                       modelIdentifier=model_description.coSimulation.modelIdentifier,
-                                       instanceName=str(uuid4()))
+    fmu_instance = fmpy.fmi2.FMU2Slave(
+        guid=model_description.guid,
+        unzipDirectory=unzip_dir,
+        modelIdentifier=model_description.coSimulation.modelIdentifier,
+        instanceName=str(uuid4()),
+    )
 
     fmu_instance.instantiate()
     fmu_instance.setupExperiment(startTime=0.0)
@@ -299,16 +323,21 @@ def _execute_fmu(
     for fmu_input in inputs:
         fmu_instance.setReal([value_references[fmu_input.value_name]], [fmu_input.init_value])
         print(
-            f"Inputs: {fmu_instance.getReal([value_references[fmu_input.value_name]])} | Increase by: {fmu_input.increase_by_step}")
+            f"Inputs: {fmu_instance.getReal([value_references[fmu_input.value_name]])} | Increase by: {fmu_input.increase_by_step}",
+        )
     print("")
     print("")
 
     for current_step in range(steps):
         for fmu_input in inputs:
-            fmu_instance.setReal([value_references[fmu_input.value_name]],
-                                 [fmu_input.init_value + (current_step * fmu_input.increase_by_step)])
-        fmu_instance.doStep(currentCommunicationPoint=current_step * step_size,
-                            communicationStepSize=step_size)
+            fmu_instance.setReal(
+                [value_references[fmu_input.value_name]],
+                [fmu_input.init_value + (current_step * fmu_input.increase_by_step)],
+            )
+        fmu_instance.doStep(
+            currentCommunicationPoint=current_step * step_size,
+            communicationStepSize=step_size,
+        )
         print(f"=== RESULT: Step {current_step}")
         for output in outputs:
             print(f"{output}: {fmu_instance.getReal([value_references[output]])}")

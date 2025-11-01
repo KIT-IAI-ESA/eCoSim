@@ -25,10 +25,11 @@ class FMU2SimulatorConfig:
     _simulator_name: str
 
     @classmethod
-    def of(cls,
-           simulator_name: str,
-           fmu_config: FMU2Config,
-           ) -> FMU2SimulatorConfig:
+    def of(
+        cls,
+        simulator_name: str,
+        fmu_config: FMU2Config,
+    ) -> FMU2SimulatorConfig:
         model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
         input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
         output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
@@ -42,9 +43,10 @@ class FMU2SimulatorConfig:
             _fmu_file=fmu_config.fmu_file,
         )
 
-    def is_fmi_version(self,
-                       version: str,
-                       ) -> bool:
+    def is_fmi_version(
+        self,
+        version: str,
+    ) -> bool:
         if self._model_description is None:
             FMU2SimulatorConfig._logger.error("No model description is set. Please investigate")
             return False
@@ -68,21 +70,25 @@ class FMU2SimulatorConfig:
     def unzip_dir(self) -> str:
         return self._unzip_dir
 
-    def input_value_references(self,
-                               name: str,
-                               ) -> str:
+    def input_value_references(
+        self,
+        name: str,
+    ) -> str:
         return self._input_value_references[name]
 
-    def output_value_references(self,
-                                name: str,
-                                ) -> str:
+    def output_value_references(
+        self,
+        name: str,
+    ) -> str:
         return self._output_value_references[name]
 
     def fmi_version(self) -> str | None:
         return self._model_description.fmiVersion
 
     def create_fmu2_instance(self) -> FMU2Slave:
-        return FMU2Slave(guid=self.model_guid(),
-                         unzipDirectory=self.unzip_dir(),
-                         modelIdentifier=self.model_identifier(),
-                         instanceName=str(uuid4()))
+        return FMU2Slave(
+            guid=self.model_guid(),
+            unzipDirectory=self.unzip_dir(),
+            modelIdentifier=self.model_identifier(),
+            instanceName=str(uuid4()),
+        )

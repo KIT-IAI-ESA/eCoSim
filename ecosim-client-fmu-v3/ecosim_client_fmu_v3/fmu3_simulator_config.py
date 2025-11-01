@@ -24,10 +24,11 @@ class FMU3SimulatorConfig:
     _output_scalar_by_name: Dict[str, ScalarVariable]
 
     @classmethod
-    def of(cls,
-           simulator_name: str,
-           fmu_config: FMU3Config,
-           ) -> FMU3SimulatorConfig:
+    def of(
+        cls,
+        simulator_name: str,
+        fmu_config: FMU3Config,
+    ) -> FMU3SimulatorConfig:
         model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
         input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
         output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
@@ -39,9 +40,10 @@ class FMU3SimulatorConfig:
             _output_scalar_by_name={var.name: var for var in output_variables},
         )
 
-    def is_fmi_version(self,
-                       version: str,
-                       ) -> bool:
+    def is_fmi_version(
+        self,
+        version: str,
+    ) -> bool:
         return self._model_description.fmiVersion == version  # type: ignore
 
     def model_name(self) -> str:
@@ -56,33 +58,39 @@ class FMU3SimulatorConfig:
     def model_identifier(self) -> str:
         return self._model_description.coSimulation.modelIdentifier  # type: ignore
 
-    def input_value_references(self,
-                               name: str,
-                               ) -> Any:
+    def input_value_references(
+        self,
+        name: str,
+    ) -> Any:
         return self._input_scalar_by_name[name].valueReference
 
-    def output_value_references(self,
-                                name: str,
-                                ) -> Any:
+    def output_value_references(
+        self,
+        name: str,
+    ) -> Any:
         return self._output_scalar_by_name[name].valueReference
 
-    def output_type(self,
-                    name: str,
-                    ) -> FMU3VariableType:
+    def output_type(
+        self,
+        name: str,
+    ) -> FMU3VariableType:
         return FMU3VariableType.type_of(self._output_scalar_by_name[name])
 
     def fmi_version(self) -> str | None:
         return self._model_description.fmiVersion  # type: ignore
 
     def create_fmu_instance(self) -> FMU3Slave:
-        return FMU3Slave(guid=self.model_guid(),
-                         unzipDirectory=self.unzip_dir,
-                         modelIdentifier=self.model_identifier(),
-                         instanceName=str(uuid4()))
+        return FMU3Slave(
+            guid=self.model_guid(),
+            unzipDirectory=self.unzip_dir,
+            modelIdentifier=self.model_identifier(),
+            instanceName=str(uuid4()),
+        )
 
-    def output_matrix_config(self,
-                             name: str,
-                             ) -> MatrixConfig:
+    def output_matrix_config(
+        self,
+        name: str,
+    ) -> MatrixConfig:
         scalar = self._output_scalar_by_name[name]
         if scalar.dimensions is None or len(scalar.dimensions) == 0:
             raise RuntimeError(f"Output matrix {name} has no dimensions")

@@ -15,8 +15,10 @@ def test_three_clients_server() -> None:
     server_port = 39310
     steps = 10
     step_size_in_ms = 2_500
-    simulation_start_date: datetime = datetime(year=2025, month=1, day=1, hour=0, minute=0, second=0,
-                                               microsecond=0)
+    simulation_start_date: datetime = datetime(
+        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        microsecond=0,
+    )
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -42,7 +44,7 @@ def test_three_clients_server() -> None:
                 interfaces=[],
                 client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
             ),
-        ]
+        ],
     )
 
     client_1 = SimpleTestClient.generate(
@@ -58,8 +60,8 @@ def test_three_clients_server() -> None:
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.11,
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
     client_2 = SimpleTestClient.generate(
         server_host=server_host,
@@ -74,8 +76,8 @@ def test_three_clients_server() -> None:
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.22,
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
     client_3 = SimpleTestClient.generate(
         server_host=server_host,
@@ -90,8 +92,8 @@ def test_three_clients_server() -> None:
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.33,
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -110,28 +112,37 @@ def test_three_clients_server() -> None:
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_1_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.11 == values[0].value)
-     )
+    (
+        client_1_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.11 == values[0].value,
+        )
+    )
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_2_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.22 == values[0].value)
-     )
+    (
+        client_2_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.22 == values[0].value,
+        )
+    )
 
     client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_3_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.33 == values[0].value)
-     )
+    (
+        client_3_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds + 0.33 == values[0].value,
+        )
+    )
