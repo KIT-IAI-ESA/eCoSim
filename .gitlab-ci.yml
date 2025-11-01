@@ -139,7 +139,7 @@ cleanup:old-dev-packages:
         echo "   -> using URL: $URL"
 
         PACKAGES=$(curl \
-          --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
           "$URL")
 
         # Check if we got any packages
