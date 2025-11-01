@@ -161,11 +161,16 @@ cleanup:old-dev-packages:
         echo "Processing $PACKAGE_COUNT packages from page $PAGE..."
 
         # Process each package
-        echo "$PACKAGES" | jq -c '.[]' | while read -r package; do
-          PACKAGE_ID=$(echo "$package" | jq -r '.id')
-          PACKAGE_NAME=$(echo "$package" | jq -r '.name')
-          PACKAGE_VERSION=$(echo "$package" | jq -r '.version')
-          PACKAGE_CREATED_AT=$(echo "$package" | jq -r '.created_at')
+        for i in $(seq 0 $((PACKAGE_COUNT - 1))); do
+          PACKAGE_ID=$(echo "$PACKAGES" | jq -r ".[$i].id")
+          PACKAGE_NAME=$(echo "$PACKAGES" | jq -r ".[$i].name")
+          PACKAGE_VERSION=$(echo "$PACKAGES" | jq -r ".[$i].version")
+          PACKAGE_CREATED_AT=$(echo "$PACKAGES" | jq -r ".[$i].created_at")
+
+          # Skip if any field is null or empty
+          if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" = "null" ]; then
+            continue
+          fi
 
           # Check if version contains '.dev'
           if [[ "$PACKAGE_VERSION" == *".dev"* ]]; then
