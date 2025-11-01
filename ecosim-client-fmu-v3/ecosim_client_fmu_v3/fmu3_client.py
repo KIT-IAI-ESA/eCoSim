@@ -18,10 +18,11 @@ from ecosim_common.simulation.interface_id import InterfaceId
 
 class FMU3Client(Client):
 
-    def __init__(self,
-                 config_parser: ConfigParser,
-                 config_override: ClientConfigOverride | None = None,
-                 ):
+    def __init__(
+        self,
+        config_parser: ConfigParser,
+        config_override: ClientConfigOverride | None = None,
+    ):
         super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMU3Config.of(config_parser)
@@ -45,10 +46,11 @@ class FMU3Client(Client):
         return self._simulator.server_used_output_values()
 
     @override
-    def on_simulation_step(self,
-                           received_inputs: Dict[InterfaceId, InterfaceValueType],
-                           step_size_in_seconds: float
-                           ) -> ClientSimStepData:
+    def on_simulation_step(
+        self,
+        received_inputs: Dict[InterfaceId, InterfaceValueType],
+        step_size_in_seconds: float,
+    ) -> ClientSimStepData:
         if self._simulator is None:
             raise RuntimeError('Simulation has not been started')
         self._simulator.do_step(
@@ -68,5 +70,5 @@ class FMU3Client(Client):
         return PreRenderedImageService(
             PreRenderedImageServiceConfig(
                 image_dir=pre_rendered_images_dir,
-            )
+            ),
         )

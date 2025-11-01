@@ -12,7 +12,8 @@ def test_load_relative_paths() -> None:
                 "--steps", "100",
                 "--pace", "1.0",
             ],
-        ))
+        ),
+    )
 
     # SERVER
     assert config.server.port == 1234
@@ -34,7 +35,8 @@ def test_load_absolute_paths() -> None:
                 "--steps", "100",
                 "--pace", "1.0",
             ],
-        ))
+        ),
+    )
 
     # SERVER
     assert config.server.port == 1234
@@ -55,8 +57,8 @@ def test_overwrite_port() -> None:
                 "--simulation-config", f"{resource_path()}/simulation.json",
                 "--steps", "100",
                 "--port", "999",
-            ]
-        )
+            ],
+        ),
     )
     # SERVER
     assert config.server.port == 999

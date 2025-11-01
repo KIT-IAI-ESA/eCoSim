@@ -24,5 +24,5 @@ class RenderingMessageClientHeader:
             client_id: ClientID,
     ) -> Mapping[str, str]:
         return {
-            'client_id': client_id.to_str()
+            'client_id': client_id.to_str(),
         }

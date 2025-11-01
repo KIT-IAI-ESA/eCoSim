@@ -31,22 +31,30 @@ class ModelInterfaceClient:
             unit=interface.get('unit'),
             description=interface.get('description') or '',
             type=interface_type,
-            required=config_parser.ConfigParser.config_string_to_bool(interface.setdefault('required',
-                                                                                           'false')),
+            required=config_parser.ConfigParser.config_string_to_bool(
+                interface.setdefault(
+                    'required',
+                    'false',
+                ),
+            ),
         )
 
-    def __eq__(self,
-               other: Any,
-               ) -> bool:
-        if isinstance(other,
-                      ModelInterfaceClient):
+    def __eq__(
+        self,
+        other: Any,
+    ) -> bool:
+        if isinstance(
+            other,
+            ModelInterfaceClient,
+        ):
             return self.model_interface_id == other.model_interface_id
         return False
 
     def __repr__(self) -> str:
         return f"{self.model_interface_id} ({self.type})"
 
-    def matches_server_interface(self,
-                                 server_interface: ModelInterfaceServer
-                                 ) -> bool:
+    def matches_server_interface(
+        self,
+        server_interface: ModelInterfaceServer,
+    ) -> bool:
         return self.model_interface_id == server_interface.model_interface_id

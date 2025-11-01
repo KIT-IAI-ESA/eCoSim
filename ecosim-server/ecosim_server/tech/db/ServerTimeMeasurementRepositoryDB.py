@@ -15,14 +15,16 @@ from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurem
 class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
     _logger = ESPLogger("ServerStatisticsRepositoryDB")
 
-    def __init__(self,
-                 db_connection: DBConnection
-                 ):
+    def __init__(
+        self,
+        db_connection: DBConnection,
+    ):
         self._db_connection = db_connection
 
-    def put(self,
-            server_time_measurement: ServerTimeMeasurement,
-            ):
+    def put(
+        self,
+        server_time_measurement: ServerTimeMeasurement,
+    ):
         for measurement_type in ServerTimeMeasurementType:
             self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(server_time_measurement.get(measurement_type)))
 
@@ -30,7 +32,7 @@ class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
 class ServerTimeMeasurementDBEntry(SimControlDB_Base, DTO[ServerTimeMeasurementType]):
     __tablename__ = 'server_time_measurement'
 
-    time_measurement_type = Column(Enum(ServerTimeMeasurementType), primary_key=True)
+    time_measurement_type = Column(Enum(ServerTimeMeasurementType), primary_key=True)  # type: ignore
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     run_time_in_seconds = Column(Integer, nullable=False)
@@ -43,9 +45,10 @@ class ServerTimeMeasurementDBEntry(SimControlDB_Base, DTO[ServerTimeMeasurementT
         return ServerTimeMeasurementDBEntry.time_measurement_type
 
     @classmethod
-    def of(cls,
-           time_measurement: ServerTimeMeasurement.Entry,
-           ) -> ServerTimeMeasurementDBEntry:
+    def of(
+        cls,
+        time_measurement: ServerTimeMeasurement.Entry,
+    ) -> ServerTimeMeasurementDBEntry:
         return ServerTimeMeasurementDBEntry(
             time_measurement_type=time_measurement.type,
             start_time=time_measurement.start_time,

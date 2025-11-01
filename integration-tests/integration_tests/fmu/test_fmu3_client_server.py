@@ -53,9 +53,9 @@ def test_fmu3_client_server() -> None:
                         description="",
                         interface_type=InterfaceType.OUTPUT,
                         required=True,
-                        connected_to=[]
-                    )
-                ]
+                        connected_to=[],
+                    ),
+                ],
             ),
             ClientSimulatorConfig(
                 simulator_name="fmu3",
@@ -80,7 +80,7 @@ def test_fmu3_client_server() -> None:
                                 simulator_interface_id=mock_client_interface,
                                 delay_path=[],
                             ),
-                        ]
+                        ],
                     ),
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
@@ -100,11 +100,11 @@ def test_fmu3_client_server() -> None:
                                 simulator_interface_id=mock_client_interface,
                                 delay_path=[],
                             ),
-                        ]
+                        ],
                     ),
-                ]
-            )
-        ]
+                ],
+            ),
+        ],
     )
     repositories = server.repositories
 
@@ -114,14 +114,16 @@ def test_fmu3_client_server() -> None:
         server_host=server_host,
         server_port=server_port,
         interface_config=ClientInterfaceConfig(
-            interfaces=[ModelInterfaceClient(
-                name=mock_client_interface.model_interface_id.interface,
-                type=InterfaceType.OUTPUT,
-                unit=None,
-                description="",
-                required=False,
-                model_interface_id=mock_client_interface.model_interface_id,
-            )]
+            interfaces=[
+                ModelInterfaceClient(
+                    name=mock_client_interface.model_interface_id.interface,
+                    type=InterfaceType.OUTPUT,
+                    unit=None,
+                    description="",
+                    required=False,
+                    model_interface_id=mock_client_interface.model_interface_id,
+                ),
+            ],
         ),
         on_simulation_step_return=lambda _self,
                                          received_inputs,
@@ -135,8 +137,8 @@ def test_fmu3_client_server() -> None:
                         100_000 * _self.accumulated_step_sizes_in_seconds.value,
                     ],
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
 
     fmu3_client = FMU3Client(
@@ -159,14 +161,17 @@ def test_fmu3_client_server() -> None:
     fmu3_measurement_repo: MeasurementRepositoryInMemory = repositories.measurement_repository(fmu3_client.client_id)  # type: ignore
     fmu3_measurement_repo.assert_entry_count(steps)
 
-    def assert_for_each_record(date: datetime,
-                               values: Tuple[ProtocolInterfaceValue, ...],
-                               ) -> bool:
+    def assert_for_each_record(
+        date: datetime,
+        values: Tuple[ProtocolInterfaceValue, ...],
+    ) -> bool:
         passed_seconds = (date - start_date).total_seconds() + 1
         u = [v for v in values if v.name == 'u'][0]
         y = [v for v in values if v.name == 'y'][0]
 
-        return (u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds, ] and
-                y.value == fmu3_state_space_results[int(passed_seconds - 1)])
+        return (
+            u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds] and
+            y.value == fmu3_state_space_results[int(passed_seconds - 1)]
+        )
 
     fmu3_measurement_repo.assert_for_each_record(assertion=assert_for_each_record)

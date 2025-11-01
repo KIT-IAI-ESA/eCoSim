@@ -19,20 +19,22 @@ from ecosim_server.measurement.measurement_repository import MeasurementReposito
 class MeasurementRepositoryDB(MeasurementRepository):
     _logger = ESPLogger("MeasurementRepositoryDB")
 
-    def __init__(self,
-                 simulation_config: SimulationConfig,
-                 client_id: ClientID,
-                 ):
+    def __init__(
+        self,
+        simulation_config: SimulationConfig,
+        client_id: ClientID,
+    ):
         self._db_connection = DBConnections.instance().main
         self._interface_name_to_column_name: dict[str, str] = {}
         self._interface_name_to_json_column_name: dict[str, str] = {}
         self._DynamicTable = self._create_dynamic_class(simulation_config, client_id)
         self._db_connection.create_measurement_table(self._DynamicTable)
 
-    def _create_dynamic_class(self,
-                              simulation_config: SimulationConfig,
-                              client_id: ClientID
-                              ) -> type:
+    def _create_dynamic_class(
+        self,
+        simulation_config: SimulationConfig,
+        client_id: ClientID,
+    ) -> type:
         client_config = simulation_config.client_simulator_config_for(client_id)
         if client_config is None:
             raise RuntimeError(f"No config for clientID {client_id} found.")
@@ -41,7 +43,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
         attributes = {
             '__tablename__': table_name,
             '__table_args__': {'schema': self._db_connection.default_schema},
-            'timestamp': Column(DateTime(timezone=True), primary_key=True)
+            'timestamp': Column(DateTime(timezone=True), primary_key=True),
         }
         for interface in client_config.interfaces:
             column_name = MeasurementRepositoryDB._column_name_of_server_interface(interface)
@@ -62,9 +64,10 @@ class MeasurementRepositoryDB(MeasurementRepository):
     def _json_column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
         return f"{'i' if interface.type == InterfaceType.INPUT else 'o'}_{interface.name.lower()}_json"
 
-    def _select_column(self,
-                       value: ProtocolInterfaceValue,
-                       ) -> str:
+    def _select_column(
+        self,
+        value: ProtocolInterfaceValue,
+    ) -> str:
         if isinstance(value.value, float):
             return self._interface_name_to_column_name[value.name]
         elif isinstance(value.value, Sequence) and not isinstance(value.value, (str, bytes)):  # type: ignore
@@ -74,10 +77,11 @@ class MeasurementRepositoryDB(MeasurementRepository):
         return self._interface_name_to_json_column_name[value.name]
 
     @override
-    def add(self,
-            values: Tuple[ProtocolInterfaceValue, ...],
-            timestamp: datetime.datetime,
-            ) -> None:
+    def add(
+        self,
+        values: Tuple[ProtocolInterfaceValue, ...],
+        timestamp: datetime.datetime,
+    ) -> None:
         with self._db_connection.session() as session:
             new_record = self._DynamicTable(
                 timestamp=timestamp,

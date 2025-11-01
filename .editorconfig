@@ -19,6 +19,7 @@ ij_python_method_parameters_right_paren_on_new_line = true
 ij_python_use_trailing_comma_in_arguments_list = true
 ij_python_use_trailing_comma_in_parameter_list = true
 ij_python_use_trailing_comma_in_collections = true
+ij_continuation_indent_size = 4
 
 [*.ini]
 # windows ini files need special handling
