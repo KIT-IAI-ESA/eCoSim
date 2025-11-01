@@ -111,6 +111,7 @@ publish_artifacts:
       - $PROJECT_DIR/dist/*
 
 cleanup:old-dev-packages:
+  needs: [publish_artifacts]
   stage: cleanup
   image: alpine:latest
   variables:
@@ -130,6 +131,7 @@ cleanup:old-dev-packages:
 
       # Fetch all PyPI packages (paginated)
       PAGE=1
+      ERROR=0
       while true; do
         echo "📦 Fetching page $PAGE of packages..."
 
@@ -140,9 +142,17 @@ cleanup:old-dev-packages:
         # Check if we got any packages
         PACKAGE_COUNT=$(echo "$PACKAGES" | jq '. | length')
 
-        if [ "$PACKAGE_COUNT" -eq 0 ]; then
-          echo "No more packages found"
-          break
+        if [ -z "$PACKAGE_COUNT" ] || [ "$PACKAGE_COUNT" = "null" ] || [ "$PACKAGE_COUNT" -le 0 ] 2>/dev/null; then
+          if [ "$PAGE" -eq 1 ]; then
+            ERROR=1
+            echo "##################"
+            echo "Something went wrong access the registry (or there aren't any packages in the registry - which is unlikely): $PACKAGES"
+            echo "##################"
+            break
+          else
+            echo "No more packages found"
+            break
+          fi
         fi
 
         echo "Processing $PACKAGE_COUNT packages from page $PAGE..."
@@ -183,9 +193,11 @@ cleanup:old-dev-packages:
         PAGE=$((PAGE + 1))
       done
 
-      echo ""
-      echo "=========================================="
-      echo "✨ Cleanup completed!"
-      echo "   Deleted: $DELETED_COUNT packages"
-      echo "   Kept: $SKIPPED_COUNT packages"
-      echo "=========================================="
+      if [ "$ERROR" -eq 0 ]; then
+        echo ""
+        echo "=========================================="
+        echo "✨ Cleanup completed!"
+        echo "   Deleted: $DELETED_COUNT packages"
+        echo "   Kept: $SKIPPED_COUNT packages"
+        echo "=========================================="
+      fi
