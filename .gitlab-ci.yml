@@ -36,6 +36,7 @@ cache:
     - cd ${PROJECT_DIR}
 
 precommit_hooks:
+  extends: .image-template
   needs: []
   stage: static-code-analysis
   script:
