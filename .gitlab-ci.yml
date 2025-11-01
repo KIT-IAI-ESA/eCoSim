@@ -1,4 +1,5 @@
 stages:
+  - static-code-analysis
   - test
   - integration_test
   - artifacts
@@ -34,7 +35,24 @@ cache:
   before_script:
     - cd ${PROJECT_DIR}
 
+precommit_hooks:
+  needs: []
+  extends: .sub-project-template
+  stage: static-code-analysis
+  script:
+    - uv sync --extra dev
+    - uv run pre-commit run --all-files
+
+my_py:
+  needs: []
+  extends: .sub-project-template
+  stage: static-code-analysis
+  script:
+    - uv sync --extra dev
+    - uv run mypy .
+
 test:
+  needs: []
   extends: .sub-project-template
   stage: test
   script:
@@ -57,6 +75,7 @@ test:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 integration_test_ecosim:
+  needs: []
   extends: .image-template
   stage: integration_test
   script:
@@ -72,6 +91,7 @@ integration_test_ecosim:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 publish_artifacts:
+  needs: [test, integration_test_ecosim]
   extends: .sub-project-template
   stage: artifacts
   script:
