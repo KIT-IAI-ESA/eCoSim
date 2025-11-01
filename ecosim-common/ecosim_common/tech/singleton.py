@@ -4,13 +4,14 @@ from typing import Type, Any, TypeVar, cast
 T = TypeVar('T', bound='Singleton')
 
 
-# Attention: this will result in a deadlock if a singleton instantiate a non-initialized singleton in its init method
+# Attention:
+#    POTENTIAL DEADLOCK: if a singleton instantiates a non-initialized singleton in its init method, this may result in a deadlock
 class Singleton(type):
     _instances: dict[type, Any] = {}
     _lock = threading.Lock()
 
-    def __call__(
-        cls: Type[T],  # type: ignore
+    def __call__(  # type: ignore
+        cls: Type[T],
         *args: Any,
         **kwargs: Any,
     ) -> T:
