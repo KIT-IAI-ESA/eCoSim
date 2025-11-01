@@ -37,7 +37,6 @@ cache:
 
 precommit_hooks:
   needs: []
-  extends: .sub-project-template
   stage: static-code-analysis
   script:
     - uv sync --extra dev
