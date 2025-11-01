@@ -3,6 +3,7 @@ stages:
   - test
   - integration_test
   - artifacts
+  - cleanup
 
 variables:
   SRC_DIR: "$CI_PROJECT_DIR"
@@ -98,7 +99,7 @@ publish_artifacts:
   script:
     - |
       if [ "$CI_COMMIT_BRANCH" != "release" ]; then
-      DEV_VERSION="$(date +%Y%m%d.%H%M%S).dev+${CI_COMMIT_BRANCH}_${CI_COMMIT_SHORT_SHA}"
+      DEV_VERSION="0.0.dev+$(date +%Y%m%d.%H%M%S)_${CI_COMMIT_BRANCH}_${CI_COMMIT_SHORT_SHA}"
       sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
       fi
     - uv sync
@@ -108,3 +109,83 @@ publish_artifacts:
     expire_in: 7 days
     paths:
       - $PROJECT_DIR/dist/*
+
+cleanup:old-dev-packages:
+  stage: cleanup
+  image: alpine:latest
+  variables:
+    DAYS_TO_KEEP: "90"
+  before_script:
+    - apk add --no-cache bash curl jq coreutils
+  script:
+    - |
+      echo "🧹 Starting cleanup of .dev packages older than ${DAYS_TO_KEEP} days..."
+
+      CUTOFF_TIMESTAMP=$(date -d "${DAYS_TO_KEEP} days ago" +%s)
+      CUTOFF_DATE=$(date -d "${DAYS_TO_KEEP} days ago" '+%Y-%m-%d %H:%M:%S')
+      echo "Cutoff date: $CUTOFF_DATE"
+
+      DELETED_COUNT=0
+      SKIPPED_COUNT=0
+
+      # Fetch all PyPI packages (paginated)
+      PAGE=1
+      while true; do
+        echo "📦 Fetching page $PAGE of packages..."
+
+        PACKAGES=$(curl --silent --fail \
+          --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages?package_type=pypi&per_page=100&page=${PAGE}")
+
+        # Check if we got any packages
+        PACKAGE_COUNT=$(echo "$PACKAGES" | jq '. | length')
+
+        if [ "$PACKAGE_COUNT" -eq 0 ]; then
+          echo "No more packages found"
+          break
+        fi
+
+        echo "Processing $PACKAGE_COUNT packages from page $PAGE..."
+
+        # Process each package
+        echo "$PACKAGES" | jq -c '.[]' | while read -r package; do
+          PACKAGE_ID=$(echo "$package" | jq -r '.id')
+          PACKAGE_NAME=$(echo "$package" | jq -r '.name')
+          PACKAGE_VERSION=$(echo "$package" | jq -r '.version')
+          PACKAGE_CREATED_AT=$(echo "$package" | jq -r '.created_at')
+
+          # Check if version contains '.dev'
+          if [[ "$PACKAGE_VERSION" == *".dev"* ]]; then
+            # Convert created_at to timestamp
+            PACKAGE_TIMESTAMP=$(date -d "$PACKAGE_CREATED_AT" +%s)
+
+            if [ "$PACKAGE_TIMESTAMP" -lt "$CUTOFF_TIMESTAMP" ]; then
+              echo "🗑️  Deleting: $PACKAGE_NAME==$PACKAGE_VERSION (created: $PACKAGE_CREATED_AT)"
+
+              HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+                --request DELETE \
+                --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+                "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PACKAGE_ID}")
+
+              if [ "$HTTP_CODE" -eq 204 ] || [ "$HTTP_CODE" -eq 200 ]; then
+                echo "   ✅ Deleted successfully"
+                DELETED_COUNT=$((DELETED_COUNT + 1))
+              else
+                echo "   ❌ Failed (HTTP $HTTP_CODE)"
+              fi
+            else
+              echo "⏭️  Keeping (recent): $PACKAGE_NAME==$PACKAGE_VERSION"
+              SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+            fi
+          fi
+        done
+
+        PAGE=$((PAGE + 1))
+      done
+
+      echo ""
+      echo "=========================================="
+      echo "✨ Cleanup completed!"
+      echo "   Deleted: $DELETED_COUNT packages"
+      echo "   Kept: $SKIPPED_COUNT packages"
+      echo "=========================================="
