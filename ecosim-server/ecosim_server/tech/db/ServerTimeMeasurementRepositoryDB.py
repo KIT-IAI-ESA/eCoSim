@@ -32,7 +32,7 @@ class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
 class ServerTimeMeasurementDBEntry(SimControlDB_Base, DTO[ServerTimeMeasurementType]):
     __tablename__ = 'server_time_measurement'
 
-    time_measurement_type = Column(Enum(ServerTimeMeasurementType), primary_key=True)
+    time_measurement_type = Column(Enum(ServerTimeMeasurementType), primary_key=True)  # type: ignore
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     run_time_in_seconds = Column(Integer, nullable=False)

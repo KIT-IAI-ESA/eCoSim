@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, ProtocolInterfaceValueMutable
+from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, ProtocolInterfaceValueMutable, InterfaceValueType
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ConnectedToData
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
@@ -67,7 +67,7 @@ class CurrentStepData:
     def set_value(
         self,
         interface: SimulatorInterfaceId,
-        value: float,
+        value: InterfaceValueType,
     ):
         client_data = self._data_by_client[interface.client_id()]
         if client_data.executed:
@@ -198,7 +198,7 @@ class CurrentStepLogicalDelay:
 
 @dataclass
 class CurrentStepLogicalDelayConnection:
-    current_value: float
+    current_value: InterfaceValueType
     output_interface: SimulatorInterfaceId
     input_interface: SimulatorInterfaceId
     set_in_step: List[int]
