@@ -8,6 +8,9 @@ class SimulationState(Enum):
     FAILED = ("Failed", "failed")
     FINISHED = ("Finished", "finished")
 
+    display_value: str
+    db_entry: str
+
     def __new__(
         cls,
         display_value: str,

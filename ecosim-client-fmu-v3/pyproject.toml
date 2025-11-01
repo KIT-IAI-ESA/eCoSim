@@ -63,3 +63,14 @@ exclude_lines = []
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"
 #Repository = "https://github.com/yourusername/myapp"
+
+[tool.mypy]
+mypy_path = "../ecosim-common"
+# Ignore fmpy library (not typed)
+[[tool.mypy.overrides]]
+module = [
+    "fmpy",
+    "fmpy.*",
+    "art",
+]
+ignore_missing_imports = true

@@ -17,5 +17,6 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit"
+    "pre-commit",
+    "mypy==1.18.2",
 ]

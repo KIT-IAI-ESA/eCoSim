@@ -29,8 +29,6 @@ dependencies = [
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 
-[tool.mypy]
-mypy_path = ["../ecosim-common"]
 
 [project.optional-dependencies]
 dev = [
@@ -67,3 +65,14 @@ omit = ["*/tests/*"]
 
 [tool.coverage.report]
 exclude_lines = []
+
+[tool.mypy]
+mypy_path = "../ecosim-common"
+# Ignore fmpy library (not typed)
+[[tool.mypy.overrides]]
+module = [
+    "fmpy",
+    "fmpy.*",
+    "art",
+]
+ignore_missing_imports = true
