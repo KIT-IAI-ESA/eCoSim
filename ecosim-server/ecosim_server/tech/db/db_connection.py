@@ -32,12 +32,12 @@ class DBConnection:
         self,
         table: type[GenericEntity],
     ) -> None:
-        table_name = table.__tablename__
+        table_name = table.__tablename__  # type: ignore # __tablename__ is part of SQLAlchemy
         if self.table_exists(table_name):
             DBConnection._logger.debug(f"Table {table_name} already exists -> skipping creation")
             return
         DBConnection._logger.debug(f"Creating table {table_name}")
-        table.__table__.create(self._db_engine)
+        table.__table__.create(self._db_engine)  # type: ignore # __table__ is part of SQLAlchemy
 
     def table_exists(
         self,
@@ -72,7 +72,7 @@ class DBConnection:
         self,
         table: type[GenericEntity],
         entity_id: GenericId,
-    ) -> DTO[GenericId]:
+    ) -> DTO[GenericId] | None:
         with Session(self._db_engine) as session:
             return session.query(table).filter_by(**{table.id_column().name: entity_id}).first()
 

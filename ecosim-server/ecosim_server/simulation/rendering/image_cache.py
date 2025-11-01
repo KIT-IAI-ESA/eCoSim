@@ -14,7 +14,7 @@ _image_cache_logger = ESPLogger("ImageCache")
 @dataclasses.dataclass(frozen=True)
 class ImageCache:
     _image_cache: Dict[int, Dict[str, RenderingImageReplyMessage]] = dataclasses.field(
-        default_factory=lambda: defaultdict(lambda: defaultdict(dict)),
+        default_factory=lambda: defaultdict(lambda: defaultdict(dict)),  # type: ignore # ignore mypy error since we just need an empty dict
     )
     _events: Dict[int, asyncio.Event] = dataclasses.field(
         default_factory=lambda: defaultdict(asyncio.Event),

@@ -31,6 +31,9 @@ class ClientCommunication:
         message: ESPChannelMessage,
     ):
         for client_state in self._client_states.client_states.values():
+            if not client_state.connection:
+                ClientCommunication._logger.warning(f"Cannot broadcast to {client_state.client_id} because connection is not set.")
+                continue
             client_state.connection.send(message)
 
     def on_messages(
