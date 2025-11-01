@@ -12,9 +12,10 @@ from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 
 class CLIArguments(AppConfig):
 
-    def __init__(self,
-                 passed_arguments: List[Any] | None = None,
-                 ):
+    def __init__(
+        self,
+        passed_arguments: List[Any] | None = None,
+    ):
         super().__init__(
             passed_arguments=passed_arguments or sys.argv[1:],
             cli_description="This is the server of eCoSimPy.",
@@ -113,7 +114,7 @@ class CLIArguments(AppConfig):
                     help_text="The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. " +
                               "If not set no images will be sent.",
                 ),
-            ]
+            ],
         )
 
     def server_config(self) -> Path:

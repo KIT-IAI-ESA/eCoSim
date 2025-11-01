@@ -27,8 +27,10 @@ def test_matrix_transfer() -> None:
     server_port = 33771
     steps = 100
     step_size_in_ms = 2_000
-    simulation_start_date: datetime = datetime(year=2025, month=1, day=1, hour=0, minute=0, second=0,
-                                               microsecond=0)
+    simulation_start_date: datetime = datetime(
+        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        microsecond=0,
+    )
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -62,46 +64,50 @@ def test_matrix_transfer() -> None:
                 simulator_name="TestSimulator_2",
                 model_name="TestModel_2",
                 client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-                interfaces=[ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_2",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_2",
-                            interface="TestInterface_2",
-                        ),
-                    ),
-                    name="TestInterface_2",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.INPUT,
-                    required=True,
-                    connected_to=[ConnectedToData(
-                        simulator_interface_id=SimulatorInterfaceId(
-                            simulator_name="TestSimulator_1",
+                interfaces=[
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_2",
                             model_interface_id=ModelInterfaceId(
-                                interface="TestInterface_1",
-                                model_name="TestModel_1",
+                                model_name="TestModel_2",
+                                interface="TestInterface_2",
                             ),
                         ),
-                        delay_path=[],
-                    )],
-                ), ModelInterfaceServer(
-                    SimulatorInterfaceId(
-                        simulator_name="TestSimulator_2",
-                        model_interface_id=ModelInterfaceId(
-                            model_name="TestModel_2",
-                            interface="TestInterface_2_2",
+                        name="TestInterface_2",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.INPUT,
+                        required=True,
+                        connected_to=[
+                            ConnectedToData(
+                                simulator_interface_id=SimulatorInterfaceId(
+                                    simulator_name="TestSimulator_1",
+                                    model_interface_id=ModelInterfaceId(
+                                        interface="TestInterface_1",
+                                        model_name="TestModel_1",
+                                    ),
+                                ),
+                                delay_path=[],
+                            ),
+                        ],
+                    ), ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="TestSimulator_2",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="TestModel_2",
+                                interface="TestInterface_2_2",
+                            ),
                         ),
+                        name="TestInterface_2_2",
+                        unit="TestUnit",
+                        description=None,
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[],
                     ),
-                    name="TestInterface_2_2",
-                    unit="TestUnit",
-                    description=None,
-                    interface_type=InterfaceType.OUTPUT,
-                    required=True,
-                    connected_to=[],
-                )],
+                ],
             ),
-        ]
+        ],
     )
     repositories = server.repositories
 
@@ -123,7 +129,7 @@ def test_matrix_transfer() -> None:
                     description="TestDescription_1",
                     unit="TestUnit",
                 ),
-            ]
+            ],
         ),
         on_simulation_step_return=lambda _self,
                                          received_inputs,
@@ -133,8 +139,8 @@ def test_matrix_transfer() -> None:
                     name="TestInterface_1",
                     value=generate_matrix(_self.accumulated_step_sizes_in_seconds.value),
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
     client_2 = SimpleTestClient.generate(
         server_host=server_host,
@@ -165,7 +171,7 @@ def test_matrix_transfer() -> None:
                     description="TestDescription_2",
                     unit="TestUnit",
                 ),
-            ]
+            ],
         ),
         on_simulation_step_return=handle_client_2_sim_step,
     )
@@ -181,9 +187,10 @@ def test_matrix_transfer() -> None:
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
 
-    def client_1_asserts(timestamp: datetime,
-                         values: Tuple[ProtocolInterfaceValue, ...],
-                         ) -> bool:
+    def client_1_asserts(
+        timestamp: datetime,
+        values: Tuple[ProtocolInterfaceValue, ...],
+    ) -> bool:
         base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
         expected = generate_matrix(base_value)
         actual = values[0].value
@@ -194,17 +201,20 @@ def test_matrix_transfer() -> None:
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    (client_1_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(client_1_asserts))
+    (
+        client_1_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(client_1_asserts)
+    )
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    def client_2_asserts(timestamp: datetime,
-                         values: Tuple[ProtocolInterfaceValue, ...],
-                         ) -> bool:
+    def client_2_asserts(
+        timestamp: datetime,
+        values: Tuple[ProtocolInterfaceValue, ...],
+    ) -> bool:
         base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
         actual = values[0].value
         expected = square_each_element(generate_matrix(base_value))
@@ -212,9 +222,11 @@ def test_matrix_transfer() -> None:
         logger.debug(f"(Client2) Actual:   {actual}")
         return actual == expected
 
-    (client_2_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(client_2_asserts))
+    (
+        client_2_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(client_2_asserts)
+    )
 
 
 def get_decimal_part(value: float) -> float:
@@ -233,10 +245,11 @@ def generate_matrix(input: float) -> InterfaceValueType:
     ]
 
 
-def handle_client_2_sim_step(simple_test_client: SimpleTestClient,
-                             received_values: dict[InterfaceId, InterfaceValueType],
-                             step_size_in_seconds: float,
-                             ) -> ClientSimStepData:
+def handle_client_2_sim_step(
+    simple_test_client: SimpleTestClient,
+    received_values: dict[InterfaceId, InterfaceValueType],
+    step_size_in_seconds: float,
+) -> ClientSimStepData:
     logger.debug(f"Received values: {received_values}")
     assert len(received_values.keys()) == 1
     received_value: InterfaceValueType = received_values['TestInterface_2']
@@ -244,10 +257,12 @@ def handle_client_2_sim_step(simple_test_client: SimpleTestClient,
     return_value = square_each_element(received_value)
     logger.debug(f"Return value: {return_value}")
     return ClientSimStepData(
-        interface_values=[ProtocolInterfaceValue(
-            name="TestInterface_2_2",
-            value=return_value,
-        )],
+        interface_values=[
+            ProtocolInterfaceValue(
+                name="TestInterface_2_2",
+                value=return_value,
+            ),
+        ],
     )
 
 

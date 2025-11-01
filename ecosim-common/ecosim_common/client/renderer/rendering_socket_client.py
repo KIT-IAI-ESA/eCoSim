@@ -18,11 +18,12 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 class RenderingSocketClient(ShutdownListener):
     _logger = ESPLogger("RenderingSocketClient")
 
-    def __init__(self,
-                 uri: str,
-                 client_config: ClientConfig,
-                 renderer_service: SimulationRendererService,
-                 ):
+    def __init__(
+        self,
+        uri: str,
+        client_config: ClientConfig,
+        renderer_service: SimulationRendererService,
+    ):
         self._uri: str = uri
         self._websocket: ClientConnection | None = None
         self._running: threading.Event = threading.Event()
@@ -42,9 +43,10 @@ class RenderingSocketClient(ShutdownListener):
         self._thread.start()
         return self._started_event
 
-    def _run_client(self,
-                    url: str
-                    ) -> None:
+    def _run_client(
+        self,
+        url: str,
+    ) -> None:
         _loop = asyncio.new_event_loop()
         asyncio.set_event_loop(_loop)
 
@@ -53,14 +55,17 @@ class RenderingSocketClient(ShutdownListener):
         finally:
             _loop.close()
 
-    async def _connect_and_run(self,
-                               url: str
-                               ) -> None:
+    async def _connect_and_run(
+        self,
+        url: str,
+    ) -> None:
         try:
             RenderingSocketClient._logger.debug(f"Connecting to {url}...")
-            self._websocket = await websockets.connect(url, additional_headers=RenderingMessageClientHeader.create_raw(
-                client_id=self._client_config.client_id(),
-            ), max_size=None)
+            self._websocket = await websockets.connect(
+                url, additional_headers=RenderingMessageClientHeader.create_raw(
+                    client_id=self._client_config.client_id(),
+                ), max_size=None,
+            )
             RenderingSocketClient._logger.debug(f"Connecting to {url}... success.")
             if self._started_event:
                 self._started_event.set()
@@ -71,7 +76,7 @@ class RenderingSocketClient(ShutdownListener):
                 while self._running.is_set():
                     try:
                         message = RawRenderingMessageHandler(
-                            await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
+                            await asyncio.wait_for(self._websocket.recv(), timeout=5.0),
                         )
                     except TimeoutError:
                         continue
@@ -81,22 +86,25 @@ class RenderingSocketClient(ShutdownListener):
                             self._no_sending_in_progress.clear()
                             rendering_image_message = message.cast(RenderingImageMessage)
                             RenderingSocketClient._logger.debug(
-                                f"Received {RenderingMessageType.RENDERING_IMAGE.value} message for time step {rendering_image_message.time_step}...")
+                                f"Received {RenderingMessageType.RENDERING_IMAGE.value} message for time step {rendering_image_message.time_step}...",
+                            )
                             image = self._renderer_service.render_step(rendering_image_message.time_step)
                             content = base64.b64encode(image).decode('utf-8') if image else None
                             await self._websocket.send(
                                 RenderingImageReplyMessage(
                                     time_step=rendering_image_message.time_step,
                                     base64=content,
-                                ).model_dump_json()
+                                ).model_dump_json(),
                             )
                             RenderingSocketClient._logger.debug(
                                 f"Handled {RenderingMessageType.RENDERING_IMAGE.value} message for time step " +
-                                f"{rendering_image_message.time_step}... success.")
+                                f"{rendering_image_message.time_step}... success.",
+                            )
                         except Exception as e:
                             RenderingSocketClient._logger.error(
                                 "Something went wrong sending images of time step " +
-                                f"{rendering_image_message.time_step if rendering_image_message else "N/A"}: {e}")
+                                f"{rendering_image_message.time_step if rendering_image_message else "N/A"}: {e}",
+                            )
                         finally:
                             self._no_sending_in_progress.set()
                     else:
@@ -122,7 +130,8 @@ class RenderingSocketClient(ShutdownListener):
             RenderingSocketClient._logger.debug(f"Sending is currently in progress. Waiting for {timeout} seconds...")
             success = self._no_sending_in_progress.wait(timeout)
             RenderingSocketClient._logger.debug(
-                f"Sending is currently in progress. Waited for {timeout} seconds... {"success" if success else "failed."}")
+                f"Sending is currently in progress. Waited for {timeout} seconds... {"success" if success else "failed."}",
+            )
         if self._thread:
             self._thread.join()
 

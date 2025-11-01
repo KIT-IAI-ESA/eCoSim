@@ -38,6 +38,39 @@ dev = [
     "uv==0.8.22",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_client_fmu_v3",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_client_fmu_v3"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
+
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"
 #Repository = "https://github.com/yourusername/myapp"
+
+[tool.mypy]
+mypy_path = "../ecosim-common"
+# Ignore fmpy library (not typed)
+[[tool.mypy.overrides]]
+module = [
+    "fmpy",
+    "fmpy.*",
+    "art",
+]
+ignore_missing_imports = true

@@ -12,9 +12,10 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 class ESPChannelEndpoint(ABC):
 
     @abstractmethod
-    def listen_async(self,
-                     on_new_channel: Callable[[ConnectionData], None],
-                     ) -> None:
+    def listen_async(
+        self,
+        on_new_channel: Callable[[ConnectionData], None],
+    ) -> None:
         pass
 
     @abstractmethod

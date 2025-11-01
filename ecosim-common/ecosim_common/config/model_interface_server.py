@@ -28,28 +28,39 @@ class ModelInterfaceServer:
         if not interface_type:
             raise RuntimeError(f"Interface type is required: Interface: {raw_interface} || Simulator: {simulator_name} || Model: {model_name}")
         return ModelInterfaceServer(
-            simulator_interface_id=SimulatorInterfaceId(simulator_name=simulator_name,
-                                                        model_interface_id=ModelInterfaceId(model_name=model_name,
-                                                                                            interface=interface_name)),
+            simulator_interface_id=SimulatorInterfaceId(
+                simulator_name=simulator_name,
+                model_interface_id=ModelInterfaceId(
+                    model_name=model_name,
+                    interface=interface_name,
+                ),
+            ),
             name=interface_name,
             unit=raw_interface.get('unit'),
             description=raw_interface.get('description'),
             interface_type=InterfaceType.of(interface_type),
-            required=config_parser.ConfigParser.config_string_to_bool(raw_interface.setdefault('required',
-                                                                                               'false')),
-            connected_to=ModelInterfaceServer._get_connected_to(raw_interface.get('connected_to'),
-                                                                raw_simulators)
+            required=config_parser.ConfigParser.config_string_to_bool(
+                raw_interface.setdefault(
+                    'required',
+                    'false',
+                ),
+            ),
+            connected_to=ModelInterfaceServer._get_connected_to(
+                raw_interface.get('connected_to'),
+                raw_simulators,
+            ),
         )
 
-    def __init__(self,
-                 simulator_interface_id: SimulatorInterfaceId,
-                 name: str,
-                 unit: str | None,
-                 description: str | None,
-                 interface_type: InterfaceType | None,
-                 required: bool | None,
-                 connected_to: List[ConnectedToData],
-                 ):
+    def __init__(
+        self,
+        simulator_interface_id: SimulatorInterfaceId,
+        name: str,
+        unit: str | None,
+        description: str | None,
+        interface_type: InterfaceType | None,
+        required: bool | None,
+        connected_to: List[ConnectedToData],
+    ):
         self.simulator_interface_id: SimulatorInterfaceId = simulator_interface_id
         self.name = name
         self.unit = unit
@@ -66,9 +77,10 @@ class ModelInterfaceServer:
         return self.simulator_interface_id.model_interface_id.interface
 
     @staticmethod
-    def _get_connected_to(raw_connected_to: List[dict[str, str]] | None,
-                          raw_simulators: List[dict[str, str]],
-                          ) -> List[ConnectedToData]:
+    def _get_connected_to(
+        raw_connected_to: List[dict[str, str]] | None,
+        raw_simulators: List[dict[str, str]],
+    ) -> List[ConnectedToData]:
         if not raw_connected_to:
             return []
         result: List[ConnectedToData] = []
@@ -91,20 +103,26 @@ class ModelInterfaceServer:
             raise RuntimeError(f"Interface name is required: {connection}")
         result.append(
             ConnectedToData(
-                simulator_interface_id=SimulatorInterfaceId(simulator_name=simulator_name,
-                                                            model_interface_id=ModelInterfaceId(
-                                                                model_name=simulator_model_name,
-                                                                interface=model_interface_name)),
+                simulator_interface_id=SimulatorInterfaceId(
+                    simulator_name=simulator_name,
+                    model_interface_id=ModelInterfaceId(
+                        model_name=simulator_model_name,
+                        interface=model_interface_name,
+                    ),
+                ),
                 delay_path=connection.get('delay_path', []),  # type: ignore
-            )
+            ),
         )
         return result
 
-    def __eq__(self,
-               other: Any,
-               ) -> bool:
-        if isinstance(other,
-                      ModelInterfaceServer):
+    def __eq__(
+        self,
+        other: Any,
+    ) -> bool:
+        if isinstance(
+            other,
+            ModelInterfaceServer,
+        ):
             return self.model_interface_id == other.model_interface_id
         return False
 

@@ -20,7 +20,7 @@ def test_simulator() -> None:
 
     simulator.do_step(
         input_values={
-            'u': [111, 222, 333]
+            'u': [111, 222, 333],
         },
         step_size_in_seconds=step_size_in_seconds,
     )
@@ -34,7 +34,7 @@ def test_simulator() -> None:
 
     simulator.do_step(
         input_values={
-            'u': [222, 444, 666]
+            'u': [222, 444, 666],
         },
         step_size_in_seconds=step_size_in_seconds,
     )

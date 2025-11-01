@@ -29,5 +29,6 @@ def test_load():
     assert interface0.connected_to == [
         ConnectedToData(
             simulator_interface_id=SimulatorInterfaceId("B_1", ModelInterfaceId("B_1", "Pe_gen_B_1")),
-            delay_path=[])
+            delay_path=[],
+        ),
     ]

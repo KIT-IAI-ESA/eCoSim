@@ -36,11 +36,13 @@ class SimpleTestClient(Client):
             on_simulation_step_return=on_simulation_step_return,
         )
 
-    def __init__(self,
-                 client_config: ClientConfig,
-                 on_simulation_step_return: Callable[
-                     [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData],
-                 ):
+    def __init__(
+        self,
+        client_config: ClientConfig,
+        on_simulation_step_return: Callable[
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData,
+        ],
+    ):
         super().__init__(client_config)
         self._on_simulation_start_calls = AtomicInteger(0)
         self._on_simulation_step_calls = AtomicInteger(0)
@@ -48,18 +50,20 @@ class SimpleTestClient(Client):
         self.accumulated_step_sizes_in_seconds = AtomicFloat(0.0)
         # the parameters: the instance of itself, the received_inputs and the step_size_in_seconds
         self._on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData] = on_simulation_step_return
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData,
+        ] = on_simulation_step_return
 
     def on_simulation_start(self) -> ClientSimStepData:
         self._on_simulation_start_calls.inc()
         return ClientSimStepData(
-            interface_values=[]
+            interface_values=[],
         )
 
-    def on_simulation_step(self,
-                           received_inputs: dict[InterfaceId, InterfaceValueType],
-                           step_size_in_seconds: float,
-                           ) -> ClientSimStepData:
+    def on_simulation_step(
+        self,
+        received_inputs: dict[InterfaceId, InterfaceValueType],
+        step_size_in_seconds: float,
+    ) -> ClientSimStepData:
         self._on_simulation_step_calls.inc()
         self.accumulated_step_sizes_in_seconds.inc(step_size_in_seconds)
         return self._on_simulation_step_return(self, received_inputs, step_size_in_seconds)
@@ -75,13 +79,14 @@ class SimpleTestClient(Client):
 
 class TestClientConfig(ClientConfig):
 
-    def __init__(self,
-                 server_host: str,
-                 server_port: int,
-                 simulator_name: str,
-                 model_name: str,
-                 interface_config: ClientInterfaceConfig,
-                 ):
+    def __init__(
+        self,
+        server_host: str,
+        server_port: int,
+        simulator_name: str,
+        model_name: str,
+        interface_config: ClientInterfaceConfig,
+    ):
         self._simulator_name = simulator_name
         self._model_name = model_name
         self._server_config: ServerConfig = ServerConfig(

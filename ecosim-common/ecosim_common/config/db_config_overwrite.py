@@ -12,42 +12,50 @@ class DbConfigOverwrite:
     _ssl: bool | None = None
     _drop_existing_schema: bool | None = None
 
-    def host(self,
-             default: str
-             ) -> str:
+    def host(
+        self,
+        default: str,
+    ) -> str:
         return self._host or default
 
-    def port(self,
-             default: str
-             ) -> str:
+    def port(
+        self,
+        default: str,
+    ) -> str:
         return self._port or default
 
-    def user(self,
-             default: str
-             ) -> str:
+    def user(
+        self,
+        default: str,
+    ) -> str:
         return self._user or default
 
-    def user_password(self,
-                      default: str
-                      ) -> str:
+    def user_password(
+        self,
+        default: str,
+    ) -> str:
         return self._user_password or default
 
-    def name(self,
-             default: str
-             ) -> str:
+    def name(
+        self,
+        default: str,
+    ) -> str:
         return self._name or default
 
-    def schema(self,
-               default: str
-               ) -> str:
+    def schema(
+        self,
+        default: str,
+    ) -> str:
         return self._schema or default
 
-    def ssl(self,
-            default: bool,
-            ) -> bool:
+    def ssl(
+        self,
+        default: bool,
+    ) -> bool:
         return self._ssl or default
 
-    def drop_existing_schema(self,
-                             default: bool
-                             ) -> bool:
+    def drop_existing_schema(
+        self,
+        default: bool,
+    ) -> bool:
         return self._drop_existing_schema or default

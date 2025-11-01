@@ -72,7 +72,7 @@ class ClientConfig(ABC):
                 "Server address": self.server_config().server_address,
                 "Image renderer port": self.server_config().image_renderer_port if self.server_config().image_renderer_port else "N/A",
                 "Provided interfaces": self.interfaces_config().interfaces,
-            }
+            },
         )
 
 
@@ -128,7 +128,7 @@ class ServerConfig:
         port: int = if_exists(config_override).server_port or config.get_int('server', 'port')
         return ServerConfig(
             server_address=ConnectionAddress(ip=ip, port=port),
-            image_renderer_port=if_exists(config_override).image_renderer_port
+            image_renderer_port=if_exists(config_override).image_renderer_port,
         )
 
 
@@ -144,14 +144,24 @@ class SimulatorConfig:
             config: ConfigParser,
     ) -> SimulatorConfig:
         return SimulatorConfig(
-            simulator_name=config.get_string('simulator',
-                                             'simulator_name'),
-            model_name=config.get_string('simulator',
-                                         'model_name'),
-            type=ClientType.of_string(config.get_string('simulator',
-                                                        'type')),
-            fmc_file=config.get_string_array('simulator',
-                                             'fmc_file')[0],
+            simulator_name=config.get_string(
+                'simulator',
+                'simulator_name',
+            ),
+            model_name=config.get_string(
+                'simulator',
+                'model_name',
+            ),
+            type=ClientType.of_string(
+                config.get_string(
+                    'simulator',
+                    'type',
+                ),
+            ),
+            fmc_file=config.get_string_array(
+                'simulator',
+                'fmc_file',
+            )[0],
         )
 
 
@@ -169,35 +179,44 @@ class ClientInterfaceConfig:
             raise FileNotFoundError("No FMC file detected in config.")
         fmc_file_absolute = config_path / simulator_config.fmc_file
         try:
-            with open(fmc_file_absolute,
-                      'r') as fmc_file:
+            with open(
+                fmc_file_absolute,
+                'r',
+            ) as fmc_file:
                 fmc_json = json.load(fmc_file)
                 input_interfaces = fmc_json.get('inputs', [])
                 output_interfaces = fmc_json.get('outputs', [])
                 for input_interface in input_interfaces:
                     if not input_interface['name']:
                         ClientConfig.logger.warning(
-                            f"There is an input interface without a name in file {fmc_file_absolute}: {input_interface}")
+                            f"There is an input interface without a name in file {fmc_file_absolute}: {input_interface}",
+                        )
                         continue
                     interfaces.append(
                         ModelInterfaceClient.of_json_client_config(
-                            model_interface_id=ModelInterfaceId(model_name=simulator_config.model_name,
-                                                                interface=input_interface['name']),
+                            model_interface_id=ModelInterfaceId(
+                                model_name=simulator_config.model_name,
+                                interface=input_interface['name'],
+                            ),
                             interface=input_interface,
                             interface_type=InterfaceType.INPUT,
-                        )
+                        ),
                     )
                 for output_interface in output_interfaces:
                     interfaces.append(
                         ModelInterfaceClient.of_json_client_config(
-                            model_interface_id=ModelInterfaceId(model_name=simulator_config.model_name,
-                                                                interface=output_interface['name']),
+                            model_interface_id=ModelInterfaceId(
+                                model_name=simulator_config.model_name,
+                                interface=output_interface['name'],
+                            ),
                             interface=output_interface,
                             interface_type=InterfaceType.OUTPUT,
-                        ))
+                        ),
+                    )
                     if not output_interface['name']:
                         ClientConfig.logger.warning(
-                            f"There is an output interface without a name in file {fmc_file_absolute}: {output_interface}")
+                            f"There is an output interface without a name in file {fmc_file_absolute}: {output_interface}",
+                        )
                         continue
         except FileNotFoundError:
             error_message = f"Can not load fmc file {simulator_config.fmc_file}"
@@ -206,17 +225,21 @@ class ClientInterfaceConfig:
         except json.JSONDecodeError as e:
             error_message = f"Can not parse fmc file {fmc_file_absolute} - invalid json"
             ClientConfig.logger.error(error_message)
-            raise json.JSONDecodeError(error_message,
-                                       e.doc,
-                                       e.pos)
+            raise json.JSONDecodeError(
+                error_message,
+                e.doc,
+                e.pos,
+            )
         return ClientInterfaceConfig(interfaces=interfaces)
 
     def all_interfaces_to_protocol_json_string(self) -> str:
         return json.dumps(self.interfaces, default=asdict)
 
     def _required_input_interface_names(self) -> List[str]:
-        return [interface.name for interface in self.interfaces if
-                interface.required and interface.type == InterfaceType.INPUT]
+        return [
+            interface.name for interface in self.interfaces if
+            interface.required and interface.type == InterfaceType.INPUT
+        ]
 
     def _input_interface_names(self) -> List[str]:
         return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT]
@@ -224,26 +247,32 @@ class ClientInterfaceConfig:
     def _output_interface_names(self) -> List[str]:
         return [interface.name for interface in self.interfaces if interface.type == InterfaceType.OUTPUT]
 
-    def validate_config_with_server(self,
-                                    server_config: ServerInterfaceSettings,
-                                    ) -> bool:
-        return (self._all_required_inputs_are_matched_by_actual(server_config.inputs)
-                and self._all_actual_inputs_are_in_config(server_config.inputs)
-                and self._all_actual_outputs_are_in_config(server_config.outputs))
+    def validate_config_with_server(
+        self,
+        server_config: ServerInterfaceSettings,
+    ) -> bool:
+        return (
+            self._all_required_inputs_are_matched_by_actual(server_config.inputs)
+            and self._all_actual_inputs_are_in_config(server_config.inputs)
+            and self._all_actual_outputs_are_in_config(server_config.outputs)
+        )
 
-    def _all_required_inputs_are_matched_by_actual(self,
-                                                   actual_inputs: List[InterfaceId],
-                                                   ) -> bool:
+    def _all_required_inputs_are_matched_by_actual(
+        self,
+        actual_inputs: List[InterfaceId],
+    ) -> bool:
         return all(required_input in actual_inputs for required_input in self._required_input_interface_names())
 
-    def _all_actual_inputs_are_in_config(self,
-                                         actual_inputs: List[InterfaceId],
-                                         ) -> bool:
+    def _all_actual_inputs_are_in_config(
+        self,
+        actual_inputs: List[InterfaceId],
+    ) -> bool:
         return all(actual_input in self._input_interface_names() for actual_input in actual_inputs)
 
-    def _all_actual_outputs_are_in_config(self,
-                                          actual_outputs: List[InterfaceId],
-                                          ) -> bool:
+    def _all_actual_outputs_are_in_config(
+        self,
+        actual_outputs: List[InterfaceId],
+    ) -> bool:
         return all(actual_output in self._output_interface_names() for actual_output in actual_outputs)
 
 

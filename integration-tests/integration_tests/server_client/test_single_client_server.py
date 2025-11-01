@@ -13,8 +13,10 @@ def test_client_server_single() -> None:
     server_port = 47189
     steps = 100
     step_size_in_ms = 2_500
-    simulation_start_date: datetime = datetime(year=2025, month=1, day=1, hour=0, minute=0, second=0,
-                                               microsecond=0)
+    simulation_start_date: datetime = datetime(
+        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        microsecond=0,
+    )
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -33,8 +35,8 @@ def test_client_server_single() -> None:
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value,
                 ),
-            ]
-        ),
+            ],
+                                         ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -51,8 +53,11 @@ def test_client_server_single() -> None:
         raise RuntimeError("You can only use in memory DBs")
 
     step_size_in_seconds = step_size_in_ms / 1000
-    (client_measurement_repository
-     .assert_entry_count(steps)
-     .assert_for_each_record(lambda timestamp,
-                                    values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds == values[0].value)
-     )
+    (
+        client_measurement_repository
+        .assert_entry_count(steps)
+        .assert_for_each_record(
+            lambda timestamp,
+            values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds == values[0].value,
+        )
+    )

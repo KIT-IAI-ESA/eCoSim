@@ -1,3 +1,5 @@
 # eCoSim
 
-[Project Setup](doc/dev/project_setup.md)
+- [Use packages](doc/use_packages.md)
+- [Project setup](doc/dev/project_setup.md)
+- [Dev notes](doc/dev/developing.md)

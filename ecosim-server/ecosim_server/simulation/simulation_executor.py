@@ -25,34 +25,39 @@ from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 class SimulationExecutor:
     logger = ESPLogger("SimulationExecutor")
 
-    def __init__(self,
-                 simulation_config: SimulationConfig,
-                 server_config: ServerConfig,
-                 server_state: ServerState,
-                 repositories: Repositories,
-                 server_measurement: ServerTimeMeasurement,
-                 ):
+    def __init__(
+        self,
+        simulation_config: SimulationConfig,
+        server_config: ServerConfig,
+        server_state: ServerState,
+        repositories: Repositories,
+        server_measurement: ServerTimeMeasurement,
+    ):
         self.simulation_config = simulation_config
         self._server_config = server_config
         self._server_state = server_state
         self._current_step = 0
         self._value_history = InterfaceValueHistory(repositories, simulation_config)
-        self._client_communication: ClientCommunication = ClientCommunication(client_states=server_state.client_states,
-                                                                              client_message_buffer=server_state.message_buffer)
+        self._client_communication: ClientCommunication = ClientCommunication(
+            client_states=server_state.client_states,
+            client_message_buffer=server_state.message_buffer,
+        )
         self._current_step_data = CurrentStepData(simulation_config)
         self._server_measurement = server_measurement
         self._pace_sleep = 4 - (4 * simulation_config.pace)
         if self._pace_sleep != 0:
             SimulationExecutor.logger.info(
-                f"The execution has set up a pace throttle. Between each execution step the thread is paused for {self._pace_sleep}s.")
+                f"The execution has set up a pace throttle. Between each execution step the thread is paused for {self._pace_sleep}s.",
+            )
         else:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
 
-    def execute(self,
-                rendering_socket: RenderingSocket | None
-                ):
+    def execute(
+        self,
+        rendering_socket: RenderingSocket | None,
+    ):
         self._rendering_socket = rendering_socket
         if not self._server_state.are_all_clients_connected_and_ready():
             raise RuntimeError("Tried to start simulation executor but not all clients are connected and ready")
@@ -112,7 +117,8 @@ class SimulationExecutor:
                 self._execute_possible_parts("Periodic possible parts execution")
                 if not self._current_step_data.all_clients_executed():
                     self.logger.debug(
-                        f"Step {self._current_step}: Waiting for all clients to be executed in a 'possible parts' execution")
+                        f"Step {self._current_step}: Waiting for all clients to be executed in a 'possible parts' execution",
+                    )
 
             self._handle_image_renderer()
             self._current_step += 1
@@ -125,21 +131,28 @@ class SimulationExecutor:
             for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                 self.logger.debug(
                     f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': " +
-                    f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}")
-                self._current_step_data.set_value(logical_delay_connection.output_interface,
-                                                  logical_delay_connection.current_value)
+                    f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
+                )
+                self._current_step_data.set_value(
+                    logical_delay_connection.output_interface,
+                    logical_delay_connection.current_value,
+                )
 
-    def _execute_possible_parts(self,
-                                part_description: str
-                                ):
+    def _execute_possible_parts(
+        self,
+        part_description: str,
+    ):
         ready_for_execution_data_by_clients: dict[
-            ClientID, List[ProtocolInterfaceValue]] = self._current_step_data.get_ready_for_execution()
+            ClientID, List[ProtocolInterfaceValue],
+        ] = self._current_step_data.get_ready_for_execution()
         self.logger.info(
             f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:" +
-            f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}")
+            f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
+        )
         for client_id in ready_for_execution_data_by_clients:
             self.logger.debug(
-                f"Step {self._current_step}: Execute possible parts: {part_description} - execute client {client_id}")
+                f"Step {self._current_step}: Execute possible parts: {part_description} - execute client {client_id}",
+            )
             self._pace_throttle()
             self._client_communication.send_simulation_step(
                 current_step=self._current_step,
@@ -151,7 +164,8 @@ class SimulationExecutor:
         client_ids = tuple(handled_clients.keys())
         if len(handled_clients) == 0:
             self.logger.debug(
-                f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.")
+                f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.",
+            )
             return
 
         message_types = (MessageType.SIMULATION_STEP,)
@@ -160,12 +174,16 @@ class SimulationExecutor:
         self._client_communication.on_messages(
             client_ids=client_ids,
             message_types=message_types,
-            callback=lambda message: self._handle_received_sim_step(message,
-                                                                    handled_clients=handled_clients,
-                                                                    ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
-                                                                    all_clients_handled_event=all_clients_handled_event))
+            callback=lambda message: self._handle_received_sim_step(
+                message,
+                handled_clients=handled_clients,
+                ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
+                all_clients_handled_event=all_clients_handled_event,
+            ),
+        )
         self.logger.debug(
-            f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}")
+            f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
+        )
         all_clients_handled_event.wait()
         self._client_communication.remove_on_message_callback(client_ids, message_types)
         for client in handled_clients:
@@ -173,22 +191,25 @@ class SimulationExecutor:
 
         self.logger.debug(f"Finished executing possible parts: {part_description}")
 
-    def _handle_received_sim_step(self,
-                                  received_message: BufferedClientMessage,
-                                  ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
-                                  handled_clients: dict[ClientID, bool],
-                                  all_clients_handled_event: threading.Event,
-                                  ):
+    def _handle_received_sim_step(
+        self,
+        received_message: BufferedClientMessage,
+        ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
+        handled_clients: dict[ClientID, bool],
+        all_clients_handled_event: threading.Event,
+    ):
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             self.logger.error(
                 f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. " +
-                f"Expected {self._current_step} but got {received_message.message.correlation_id()}")
+                f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
+            )
             return
         client_sim_step_data: ClientSimStepData = received_message.payload(ClientSimStepData)
         interface_values = tuple(client_sim_step_data.interface_values)
         self.logger.debug(
-            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} on step {self._current_step}: {client_sim_step_data}")
+            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} on step {self._current_step}: {client_sim_step_data}",
+        )
         self._value_history.add(
             time_step=self._current_step,
             client_id=client_id,
@@ -205,9 +226,10 @@ class SimulationExecutor:
             return
         time.sleep(self._pace_sleep)
 
-    def _handle_image_renderer(self,
-                               wait_for_finish_timeout: int | None = None,
-                               ):
+    def _handle_image_renderer(
+        self,
+        wait_for_finish_timeout: int | None = None,
+    ):
         if not self._rendering_socket:
             return
         if not self._rendering_interval:
