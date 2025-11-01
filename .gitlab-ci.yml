@@ -205,7 +205,7 @@ cleanup:old-dev-packages:
           echo "ERROR: Unexpected API response format (not an array)"
           echo "Response: $PACKAGES"
           echo "Response type: $(echo "$PACKAGES" | jq 'type')"
-          break
+          exit 123
         fi
 
         PAGE=$((PAGE + 1))
@@ -218,4 +218,6 @@ cleanup:old-dev-packages:
         echo "   Deleted: $DELETED_COUNT packages"
         echo "   Kept: $SKIPPED_COUNT packages"
         echo "=========================================="
+      else
+        exit 123
       fi
