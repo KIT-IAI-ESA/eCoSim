@@ -18,43 +18,52 @@ from ecosim_server.message_buffer import ClientMessageBuffer, BufferedClientMess
 class ClientCommunication:
     _logger = ESPLogger("ClientCommunication")
 
-    def __init__(self,
-                 client_states: ClientStates,
-                 client_message_buffer: ClientMessageBuffer,
-                 ):
+    def __init__(
+        self,
+        client_states: ClientStates,
+        client_message_buffer: ClientMessageBuffer,
+    ):
         self._client_states = client_states
         self._client_message_buffer = client_message_buffer
 
-    def broadcast(self,
-                  message: ESPChannelMessage,
-                  ):
+    def broadcast(
+        self,
+        message: ESPChannelMessage,
+    ):
         for client_state in self._client_states.client_states.values():
+            if not client_state.connection:
+                ClientCommunication._logger.warning(f"Cannot broadcast to {client_state.client_id} because connection is not set.")
+                continue
             client_state.connection.send(message)
 
-    def on_messages(self,
-                    client_ids: Tuple[ClientID, ...],
-                    message_types: Tuple[MessageType, ...],
-                    callback: Callable[[BufferedClientMessage], None],
-                    ):
+    def on_messages(
+        self,
+        client_ids: Tuple[ClientID, ...],
+        message_types: Tuple[MessageType, ...],
+        callback: Callable[[BufferedClientMessage], None],
+    ):
         self._client_message_buffer.on_message(client_ids, message_types, callback)
 
-    def remove_on_message_callback(self,
-                                   client_ids: Tuple[ClientID, ...],
-                                   message_types: Tuple[MessageType, ...],
-                                   ):
+    def remove_on_message_callback(
+        self,
+        client_ids: Tuple[ClientID, ...],
+        message_types: Tuple[MessageType, ...],
+    ):
         self._client_message_buffer.remove_on_message_callback(client_ids, message_types)
 
-    def messages_of(self,
-                    client_ids: Tuple[ClientID, ...],
-                    message_types: Tuple[MessageType, ...],
-                    ) -> List[BufferedClientMessage]:
+    def messages_of(
+        self,
+        client_ids: Tuple[ClientID, ...],
+        message_types: Tuple[MessageType, ...],
+    ) -> List[BufferedClientMessage]:
         return self._client_message_buffer.get_and_delete_of(client_ids=client_ids, message_types=message_types)
 
-    def send_simulation_step(self,
-                             current_step: int,
-                             client_id: ClientID,
-                             values: List[ProtocolInterfaceValue],
-                             ):
+    def send_simulation_step(
+        self,
+        current_step: int,
+        client_id: ClientID,
+        values: List[ProtocolInterfaceValue],
+    ):
         def thread_task():
             self._client_states.client_states[client_id].connection.send(
                 ESPChannelMessageJson.create(
@@ -64,7 +73,7 @@ class ClientCommunication:
                         step=current_step,
                         inputs=values,
                     ),
-                )
+                ),
             )
 
         thread = threading.Thread(target=thread_task)

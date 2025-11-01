@@ -36,11 +36,12 @@ class AbstractServer(ABC):
 class Server(AbstractServer):
     _logger = ESPLogger("Server")
 
-    def __init__(self,
-                 server_config: ServerConfig,
-                 simulation_config: SimulationConfig,
-                 repositories: Repositories,
-                 ):
+    def __init__(
+        self,
+        server_config: ServerConfig,
+        simulation_config: SimulationConfig,
+        repositories: Repositories,
+    ):
         self.server_measurements = ServerTimeMeasurement()
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
@@ -48,12 +49,13 @@ class Server(AbstractServer):
             simulation_config=simulation_config,
             simulation_state_repository=repositories.simulation_state_repository,
         )
-        self._simulation_executor: SimulationExecutor = SimulationExecutor(simulation_config=self._simulation_config,
-                                                                           server_config=self._server_config,
-                                                                           server_state=self._server_state,
-                                                                           repositories=repositories,
-                                                                           server_measurement=self.server_measurements,
-                                                                           )
+        self._simulation_executor: SimulationExecutor = SimulationExecutor(
+            simulation_config=self._simulation_config,
+            server_config=self._server_config,
+            server_state=self._server_state,
+            repositories=repositories,
+            server_measurement=self.server_measurements,
+        )
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket(
             _connection_address=self._server_config.server.connection_address(),
         )
@@ -79,18 +81,24 @@ class Server(AbstractServer):
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
 
-    def _handle_new_channel(self,
-                            connection_data: ConnectionData,
-                            ) -> None:
-        client_thread = threading.Thread(target=self._handle_client, args=(ClientConnection(
-            address=connection_data.client_address,
-            _channel=connection_data.channel,
-        ),))
+    def _handle_new_channel(
+        self,
+        connection_data: ConnectionData,
+    ) -> None:
+        client_thread = threading.Thread(
+            target=self._handle_client, args=(
+                ClientConnection(
+                    address=connection_data.client_address,
+                    _channel=connection_data.channel,
+                ),
+            ),
+        )
         client_thread.start()
 
-    def _handle_client(self,
-                       connection: ClientConnection,
-                       ) -> None:
+    def _handle_client(
+        self,
+        connection: ClientConnection,
+    ) -> None:
         client_id: ClientID | None = None
         with connection:
             try:
@@ -104,7 +112,8 @@ class Server(AbstractServer):
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 if not self._server_state.client_states.add_if_needed(client_config, connection):
                     Server._logger.warning(
-                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.")
+                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
+                    )
                     connection.close()
                     return
                 client_id = client_config.client_id()
@@ -116,26 +125,31 @@ class Server(AbstractServer):
                 client_interfaces = message.payload(ModelInterfaceIds)
                 if not self._simulation_config.validate_interfaces(client_id, client_interfaces):
                     raise Exception(
-                        f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.")
+                        f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
+                    )
                 Server._logger.debug(f"Successfully validated interfaces for client {connection.address}")
                 self._server_state.client_states.interfaces_validated(client_id)
 
                 client_simulator_config = self._simulation_config.client_simulator_config_for(client_id)
                 if client_simulator_config is None:
                     raise Exception(f"No simulator configuration available for client {connection.address}.")
-                connection.send(ESPChannelMessageJson.create(
-                    type=MessageType.INTERFACE_SETTINGS,
-                    payload=client_simulator_config.to_server_interface_settings(),
-                ))
+                connection.send(
+                    ESPChannelMessageJson.create(
+                        type=MessageType.INTERFACE_SETTINGS,
+                        payload=client_simulator_config.to_server_interface_settings(),
+                    ),
+                )
                 connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
                 Server._logger.debug(f"Client {connection.address} accepted interface settings")
 
-                connection.send(ESPChannelMessageJson.create(
-                    type=MessageType.SIMULATION_SETUP,
-                    payload=SimulationSetupMessage(
-                        step_size_in_ms=self._simulation_config.step_size_in_ms,
+                connection.send(
+                    ESPChannelMessageJson.create(
+                        type=MessageType.SIMULATION_SETUP,
+                        payload=SimulationSetupMessage(
+                            step_size_in_ms=self._simulation_config.step_size_in_ms,
+                        ),
                     ),
-                ))
+                )
                 Server._logger.debug(f"Client {connection.address} accepted step size")
                 self._server_state.client_states.step_size_accepted(client_id)
 
@@ -167,7 +181,8 @@ class Server(AbstractServer):
         if socket_port is None or rendering_interval is None:
             SimulationExecutor.logger.error(
                 "Invalid configuration for image renderer, since only either port or interval is set (and not both). " +
-                f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.")
+                f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.",
+            )
             return
         SimulationExecutor.logger.info(f"Image renderer socket will be opened at port {socket_port}")
         self._rendering_socket = RenderingSocket(
@@ -179,7 +194,8 @@ class Server(AbstractServer):
         if not started_event.wait(timeout=timeout):
             SimulationExecutor.logger.warning(
                 f"The rendering image socket did not start within {timeout}s -> the execution continues " +
-                "but you may not be able to receive rendered images.")
+                "but you may not be able to receive rendered images.",
+            )
 
     def _stop_image_renderer_socket(self) -> None:
         if self._rendering_socket is None:

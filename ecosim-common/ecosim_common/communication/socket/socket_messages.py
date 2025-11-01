@@ -12,17 +12,21 @@ from ecosim_common.communication.channel.connection_address import ConnectionAdd
 
 class SocketMessageHeader:
 
-    def __init__(self,
-                 raw: bytes
-                 ):
+    def __init__(
+        self,
+        raw: bytes,
+    ):
         self._raw = raw
         byte_array_received_data = bytearray(raw)
         if len(byte_array_received_data) != SocketMessage.HEADER_BYTES:
             raise Exception(
                 f"Invalid byte array received. "
-                f"Header must be {SocketMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}")
-        unpacked_values = struct.unpack(SocketMessage.BYTE_FORMAT,
-                                        byte_array_received_data[:SocketMessage.HEADER_BYTES])
+                f"Header must be {SocketMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}",
+            )
+        unpacked_values = struct.unpack(
+            SocketMessage.BYTE_FORMAT,
+            byte_array_received_data[:SocketMessage.HEADER_BYTES],
+        )
         self.correlation_id: CorrelationId = CorrelationId.of_int(unpacked_values[0])
         self.message_type: MessageType = MessageType.of_int(unpacked_values[1])
         self.data_length: int = unpacked_values[2]
@@ -30,11 +34,14 @@ class SocketMessageHeader:
     def raw(self) -> bytes:
         return self._raw
 
-    def __eq__(self,
-               other: Any,
-               ) -> bool:
-        return (isinstance(other, SocketMessageHeader) and
-                self._raw == other._raw)
+    def __eq__(
+        self,
+        other: Any,
+    ) -> bool:
+        return (
+            isinstance(other, SocketMessageHeader) and
+            self._raw == other._raw
+        )
 
     def __hash__(self) -> int:
         return hash(self._raw)
@@ -70,11 +77,12 @@ class SocketMessage(ABC):
 
 class ReceivedMessage(SocketMessage):
 
-    def __init__(self,
-                 header: SocketMessageHeader,
-                 data: bytes,
-                 connection: ConnectionAddress
-                 ):
+    def __init__(
+        self,
+        header: SocketMessageHeader,
+        data: bytes,
+        connection: ConnectionAddress,
+    ):
         self._header = header
         self._data = data
         self._connection = connection

@@ -9,10 +9,11 @@ from ecosim_server.measurement.measurement_entry import MeasurementEntry
 class MeasurementRepository(ABC):
 
     @abstractmethod
-    def add(self,
-            values: Tuple[ProtocolInterfaceValue, ...],
-            timestamp: datetime.datetime,
-            ) -> None:
+    def add(
+        self,
+        values: Tuple[ProtocolInterfaceValue, ...],
+        timestamp: datetime.datetime,
+    ) -> None:
         pass
 
     @abstractmethod

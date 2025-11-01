@@ -9,10 +9,11 @@ from ecosim_server.simulation.state.simulation_state_repository import Simulatio
 
 class ServerState(ShutdownListener):
 
-    def __init__(self,
-                 simulation_config: SimulationConfig,
-                 simulation_state_repository: SimulationStateRepository,
-                 ):
+    def __init__(
+        self,
+        simulation_config: SimulationConfig,
+        simulation_state_repository: SimulationStateRepository,
+    ):
         ShutdownManager().register_listener(self)
         self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
         self.client_states: ClientStates = ClientStates(simulation_config)
@@ -45,9 +46,10 @@ class ServerState(ShutdownListener):
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self.client_states.wait_for_all_clients_connected_and_ready()
 
-    def set_is_finished(self,
-                        state: bool
-                        ) -> None:
+    def set_is_finished(
+        self,
+        state: bool,
+    ) -> None:
         self._is_finished = state
         self.set_simulation_state(SimulationState.FINISHED)
 

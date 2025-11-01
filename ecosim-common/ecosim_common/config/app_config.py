@@ -9,12 +9,13 @@ from typing import Any, Callable, List
 
 class AppConfig(object):
 
-    def __init__(self,
-                 cli_description: str,
-                 parameters: List[AppConfigParameter],
-                 environment_variables: dict[str, str] | None = None,
-                 passed_arguments: List[Any] | None = None,
-                 ):
+    def __init__(
+        self,
+        cli_description: str,
+        parameters: List[AppConfigParameter],
+        environment_variables: dict[str, str] | None = None,
+        passed_arguments: List[Any] | None = None,
+    ):
         if environment_variables is None:
             environment_variables = dict(os.environ)
         if passed_arguments is None:
@@ -29,39 +30,46 @@ class AppConfig(object):
         for parameter in parameters:
             if not parameter.transform or getattr(self._args, parameter.to_parsed_arg_name()) is None:
                 continue
-            setattr(self._args, parameter.to_parsed_arg_name(),
-                    parameter.transform(getattr(self._args, parameter.to_parsed_arg_name())))
+            setattr(
+                self._args, parameter.to_parsed_arg_name(),
+                parameter.transform(getattr(self._args, parameter.to_parsed_arg_name())),
+            )
 
-    def _add_string(self,
-                    overrides: dict[str, str],
-                    parameter: AppConfigParameter
-                    ) -> None:
+    def _add_string(
+        self,
+        overrides: dict[str, str],
+        parameter: AppConfigParameter,
+    ) -> None:
         string_value: str | None = None
         if parameter.enable_environment_variable:
             string_value = overrides.get(parameter.to_environment_variable())
         if string_value is None:
             string_value = parameter.default_value
-        self._parser.add_argument(parameter.to_cli_variable(),
-                                  type=str,
-                                  required=parameter.required,
-                                  help=parameter.help_text,
-                                  default=string_value,
-                                  )
+        self._parser.add_argument(
+            parameter.to_cli_variable(),
+            type=str,
+            required=parameter.required,
+            help=parameter.help_text,
+            default=string_value,
+        )
 
-    def _add_flag(self,
-                  overrides: dict[str, str],
-                  parameter: AppConfigParameter
-                  ) -> None:
+    def _add_flag(
+        self,
+        overrides: dict[str, str],
+        parameter: AppConfigParameter,
+    ) -> None:
         default_value: bool | None = None
         if parameter.enable_environment_variable:
             default_value = parameter.to_environment_variable() in overrides
         default_value = default_value or config_parser.ConfigParser.config_string_to_bool(
-            parameter.default_value or "False")
-        self._parser.add_argument(parameter.to_cli_variable(),
-                                  help=parameter.help_text,
-                                  default=default_value,
-                                  action="store_true",
-                                  )
+            parameter.default_value or "False",
+        )
+        self._parser.add_argument(
+            parameter.to_cli_variable(),
+            help=parameter.help_text,
+            default=default_value,
+            action="store_true",
+        )
 
 
 @dataclass

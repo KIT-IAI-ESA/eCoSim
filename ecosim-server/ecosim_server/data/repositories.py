@@ -17,7 +17,8 @@ class Repositories(ABC):
     server_time_measurement_repository: ServerTimeMeasurementRepository
 
     @abstractmethod
-    def measurement_repository(self,
-                               client_id: ClientID
-                               ) -> MeasurementRepository:
+    def measurement_repository(
+        self,
+        client_id: ClientID,
+    ) -> MeasurementRepository:
         pass

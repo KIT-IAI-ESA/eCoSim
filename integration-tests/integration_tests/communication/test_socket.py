@@ -34,11 +34,13 @@ def test_happy_path() -> None:
         string="Test",
         integer=1111,
     )
-    socket_channel.send(ESPChannelMessageJson.create(
-        type=MessageType.CLIENT_META_DATA_REQUEST,
-        correlation_id=correlation_id,
-        payload=data,
-    ))
+    socket_channel.send(
+        ESPChannelMessageJson.create(
+            type=MessageType.CLIENT_META_DATA_REQUEST,
+            correlation_id=correlation_id,
+            payload=data,
+        ),
+    )
 
     received_data = message_queue.get()
     assert received_data.correlation_id() == correlation_id
@@ -79,11 +81,13 @@ def test_big_data() -> None:
         integer=2222,
     )
 
-    socket_channel.send(ESPChannelMessageJson.create(
-        type=MessageType.CLIENT_META_DATA_REQUEST,
-        correlation_id=correlation_id,
-        payload=data,
-    ))
+    socket_channel.send(
+        ESPChannelMessageJson.create(
+            type=MessageType.CLIENT_META_DATA_REQUEST,
+            correlation_id=correlation_id,
+            payload=data,
+        ),
+    )
 
     received_data = message_queue.get()
     assert received_data.correlation_id() == correlation_id

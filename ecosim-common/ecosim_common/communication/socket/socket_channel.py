@@ -14,9 +14,10 @@ from ecosim_common.tech.logger.logger import ESPLogger
 class SocketChannel(ESPChannel):
     _logger = ESPLogger("SocketChannel")
 
-    def __init__(self,
-                 esp_socket: ESPSocket,
-                 ):
+    def __init__(
+        self,
+        esp_socket: ESPSocket,
+    ):
         self._internal_socket: ESPSocket = esp_socket
         self._is_finished: threading.Event = threading.Event()
 
@@ -31,30 +32,34 @@ class SocketChannel(ESPChannel):
         SocketChannel._logger.info(f"Connection to socket {connection_address} closed.")
 
     @override
-    def listen_async(self,
-                     on_message: Callable[[ESPChannelMessage], None],
-                     ) -> None:
+    def listen_async(
+        self,
+        on_message: Callable[[ESPChannelMessage], None],
+    ) -> None:
         listen_thread = threading.Thread(target=self._listen, args=[on_message])
         listen_thread.start()
 
-    def _listen(self,
-                on_message: Callable[[ESPChannelMessage], None],
-                ) -> None:
+    def _listen(
+        self,
+        on_message: Callable[[ESPChannelMessage], None],
+    ) -> None:
         while not self._is_finished.is_set():
             message = self.listen_blocking()
             if message is not None:
                 on_message(message)
 
     @override
-    def wait_for_finish(self,
-                        timeout_in_seconds: int | None = None,
-                        ) -> None:
+    def wait_for_finish(
+        self,
+        timeout_in_seconds: int | None = None,
+    ) -> None:
         self._is_finished.wait(timeout_in_seconds)
 
     @override
-    def listen_blocking(self,
-                        timeout_in_seconds: int | None = None,
-                        ) -> ESPChannelMessage | None:
+    def listen_blocking(
+        self,
+        timeout_in_seconds: int | None = None,
+    ) -> ESPChannelMessage | None:
         message: ReceivedMessage | None = self._internal_socket.receive()
         if not message:
             SocketChannel._logger.info("Received empty message -> closing connection")
@@ -63,19 +68,21 @@ class SocketChannel(ESPChannel):
         return message.to_esp_channel_message()
 
     @override
-    def send(self,
-             message: ESPChannelMessage,
-             ) -> None:
+    def send(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
         if not self._internal_socket.is_connected():
             raise Exception("Socket already closed")
         try:
             self._internal_socket.send(
-                SimpleSocketMessage.of_esp_channel_message(message=message)
+                SimpleSocketMessage.of_esp_channel_message(message=message),
             )
         except Exception as e:
             SocketChannel._logger.debug(
-                f"Sending message to server failed - recreating the socket and try again. Error: {e}")
+                f"Sending message to server failed - recreating the socket and try again. Error: {e}",
+            )
             self._internal_socket.connect(connection_address=self._internal_socket.connection_address())
             self._internal_socket.send(
-                SimpleSocketMessage.of_esp_channel_message(message=message)
+                SimpleSocketMessage.of_esp_channel_message(message=message),
             )

@@ -13,14 +13,16 @@ class ClientConnection(AbstractContextManager['ClientConnection']):
     _channel: ESPChannel = field()
     address: ConnectionAddress = field()
 
-    def send(self,
-             message: ESPChannelMessage,
-             ) -> None:
+    def send(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
         self._channel.send(message)
 
-    def receive(self,
-                expected_type: MessageType | None = None,
-                ) -> ESPChannelMessage | None:
+    def receive(
+        self,
+        expected_type: MessageType | None = None,
+    ) -> ESPChannelMessage | None:
         message = self._channel.listen_blocking()
         if expected_type is not None and (message is None or message.type() != expected_type):
             received_type: str = "None"
@@ -32,9 +34,10 @@ class ClientConnection(AbstractContextManager['ClientConnection']):
     def close(self) -> None:
         self._channel.close()
 
-    def __exit__(self,
-                 exc_type: Any,
-                 exc_value: Any,
-                 traceback: Any,
-                 ) -> None:
+    def __exit__(
+        self,
+        exc_type: Any,
+        exc_value: Any,
+        traceback: Any,
+    ) -> None:
         self.close()

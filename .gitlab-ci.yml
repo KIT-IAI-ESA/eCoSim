@@ -1,0 +1,223 @@
+stages:
+  - static-code-analysis
+  - test
+  - integration_test
+  - artifacts
+  - cleanup
+
+variables:
+  SRC_DIR: "$CI_PROJECT_DIR"
+  # Change pip's cache directory to be inside the project directory since we can
+  # only cache local items.
+  PIP_CACHE_DIR: "$GIT_CLONE_PATH/.cache/pip"
+  UV_PUBLISH_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
+  UV_PUBLISH_USERNAME: "gitlab-ci-token"
+  UV_PUBLISH_PASSWORD: "${CI_JOB_TOKEN}"
+
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - "$PIP_CACHE_DIR"
+    - "$VENV_DIR"
+
+.image-template:
+  image: astral/uv:python3.13-trixie-slim
+
+.sub-project-template:
+  extends: .image-template
+  parallel:
+    matrix:
+      - PROJECT_DIR:
+          - $SRC_DIR/ecosim-common
+          - $SRC_DIR/ecosim-client-fmu-v2
+          - $SRC_DIR/ecosim-client-fmu-v3
+          - $SRC_DIR/ecosim-server
+  before_script:
+    - cd ${PROJECT_DIR}
+
+precommit_hooks:
+  image: python:3.13
+  needs: []
+  stage: static-code-analysis
+  script:
+    - git config --global --add safe.directory $CI_PROJECT_DIR
+    - pip install pre-commit
+    - pre-commit run --all-files
+
+my_py:
+  needs: []
+  extends: .sub-project-template
+  stage: static-code-analysis
+  script:
+    - uv sync --extra dev
+    - uv run mypy .
+
+test:
+  needs: []
+  extends: .sub-project-template
+  stage: test
+  script:
+    - uv sync --extra dev
+    - uv run pytest
+
+  # NOTE: the coverage is extracted from stdout - not from the file specified below
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
+  artifacts:
+    expire_in: 14 days
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: $PROJECT_DIR/coverage.xml
+      junit: $PROJECT_DIR/report.xml
+    paths:
+      - $PROJECT_DIR/coverage.xml
+      - $PROJECT_DIR/report.xml
+      - $PROJECT_DIR/htmlcov/
+    when: always  # always = collect artifacts even if the job (i.e. the tests) fails
+
+integration_test_ecosim:
+  needs: []
+  extends: .image-template
+  stage: integration_test
+  script:
+    - cd $SRC_DIR/integration-tests
+    - uv sync
+    - uv run pytest
+  artifacts:
+    expire_in: 14 days
+    reports:
+      junit: integration-tests/report.xml
+    paths:
+      - integration-tests/report.xml
+    when: always  # always = collect artifacts even if the job (i.e. the tests) fails
+
+publish_artifacts:
+  needs: [test, integration_test_ecosim]
+  extends: .sub-project-template
+  stage: artifacts
+  script:
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "release" ]; then
+      DEV_VERSION="0.0.dev+$(date +%Y%m%d.%H%M%S)_${CI_COMMIT_BRANCH}_${CI_COMMIT_SHORT_SHA}"
+      sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
+      fi
+    - uv sync
+    - uv build
+    - uv publish
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - $PROJECT_DIR/dist/*
+
+cleanup:old-dev-packages:
+  needs: [publish_artifacts]
+  stage: cleanup
+  image: alpine:latest
+  variables:
+    DAYS_TO_KEEP: "90"
+  before_script:
+    - apk add --no-cache bash curl jq coreutils
+  script:
+    - |
+      echo "🧹 Starting cleanup of .dev packages older than ${DAYS_TO_KEEP} days..."
+
+      CUTOFF_TIMESTAMP=$(date -d "${DAYS_TO_KEEP} days ago" +%s)
+      CUTOFF_DATE=$(date -d "${DAYS_TO_KEEP} days ago" '+%Y-%m-%d %H:%M:%S')
+      echo "Cutoff date: $CUTOFF_DATE"
+
+      DELETED_COUNT=0
+      SKIPPED_COUNT=0
+
+      # Fetch all PyPI packages (paginated)
+      PAGE=1
+      ERROR=0
+      while true; do
+        echo "📦 Fetching page $PAGE of packages..."
+
+        URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages?package_type=pypi&per_page=100&page=${PAGE}"
+        echo "   -> using URL: $URL"
+
+        PACKAGES=$(curl \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          "$URL")
+
+        # Check if we got any packages
+        PACKAGE_COUNT=$(echo "$PACKAGES" | jq '. | length')
+
+        if [ -z "$PACKAGE_COUNT" ] || [ "$PACKAGE_COUNT" = "null" ] || [ "$PACKAGE_COUNT" -le 0 ] 2>/dev/null; then
+          if [ "$PAGE" -eq 1 ]; then
+            ERROR=1
+            echo "##################"
+            echo "Something went wrong access the registry (or there aren't any packages in the registry - which is unlikely): $PACKAGES"
+            echo "##################"
+            break
+          else
+            echo "No more packages found"
+            break
+          fi
+        fi
+
+        echo "Processing $PACKAGE_COUNT packages from page $PAGE..."
+
+        # Check if response is an array or has a different structure
+        IS_ARRAY=$(echo "$PACKAGES" | jq 'type == "array"')
+
+        if [ "$IS_ARRAY" = "true" ]; then
+          # Process each package
+          for i in $(seq 0 $((PACKAGE_COUNT - 1))); do
+            PACKAGE_ID=$(echo "$PACKAGES" | jq -r ".[$i].id")
+            PACKAGE_NAME=$(echo "$PACKAGES" | jq -r ".[$i].name")
+            PACKAGE_VERSION=$(echo "$PACKAGES" | jq -r ".[$i].version")
+            PACKAGE_CREATED_AT=$(echo "$PACKAGES" | jq -r ".[$i].created_at")
+
+            # Skip if any field is null or empty
+            if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" = "null" ]; then
+              continue
+            fi
+
+            # Check if version contains '.dev'
+            if [[ "$PACKAGE_VERSION" == *".dev"* ]]; then
+              # Convert created_at to timestamp
+              PACKAGE_TIMESTAMP=$(date -d "$PACKAGE_CREATED_AT" +%s)
+
+              if [ "$PACKAGE_TIMESTAMP" -lt "$CUTOFF_TIMESTAMP" ]; then
+                echo "🗑️  Deleting: $PACKAGE_NAME==$PACKAGE_VERSION (created: $PACKAGE_CREATED_AT)"
+
+                HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+                  --request DELETE \
+                  --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+                  "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PACKAGE_ID}")
+
+                if [ "$HTTP_CODE" -eq 204 ] || [ "$HTTP_CODE" -eq 200 ]; then
+                  echo "   ✅ Deleted successfully"
+                  DELETED_COUNT=$((DELETED_COUNT + 1))
+                else
+                  echo "   ❌ Failed (HTTP $HTTP_CODE)"
+                fi
+              else
+                echo "⏭️  Keeping (recent): $PACKAGE_NAME==$PACKAGE_VERSION"
+                SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+              fi
+            fi
+          done
+        else
+          echo "ERROR: Unexpected API response format (not an array)"
+          echo "Response: $PACKAGES"
+          echo "Response type: $(echo "$PACKAGES" | jq 'type')"
+          exit 123
+        fi
+
+        PAGE=$((PAGE + 1))
+      done
+
+      if [ "$ERROR" -eq 0 ]; then
+        echo ""
+        echo "=========================================="
+        echo "✨ Cleanup completed!"
+        echo "   Deleted: $DELETED_COUNT packages"
+        echo "   Kept: $SKIPPED_COUNT packages"
+        echo "=========================================="
+      else
+        exit 123
+      fi

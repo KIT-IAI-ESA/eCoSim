@@ -11,10 +11,12 @@ if "pytest" not in sys.modules:
         metaclass=DTOMeta,
         metadata=MetaData(
             schema=CLIArguments().db_config_overwrite().schema(default="ERROR_NO_SCHEMA"),
-        ))
+        ),
+    )
 else:
     SimControlDB_Base = declarative_base(
         metaclass=DTOMeta,
         metadata=MetaData(
             schema="postgres",
-        ))
+        ),
+    )
