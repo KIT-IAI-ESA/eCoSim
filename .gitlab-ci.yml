@@ -36,12 +36,13 @@ cache:
     - cd ${PROJECT_DIR}
 
 precommit_hooks:
-  extends: .image-template
+  image: python:3.13
   needs: []
   stage: static-code-analysis
   script:
-    - uv sync --extra dev
-    - uv run pre-commit run --all-files
+    - git config --global --add safe.directory $CI_PROJECT_DIR
+    - pip install pre-commit
+    - pre-commit run --all-files
 
 my_py:
   needs: []
