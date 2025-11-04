@@ -10,9 +10,10 @@ from ecosim_server.config.server_config import ServerConfig
 class PostgresTech(DbTechAbstract):
     _logger = ESPLogger("PostgresTech")
 
-    def __init__(self,
-                 server_config: ServerConfig
-                 ):
+    def __init__(
+        self,
+        server_config: ServerConfig,
+    ):
         self.server_config = server_config
 
     def db_connection(self) -> DBConnection:
@@ -26,9 +27,10 @@ class PostgresTech(DbTechAbstract):
         root_engine = create_engine(self.server_config.database.generate_sqlalchemy_root_url())
         self._prepare_database(root_engine)
 
-    def _prepare_database(self,
-                          root_engine: Engine,
-                          ):
+    def _prepare_database(
+        self,
+        root_engine: Engine,
+    ):
         db_name = self.server_config.database.name
         schema = self.server_config.database.schema
         with root_engine.connect() as root_connection:
@@ -44,12 +46,14 @@ class PostgresTech(DbTechAbstract):
         existing_db = create_engine(self.server_config.database.generate_sqlalchemy_db_url())
         with existing_db.connect() as connection:
             result = connection.execute(
-                text(f"SELECT 1 FROM information_schema.schemata WHERE schema_name = '{schema}'"))
+                text(f"SELECT 1 FROM information_schema.schemata WHERE schema_name = '{schema}'"),
+            )
             if result.scalar():
                 if not self.server_config.database.drop_existing_schema:
                     raise RuntimeError(
                         f"Schema '{schema}' already exists. This means there was already an execution for this run. " +
-                        "This is most likely an error in your local setup and should not occur on live.")
+                        "This is most likely an error in your local setup and should not occur on live.",
+                    )
                 else:
                     connection.execute(text(f"DROP SCHEMA \"{schema}\" CASCADE"))
             connection.execute(text(f"CREATE SCHEMA \"{schema}\""))

@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import Column, Integer, Text
 
+from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_types import DTO
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
@@ -14,6 +15,7 @@ from ecosim_server.simulation.state.simulation_state_repository import Simulatio
 
 class SimulationStateRepositoryDB(SimulationStateRepository):
     _thread_lock = threading.Lock()
+    _logger = ESPLogger("SimulationStateRepositoryDB")
 
     def __init__(self, db_connection: DBConnection):
         self._db_connection = db_connection
@@ -23,18 +25,25 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
         )
         self._state_id = self._db_connection.insert_into(state)
 
-    def update(self,
-               state: SimulationState,
-               ):
+    def update(
+        self,
+        state: SimulationState,
+    ):
         with self._thread_lock:
-            self._db_connection.update(SimulationStateDTO(
-                state_id=self._state_id,
-                variation_id=0,
-                state=state.db_entry,
-            ))
+            self._db_connection.update(
+                SimulationStateDTO(
+                    state_id=self._state_id,
+                    variation_id=0,
+                    state=state.db_entry,
+                ),
+            )
 
     def current(self) -> SimulationState:
-        return SimulationState.of_db_entry(self._db_connection.select_by_id(SimulationStateDTO, self._state_id).state)
+        dto: SimulationStateDTO | None = self._db_connection.select_by_id(SimulationStateDTO, self._state_id)  # type: ignore
+        if dto is None:
+            SimulationStateRepositoryDB._logger.error(f"Could not find state in database for state_id {self._state_id}.")
+            return SimulationState.NOT_READY
+        return SimulationState.of_db_entry(dto.state)  # type: ignore
 
 
 class SimulationStateDTO(SimControlDB_Base, DTO[int]):

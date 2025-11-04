@@ -27,12 +27,14 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
         self._internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     @override
-    def listen_async(self,
-                     on_new_channel: Callable[[ConnectionData], None],
-                     ) -> None:
+    def listen_async(
+        self,
+        on_new_channel: Callable[[ConnectionData], None],
+    ) -> None:
         if self._listening.is_set():
             EndpointSocket._logger.warning(
-                f"Socket is already listening to: {self._connection_address}. So nothing is done.")
+                f"Socket is already listening to: {self._connection_address}. So nothing is done.",
+            )
             return
         self._listening.set()
         listen_thread = threading.Thread(
@@ -42,9 +44,10 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
         )
         listen_thread.start()
 
-    def _listen(self,
-                on_new_channel: Callable[[ConnectionData], None],
-                ) -> None:
+    def _listen(
+        self,
+        on_new_channel: Callable[[ConnectionData], None],
+    ) -> None:
         with self._internal_socket:
             try:
                 self._internal_socket.bind((self._connection_address.ip, self._connection_address.port))
@@ -62,20 +65,25 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
                     raise e
                 if not connection:
                     EndpointSocket._logger.error(
-                        f"Something went wrong accepting a connection on {self._connection_address}")
+                        f"Something went wrong accepting a connection on {self._connection_address}",
+                    )
                     continue
                 client_address = ConnectionAddress.of_raw_socket_address(address)
                 if client_address.ip == self._connection_address.ip:
                     EndpointSocket._logger.info(
                         f"Socket listening on {self._connection_address} received a connection from itself - this is "
-                        f"probably a shutdown trigger. If this message appears multiple times please investigate.")
+                        f"probably a shutdown trigger. If this message appears multiple times please investigate.",
+                    )
                     continue
                 EndpointSocket._logger.debug(
-                    f"New connection on socket {self._connection_address} from {client_address}")
-                on_new_channel(ConnectionData(
-                    channel=SocketChannel(ESPSocket(connection)),
-                    client_address=client_address,
-                ))
+                    f"New connection on socket {self._connection_address} from {client_address}",
+                )
+                on_new_channel(
+                    ConnectionData(
+                        channel=SocketChannel(ESPSocket(connection)),
+                        client_address=client_address,
+                    ),
+                )
             EndpointSocket._logger.debug(f"Socket stopped listening on {self._connection_address}")
 
     @override

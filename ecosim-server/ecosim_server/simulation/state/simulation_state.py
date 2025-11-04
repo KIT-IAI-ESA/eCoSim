@@ -8,10 +8,14 @@ class SimulationState(Enum):
     FAILED = ("Failed", "failed")
     FINISHED = ("Finished", "finished")
 
-    def __new__(cls,
-                display_value: str,
-                db_entry: str,
-                ):
+    display_value: str
+    db_entry: str
+
+    def __new__(
+        cls,
+        display_value: str,
+        db_entry: str,
+    ):
         obj = object.__new__(cls)
         obj._value_ = display_value  # Set the value for the enum member
         obj.display_value = display_value
@@ -23,9 +27,10 @@ class SimulationState(Enum):
         return self.display_value
 
     @classmethod
-    def of_db_entry(cls,
-                    db_entry: str,
-                    ):
+    def of_db_entry(
+        cls,
+        db_entry: str,
+    ):
         try:
             normalized_entry = db_entry.strip().lower()
             return next(member for member in cls if member.db_entry == normalized_entry)

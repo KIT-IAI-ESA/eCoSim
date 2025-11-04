@@ -60,7 +60,8 @@ def test_load() -> None:
     assert interface0.connected_to == [
         ConnectedToData(
             simulator_interface_id=SimulatorInterfaceId("weather", ModelInterfaceId("weather", "T_out")),
-            delay_path=[])
+            delay_path=[],
+        ),
     ]
     # CLIENTS[1].INTERFACE[1]
     interface1 = client1.interfaces[1]
@@ -71,10 +72,16 @@ def test_load() -> None:
     assert interface1.required is True
     assert interface1.description == ""
     assert interface1.connected_to == [
-        ConnectedToData(simulator_interface_id=SimulatorInterfaceId("ventilation",
-                                                                    ModelInterfaceId("ventilation",
-                                                                                     "ventilation_pressure_control_signal")),
-                        delay_path=[])
+        ConnectedToData(
+            simulator_interface_id=SimulatorInterfaceId(
+                "ventilation",
+                ModelInterfaceId(
+                    "ventilation",
+                    "ventilation_pressure_control_signal",
+                ),
+            ),
+            delay_path=[],
+        ),
     ]
     # CLIENTS[1].INTERFACE[2]
     interface2 = client1.interfaces[2]
@@ -87,7 +94,8 @@ def test_load() -> None:
     assert interface2.connected_to == [
         ConnectedToData(
             simulator_interface_id=SimulatorInterfaceId("heating", ModelInterfaceId("heating", "heating_control_signal")),
-            delay_path=[])
+            delay_path=[],
+        ),
     ]
     # CLIENTS[1].INTERFACE[3]
     interface3 = client1.interfaces[3]
@@ -98,10 +106,16 @@ def test_load() -> None:
     assert interface3.required is True
     assert interface3.description == ""
     assert interface3.connected_to == [
-        ConnectedToData(simulator_interface_id=SimulatorInterfaceId("ventilation",
-                                                                    ModelInterfaceId("ventilation",
-                                                                                     "ventilation_valve_control_signal")),
-                        delay_path=[])
+        ConnectedToData(
+            simulator_interface_id=SimulatorInterfaceId(
+                "ventilation",
+                ModelInterfaceId(
+                    "ventilation",
+                    "ventilation_valve_control_signal",
+                ),
+            ),
+            delay_path=[],
+        ),
     ]
     # CLIENTS[1].INTERFACE[4]
     interface4 = client1.interfaces[4]
@@ -112,10 +126,16 @@ def test_load() -> None:
     assert interface4.required is True
     assert interface4.description == "direct solar iradiance"
     assert interface4.connected_to == [
-        ConnectedToData(simulator_interface_id=SimulatorInterfaceId("weather",
-                                                                    ModelInterfaceId("weather",
-                                                                                     "dir_sol_irradiance")),
-                        delay_path=[])
+        ConnectedToData(
+            simulator_interface_id=SimulatorInterfaceId(
+                "weather",
+                ModelInterfaceId(
+                    "weather",
+                    "dir_sol_irradiance",
+                ),
+            ),
+            delay_path=[],
+        ),
     ]
     # CLIENTS[1].INTERFACE[5]
     interface5 = client1.interfaces[5]
@@ -137,8 +157,10 @@ def test_load() -> None:
     assert interface0.required is True
     assert interface0.description == "T_room"
     assert interface0.connected_to == [
-        ConnectedToData(simulator_interface_id=SimulatorInterfaceId("house", ModelInterfaceId("house", "room_temperature")),
-                        delay_path=["1"])
+        ConnectedToData(
+            simulator_interface_id=SimulatorInterfaceId("house", ModelInterfaceId("house", "room_temperature")),
+            delay_path=["1"],
+        ),
     ]
 
     # CLIENTS[2].INTERFACE[1]
@@ -161,8 +183,10 @@ def test_load() -> None:
     assert interface0.required is True
     assert interface0.description == "T_room"
     assert interface0.connected_to == [
-        ConnectedToData(simulator_interface_id=SimulatorInterfaceId("house", ModelInterfaceId("house", "room_temperature")),
-                        delay_path=["1"])
+        ConnectedToData(
+            simulator_interface_id=SimulatorInterfaceId("house", ModelInterfaceId("house", "room_temperature")),
+            delay_path=["1"],
+        ),
     ]
 
     # CLIENTS[3].INTERFACE[1]
@@ -191,24 +215,36 @@ def test_load() -> None:
     assert len(config.logical_delays[0].logical_delay_connections) == 2
     # LOGICAL_DELAY.INTERFACE[0]
     assert config.logical_delays[0].logical_delay_connections[0].start_value == 20.0
-    assert config.logical_delays[0].logical_delay_connections[0].output_interface == SimulatorInterfaceId(simulator_name="heating",
-                                                                                                          model_interface_id=ModelInterfaceId(
-                                                                                                              model_name="heating",
-                                                                                                              interface="T_room"))
-    assert config.logical_delays[0].logical_delay_connections[0].input_interface == SimulatorInterfaceId(simulator_name="house",
-                                                                                                         model_interface_id=ModelInterfaceId(
-                                                                                                             model_name="house",
-                                                                                                             interface="room_temperature"))
+    assert config.logical_delays[0].logical_delay_connections[0].output_interface == SimulatorInterfaceId(
+        simulator_name="heating",
+        model_interface_id=ModelInterfaceId(
+            model_name="heating",
+            interface="T_room",
+        ),
+    )
+    assert config.logical_delays[0].logical_delay_connections[0].input_interface == SimulatorInterfaceId(
+        simulator_name="house",
+        model_interface_id=ModelInterfaceId(
+            model_name="house",
+            interface="room_temperature",
+        ),
+    )
     # LOGICAL_DELAY.INTERFACE[1]
     assert config.logical_delays[0].logical_delay_connections[1].start_value == 20.0
-    assert config.logical_delays[0].logical_delay_connections[1].output_interface == SimulatorInterfaceId(simulator_name="ventilation",
-                                                                                                          model_interface_id=ModelInterfaceId(
-                                                                                                              model_name="ventilation",
-                                                                                                              interface="T_room"))
-    assert config.logical_delays[0].logical_delay_connections[1].input_interface == SimulatorInterfaceId(simulator_name="house",
-                                                                                                         model_interface_id=ModelInterfaceId(
-                                                                                                             model_name="house",
-                                                                                                             interface="room_temperature"))
+    assert config.logical_delays[0].logical_delay_connections[1].output_interface == SimulatorInterfaceId(
+        simulator_name="ventilation",
+        model_interface_id=ModelInterfaceId(
+            model_name="ventilation",
+            interface="T_room",
+        ),
+    )
+    assert config.logical_delays[0].logical_delay_connections[1].input_interface == SimulatorInterfaceId(
+        simulator_name="house",
+        model_interface_id=ModelInterfaceId(
+            model_name="house",
+            interface="room_temperature",
+        ),
+    )
 
 
 def test_without_start_date():

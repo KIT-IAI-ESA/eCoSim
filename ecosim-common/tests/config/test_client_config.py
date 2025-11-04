@@ -35,7 +35,7 @@ def test_load() -> None:
         unit="m",
         description="",
         required=False,
-        type=InterfaceType.INPUT
+        type=InterfaceType.INPUT,
     ) in config.interfaces_config().interfaces
     assert ModelInterfaceClient(
         model_interface_id=ModelInterfaceId(model_name="Model Name", interface="speed_2"),
@@ -82,13 +82,15 @@ def test_json_string_interfaces() -> None:
     simulator_config.ensemble = "Test_Ensemble"
     simulator_config.model_name = "Model_Name"
     config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=resource_path())
-    expected = ('['
-                '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_1"}, "name": "input_1", "unit": "m", "description": "non required value", "type": "input", "required": false}, '  # noqa: E501
-                '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_2"}, "name": "input_2", "unit": "m/s", "description": "required value", "type": "input", "required": true}, '  # noqa: E501
-                '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_3"}, "name": "input_3", "unit": "m/s", "description": "missing required attribute", "type": "input", "required": false}, '  # noqa: E501
-                '{"model_interface_id": {"model_name": "Model_Name", "interface": "output_1"}, "name": "output_1", "unit": "m", "description": "output 1", "type": "output", "required": false}, '  # noqa: E501
-                '{"model_interface_id": {"model_name": "Model_Name", "interface": "output_2"}, "name": "output_2", "unit": "m/s", "description": "output 2", "type": "output", "required": false}'  # noqa: E501
-                ']')
+    expected = (
+        '['
+        '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_1"}, "name": "input_1", "unit": "m", "description": "non required value", "type": "input", "required": false}, '  # noqa: E501
+        '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_2"}, "name": "input_2", "unit": "m/s", "description": "required value", "type": "input", "required": true}, '  # noqa: E501
+        '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_3"}, "name": "input_3", "unit": "m/s", "description": "missing required attribute", "type": "input", "required": false}, '  # noqa: E501
+        '{"model_interface_id": {"model_name": "Model_Name", "interface": "output_1"}, "name": "output_1", "unit": "m", "description": "output 1", "type": "output", "required": false}, '  # noqa: E501
+        '{"model_interface_id": {"model_name": "Model_Name", "interface": "output_2"}, "name": "output_2", "unit": "m/s", "description": "output 2", "type": "output", "required": false}'  # noqa: E501
+        ']'
+    )
     actual = config.all_interfaces_to_protocol_json_string()
     assert actual == expected
 
@@ -106,14 +108,20 @@ def test_validate_interface_config_with_actual() -> None:
     actual_input_all_plus_non_matching = ["input_1", "input_2", "input_3", "non_matching"]
     actual_output_all = ["output_1", "output_2"]
     actual_output_all_plus_non_matching = ["output_1", "output_2", "non_matching"]
-    assert config.validate_config_with_server(ServerInterfaceSettings(
-        inputs=actual_input_only_required, outputs=actual_output_all)
+    assert config.validate_config_with_server(
+        ServerInterfaceSettings(
+            inputs=actual_input_only_required, outputs=actual_output_all,
+        ),
     ) is True
     assert config.validate_config_with_server(
-        ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all)) is True
+        ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all),
+    ) is True
     assert config.validate_config_with_server(
-        ServerInterfaceSettings(inputs=actual_input_missing_required, outputs=actual_output_all)) is False
+        ServerInterfaceSettings(inputs=actual_input_missing_required, outputs=actual_output_all),
+    ) is False
     assert config.validate_config_with_server(
-        ServerInterfaceSettings(inputs=actual_input_all_plus_non_matching, outputs=actual_output_all)) is False
+        ServerInterfaceSettings(inputs=actual_input_all_plus_non_matching, outputs=actual_output_all),
+    ) is False
     assert config.validate_config_with_server(
-        ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all_plus_non_matching)) is False
+        ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all_plus_non_matching),
+    ) is False

@@ -14,7 +14,7 @@ def save_tar_from_container(
         client,
         container_name,
         src_path,
-        tar_dest_path
+        tar_dest_path,
 ):
     container = client.containers.get(container_name)
     # Retrieve the archive from the container
@@ -50,7 +50,7 @@ def run_integration_test(
         image, logs = docker_client.images.build(
             path=os.path.abspath(f'{test_dir}/resources/ci_container'),
             dockerfile='Dockerfile',
-            tag=image_name
+            tag=image_name,
         )
         for log in logs:
             if 'stream' in log:
@@ -73,9 +73,10 @@ def run_integration_test(
             exclude_dirs: Tuple[str, ...] = (),
     ):
 
-        def should_exclude(path,
-                           exclude_dirs
-                           ):
+        def should_exclude(
+            path,
+            exclude_dirs,
+        ):
             """
             Determine if the given path should be excluded based on the exclude_dirs list.
 
@@ -85,7 +86,8 @@ def run_integration_test(
             """
             for exclude_dir in exclude_dirs:
                 if path == exclude_dir or path == f'./{exclude_dir}' or path.startswith(
-                        exclude_dir + os.sep) or path.startswith(f'./{exclude_dir}{os.sep}'):
+                        exclude_dir + os.sep,
+                ) or path.startswith(f'./{exclude_dir}{os.sep}'):
                     return True
             return False
 
@@ -116,11 +118,12 @@ def run_integration_test(
         tar_stream.seek(0)
         return tar_stream
 
-    def copy_directory_to_container(container_name: str,
-                                    source_dir: str,
-                                    destination_dir: str,
-                                    exclude_dirs: Tuple[str, ...] = (),
-                                    ):
+    def copy_directory_to_container(
+        container_name: str,
+        source_dir: str,
+        destination_dir: str,
+        exclude_dirs: Tuple[str, ...] = (),
+    ):
         client = docker.from_env()
         container = client.containers.get(container_name)
 
@@ -138,13 +141,15 @@ def run_integration_test(
             container_name=container_name,
             source_dir="..",
             destination_dir=ecosimpy_dir,
-            exclude_dirs=(".git", ".idea", "ecosim/venv", "ecosim/dist", "ecosim/integration_tests",
-                          "ecosim/unit_tests",
-                          "ecosim/ecosim-server/build", "ecosim/ecosim-server/ecosim_server.egg-info",
-                          "ecosim/ecosim-common/build", "ecosim/ecosim-common/ecosim_common.egg-info",
-                          "ecosim/ecosim-client-fmu-v2/build", "ecosim/ecosim-client-fmu-v2/ecosim_client_fmu_v2.egg-info",
-                          ".idea", ".git", ".mypy_cache",
-                          "doc", "sim-control", ".pytest_cache", "ecosim/.pytest_cache", "ecosim/.mypy_cache"),
+            exclude_dirs=(
+                ".git", ".idea", "ecosim/venv", "ecosim/dist", "ecosim/integration_tests",
+                "ecosim/unit_tests",
+                "ecosim/ecosim-server/build", "ecosim/ecosim-server/ecosim_server.egg-info",
+                "ecosim/ecosim-common/build", "ecosim/ecosim-common/ecosim_common.egg-info",
+                "ecosim/ecosim-client-fmu-v2/build", "ecosim/ecosim-client-fmu-v2/ecosim_client_fmu_v2.egg-info",
+                ".idea", ".git", ".mypy_cache",
+                "doc", "sim-control", ".pytest_cache", "ecosim/.pytest_cache", "ecosim/.mypy_cache",
+            ),
         )
 
         print('Start process...')
@@ -152,7 +157,8 @@ def run_integration_test(
             container.id,
             start_script,
             stdout=True,
-            stderr=True)['Id']
+            stderr=True,
+        )['Id']
         output = container.client.api.exec_start(exec_id, stream=True)
         for line in output:
             print(line.decode('utf-8').strip())
@@ -191,13 +197,13 @@ def run_integration_test(
                 client=docker_client,
                 container_name=container_name,
                 src_path="/integration_test/logs",
-                tar_dest_path=f"{copy_destination_path}/logs.tar"
+                tar_dest_path=f"{copy_destination_path}/logs.tar",
             )
         if copy_results:
             save_tar_from_container(
                 client=docker_client,
                 container_name=container_name,
                 src_path="/integration_test/results",
-                tar_dest_path=f"{copy_destination_path}/results.tar"
+                tar_dest_path=f"{copy_destination_path}/results.tar",
             )
         docker_client.containers.get(container_name).remove(force=True)

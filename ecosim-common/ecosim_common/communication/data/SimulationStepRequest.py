@@ -14,13 +14,16 @@ class SimulationStepRequest(MessageData):
 
     @classmethod
     @override
-    def of_json(cls,
-                value: Dict[str, Any],
-                ) -> SimulationStepRequest:
+    def of_json(
+        cls,
+        value: Dict[str, Any],
+    ) -> SimulationStepRequest:
         return SimulationStepRequest(
             step=value['step'],
-            inputs=[ProtocolInterfaceValue(
-                name=interface_value['name'],
-                value=interface_value['value'],
-            ) for interface_value in value['inputs']],
+            inputs=[
+                ProtocolInterfaceValue(
+                    name=interface_value['name'],
+                    value=interface_value['value'],
+                ) for interface_value in value['inputs']
+            ],
         )

@@ -30,7 +30,7 @@ def test_local_test():
     renderer_service = PreRenderedImageService(
         PreRenderedImageServiceConfig(
             image_dir=f"{resources_dir}/rendered_images",
-        )
+        ),
     )
     client = RenderingSocketClient(
         uri="ws://localhost:3336",
@@ -40,15 +40,21 @@ def test_local_test():
     client.start().wait()
 
     loop = asyncio.get_event_loop()
-    image_receiver_connection = loop.run_until_complete(websockets.connect("ws://localhost:3336", additional_headers={
-        'client_id': 'sim_control'
-    }))
+    image_receiver_connection = loop.run_until_complete(
+        websockets.connect(
+            "ws://localhost:3336", additional_headers={
+                'client_id': 'sim_control',
+            },
+        ),
+    )
 
     # test trigger by web socket message
     loop.run_until_complete(
-        image_receiver_connection.send(RenderingImageMessage(
-            time_step=100,
-        ).model_dump_json())
+        image_receiver_connection.send(
+            RenderingImageMessage(
+                time_step=100,
+            ).model_dump_json(),
+        ),
     )
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP
@@ -56,9 +62,11 @@ def test_local_test():
     assert message.time_step == 100
 
     loop.run_until_complete(
-        image_receiver_connection.send(RenderingImageMessage(
-            time_step=200,
-        ).model_dump_json())
+        image_receiver_connection.send(
+            RenderingImageMessage(
+                time_step=200,
+            ).model_dump_json(),
+        ),
     )
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP

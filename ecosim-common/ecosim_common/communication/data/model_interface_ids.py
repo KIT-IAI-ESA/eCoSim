@@ -14,20 +14,24 @@ class ModelInterfaceIds(MessageData):
 
     @classmethod
     @override
-    def of_json(cls,
-                value: Dict[str, Any],
-                ) -> ModelInterfaceIds:
+    def of_json(
+        cls,
+        value: Dict[str, Any],
+    ) -> ModelInterfaceIds:
         return ModelInterfaceIds(
             interfaces=[ModelInterfaceId.of_json(interface) for interface in value['interfaces']],
         )
 
     @classmethod
-    def of_interface_config(cls,
-                            config: ClientConfig,
-                            ) -> ModelInterfaceIds:
+    def of_interface_config(
+        cls,
+        config: ClientConfig,
+    ) -> ModelInterfaceIds:
         return ModelInterfaceIds(
-            interfaces=[ModelInterfaceId(
-                interface=interface.name,
-                model_name=config.meta_data().model_name,
-            ) for interface in config.interfaces_config().interfaces],
+            interfaces=[
+                ModelInterfaceId(
+                    interface=interface.name,
+                    model_name=config.meta_data().model_name,
+                ) for interface in config.interfaces_config().interfaces
+            ],
         )

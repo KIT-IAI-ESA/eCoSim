@@ -9,9 +9,10 @@ from typing import TypeVar, Type, Dict, Any
 class MessageData(ABC):
 
     @classmethod
-    def of_json(cls: Type[MESSAGE_DATA],
-                value: Dict[str, Any]
-                ) -> MESSAGE_DATA:
+    def of_json(
+        cls: Type[MESSAGE_DATA],
+        value: Dict[str, Any],
+    ) -> MESSAGE_DATA:
         # noinspection PyArgumentList
         return cls(**value)
 

@@ -11,11 +11,12 @@ class GlobalLogger:
     _list_padding = 4
 
     @staticmethod
-    def print_values(header: str,
-                     value_pairs: dict[str, Any],
-                     key_value_seperator: str = ":",
-                     list_point_character: str = "├"
-                     ) -> None:
+    def print_values(
+        header: str,
+        value_pairs: dict[str, Any],
+        key_value_seperator: str = ":",
+        list_point_character: str = "├",
+    ) -> None:
         header_length = len(header) + 2 * GlobalLogger._header_padding + 2 * GlobalLogger._wall_thickness
         header_bar = "#" * header_length
         wall = "#" * GlobalLogger._wall_thickness

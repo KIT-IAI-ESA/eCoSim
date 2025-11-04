@@ -17,10 +17,11 @@ class SocketConnector(ESPChannelConnector):
     _logger = ESPLogger("SocketConnector")
 
     @override
-    def connect(self,
-                connection_address: ConnectionAddress,
-                timeout_in_seconds: int = 30,
-                ) -> ESPChannel:
+    def connect(
+        self,
+        connection_address: ConnectionAddress,
+        timeout_in_seconds: int = 30,
+    ) -> ESPChannel:
         start_time = time.time()
         esp_socket = ESPSocket(internal_socket=create_internal_socket())
         connected: bool = False
@@ -30,7 +31,8 @@ class SocketConnector(ESPChannelConnector):
                 connected = True
             except socket.error as e:
                 SocketConnector._logger.warning(
-                    f"Cannot connect to socket - trying in sum for {timeout_in_seconds}s. Error: {e}")
+                    f"Cannot connect to socket - trying in sum for {timeout_in_seconds}s. Error: {e}",
+                )
                 time.sleep(1)
         if not connected:
             raise ConnectionError(f"Could not connect to socket {connection_address}")
