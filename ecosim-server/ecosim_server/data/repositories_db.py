@@ -14,11 +14,13 @@ class RepositoriesDB(Repositories):
     _thread_lock: threading.Lock = field(default_factory=threading.Lock)
     _client_id_to_measurement_repository: dict[ClientID, MeasurementRepository] = field(default_factory=dict)
 
-    def measurement_repository(self,
-                               client_id: ClientID,
-                               ) -> MeasurementRepository:
+    def measurement_repository(
+        self,
+        client_id: ClientID,
+    ) -> MeasurementRepository:
         with self._thread_lock:
             if client_id not in self._client_id_to_measurement_repository:
                 self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryDB(
-                    self._simulation_config, client_id)
+                    self._simulation_config, client_id,
+                )
             return self._client_id_to_measurement_repository[client_id]

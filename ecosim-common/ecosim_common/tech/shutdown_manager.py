@@ -25,10 +25,11 @@ class ShutdownManager:
     _init: bool = False
     shutdown_event: threading.Event
 
-    def __new__(cls: Type[ShutdownManager],
-                *args: Any,
-                **kwargs: Any,
-                ) -> ShutdownManager:
+    def __new__(
+        cls: Type[ShutdownManager],
+        *args: Any,
+        **kwargs: Any,
+    ) -> ShutdownManager:
         if not cls._instance:
             with cls._lock:
                 if not cls._instance:
@@ -47,10 +48,11 @@ class ShutdownManager:
         signal.signal(signal.SIGFPE, self.__other_interrupts_handler)
 
     # noinspection PyUnusedLocal
-    def __interrupt_signal_handler(self,
-                                   sig: int,
-                                   frame: FrameType | None,
-                                   ) -> None:
+    def __interrupt_signal_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
         if self.shutdown_event.is_set():
             return
         self._logger.info("Interrupt signal received - shutting down.")
@@ -58,10 +60,11 @@ class ShutdownManager:
         sys.exit(333)
 
     # noinspection PyUnusedLocal
-    def __terminate_signal_handler(self,
-                                   sig: int,
-                                   frame: FrameType | None,
-                                   ) -> None:
+    def __terminate_signal_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
         if self.shutdown_event.is_set():
             return
         self._logger.info("Terminate signal received - shutting down.")
@@ -69,10 +72,11 @@ class ShutdownManager:
         sys.exit(444)
 
     # noinspection PyUnusedLocal
-    def __other_interrupts_handler(self,
-                                   sig: int,
-                                   frame: FrameType | None,
-                                   ) -> None:
+    def __other_interrupts_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
         if self.shutdown_event.is_set():
             return
         self._logger.info("Other interrupt signal received - shutting down.")
@@ -86,9 +90,10 @@ class ShutdownManager:
                 if listener is not None:
                     listener.on_app_shutdown()
 
-    def register_listener(self,
-                          listener: ShutdownListener
-                          ) -> None:
+    def register_listener(
+        self,
+        listener: ShutdownListener,
+    ) -> None:
         with self._lock:
             self._listener.append(listener)
 

@@ -14,7 +14,7 @@ class CLIArguments(AppConfig):
                     name="config-file",
                     required=True,
                     help_text="The path to the config file. This must be relative to the call path or it can "
-                              "be an absolute path."
+                              "be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="debug",

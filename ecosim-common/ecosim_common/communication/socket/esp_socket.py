@@ -28,9 +28,10 @@ def is_raw_socket_connected(raw_socket: socket.socket) -> bool:
 class ESPSocket(ShutdownListener):
     _logger = ESPLogger("ESPSocket")
 
-    def __init__(self,
-                 internal_socket: socket.socket,
-                 ):
+    def __init__(
+        self,
+        internal_socket: socket.socket,
+    ):
         ShutdownManager().register_listener(self)
         self._closing_calls = AtomicInteger(0)
         self._closed: threading.Event = threading.Event()
@@ -42,11 +43,12 @@ class ESPSocket(ShutdownListener):
             ESPSocket._logger.info("Internal shutdown signal triggered - closing socket...")
             self.close()
 
-    def connect(self,
-                connection_address: ConnectionAddress,
-                ) -> None:
+    def connect(
+        self,
+        connection_address: ConnectionAddress,
+    ) -> None:
         self._internal_socket.connect(
-            (connection_address.ip, connection_address.port)
+            (connection_address.ip, connection_address.port),
         )
         self._connected = True
 
@@ -80,9 +82,10 @@ class ESPSocket(ShutdownListener):
         else:
             ESPSocket._logger.info("Socket is already in closing process.")
 
-    def send(self,
-             message: SocketMessage,
-             ) -> None:
+    def send(
+        self,
+        message: SocketMessage,
+    ) -> None:
         if self._closed.is_set():
             raise Exception("Socket is in the progress of closing or already closed.")
         ESPSocket._logger.debug(f"Sending message {message.header().message_type}")
@@ -94,9 +97,10 @@ class ESPSocket(ShutdownListener):
         return ESPSocket.receive_from_socket(self._internal_socket)
 
     @staticmethod
-    def send_to_socket(connection: socket.socket,
-                       message: SocketMessage
-                       ) -> None:
+    def send_to_socket(
+        connection: socket.socket,
+        message: SocketMessage,
+    ) -> None:
         connection.send(message.raw_message())
 
     @staticmethod

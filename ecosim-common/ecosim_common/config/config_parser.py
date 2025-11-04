@@ -10,59 +10,67 @@ from ecosim_common.tech.logger.logger import ESPLogger
 class ConfigParser:
     _logger = ESPLogger("ConfigParser")
 
-    def __init__(self,
-                 path: Path,
-                 ):
+    def __init__(
+        self,
+        path: Path,
+    ):
         ConfigParser.ensure_file_exists(path)
         self.config_file: Path = path
         self._config: configparser.ConfigParser = configparser.ConfigParser()
         self._config.read(path)
 
-    def get_bool(self,
-                 section: str,
-                 option: str
-                 ) -> bool:
+    def get_bool(
+        self,
+        section: str,
+        option: str,
+    ) -> bool:
         return self.config_string_to_bool(self._get(section, option))
 
-    def get_string_array(self,
-                         section: str,
-                         option: str
-                         ) -> List[str]:
+    def get_string_array(
+        self,
+        section: str,
+        option: str,
+    ) -> List[str]:
         return self.config_string_to_string_array(self._get(section, option))
 
-    def get_string(self,
-                   section: str,
-                   option: str,
-                   default: str | None = None
-                   ) -> str:
+    def get_string(
+        self,
+        section: str,
+        option: str,
+        default: str | None = None,
+    ) -> str:
         try:
             return self._get(section, option)
         except ConfigParserException as e:
             if default is not None:
                 ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.")
+                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
+                )
                 return default
             raise e
 
-    def get_int(self,
-                section: str,
-                option: str
-                ) -> int:
+    def get_int(
+        self,
+        section: str,
+        option: str,
+    ) -> int:
         try:
             return int(self._get(section, option))
         except ValueError as e:
             raise ConfigParserException(f"Cannot parse value as int ({section}#{option})") from e
 
-    def contains(self,
-                 section: str,
-                 option: str
-                 ) -> int:
+    def contains(
+        self,
+        section: str,
+        option: str,
+    ) -> int:
         return self._config.has_option(section, option)
 
-    def _get(self,
-             section: str,
-             option: str
-             ) -> str:
+    def _get(
+        self,
+        section: str,
+        option: str,
+    ) -> str:
         try:
             return self._config.get(section, option)
         except configparser.NoSectionError as e:
@@ -102,7 +110,8 @@ class ConfigParser:
 
 
 class ConfigParserException(Exception):
-    def __init__(self,
-                 message: str | None,
-                 ) -> None:
+    def __init__(
+        self,
+        message: str | None,
+    ) -> None:
         super().__init__(message)

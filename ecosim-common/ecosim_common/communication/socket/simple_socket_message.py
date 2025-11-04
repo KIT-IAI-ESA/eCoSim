@@ -32,11 +32,12 @@ class SimpleSocketMessage(SocketMessage):
             _payload=json.dumps(payload).encode("utf-8"),
         )
 
-    def __init__(self,
-                 _type: MessageType,
-                 _correlation_id: CorrelationId,
-                 _payload: bytes,
-                 ):
+    def __init__(
+        self,
+        _type: MessageType,
+        _correlation_id: CorrelationId,
+        _payload: bytes,
+    ):
         self._type = _type
         self._correlation_id = _correlation_id
         self._payload = _payload
@@ -50,11 +51,12 @@ class SimpleSocketMessage(SocketMessage):
         return bytecode
 
     def _raw_header(self) -> bytes:
-        return struct.pack(SocketMessage.BYTE_FORMAT,
-                           self._correlation_id.to_int(),
-                           self._type.to_int(),
-                           self.length,
-                           )
+        return struct.pack(
+            SocketMessage.BYTE_FORMAT,
+            self._correlation_id.to_int(),
+            self._type.to_int(),
+            self.length,
+        )
 
     def raw_message(self) -> bytes:
         return self.bytecode()

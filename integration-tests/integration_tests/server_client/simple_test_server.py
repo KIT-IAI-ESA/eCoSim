@@ -42,18 +42,22 @@ def generate_simple_test_server(
         pace: float = 1.0,
         steps: int = 100,
         step_size_in_ms: int = 1_000,
-        simulation_start_date: datetime = datetime(year=2025, month=1, day=1, hour=0, minute=0, second=0,
-                                                   microsecond=0),
+        simulation_start_date: datetime = datetime(
+            year=2025, month=1, day=1, hour=0, minute=0, second=0,
+            microsecond=0,
+        ),
         repository_type: RepositoryType = RepositoryType.IN_MEMORY,
         clients: List[ClientSimulatorConfig] | None = None,
         database_config: DatabaseConfig | None = None,
 ) -> SimpleTestServer:
-    clients = clients or [ClientSimulatorConfig(
-        simulator_name="TestSimulator",
-        model_name="TestModel",
-        interfaces=[],
-        client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
-    )]
+    clients = clients or [
+        ClientSimulatorConfig(
+            simulator_name="TestSimulator",
+            model_name="TestModel",
+            interfaces=[],
+            client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
+        ),
+    ]
     server_config = ServerConfig(
         server=MainConfig(
             host=host,

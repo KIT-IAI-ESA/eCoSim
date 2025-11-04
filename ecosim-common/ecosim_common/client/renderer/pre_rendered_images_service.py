@@ -10,15 +10,17 @@ from ecosim_common.tech.logger.logger import ESPLogger
 class PreRenderedImageService(SimulationRendererService):
     _logger = ESPLogger("PreRenderedImageService")
 
-    def __init__(self,
-                 config: PreRenderedImageServiceConfig,
-                 ) -> None:
+    def __init__(
+        self,
+        config: PreRenderedImageServiceConfig,
+    ) -> None:
         self._config: PreRenderedImageServiceConfig = config
         self._file_pattern = re.compile(r'^(\d+)_')
 
-    def render_step(self,
-                    time_step: int
-                    ) -> bytes | None:
+    def render_step(
+        self,
+        time_step: int,
+    ) -> bytes | None:
         try:
             # Iterate over all files in directory
             for file_path in Path(self._config.image_dir).iterdir():
@@ -30,20 +32,23 @@ class PreRenderedImageService(SimulationRendererService):
                 number = int(match.group(1))
                 if number == time_step:
                     PreRenderedImageService._logger.debug(
-                        f"Found pre-rendered image in '{self._config.image_dir}' for time step {time_step}")
+                        f"Found pre-rendered image in '{self._config.image_dir}' for time step {time_step}",
+                    )
                     with open(file_path, 'rb') as file:
                         return file.read()
         except Exception as e:
             PreRenderedImageService._logger.error("Failed to render image {}".format(e))
             return None
         PreRenderedImageService._logger.error(
-            f"Failed to find pre-rendered image in '{self._config.image_dir}' for time step {time_step}")
+            f"Failed to find pre-rendered image in '{self._config.image_dir}' for time step {time_step}",
+        )
         return None
 
 
 class PreRenderedImageServiceConfig:
 
-    def __init__(self,
-                 image_dir: str,
-                 ):
+    def __init__(
+        self,
+        image_dir: str,
+    ):
         self.image_dir: str = image_dir

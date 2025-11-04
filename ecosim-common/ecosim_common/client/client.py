@@ -26,9 +26,10 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 class Client(ShutdownListener):
     logger = ESPLogger("Client")
 
-    def __init__(self,
-                 client_config: ClientConfig,
-                 ):
+    def __init__(
+        self,
+        client_config: ClientConfig,
+    ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
@@ -58,10 +59,11 @@ class Client(ShutdownListener):
         pass
 
     @abstractmethod
-    def on_simulation_step(self,
-                           received_inputs: dict[InterfaceId, InterfaceValueType],
-                           step_size_in_seconds: float
-                           ) -> ClientSimStepData:
+    def on_simulation_step(
+        self,
+        received_inputs: dict[InterfaceId, InterfaceValueType],
+        step_size_in_seconds: float,
+    ) -> ClientSimStepData:
         """
         You need to run the simulation for :step_size_in_seconds: and return the resulting values for each output
         interface.
@@ -80,18 +82,20 @@ class Client(ShutdownListener):
     def start(self) -> None:
         Client.logger.info(
             "Starting to connect to " +
-            f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}")
+            f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
+        )
         self._connect_channel()
         self._channel.listen_async(
-            on_message=self._handle_message
+            on_message=self._handle_message,
         )
 
     def wait_until_finished(self) -> None:
         self._channel.wait_for_finish()
 
-    def _connect_channel(self,
-                         timeout_in_seconds: int = 30
-                         ) -> None:
+    def _connect_channel(
+        self,
+        timeout_in_seconds: int = 30,
+    ) -> None:
         try:
             self._channel_or_none = self._channel_connector.connect(
                 connection_address=self._client_config.server_config().server_address,
@@ -103,9 +107,10 @@ class Client(ShutdownListener):
         Client.logger.info(f"Connected to socket successfully: "
                            f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}")
 
-    def _handle_message(self,
-                        message: ESPChannelMessage,
-                        ) -> None:
+    def _handle_message(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
         Client.logger.debug('Received and handling message')
         if message.type() == MessageType.CLIENT_META_DATA_REQUEST:
             Client.logger.debug('Handling poss config request')
@@ -113,7 +118,7 @@ class Client(ShutdownListener):
                 ESPChannelMessageJson.answer_with_payload(
                     request_message=message,
                     payload=self._client_config.meta_data(),
-                )
+                ),
             )
         elif message.type() == MessageType.INTERFACE_REQUEST:
             Client.logger.debug('Handling interface request')
@@ -121,7 +126,7 @@ class Client(ShutdownListener):
                 ESPChannelMessageJson.answer_with_payload(
                     request_message=message,
                     payload=ModelInterfaceIds.of_interface_config(self._client_config),
-                )
+                ),
             )
         elif message.type() == MessageType.INTERFACE_SETTINGS:
             Client.logger.debug('Handling interface settings')
@@ -135,7 +140,8 @@ class Client(ShutdownListener):
             if error_occurred:
                 Client.logger.error(
                     "   ->> Could not validate the incoming input/output interfaces - there seems to be a mismatch "
-                    "between the client interfaces and the interfaces the server requires")
+                    "between the client interfaces and the interfaces the server requires",
+                )
 
             self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
@@ -152,7 +158,7 @@ class Client(ShutdownListener):
                 ESPChannelMessageJson.answer_with_payload(
                     request_message=message,
                     payload=data,
-                )
+                ),
             )
             self._init_image_renderer_connection()
 
@@ -167,7 +173,7 @@ class Client(ShutdownListener):
                 ESPChannelMessageJson.answer_with_payload(
                     request_message=message,
                     payload=data,
-                )
+                ),
             )
 
         elif message.type() == MessageType.SIMULATION_STOP:
@@ -198,4 +204,5 @@ class Client(ShutdownListener):
         if not started:
             Client.logger.warning(
                 f"The image renderer connection was not established within {timeout}s -> " +
-                "the simulation will execute but you may not receive any images from this client.")
+                "the simulation will execute but you may not receive any images from this client.",
+            )

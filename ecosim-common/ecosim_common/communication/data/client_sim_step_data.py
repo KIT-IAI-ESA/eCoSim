@@ -18,9 +18,10 @@ class ClientSimStepData(MessageData):
 
     @classmethod
     @override
-    def of_json(cls,
-                value: Dict[str, Any],
-                ) -> ClientSimStepData:
+    def of_json(
+        cls,
+        value: Dict[str, Any],
+    ) -> ClientSimStepData:
         return ClientSimStepData(
             interface_values=[ProtocolInterfaceValue.of_json(interface_value) for interface_value in value['interface_values']],
         )
