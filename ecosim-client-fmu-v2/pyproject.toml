@@ -4,23 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-client-fmu-v2"
-version = "0.11.1"
+version = "0.11.2"
 description = "The FMU v2 client for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: FMU client",
 #    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "art==6.5",
-    "ecosim-common>=0.11.1",
+    "ecosim-common>=0.11.2",
     "setuptools==80.8.0",
     "fmpy==0.3.25",
     "pydantic==2.11.9",
@@ -35,7 +35,7 @@ dev = [
     "pytest-cov==6.1.1",
     "pytest-html==4.1.1",
     "mypy==1.18.2",
-    "uv==0.8.22",
+    "uv==0.9.6",
 ]
 
 [tool.pytest.ini_options]
