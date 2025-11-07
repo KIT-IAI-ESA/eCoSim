@@ -15,6 +15,7 @@ SUBPROJECTS: List[tuple[Path, List[str]]] = [
     (REPO_ROOT / "integration-tests", []),
     (REPO_ROOT / "ecosim-client-fmu-v2", ["dev"]),
     (REPO_ROOT / "ecosim-client-fmu-v3", ["dev"]),
+    (REPO_ROOT / "ecosim-client-matlab", ["dev"]),
 ]
 
 

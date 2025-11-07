@@ -9,5 +9,5 @@ class ServerTimeMeasurementRepository(ABC):
     def put(
         self,
         server_time_measurement: ServerTimeMeasurement,
-    ):
+    ) -> None:
         pass

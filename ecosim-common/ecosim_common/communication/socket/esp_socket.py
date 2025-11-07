@@ -38,7 +38,7 @@ class ESPSocket(ShutdownListener):
         self._internal_socket = internal_socket
         self._connected: bool = is_raw_socket_connected(internal_socket)
 
-    def on_app_shutdown(self):
+    def on_app_shutdown(self) -> None:
         if not self._closed.is_set():
             ESPSocket._logger.info("Internal shutdown signal triggered - closing socket...")
             self.close()

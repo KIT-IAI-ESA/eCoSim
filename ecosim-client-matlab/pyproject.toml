@@ -65,6 +65,8 @@ exclude_lines = []
 
 [tool.mypy]
 mypy_path = "../ecosim-common"
+check_untyped_defs = true
+disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
