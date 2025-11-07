@@ -5,7 +5,7 @@ from ecosim_common.config.config_parser import ConfigParser
 from tests.tech.resource_utils import config_parser_for_resource
 
 
-def test_config_parser():
+def test_config_parser() -> None:
     config = config_parser_for_resource('config.ini')
     # SECTION 1
     assert config.get_string('Section1', 'string') == 'section1-string'
@@ -25,71 +25,71 @@ def test_config_parser():
     assert config.get_int('Section2', 'int') == 2222
 
 
-def test_empty_string():
+def test_empty_string() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     assert config.get_string('Section1', 'string_empty') == ''
 
 
-def test_empty_string_array():
+def test_empty_string_array() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     assert config.get_string_array('Section1', 'string_array_empty') == []
 
 
-def test_empty_bool():
+def test_empty_bool() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_bool('Section1', 'bool_empty')
 
 
-def test_invalid_bool():
+def test_invalid_bool() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_bool('Section1', 'bool_invalid')
 
 
-def test_non_existing_string():
+def test_non_existing_string() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_string('Section1', 'non_existing')
 
 
-def test_non_existing_bool():
+def test_non_existing_bool() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_bool('Section1', 'non_existing')
 
 
-def test_non_existing_int():
+def test_non_existing_int() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_int('Section1', 'non_existing')
 
 
-def test_invalid_int():
+def test_invalid_int() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_int('Section1', 'int_invalid')
 
 
-def test_non_existing_string_array():
+def test_non_existing_string_array() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_string_array('Section1', 'non_existing')
 
 
-def test_invalid_string_array():
+def test_invalid_string_array() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_string_array('Section1', 'string_array_invalid')
 
 
-def test_non_existing_section():
+def test_non_existing_section() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     with pytest.raises(config_parser.ConfigParserException):
         config.get_string_array('NON_EXISTING', 'string_empty')
 
 
-def test_string_to_bool():
+def test_string_to_bool() -> None:
     assert config_parser.ConfigParser.config_string_to_bool("true") is True
     assert config_parser.ConfigParser.config_string_to_bool("True") is True
     assert config_parser.ConfigParser.config_string_to_bool("TRUE") is True
@@ -104,40 +104,40 @@ def test_string_to_bool():
     assert config_parser.ConfigParser.config_string_to_bool("NO") is False
 
 
-def test_non_existing_string_with_default_value():
+def test_non_existing_string_with_default_value() -> None:
     config = config_parser_for_resource('edge_cases.ini')
     default_value = 'my_default_value'
     assert config.get_string('Section1', 'non_existing', default_value) == default_value
 
 
-def test_parse_string_array():
+def test_parse_string_array() -> None:
     string_array = '["hello", "world"]'
     actual = ConfigParser.config_string_to_string_array(string_array)
     assert actual[0] == "hello"
     assert actual[1] == "world"
 
 
-def test_parse_string_array_none_array():
+def test_parse_string_array_none_array() -> None:
     actual = ConfigParser.config_string_to_string_array(None)
     assert len(actual) == 0
 
 
-def test_parse_string_array_empty_string():
+def test_parse_string_array_empty_string() -> None:
     actual = ConfigParser.config_string_to_string_array("")
     assert len(actual) == 0
 
 
-def test_parse_string_array_without_quotes():
+def test_parse_string_array_without_quotes() -> None:
     actual = ConfigParser.config_string_to_string_array("[10, False, hello, 1.11]")
     assert actual == ['10', 'False', 'hello', '1.11']
 
 
-def test_parse_string_array_invalid_string():
+def test_parse_string_array_invalid_string() -> None:
     with pytest.raises(config_parser.ConfigParserException):
         ConfigParser.config_string_to_string_array("90,ajksaf")
 
 
-def test_parse_int_array():
+def test_parse_int_array() -> None:
     string_array = '[888, 222]'
     actual = ConfigParser.config_string_to_int_array(string_array)
     assert actual[0] == 888

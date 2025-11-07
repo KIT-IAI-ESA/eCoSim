@@ -68,11 +68,15 @@ exclude_lines = []
 
 [tool.mypy]
 mypy_path = "../ecosim-common"
-# Ignore fmpy library (not typed)
+check_untyped_defs = true
+disallow_untyped_defs = true
+
 [[tool.mypy.overrides]]
 module = [
+    # Ignore fmpy library (not typed)
     "fmpy",
     "fmpy.*",
+    # Ignore art library (not typed)
     "art",
 ]
 ignore_missing_imports = true

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -15,14 +17,14 @@ class SimulationState(Enum):
         cls,
         display_value: str,
         db_entry: str,
-    ):
+    ) -> SimulationState:
         obj = object.__new__(cls)
         obj._value_ = display_value  # Set the value for the enum member
         obj.display_value = display_value
         obj.db_entry = db_entry
         return obj
 
-    def __str__(self):
+    def __str__(self) -> str:
         # Custom string representation for the enum member
         return self.display_value
 
@@ -30,7 +32,7 @@ class SimulationState(Enum):
     def of_db_entry(
         cls,
         db_entry: str,
-    ):
+    ) -> SimulationState:
         try:
             normalized_entry = db_entry.strip().lower()
             return next(member for member in cls if member.db_entry == normalized_entry)

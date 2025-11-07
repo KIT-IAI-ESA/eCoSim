@@ -2,7 +2,7 @@ from datetime import datetime
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 
 
-def test_app_config_defaults():
+def test_app_config_defaults() -> None:
     app_config = AppConfig(
         passed_arguments=[],
         environment_variables={},
@@ -42,7 +42,7 @@ def test_app_config_defaults():
     assert app_config._args.transform_to_obj == datetime.fromtimestamp(1737028198)
 
 
-def test_app_config_overwrites():
+def test_app_config_overwrites() -> None:
     app_config = AppConfig(
         passed_arguments=[],
         environment_variables={"STRING_WITH_DEFAULT_VALUE": "override"},
@@ -60,7 +60,7 @@ def test_app_config_overwrites():
     assert app_config._args.string_with_default_value == "override"
 
 
-def test_app_config_transform_none():
+def test_app_config_transform_none() -> None:
     app_config = AppConfig(
         passed_arguments=[],
         cli_description="CLI description",
@@ -76,7 +76,7 @@ def test_app_config_transform_none():
     assert app_config._args.transform is None
 
 
-def test_app_config_flags():
+def test_app_config_flags() -> None:
     app_config = AppConfig(
         passed_arguments=["--flag-required"],
         environment_variables={},
@@ -98,7 +98,7 @@ def test_app_config_flags():
     assert app_config._args.flag_absent is False
 
 
-def test_app_config_passed_argument_override():
+def test_app_config_passed_argument_override() -> None:
     app_config = AppConfig(
         passed_arguments=["--value-override", "333"],
         cli_description="CLI description",

@@ -12,5 +12,5 @@ class ServerTimeMeasurementRepositoryInMemory(ServerTimeMeasurementRepository):
     def put(
         self,
         server_time_measurement: ServerTimeMeasurement,
-    ):
+    ) -> None:
         self._measurements.append(server_time_measurement)

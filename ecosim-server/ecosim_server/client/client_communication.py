@@ -29,7 +29,7 @@ class ClientCommunication:
     def broadcast(
         self,
         message: ESPChannelMessage,
-    ):
+    ) -> None:
         for client_state in self._client_states.client_states.values():
             if not client_state.connection:
                 ClientCommunication._logger.warning(f"Cannot broadcast to {client_state.client_id} because connection is not set.")
@@ -41,14 +41,14 @@ class ClientCommunication:
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
         callback: Callable[[BufferedClientMessage], None],
-    ):
+    ) -> None:
         self._client_message_buffer.on_message(client_ids, message_types, callback)
 
     def remove_on_message_callback(
         self,
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
-    ):
+    ) -> None:
         self._client_message_buffer.remove_on_message_callback(client_ids, message_types)
 
     def messages_of(
@@ -63,9 +63,13 @@ class ClientCommunication:
         current_step: int,
         client_id: ClientID,
         values: List[ProtocolInterfaceValue],
-    ):
-        def thread_task():
-            self._client_states.client_states[client_id].connection.send(
+    ) -> None:
+        def thread_task() -> None:
+            connection = self._client_states.client_states[client_id].connection
+            if connection is None:
+                ClientCommunication._logger.warning(f"Cannot send simulation step to {client_id} because connection is not set.")
+                return
+            connection.send(
                 ESPChannelMessageJson.create(
                     type=MessageType.SIMULATION_STEP,
                     correlation_id=CorrelationId.of_int(current_step),
