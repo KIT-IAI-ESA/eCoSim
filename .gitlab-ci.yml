@@ -22,7 +22,7 @@ cache:
     - "$VENV_DIR"
 
 .image-template:
-  image: astral/uv:python3.13-trixie-slim
+  image: astral/uv:python3.13-trixie
 
 .sub-project-template:
   extends: .image-template
@@ -38,13 +38,16 @@ cache:
     - cd ${PROJECT_DIR}
 
 precommit_hooks:
-  image: python:3.13
+  extends: .image-template
   needs: [ ]
   stage: static-code-analysis
   script:
-    - git config --global --add safe.directory $CI_PROJECT_DIR
-    - pip install pre-commit
-    - pre-commit run --all-files
+    - git config --global --add safe.directory $CI_PROJECT_DIR  # we need a git project for pre-commit hooks to work
+    - cd ${SRC_DIR}/dev
+    - python sync_projects.py
+    - cd ${SRC_DIR}
+    - uv sync --extra dev
+    - uv run pre-commit run --all-files
 
 my_py:
   needs: [ ]

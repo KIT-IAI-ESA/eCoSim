@@ -57,7 +57,7 @@ class SimulationExecutor:
     def execute(
         self,
         rendering_socket: RenderingSocket | None,
-    ):
+    ) -> None:
         self._rendering_socket = rendering_socket
         if not self._server_state.are_all_clients_connected_and_ready():
             raise RuntimeError("Tried to start simulation executor but not all clients are connected and ready")
@@ -71,7 +71,7 @@ class SimulationExecutor:
         self._stop_simulation()
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
-    def _stop_simulation(self):
+    def _stop_simulation(self) -> None:
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
 
@@ -87,7 +87,7 @@ class SimulationExecutor:
             sleep(2)
         SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
-    def _start_simulation_of_all_clients(self):
+    def _start_simulation_of_all_clients(self) -> None:
         SimulationExecutor.logger.info("Starting simulation on all clients and wait for successful start")
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START))
 
@@ -105,7 +105,7 @@ class SimulationExecutor:
             sleep(2)
         SimulationExecutor.logger.debug("Starting of simulations of all clients successful")
 
-    def _execute_steps(self):
+    def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
         while self._current_step < self.simulation_config.steps:
             self.logger.info(f"Step {self._current_step}: Executing step {self._current_step}")
@@ -123,7 +123,7 @@ class SimulationExecutor:
             self._handle_image_renderer()
             self._current_step += 1
 
-    def _execute_logical_delays(self):
+    def _execute_logical_delays(self) -> None:
         self.logger.debug(f"Step {self._current_step}: Execute logical delays")
         delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step()
         for delayed_time_steps in sorted(delays_by_delay_step.keys()):
@@ -141,7 +141,7 @@ class SimulationExecutor:
     def _execute_possible_parts(
         self,
         part_description: str,
-    ):
+    ) -> None:
         ready_for_execution_data_by_clients: dict[
             ClientID, List[ProtocolInterfaceValue],
         ] = self._current_step_data.get_ready_for_execution()
@@ -197,7 +197,7 @@ class SimulationExecutor:
         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
         handled_clients: dict[ClientID, bool],
         all_clients_handled_event: threading.Event,
-    ):
+    ) -> None:
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             self.logger.error(
@@ -221,7 +221,7 @@ class SimulationExecutor:
         if all(handled_clients.values()):
             all_clients_handled_event.set()
 
-    def _pace_throttle(self):
+    def _pace_throttle(self) -> None:
         if self._pace_sleep == 0:
             return
         time.sleep(self._pace_sleep)
@@ -229,7 +229,7 @@ class SimulationExecutor:
     def _handle_image_renderer(
         self,
         wait_for_finish_timeout: int | None = None,
-    ):
+    ) -> None:
         if not self._rendering_socket:
             return
         if not self._rendering_interval:

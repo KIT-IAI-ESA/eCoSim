@@ -247,7 +247,7 @@ def test_load() -> None:
     )
 
 
-def test_without_start_date():
+def test_without_start_date() -> None:
     config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_without_start_date.json'), 1221)
 
     assert config.step_size_in_ms == 60000
@@ -255,7 +255,7 @@ def test_without_start_date():
     assert config.start_date == datetime(year=2024, month=1, day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
 
 
-def test_date_time_for_step():
+def test_date_time_for_step() -> None:
     config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
     assert config.step_size_in_ms == 60000
     assert config.start_date == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=7, microsecond=123000, tzinfo=timezone.utc)
@@ -271,7 +271,7 @@ def test_date_time_for_step():
     assert step_0_5 == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=37, microsecond=123000, tzinfo=timezone.utc)
 
 
-def test_step_size_default():
+def test_step_size_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -280,7 +280,7 @@ def test_step_size_default():
     assert config.step_size_in_ms == 60000
 
 
-def test_step_size_override():
+def test_step_size_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -289,7 +289,7 @@ def test_step_size_override():
     assert config.step_size_in_ms == 833
 
 
-def test_pace_default():
+def test_pace_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -297,7 +297,7 @@ def test_pace_default():
     assert config.pace == 1.0
 
 
-def test_pace_override():
+def test_pace_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,

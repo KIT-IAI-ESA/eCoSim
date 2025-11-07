@@ -13,7 +13,7 @@ class SimulationStateRepositoryInMemory(SimulationStateRepository):
     def update(
         self,
         state: SimulationState,
-    ):
+    ) -> None:
         self._states.append(state)
 
     def current(self) -> SimulationState:

@@ -9,7 +9,7 @@ class SimulationStateRepository(ABC):
     def update(
         self,
         state: SimulationState,
-    ):
+    ) -> None:
         pass
 
     @abstractmethod
