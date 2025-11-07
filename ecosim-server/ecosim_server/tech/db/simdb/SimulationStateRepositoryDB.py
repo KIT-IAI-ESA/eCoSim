@@ -28,7 +28,7 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
     def update(
         self,
         state: SimulationState,
-    ):
+    ) -> None:
         with self._thread_lock:
             self._db_connection.update(
                 SimulationStateDTO(
