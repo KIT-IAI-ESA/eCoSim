@@ -5,7 +5,7 @@ from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.tech.db.simdb.MeasurementRepositoryDB import MeasurementRepositoryDB
+from ecosim_server.tech.db.simdb.measurement_repository_db import MeasurementRepositoryDB
 
 
 @dataclass(frozen=True)

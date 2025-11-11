@@ -6,7 +6,7 @@ from art import tprint
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
-from ecosim_server.tech.db.ServerTimeMeasurementRepositoryDB import ServerTimeMeasurementRepositoryDB
+from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementRepositoryDB
 from ecosim_server.tech.db.db_connections import DBConnections
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import init_logger
@@ -15,7 +15,7 @@ from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.server import Server
-from ecosim_server.tech.db.simdb.SimulationStateRepositoryDB import SimulationStateRepositoryDB
+from ecosim_server.tech.db.simdb.simulation_state_repository_db import SimulationStateRepositoryDB
 
 
 def main() -> None:
