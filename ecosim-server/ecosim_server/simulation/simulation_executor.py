@@ -57,6 +57,7 @@ class SimulationExecutor:
     def execute(
         self,
         rendering_socket: RenderingSocket | None,
+        start_step: int = 0,
     ) -> None:
         self._rendering_socket = rendering_socket
         if not self._server_state.are_all_clients_connected_and_ready():
@@ -65,6 +66,7 @@ class SimulationExecutor:
         self._start_simulation_of_all_clients()
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_START)
         self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_EXECUTION)
+        self._current_step = start_step
         self._execute_steps()
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_EXECUTION)
         self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_STOP)

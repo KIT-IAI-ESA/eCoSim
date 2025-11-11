@@ -8,7 +8,7 @@ from ecosim_common.communication.channel.esp_channel_message_json import ESPChan
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from ecosim_common.communication.data.SimulationStepRequest import SimulationStepRequest
+from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_state import ClientStates

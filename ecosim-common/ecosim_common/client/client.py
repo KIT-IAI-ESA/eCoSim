@@ -12,7 +12,7 @@ from ecosim_common.communication.channel.esp_channel_message_json import ESPChan
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.data.SimulationStepRequest import SimulationStepRequest
+from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.communication.socket.socket_connector import SocketConnector
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.simulation.interface_id import InterfaceId
