@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict
+from typing import Dict, List
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
@@ -10,7 +10,8 @@ from ecosim_common.communication.channel.esp_channel_connector import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.communication.socket.socket_connector import SocketConnector
@@ -113,75 +114,21 @@ class Client(ShutdownListener):
     ) -> None:
         Client.logger.debug('Received and handling message')
         if message.type() == MessageType.CLIENT_META_DATA_REQUEST:
-            Client.logger.debug('Handling poss config request')
-            self._channel.send(
-                ESPChannelMessageJson.answer_with_payload(
-                    request_message=message,
-                    payload=self._client_config.meta_data(),
-                ),
-            )
+            self._handle_client_meta_data_request(message)
         elif message.type() == MessageType.INTERFACE_REQUEST:
-            Client.logger.debug('Handling interface request')
-            self._channel.send(
-                ESPChannelMessageJson.answer_with_payload(
-                    request_message=message,
-                    payload=ModelInterfaceIds.of_interface_config(self._client_config),
-                ),
-            )
+            self._handle_interface_requests(message)
         elif message.type() == MessageType.INTERFACE_SETTINGS:
-            Client.logger.debug('Handling interface settings')
-            server_interface_settings: ServerInterfaceSettings = message.payload(ServerInterfaceSettings)
-
-            # check if config matches actual interfaces
-            config_validated = self._client_config.interfaces_config().validate_config_with_server(server_interface_settings)
-            self._execution_config.set_server_interface_settings(server_interface_settings)
-
-            error_occurred = not config_validated
-            if error_occurred:
-                Client.logger.error(
-                    "   ->> Could not validate the incoming input/output interfaces - there seems to be a mismatch "
-                    "between the client interfaces and the interfaces the server requires",
-                )
-
-            self._channel.send(ESPChannelMessageJson.empty_answer(message))
-
+            self._handle_interface_settings(message)
         elif message.type() == MessageType.SIMULATION_SETUP:
-            Client.logger.debug('Handling simulation setup')
-            self._execution_config.set_step_size_in_ms(message.payload(SimulationSetupMessage).step_size_in_ms)
-            Client.logger.debug(f'  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}')
-            self._channel.send(ESPChannelMessageJson.empty_answer(message))
-
+            self._handle_simulation_setup(message)
         elif message.type() == MessageType.SIMULATION_START:
-            Client.logger.debug('Handling start simulation')
-            data = self.on_simulation_start()
-            self._channel.send(
-                ESPChannelMessageJson.answer_with_payload(
-                    request_message=message,
-                    payload=data,
-                ),
-            )
-            self._init_image_renderer_connection()
-
+            self._handle_simulation_start(message)
         elif message.type() == MessageType.SIMULATION_STEP:
-            Client.logger.info('Handling simulation step')
-            received_inputs: Dict[InterfaceId, InterfaceValueType] = {}
-            simulation_step_request: SimulationStepRequest = message.payload(SimulationStepRequest)
-            for server_inputs in simulation_step_request.inputs:
-                received_inputs[server_inputs.name] = server_inputs.value
-            data = self.on_simulation_step(received_inputs, self._execution_config.step_size_in_seconds())
-            self._channel.send(
-                ESPChannelMessageJson.answer_with_payload(
-                    request_message=message,
-                    payload=data,
-                ),
-            )
-
+            self._handle_simulation_step(message)
+        elif message.type() == MessageType.SIMULATION_STEP_BATCH:
+            self._handle_simulation_step_batch(message)
         elif message.type() == MessageType.SIMULATION_STOP:
-            Client.logger.debug("Handle stop simulation")
-            self.on_simulation_stop()
-            self._channel.send(ESPChannelMessageJson.empty_answer(message))
-            self._is_finished = True
-
+            self._handle_simulation_stop(message)
         else:
             Client.logger.error(f"Unknown message type: '{message.type()}'")
 
@@ -206,3 +153,116 @@ class Client(ShutdownListener):
                 f"The image renderer connection was not established within {timeout}s -> " +
                 "the simulation will execute but you may not receive any images from this client.",
             )
+
+    def _handle_client_meta_data_request(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug('Handling poss config request')
+        self._channel.send(
+            ESPChannelMessageJson.answer_with_payload(
+                request_message=message,
+                payload=self._client_config.meta_data(),
+            ),
+        )
+
+    def _handle_interface_requests(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug('Handling interface request')
+        self._channel.send(
+            ESPChannelMessageJson.answer_with_payload(
+                request_message=message,
+                payload=ModelInterfaceIds.of_interface_config(self._client_config),
+            ),
+        )
+
+    def _handle_interface_settings(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug('Handling interface settings')
+        server_interface_settings: ServerInterfaceSettings = message.payload(ServerInterfaceSettings)
+
+        # check if config matches actual interfaces
+        config_validated = self._client_config.interfaces_config().validate_config_with_server(server_interface_settings)
+        self._execution_config.set_server_interface_settings(server_interface_settings)
+
+        error_occurred = not config_validated
+        if error_occurred:
+            Client.logger.error(
+                "   ->> Could not validate the incoming input/output interfaces - there seems to be a mismatch "
+                "between the client interfaces and the interfaces the server requires",
+            )
+
+        self._channel.send(ESPChannelMessageJson.empty_answer(message))
+
+    def _handle_simulation_setup(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug('Handling simulation setup')
+        self._execution_config.set_step_size_in_ms(message.payload(SimulationSetupMessage).step_size_in_ms)
+        Client.logger.debug(f'  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}')
+        self._channel.send(ESPChannelMessageJson.empty_answer(message))
+
+    def _handle_simulation_start(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug('Handling start simulation')
+        data = self.on_simulation_start()
+        self._channel.send(
+            ESPChannelMessageJson.answer_with_payload(
+                request_message=message,
+                payload=data,
+            ),
+        )
+        self._init_image_renderer_connection()
+
+    def _handle_simulation_step(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.info('Handling simulation step')
+        simulation_step_request: SimulationStepRequest = message.payload(SimulationStepRequest)
+        received_inputs = self._protocol_interface_value_to_dict(simulation_step_request.inputs)
+        data = self.on_simulation_step(received_inputs, self._execution_config.step_size_in_seconds())
+        self._channel.send(
+            ESPChannelMessageJson.answer_with_payload(
+                request_message=message,
+                payload=data,
+            ),
+        )
+
+    def _protocol_interface_value_to_dict(
+        self,
+        values: List[ProtocolInterfaceValue],
+    ) -> dict[InterfaceId, InterfaceValueType]:
+        transformed: Dict[InterfaceId, InterfaceValueType] = {}
+        for server_inputs in values:
+            transformed[server_inputs.name] = server_inputs.value
+        return transformed
+
+    def _handle_simulation_step_batch(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.info('Handling simulation step batch')
+        simulation_step_batch_request: SimulationStepBatchRequest = message.payload(SimulationStepBatchRequest)
+        for i, inputs in enumerate(simulation_step_batch_request.inputs.values()):
+            Client.logger.debug(f"Executing batch step {i}")
+            values = self._protocol_interface_value_to_dict(inputs)
+            result = self.on_simulation_step(values, simulation_step_batch_request.step_size_ms)
+            assert result  # remove this line
+            # TODO CONTINUE HERE
+
+    def _handle_simulation_stop(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug("Handle stop simulation")
+        self.on_simulation_stop()
+        self._channel.send(ESPChannelMessageJson.empty_answer(message))
+        self._is_finished = True
