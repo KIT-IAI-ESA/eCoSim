@@ -38,3 +38,14 @@ If you use PyCharm as the IDE you should do the following steps:
         - set up dependencies
             - Settings -> Project -> Project Dependencies -> [Subproject] -> select the needed projects
         - mark the root of each subproject as `Source`
+
+## Troubleshooting
+
+### Test configuration does not work
+
+- with PyCharm, the test configuration should work after you synced the projects with `uv`
+- if it does not, please check the settings of the integrated tools
+  - Settings -> Python -> Integrated Tools
+    - select `pytest` as default test runner
+    - if you get a warning that `pytest runner` is not found, click the `Fix` button
+    ![remove content root](fix_pytest.png)
