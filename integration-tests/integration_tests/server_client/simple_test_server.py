@@ -11,9 +11,9 @@ from ecosim_server.config.simulation_config import SimulationConfig, ClientSimul
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.server import Server, AbstractServer
-from ecosim_server.tech.db.ServerTimeMeasurementRepositoryDB import ServerTimeMeasurementRepositoryDB
+from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementRepositoryDB
 from ecosim_server.tech.db.db_connections import DBConnections
-from ecosim_server.tech.db.simdb.SimulationStateRepositoryDB import SimulationStateRepositoryDB
+from ecosim_server.tech.db.simdb.simulation_state_repository_db import SimulationStateRepositoryDB
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
