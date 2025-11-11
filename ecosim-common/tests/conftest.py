@@ -16,7 +16,7 @@ def setup_logging() -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def teardown_shutdown_manager() -> Generator[None]:
+def teardown_shutdown_manager() -> Generator[None, None, None]:
     """runs once after all tests"""
     yield
     ShutdownManager().set_shutdown_at_application_end()
