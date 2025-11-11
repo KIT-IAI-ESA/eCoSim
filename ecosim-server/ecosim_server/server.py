@@ -59,8 +59,6 @@ class Server(AbstractServer):
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket(
             _connection_address=self._server_config.server.connection_address(),
         )
-        # self.socket = ServerSocket(
-        #     connection_address=ConnectionAddress(ip=server_config.server.host, port=server_config.server.port))
         self._rendering_socket: RenderingSocket | None = None
 
     @override
