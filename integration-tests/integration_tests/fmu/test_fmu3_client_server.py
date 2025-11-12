@@ -1,3 +1,5 @@
+import pytest
+import sys
 import threading
 from datetime import datetime
 from typing import Tuple
@@ -20,6 +22,7 @@ from integration_tests.tech.db.measurement_repository_in_memory import Measureme
 from integration_tests.tech.resource_utils import config_parser_for_resource
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
 def test_fmu3_client_server() -> None:
     mock_client_interface = SimulatorInterfaceId(
         simulator_name="Mock_1",

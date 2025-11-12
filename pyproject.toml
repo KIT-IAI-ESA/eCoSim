@@ -20,4 +20,5 @@ dev = [
     "pre-commit",
     "mypy==1.18.2",
     "pytest==8.4.2",
+    "pip==25.3",
 ]

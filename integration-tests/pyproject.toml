@@ -32,6 +32,7 @@ dependencies = [
     "types-docker==7.1.0.20250916",
     "uv==0.9.6",
     "websockets==15.0.1",
+    "pip==25.3",
 ]
 
 [tool.uv.sources]
