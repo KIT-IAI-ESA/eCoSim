@@ -21,4 +21,5 @@ dev = [
     "mypy==1.18.2",
     "pytest==8.4.2",
     "pip==25.3", # PyCharm mypy plugin needs pip
+    "ruff==0.14.4",
 ]
