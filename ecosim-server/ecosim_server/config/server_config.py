@@ -37,8 +37,8 @@ class ServerConfig:
             header="SERVER CONFIG",
             value_pairs={
                 "Server address": f"{self.server.host}:{self.server.port}",
-                "Image renderer socket": f"{f"{self.server.host}:{self.server.image_renderer_port}" if self.server.image_renderer_port else "N/A"}",
-                "Image renderer interval": f"{self.server.image_renderer_interval if self.server.image_renderer_interval else "N/A"}",
+                "Image renderer socket": f"{f'{self.server.host}:{self.server.image_renderer_port}' if self.server.image_renderer_port else 'N/A'}",
+                "Image renderer interval": f"{self.server.image_renderer_interval if self.server.image_renderer_interval else 'N/A'}",
                 "Database server": f"{self.database.host}:{self.database.port} ({self.database.type})",
                 "Database name": self.database.name,
                 "Database schema": self.database.schema,
@@ -52,19 +52,31 @@ class MainConfig:
     port: int
     image_renderer_port: int | None = None
     image_renderer_interval: int | None = None
+    restore_simulation_run: bool = False
 
     @staticmethod
     def of_config_parser(
-            config_parser: ConfigParser,
-            config_override: ServerConfigOverride = ServerConfigOverride(server_host=None, server_port=None),
-            image_renderer_port: int | None = None,
-            image_renderer_interval: int | None = None,
+        config_parser: ConfigParser,
+        config_override: ServerConfigOverride = ServerConfigOverride(
+            server_host=None,
+            server_port=None,
+            restore_simulation_run=False,
+        ),
+        image_renderer_port: int | None = None,
+        image_renderer_interval: int | None = None,
     ) -> MainConfig:
         return MainConfig(
             port=MainConfig._get_port(config_parser, config_override),
-            host=config_override.server_host or config_parser.get_string('server', 'host', default='localhost'),
+            host=config_override.server_host
+            or config_parser.get_string("server", "host", default="localhost"),
             image_renderer_port=image_renderer_port,
             image_renderer_interval=image_renderer_interval,
+            restore_simulation_run=config_override.restore_simulation_run
+            or config_parser.get_bool(
+                "server",
+                "restore_simulation_run",
+                default=False,
+            ),
         )
 
     @staticmethod
@@ -73,18 +85,23 @@ class MainConfig:
         config_override: ServerConfigOverride,
     ) -> int:
         # This method is mainly responsible for getting a meaningful info log if the port is overridden
-        if config.contains('server', 'port') and config_override.server_port is not None:
-            config_port = config.get_int('server', 'port')
+        if (
+            config.contains("server", "port")
+            and config_override.server_port is not None
+        ):
+            config_port = config.get_int("server", "port")
             ServerConfig.logger.info(
-                f'Port was passed as an CLI argument. The port in the config file ({config_port}) is therefor '
-                f'overridden with {config_override.server_port}',
+                f"Port was passed as an CLI argument. The port in the config file ({config_port}) is therefor "
+                f"overridden with {config_override.server_port}",
             )
             return config_override.server_port
         if config_override.server_port is not None:
             return config_override.server_port
-        if config.contains('server', 'port'):
-            return config.get_int('server', 'port')
-        raise Exception('Server port is neither provided by CLI args nor by config file.')
+        if config.contains("server", "port"):
+            return config.get_int("server", "port")
+        raise Exception(
+            "Server port is neither provided by CLI args nor by config file.",
+        )
 
     def connection_address(self) -> ConnectionAddress:
         return ConnectionAddress(
@@ -112,15 +129,19 @@ class DatabaseConfig:
         db_overwrite: DbConfigOverwrite = DbConfigOverwrite(),
     ) -> DatabaseConfig:
         return cls(
-            host=db_overwrite.host(default=config.get_string('database', 'server')),
-            port=int(db_overwrite.port(default=config.get_string('database', 'port'))),
-            ssl=db_overwrite.ssl(default=config.get_bool('database', 'ssl')),
+            host=db_overwrite.host(default=config.get_string("database", "server")),
+            port=int(db_overwrite.port(default=config.get_string("database", "port"))),
+            ssl=db_overwrite.ssl(default=config.get_bool("database", "ssl")),
             name=db_overwrite.name(default="sim_control"),
             schema=db_overwrite.schema(default="sim_control"),
-            username=db_overwrite.user(default=config.get_string('database', 'username')),
-            password=db_overwrite.user_password(default=config.get_string('database', 'password')),
+            username=db_overwrite.user(
+                default=config.get_string("database", "username"),
+            ),
+            password=db_overwrite.user_password(
+                default=config.get_string("database", "password"),
+            ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
-            type=config.get_string('database', 'type', 'postgres'),
+            type=config.get_string("database", "type", "postgres"),
         )
 
     def generate_sqlalchemy_db_url(self) -> str:

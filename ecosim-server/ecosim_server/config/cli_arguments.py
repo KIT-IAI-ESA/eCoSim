@@ -11,7 +11,6 @@ from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 
 
 class CLIArguments(AppConfig):
-
     def __init__(
         self,
         passed_arguments: List[Any] | None = None,
@@ -24,13 +23,13 @@ class CLIArguments(AppConfig):
                     name="server-config",
                     required=True,
                     help_text="The path to the config file. This must be relative to the call path or it can be an "
-                              "absolute path.",
+                    "absolute path.",
                 ),
                 AppConfigParameter(
                     name="simulation-config",
                     required=True,
                     help_text="The path to the simulation config file. This must be relative to the call path or it can"
-                              " be an absolute path.",
+                    " be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="host",
@@ -111,8 +110,16 @@ class CLIArguments(AppConfig):
                     default_value=None,
                     required=False,
                     transform=lambda x: int(x),
-                    help_text="The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. " +
-                              "If not set no images will be sent.",
+                    help_text="The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. "
+                    + "If not set no images will be sent.",
+                ),
+                AppConfigParameter(
+                    name="restore-simulation-run",
+                    default_value=None,
+                    required=False,
+                    is_flag=True,
+                    help_text="If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous "
+                    + "simulation run, the simulation is executed normally.",
                 ),
             ],
         )
@@ -167,6 +174,7 @@ class CLIArguments(AppConfig):
         return ServerConfigOverride(
             server_host=self._args.host,
             server_port=self._args.port,
+            restore_simulation_run=self._args.restore_simulation_run,
         )
 
 
@@ -174,3 +182,4 @@ class CLIArguments(AppConfig):
 class ServerConfigOverride:
     server_host: str | None
     server_port: int | None
+    restore_simulation_run: bool | None

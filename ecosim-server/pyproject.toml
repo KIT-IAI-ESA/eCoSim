@@ -78,5 +78,6 @@ module = [
     "fmpy.*",
     # Ignore art library (not typed)
     "art",
+    "sqlalchemy",
 ]
 ignore_missing_imports = true
