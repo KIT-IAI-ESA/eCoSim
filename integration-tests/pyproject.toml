@@ -29,10 +29,12 @@ dependencies = [
     "pytest-mock==3.15.1",
     "pytest==8.3.5",
     "testcontainers[postgres]==4.13.0",
-    "types-docker==7.1.0.20250916",
+    "types-docker==7.1.0.20251009",
     "uv==0.9.6",
     "websockets==15.0.1",
     "pip==25.3",
+    "psycopg2==2.9.11",
+    "types-psycopg2==2.9.21.20251012",
 ]
 
 [tool.uv.sources]
@@ -41,7 +43,7 @@ ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server"]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v3"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
