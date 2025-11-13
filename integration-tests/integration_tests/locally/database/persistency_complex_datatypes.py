@@ -43,7 +43,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
 
 @pytest.fixture(scope="function", autouse=True)
 def db_connection(postgres_container: PostgresContainer) -> Generator[connection, Any, None]:
-    connection = psycopg2.connect(
+    conn = psycopg2.connect(
         host=postgres_container.get_container_host_ip(),
         port=postgres_container.get_exposed_port(5432),
         database=postgres_container.dbname,
@@ -52,9 +52,9 @@ def db_connection(postgres_container: PostgresContainer) -> Generator[connection
         cursor_factory=DictCursor,
     )
     try:
-        yield connection
+        yield conn
     finally:
-        connection.close()
+        conn.close()
 
 
 def test_db_persistence_float(
