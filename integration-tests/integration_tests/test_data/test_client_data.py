@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from typing import List
 
@@ -23,6 +25,7 @@ class TestClientData:
         interface_name: str,
         unit: str,
         interface_type: InterfaceType,
+        connected_interface: TestModelInterface | None = None,
     ) -> TestModelInterface:
         interface = TestModelInterface(
             simulator_name=self.simulator_name,
@@ -30,7 +33,10 @@ class TestClientData:
             interface_name=interface_name,
             unit=unit,
             interface_type=interface_type,
+            connected_interface=connected_interface,
         )
+        if connected_interface is not None:
+            connected_interface.connected_interface = interface
         self.interfaces.append(interface)
         return interface
 
@@ -54,9 +60,15 @@ class TestClientData:
             ],
         )
 
-    def interface_protocol_value_of(  # type: ignore[empty-body]
+    def interface_protocol_value_of(
         self,
         interface_name: str,
         value: InterfaceValueType,
     ) -> ProtocolInterfaceValue:
-        pass
+        for interface in self.interfaces:
+            if interface.interface_name == interface_name:
+                return interface.to_protocol_interface_value(value)
+        available = ", ".join(i.interface_name for i in self.interfaces)
+        raise ValueError(
+            f"Interface '{interface_name}' not found. Available interfaces: [{available}]",
+        )

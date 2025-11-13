@@ -16,7 +16,7 @@ from ecosim_common.tech.datetime.date_time_to_millis import (
 
 @dataclass(frozen=True)
 class SimulationStepBatchRequest(MessageData):
-    step_size_ms: int
+    start_datetime: datetime.datetime
     inputs: dict[datetime.datetime, List[ProtocolInterfaceValue]]
 
     @classmethod
@@ -38,14 +38,16 @@ class SimulationStepBatchRequest(MessageData):
         }
 
         return SimulationStepBatchRequest(
-            step_size_ms=value["step_size_ms"],
+            start_datetime=millis_since_unix_epoch_to_date_time(
+                value["start_datetime"],
+            ),
             inputs=parsed_inputs,
         )
 
     @override
     def to_json(self) -> Dict[str, Any]:
         return {
-            "step_size_ms": self.step_size_ms,
+            "start_datetime": date_time_to_millis_since_unix_epoch(self.start_datetime),
             "inputs": {
                 date_time_to_millis_since_unix_epoch(dt): [
                     interface_value.to_json() for interface_value in interface_values

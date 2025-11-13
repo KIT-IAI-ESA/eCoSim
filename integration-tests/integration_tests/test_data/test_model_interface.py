@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -6,7 +8,10 @@ from ecosim_common.communication.data.protocol_interface_value import (
 )
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer
+from ecosim_common.config.model_interface_server import (
+    ModelInterfaceServer,
+    ConnectedToData,
+)
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 
@@ -18,6 +23,7 @@ class TestModelInterface:
     interface_name: str
     unit: str
     interface_type: InterfaceType
+    connected_interface: TestModelInterface | None = None
 
     def to_simulator_interface_id(self) -> SimulatorInterfaceId:
         return SimulatorInterfaceId(
@@ -29,6 +35,10 @@ class TestModelInterface:
         )
 
     def to_model_interface_server(self) -> ModelInterfaceServer:
+        connected_to = []
+        if self.connected_interface is not None:
+            connected_to = [self.connected_interface.to_connected_data()]
+
         return ModelInterfaceServer(
             simulator_interface_id=self.to_simulator_interface_id(),
             name=self.interface_name,
@@ -36,7 +46,7 @@ class TestModelInterface:
             description=f"Interface {self.interface_name} of {self.model_name}",
             interface_type=self.interface_type,
             required=True,
-            connected_to=[],
+            connected_to=connected_to,
         )
 
     def to_model_interface_client(self) -> ModelInterfaceClient:
@@ -59,4 +69,10 @@ class TestModelInterface:
         return ProtocolInterfaceValue(
             name=self.interface_name,
             value=value,
+        )
+
+    def to_connected_data(self) -> ConnectedToData:
+        return ConnectedToData(
+            simulator_interface_id=self.to_simulator_interface_id(),
+            delay_path=[],
         )

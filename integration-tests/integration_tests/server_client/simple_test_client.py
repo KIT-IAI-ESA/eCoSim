@@ -54,15 +54,15 @@ class SimpleTestClient(Client):
             [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
             ClientSimStepData,
         ],
-        test_data: TestClientData,
+        test_client_data: TestClientData,
     ) -> SimpleTestClient:
         return SimpleTestClient(
             client_config=TestClientConfig(
                 server_host=server_host,
                 server_port=server_port,
-                simulator_name=test_data.simulator_name,
-                model_name=test_data.model_name,
-                interface_config=test_data.to_client_interface_config(),
+                simulator_name=test_client_data.simulator_name,
+                model_name=test_client_data.model_name,
+                interface_config=test_client_data.to_client_interface_config(),
             ),
             on_simulation_step_return=on_simulation_step_return,
         )
