@@ -196,7 +196,7 @@ class Server(AbstractServer):
             ESPChannelMessageJson.create(
                 type=MessageType.SIMULATION_STEP_BATCH,
                 payload=SimulationStepBatchRequest(
-                    step_size_ms=self._simulation_config.step_size_in_ms,
+                    start_datetime=self._simulation_config.start_date,
                     inputs={
                         entry.timestamp: list(entry.values) for entry in existing_values
                     },

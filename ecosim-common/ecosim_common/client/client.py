@@ -37,6 +37,9 @@ from ecosim_common.communication.data.server_interface_settings import (
 from ecosim_common.communication.data.simulation_setup_message import (
     SimulationSetupMessage,
 )
+from ecosim_common.tech.datetime.date_time_to_millis import (
+    date_time_to_millis_since_unix_epoch,
+)
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
@@ -291,34 +294,43 @@ class Client(ShutdownListener):
         simulation_step_batch_request: SimulationStepBatchRequest = message.payload(
             SimulationStepBatchRequest,
         )
-
-        # TODO SORT THE INPUTS!
-        # ATTENTION: the received values are the outputs, not the inputs
-        for i, inputs in enumerate(simulation_step_batch_request.inputs.values()):
-            Client.logger.debug(f"Executing batch step {i}")
+        last_timestamp = date_time_to_millis_since_unix_epoch(
+            simulation_step_batch_request.start_datetime,
+        )
+        for step_datetime, inputs in sorted(
+            simulation_step_batch_request.inputs.items(),
+        ):
+            Client.logger.debug(f"Executing batch step {step_datetime}")
             values = self._protocol_interface_value_to_dict(inputs)
+            current_timestamp = date_time_to_millis_since_unix_epoch(step_datetime)
+            # TODO: check why on_simulation_step executes even if the input interface value is missing
             client_step_data = self.on_simulation_step(
                 values,
-                simulation_step_batch_request.step_size_ms / 1000,
+                (current_timestamp - last_timestamp) / 1000,
             )
-            for interface_value in client_step_data.interface_values:
-                matching_input = next(
-                    (inp for inp in inputs if inp.name == interface_value.name),
+            last_timestamp = current_timestamp
+            for calculated_interface_value in client_step_data.interface_values:
+                matching_interface = next(
+                    (
+                        inp
+                        for inp in inputs
+                        if inp.name == calculated_interface_value.name
+                    ),
                     None,
                 )
-                if matching_input is None:
+                if matching_interface is None:
                     Client.logger.warning(
-                        f"Batch step {i}: No matching input found for interface '{interface_value.name}'",
+                        f"Batch step {step_datetime}: No matching interface found for interface '{calculated_interface_value.name}'",
                     )
                     continue
-                if matching_input.value == interface_value.value:
+                if matching_interface.value == calculated_interface_value.value:
                     Client.logger.debug(
-                        f"Batch step {i}: Value matched for interface '{interface_value.name}'",
+                        f"Batch step {step_datetime}: Value matched for interface '{calculated_interface_value.name}'",
                     )
                 else:
                     Client.logger.error(
-                        f"Batch step {i}: Value mismatch for interface '{interface_value.name}': "
-                        f"input={matching_input.value}, output={interface_value.value}",
+                        f"Batch step {step_datetime}: Value mismatch for interface '{calculated_interface_value.name}': "
+                        f"expected={matching_interface.value}, actual={calculated_interface_value.value}",
                     )
 
     def _handle_simulation_stop(

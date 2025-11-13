@@ -2,9 +2,6 @@ import threading
 from datetime import datetime, timedelta
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import (
-    ProtocolInterfaceValue,
-)
 from ecosim_common.config.interface_type import InterfaceType
 
 from integration_tests.server_client.simple_test_client import SimpleTestClient
@@ -37,7 +34,7 @@ def test_client_server_batch_steps() -> None:
         model_name="Model_1",
         interfaces=[],
     )
-    client_data_1.add_interface(
+    client_1_input_interface = client_data_1.add_interface(
         interface_name="Interface_Input_1",
         unit="float64_matrix",
         interface_type=InterfaceType.INPUT,
@@ -48,15 +45,16 @@ def test_client_server_batch_steps() -> None:
         interface_type=InterfaceType.OUTPUT,
     )
 
-    client2 = TestClientData(
+    client_data_2 = TestClientData(
         simulator_name="Simulator_2",
         model_name="Model_2",
         interfaces=[],
     )
-    client2.add_interface(
+    client_data_2.add_interface(
         interface_name="Interface_Output_2",
         unit="float64_matrix",
         interface_type=InterfaceType.OUTPUT,
+        connected_interface=client_1_input_interface,
     )
 
     server = generate_simple_test_server(
@@ -68,62 +66,74 @@ def test_client_server_batch_steps() -> None:
         restore_simulation_run=True,
         clients=[
             client_data_1.to_client_simulator_config(),
-            client2.to_client_simulator_config(),
+            client_data_2.to_client_simulator_config(),
         ],
     )
 
-    client = SimpleTestClient.of_test_data(
+    client_1 = SimpleTestClient.of_test_data(
         server_host=server_host,
         server_port=server_port,
-        test_data=client_data_1,
+        test_client_data=client_data_1,
         on_simulation_step_return=lambda _self,
         received_inputs,
         steps: ClientSimStepData(
             interface_values=[
-                # client_interface_output.to_protocol_interface_value(
-                #     _self.accumulated_step_sizes_in_seconds.value,
-                # ),
+                client_data_1.interface_protocol_value_of(
+                    "Interface_Output_1",
+                    _self.accumulated_step_sizes_in_seconds.value,
+                ),
+            ],
+        ),
+    )
+    client_2 = SimpleTestClient.of_test_data(
+        server_host=server_host,
+        server_port=server_port,
+        test_client_data=client_data_2,
+        on_simulation_step_return=lambda _self,
+        received_inputs,
+        steps: ClientSimStepData(
+            interface_values=[
+                client_data_2.interface_protocol_value_of(
+                    "Interface_Output_2",
+                    -_self.accumulated_step_sizes_in_seconds.value,
+                ),
             ],
         ),
     )
     step_size_in_seconds = step_size_in_ms / 1000
     client_measurement_repository = server.repositories.measurement_repository(
-        client_id=client._client_config.client_id(),
+        client_id=client_1.client_id,
     )
     for i in range(5):
         entry_date = simulation_start_date + timedelta(seconds=i * step_size_in_seconds)
         client_measurement_repository.add(
-            (
-                ProtocolInterfaceValue(
-                    name="TestInterface",
-                    value=i + step_size_in_seconds,
+            values=(
+                client_data_1.interface_protocol_value_of(
+                    interface_name="Interface_Output_1",
+                    value=i * step_size_in_seconds,
                 ),
             ),
-            entry_date,
+            timestamp=entry_date,
         )
 
     server_thread = threading.Thread(target=server.start)
     server_thread.daemon = True
     server_thread.start()
 
-    client.start()
+    client_1.start()
+    client_2.start()
 
-    server_thread.join(timeout=10)
+    server_thread.join(timeout=4)
 
     client_measurement_repository = server.repositories.measurement_repository(
-        client_id=client._client_config.client_id(),
+        client_id=client_1._client_config.client_id(),
     )
-    (ProtocolInterfaceValue(name="TestInterface", value=2.5),)
 
     if not isinstance(client_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    (
-        client_measurement_repository.assert_entry_count(steps).assert_for_each_record(
-            lambda timestamp, values: (
-                timestamp - simulation_start_date
-            ).total_seconds()
-            + step_size_in_seconds
-            == values[0].value,
-        )
+    client_measurement_repository.assert_entry_count(steps).assert_for_each_record(
+        lambda timestamp, values: (timestamp - simulation_start_date).total_seconds()
+        + step_size_in_seconds
+        == values[0].value,
     )
