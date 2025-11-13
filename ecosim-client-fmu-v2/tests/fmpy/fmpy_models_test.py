@@ -23,7 +23,7 @@ class FMUInput:
     increase_by_step: float
 
 
-def get_os() -> str:
+def get_os_name_lower_case() -> str:
     return str.lower(platform.system())
 
 
@@ -222,7 +222,7 @@ def test_fmpy_coupled_clutches() -> None:
 
 def test_fmpy_houses_weather() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os(), "weather.fmu"),
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "weather.fmu"),
         steps=12,
         step_size=60000,
         inputs=[],
@@ -232,7 +232,7 @@ def test_fmpy_houses_weather() -> None:
 
 def test_fmpy_houses_house() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os(), "house.fmu"),
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "house.fmu"),
         steps=10,
         step_size=100,
         inputs=[
@@ -269,7 +269,7 @@ def test_fmpy_houses_house() -> None:
 
 def test_fmpy_houses_heating() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os(), "heating.fmu"),
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "heating.fmu"),
         steps=10,
         step_size=60,
         inputs=[
@@ -285,7 +285,7 @@ def test_fmpy_houses_heating() -> None:
 
 def test_fmpy_houses_ventilation() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os(), "ventilation.fmu"),
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "ventilation.fmu"),
         steps=10,
         step_size=60,
         inputs=[
@@ -308,7 +308,7 @@ def _execute_fmu(
 ) -> None:
     print("")
     print("")
-    full_path = os.path.join(resource_path(), fmu_file)  # f"{resource_path()}/{fmu_file}"
+    full_path = os.path.join(resource_path(), fmu_file)
     unzip_dir = fmpy.extract(full_path)
     model_description = fmpy.read_model_description(full_path)
 
