@@ -5,6 +5,8 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
 )
+from ecosim_common.config.interface_type import InterfaceType
+
 from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import (
     generate_simple_test_server,
@@ -12,6 +14,7 @@ from integration_tests.server_client.simple_test_server import (
 from integration_tests.tech.db.measurement_repository_in_memory import (
     MeasurementRepositoryInMemory,
 )
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 def test_client_server_batch_steps() -> None:
@@ -28,6 +31,34 @@ def test_client_server_batch_steps() -> None:
         second=0,
         microsecond=0,
     )
+
+    client_data_1 = TestClientData(
+        simulator_name="Simulator_1",
+        model_name="Model_1",
+        interfaces=[],
+    )
+    client_data_1.add_interface(
+        interface_name="Interface_Input_1",
+        unit="float64_matrix",
+        interface_type=InterfaceType.INPUT,
+    )
+    client_data_1.add_interface(
+        interface_name="Interface_Output_1",
+        unit="float64_matrix",
+        interface_type=InterfaceType.OUTPUT,
+    )
+
+    client2 = TestClientData(
+        simulator_name="Simulator_2",
+        model_name="Model_2",
+        interfaces=[],
+    )
+    client2.add_interface(
+        interface_name="Interface_Output_2",
+        unit="float64_matrix",
+        interface_type=InterfaceType.OUTPUT,
+    )
+
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -35,18 +66,23 @@ def test_client_server_batch_steps() -> None:
         step_size_in_ms=step_size_in_ms,
         simulation_start_date=simulation_start_date,
         restore_simulation_run=True,
+        clients=[
+            client_data_1.to_client_simulator_config(),
+            client2.to_client_simulator_config(),
+        ],
     )
-    client = SimpleTestClient.generate(
+
+    client = SimpleTestClient.of_test_data(
         server_host=server_host,
         server_port=server_port,
+        test_data=client_data_1,
         on_simulation_step_return=lambda _self,
         received_inputs,
         steps: ClientSimStepData(
             interface_values=[
-                ProtocolInterfaceValue(
-                    name="TestInterface",
-                    value=_self.accumulated_step_sizes_in_seconds.value,
-                ),
+                # client_interface_output.to_protocol_interface_value(
+                #     _self.accumulated_step_sizes_in_seconds.value,
+                # ),
             ],
         ),
     )
@@ -72,7 +108,7 @@ def test_client_server_batch_steps() -> None:
 
     client.start()
 
-    server_thread.join()
+    server_thread.join(timeout=10)
 
     client_measurement_repository = server.repositories.measurement_repository(
         client_id=client._client_config.client_id(),

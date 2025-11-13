@@ -293,6 +293,7 @@ class Client(ShutdownListener):
         )
 
         # TODO SORT THE INPUTS!
+        # ATTENTION: the received values are the outputs, not the inputs
         for i, inputs in enumerate(simulation_step_batch_request.inputs.values()):
             Client.logger.debug(f"Executing batch step {i}")
             values = self._protocol_interface_value_to_dict(inputs)
@@ -306,7 +307,7 @@ class Client(ShutdownListener):
                     None,
                 )
                 if matching_input is None:
-                    Client.logger.error(
+                    Client.logger.warning(
                         f"Batch step {i}: No matching input found for interface '{interface_value.name}'",
                     )
                     continue
