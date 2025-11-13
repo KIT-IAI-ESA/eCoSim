@@ -35,10 +35,8 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
     )
 
     container.start()
-    try:
-        yield container
-    finally:
-        container.stop()
+    yield container
+    container.stop()
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -51,10 +49,8 @@ def db_connection(postgres_container: PostgresContainer) -> Generator[connection
         password=postgres_container.password,
         cursor_factory=DictCursor,
     )
-    try:
-        yield conn
-    finally:
-        conn.close()
+    yield conn
+    conn.close()
 
 
 def test_db_persistence_float(
