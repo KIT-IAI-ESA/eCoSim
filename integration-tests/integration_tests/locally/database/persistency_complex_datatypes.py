@@ -1,7 +1,12 @@
+import os
 import threading
+from typing import Any, Generator
 
 import psycopg2
+import pytest
 from psycopg2 import sql
+from psycopg2._psycopg import connection
+from psycopg2.extras import DictCursor
 from testcontainers.postgres import PostgresContainer
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
@@ -18,40 +23,58 @@ from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
 
-
-def start_container() -> PostgresContainer:
-    container = PostgresContainer("postgres:16-alpine", port=5432)
-    container.with_name("persistence_db")
-
-    container.start()
-    return container
+os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 
-def stop_container(container: PostgresContainer) -> None:
-    container.stop()
-
-
-def test_db_connection_float() -> None:
-    container = start_container()
-
-    connection = psycopg2.connect(
-        host=container.get_container_host_ip(),
-        port=container.get_exposed_port(5432),
-        database=container.dbname,
-        user=container.username,
-        password=container.password,
+@pytest.fixture(scope="function", autouse=True)
+def postgres_container() -> Generator[PostgresContainer, Any, None]:
+    container = (
+        PostgresContainer("postgres:16-alpine", port=5432)
+        .with_bind_ports(5432, 5432)
+        .with_name("persistence_db")
     )
 
+    container.start()
+    try:
+        yield container
+    finally:
+        container.stop()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def db_connection(postgres_container: PostgresContainer) -> Generator[connection, Any, None]:
+    connection = psycopg2.connect(
+        host=postgres_container.get_container_host_ip(),
+        port=postgres_container.get_exposed_port(5432),
+        database=postgres_container.dbname,
+        user=postgres_container.username,
+        password=postgres_container.password,
+        cursor_factory=DictCursor,
+    )
+    try:
+        yield connection
+    finally:
+        connection.close()
+
+
+def test_db_persistence_float(
+    postgres_container: PostgresContainer,
+    db_connection: connection,
+) -> None:
     server = generate_simple_test_server(
-        host="localhost", port=6543, repository_type=RepositoryType.DB, steps=10,
+        host="localhost",
+        port=6543,
+        repository_type=RepositoryType.DB,
+        steps=10,
         database_config=DatabaseConfig(
-            host=container.get_container_host_ip(),
-            port=container.get_exposed_port(5432),
-            ssl=False, drop_existing_schema=True,
-            username=container.username,
-            password=container.password,
+            host=postgres_container.get_container_host_ip(),
+            port=postgres_container.get_exposed_port(5432),
+            ssl=False,
+            drop_existing_schema=True,
+            username=postgres_container.username,
+            password=postgres_container.password,
             schema="postgres",
-            name=container.dbname,
+            name=postgres_container.dbname,
         ),
         clients=[
             ClientSimulatorConfig(
@@ -80,7 +103,8 @@ def test_db_connection_float() -> None:
     )
 
     client = SimpleTestClient.generate(
-        server_host="localhost", server_port=6543,
+        server_host="localhost",
+        server_port=6543,
         model_name="TestModel",
         simulator_name="TestSimulator",
         interface_config=ClientInterfaceConfig(
@@ -111,49 +135,43 @@ def test_db_connection_float() -> None:
 
     server_thread.join()
 
-    cursor = connection.cursor()
+    cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
 
     cursor.execute("SELECT * FROM module_testsimulator")
     rows = cursor.fetchall()
 
     for row in rows:
-        assert row[1] == 2.5
-        assert row[2] is None
+        assert row['o_testinterface'] == 2.5
+        assert row['o_testinterface_json'] is None
 
     cursor.close()
-    connection.close()
-
-    # stop_container(container)
 
 
-def test_db_connection_matrix() -> None:
+def test_db_persistence_matrix(
+    postgres_container: PostgresContainer,
+    db_connection: connection,
+) -> None:
     matrix: InterfaceValueType = [
         [1.1, 2.2, 3.3],
         [4.4, 5.5, 6.6],
         [7.7, 8.8, 9.9],
     ]
 
-    container = start_container()
-
-    connection = psycopg2.connect(
-        host=container.get_container_host_ip(),
-        port=container.get_exposed_port(5432),
-        database=container.dbname,
-        user=container.username,
-        password=container.password,
-    )
-
     server = generate_simple_test_server(
-        host="localhost", port=6543, repository_type=RepositoryType.DB, steps=10,
+        host="localhost",
+        port=6543,
+        repository_type=RepositoryType.DB,
+        steps=10,
         database_config=DatabaseConfig(
-            host=container.get_container_host_ip(),
-            port=container.get_exposed_port(5432),
-            ssl=False, drop_existing_schema=True,
-            username=container.username,
-            password=container.password,
+            host=postgres_container.get_container_host_ip(),
+            port=postgres_container.get_exposed_port(5432),
+            ssl=False,
+            drop_existing_schema=True,
+            username=postgres_container.username,
+            password=postgres_container.password,
             schema="postgres",
-            name=container.dbname,
+            name=postgres_container.dbname,
         ),
         clients=[
             ClientSimulatorConfig(
@@ -213,17 +231,14 @@ def test_db_connection_matrix() -> None:
 
     server_thread.join()
 
-    cursor = connection.cursor()
+    cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
 
     cursor.execute("SELECT * FROM module_testsimulator")
     rows = cursor.fetchall()
 
     for row in rows:
-        assert row[1] is None
-        assert row[2] == matrix
+        assert row['o_testinterface'] is None
+        assert row['o_testinterface_json'] == matrix
 
     cursor.close()
-    connection.close()
-
-    # stop_container(container)
