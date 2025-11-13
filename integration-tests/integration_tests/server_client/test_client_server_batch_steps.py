@@ -2,7 +2,9 @@ import threading
 from datetime import datetime, timedelta
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.simulation.interface_id import InterfaceId
 
 from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import (
@@ -70,20 +72,30 @@ def test_client_server_batch_steps() -> None:
         ],
     )
 
+    def client_1_on_simulation_step(
+        client: SimpleTestClient,
+        received_inputs: dict[InterfaceId, InterfaceValueType],
+        steps: float,
+    ) -> ClientSimStepData:
+        value = received_inputs.get(client_1_input_interface.interface_name, None)
+        if value is None or not isinstance(value, float):
+            raise RuntimeError(
+                f"Missing input interface '{client_1_input_interface.interface_name}' or value None | value: {value}",
+            )
+        return ClientSimStepData(
+            interface_values=[
+                client_data_1.interface_protocol_value_of(
+                    "Interface_Output_1",
+                    client.accumulated_step_sizes_in_seconds.value + value * 10_000,
+                ),
+            ],
+        )
+
     client_1 = SimpleTestClient.of_test_data(
         server_host=server_host,
         server_port=server_port,
         test_client_data=client_data_1,
-        on_simulation_step_return=lambda _self,
-        received_inputs,
-        steps: ClientSimStepData(
-            interface_values=[
-                client_data_1.interface_protocol_value_of(
-                    "Interface_Output_1",
-                    _self.accumulated_step_sizes_in_seconds.value,
-                ),
-            ],
-        ),
+        on_simulation_step_return=client_1_on_simulation_step,
     )
     client_2 = SimpleTestClient.of_test_data(
         server_host=server_host,
@@ -101,16 +113,33 @@ def test_client_server_batch_steps() -> None:
         ),
     )
     step_size_in_seconds = step_size_in_ms / 1000
-    client_measurement_repository = server.repositories.measurement_repository(
+    client_1_measurement_repository = server.repositories.measurement_repository(
         client_id=client_1.client_id,
+    )
+    client_2_measurement_repository = server.repositories.measurement_repository(
+        client_id=client_2.client_id,
     )
     for i in range(5):
         entry_date = simulation_start_date + timedelta(seconds=i * step_size_in_seconds)
-        client_measurement_repository.add(
+        client_1_measurement_repository.add(
             values=(
                 client_data_1.interface_protocol_value_of(
                     interface_name="Interface_Output_1",
-                    value=i * step_size_in_seconds,
+                    value=i * step_size_in_seconds
+                    + (-i * step_size_in_seconds * 10000),
+                ),
+                client_data_1.interface_protocol_value_of(
+                    interface_name="Interface_Input_1",
+                    value=-i * step_size_in_seconds,
+                ),
+            ),
+            timestamp=entry_date,
+        )
+        client_2_measurement_repository.add(
+            values=(
+                client_data_2.interface_protocol_value_of(
+                    interface_name="Interface_Output_2",
+                    value=-i * step_size_in_seconds,
                 ),
             ),
             timestamp=entry_date,
@@ -123,16 +152,16 @@ def test_client_server_batch_steps() -> None:
     client_1.start()
     client_2.start()
 
-    server_thread.join(timeout=4)
+    server_thread.join(timeout=7)
 
-    client_measurement_repository = server.repositories.measurement_repository(
-        client_id=client_1._client_config.client_id(),
+    client_1_measurement_repository = server.repositories.measurement_repository(
+        client_id=client_1.client_id,
     )
 
-    if not isinstance(client_measurement_repository, MeasurementRepositoryInMemory):
+    if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    client_measurement_repository.assert_entry_count(steps).assert_for_each_record(
+    client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(
         lambda timestamp, values: (timestamp - simulation_start_date).total_seconds()
         + step_size_in_seconds
         == values[0].value,

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Dict, List
 
+
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.client.renderer.rendering_socket_client import RenderingSocketClient
@@ -297,41 +298,70 @@ class Client(ShutdownListener):
         last_timestamp = date_time_to_millis_since_unix_epoch(
             simulation_step_batch_request.start_datetime,
         )
+        input_interfaces = (
+            self._client_config.interfaces_config().input_interface_names()
+        )
+        required_input_interfaces = (
+            self._client_config.interfaces_config().input_interface_names(
+                only_required=True,
+            )
+        )
+        last_simulation_step_data: ClientSimStepData | None = None
         for step_datetime, inputs in sorted(
             simulation_step_batch_request.inputs.items(),
         ):
             Client.logger.debug(f"Executing batch step {step_datetime}")
-            values = self._protocol_interface_value_to_dict(inputs)
+            filtered_inputs = [
+                input for input in inputs if input.name in input_interfaces
+            ]
+            filtered_interface_names = [interface.name for interface in filtered_inputs]
+            for required_input in required_input_interfaces:
+                if required_input not in filtered_interface_names:
+                    error_message = f"Missing input interface '{required_input}' in batch step {step_datetime} - cannot restore state."
+                    Client.logger.error(error_message)
+                    raise RuntimeError(error_message)
+            values = self._protocol_interface_value_to_dict(filtered_inputs)
             current_timestamp = date_time_to_millis_since_unix_epoch(step_datetime)
-            # TODO: check why on_simulation_step executes even if the input interface value is missing
-            client_step_data = self.on_simulation_step(
+            last_simulation_step_data = self.on_simulation_step(
                 values,
                 (current_timestamp - last_timestamp) / 1000,
             )
             last_timestamp = current_timestamp
-            for calculated_interface_value in client_step_data.interface_values:
+            for new_interface_value in last_simulation_step_data.interface_values:
                 matching_interface = next(
                     (
-                        inp
-                        for inp in inputs
-                        if inp.name == calculated_interface_value.name
+                        interface
+                        for interface in inputs
+                        if interface.name == new_interface_value.name
                     ),
                     None,
                 )
                 if matching_interface is None:
                     Client.logger.warning(
-                        f"Batch step {step_datetime}: No matching interface found for interface '{calculated_interface_value.name}'",
+                        f"Batch step {step_datetime}: No matching interface found for interface '{new_interface_value.name}'",
                     )
                     continue
-                if matching_interface.value == calculated_interface_value.value:
+                if matching_interface.value == new_interface_value.value:
                     Client.logger.debug(
-                        f"Batch step {step_datetime}: Value matched for interface '{calculated_interface_value.name}'",
+                        f"Batch step {step_datetime}: Value matched for interface '{new_interface_value.name}'",
                     )
                 else:
                     Client.logger.error(
-                        f"Batch step {step_datetime}: Value mismatch for interface '{calculated_interface_value.name}': "
-                        f"expected={matching_interface.value}, actual={calculated_interface_value.value}",
+                        f"Batch step {step_datetime}: Value mismatch for interface '{new_interface_value.name}': "
+                        f"expected={matching_interface.value}, actual={new_interface_value.value}",
                     )
+
+        if last_simulation_step_data is None:
+            error_message = "No simulation step was executed."
+            Client.logger.error(error_message)
+            raise RuntimeError(error_message)
+
+        self._channel.send(
+            ESPChannelMessageJson.answer_with_payload(
+                request_message=message,
+                payload=last_simulation_step_data,
+            ),
+        )
 
     def _handle_simulation_stop(
         self,
