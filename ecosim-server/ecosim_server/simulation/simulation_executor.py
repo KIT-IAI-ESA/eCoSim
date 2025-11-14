@@ -72,9 +72,20 @@ class SimulationExecutor:
             raise RuntimeError(
                 "Tried to start simulation executor but not all clients are connected and ready",
             )
-        self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_START)
-        self._start_simulation_of_all_clients()
-        self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_START)
+        if self.simulation_config.restore:
+            self._server_measurement.set_start(
+                ServerTimeMeasurementType.RESTORE_SIMULATION_RUN,
+            )
+            self._restore_simulation_run()
+            self._server_measurement.set_end(
+                ServerTimeMeasurementType.RESTORE_SIMULATION_RUN,
+            )
+        else:
+            self._server_measurement.set_start(
+                ServerTimeMeasurementType.SIMULATION_START,
+            )
+            self._start_simulation_of_all_clients()
+            self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_START)
         self._server_measurement.set_start(
             ServerTimeMeasurementType.SIMULATION_EXECUTION,
         )
@@ -108,7 +119,10 @@ class SimulationExecutor:
             "All clients stopped (or are not connected anymore)",
         )
 
-    def _start_simulation_of_all_clients(self) -> None:
+    def _start_simulation_of_all_clients(
+        self,
+        store_default_values_in_history: bool = True,
+    ) -> None:
         SimulationExecutor.logger.info(
             "Starting simulation on all clients and wait for successful start",
         )
@@ -126,13 +140,25 @@ class SimulationExecutor:
                 self._server_state.client_states.simulation_started(
                     client_id=message.client_id,
                 )
-                self._value_history.add_default_values(
-                    client_id=message.client_id,
-                    client_sim_step_data=message.payload(ClientSimStepData),
-                )
+                if store_default_values_in_history:
+                    self._value_history.add_default_values(
+                        client_id=message.client_id,
+                        client_sim_step_data=message.payload(ClientSimStepData),
+                    )
             sleep(2)
         SimulationExecutor.logger.debug(
             "Starting of simulations of all clients successful",
+        )
+
+    def _restore_simulation_run(self) -> None:
+        SimulationExecutor.logger.info(
+            "Restoring simulation on all clients and wait for successful start",
+        )
+        self._value_history.init_from_repositories()
+
+        self._start_simulation_of_all_clients(store_default_values_in_history=False)
+        SimulationExecutor.logger.debug(
+            "Restoring simulation on all clients successful",
         )
 
     def _execute_steps(self) -> None:

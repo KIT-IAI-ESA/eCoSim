@@ -75,7 +75,6 @@ def generate_simple_test_server(
         server=MainConfig(
             host=host,
             port=port,
-            restore_simulation_run=restore_simulation_run,
         ),
         database=database_config
         or DatabaseConfig(
@@ -97,6 +96,7 @@ def generate_simple_test_server(
         pace=pace,
         steps=steps,
         step_size_in_ms=step_size_in_ms,
+        restore=restore_simulation_run,
     )
     repositories: Repositories = (
         RepositoriesInMemory()

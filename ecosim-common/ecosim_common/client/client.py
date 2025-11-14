@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from typing import Dict, List
 
-
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.client.renderer.rendering_socket_client import RenderingSocketClient
@@ -247,7 +246,7 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Handling start simulation")
-        data = self.on_simulation_start()
+        data: ClientSimStepData = self.on_simulation_start()
         self._channel.send(
             ESPChannelMessageJson.answer_with_payload(
                 request_message=message,
