@@ -108,9 +108,9 @@ integration_test_db:
   artifacts:
     expire_in: 14 days
     reports:
-      junit: integration-tests/report_db.xml
+      junit: integration-tests/report.xml
     paths:
-      - integration-tests/report_db.xml
+      - integration-tests/report.xml
     when: always
 
 publish_artifacts:
