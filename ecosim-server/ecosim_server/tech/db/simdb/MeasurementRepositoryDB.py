@@ -9,7 +9,6 @@ from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.tech.db.db_connection import DBConnection
-from ecosim_server.tech.db.db_connections import DBConnections
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
@@ -24,9 +23,9 @@ class MeasurementRepositoryDB(MeasurementRepository):
         self,
         simulation_config: SimulationConfig,
         client_id: ClientID,
-        db_connection: DBConnection | None = None,
+        db_connection: DBConnection,
     ):
-        self._db_connection = db_connection or DBConnections.instance().main
+        self._db_connection = db_connection
         self._interface_name_to_column_name: dict[str, str] = {}
         self._interface_name_to_json_column_name: dict[str, str] = {}
         self._DynamicTable = self._create_dynamic_class(simulation_config, client_id)

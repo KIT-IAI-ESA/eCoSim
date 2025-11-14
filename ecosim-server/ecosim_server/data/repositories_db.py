@@ -41,7 +41,9 @@ class RepositoriesDB(Repositories):
         with self._thread_lock:
             if client_id not in self._client_id_to_measurement_repository:
                 self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryDB(
-                    self._simulation_config, client_id, self._db_connection,
+                    simulation_config=self._simulation_config,
+                    client_id=client_id,
+                    db_connection=self._db_connection,
                 )
             return self._client_id_to_measurement_repository[client_id]
 
