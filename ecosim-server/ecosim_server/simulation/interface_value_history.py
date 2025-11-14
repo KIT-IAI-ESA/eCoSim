@@ -14,7 +14,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 
 class InterfaceValueHistory:
     _logger = ESPLogger("InterfaceValueHistory")
-    _default_values_marker = -1.0
+    _default_values_marker = -1
 
     def __init__(
         self,
@@ -22,7 +22,7 @@ class InterfaceValueHistory:
         simulation_config: SimulationConfig,
     ):
         self.__thread_lock = threading.Lock()
-        self._entries: dict[float, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
+        self._entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
         self._repositories = repositories
         self._simulation_config = simulation_config
 
@@ -39,7 +39,7 @@ class InterfaceValueHistory:
 
     def add(
         self,
-        time_step: float,
+        time_step: int,
         client_id: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
@@ -60,15 +60,25 @@ class InterfaceValueHistory:
 
     def _add_to_entries_internal(
         self,
-        time_step: float,
+        time_step: int,
         client_id: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
+        self._get_mutable_entry(
+            time_step=time_step,
+            client_id=client_id,
+        ).extend(interface_values)
+
+    def _get_mutable_entry(
+        self,
+        time_step: int,
+        client_id: ClientID,
+    ) -> List[ProtocolInterfaceValue]:
         if time_step not in self._entries:
             self._entries[time_step] = {}
         if client_id not in self._entries[time_step]:
             self._entries[time_step][client_id] = []
-        self._entries[time_step][client_id].extend(interface_values)
+        return self._entries[time_step][client_id]
 
     def _add_to_repository_internal(
         self,
@@ -101,7 +111,7 @@ class InterfaceValueHistory:
                 f"Initializing from repositories for client {client.client_id}: found {len(sorted_entries)} entries",
             )
             for entry in sorted_entries:
-                step = self._timestamp_to_step(entry.timestamp)
+                step: int = self._timestamp_to_step(entry.timestamp)
                 self._add_to_entries_internal(step, client.client_id, entry.values)
             InterfaceValueHistory._logger.debug(
                 f"Initializing from repositories for client {client.client_id}: successfully restored {len(sorted_entries)} entries",
@@ -110,17 +120,53 @@ class InterfaceValueHistory:
     def _timestamp_to_step(
         self,
         timestamp: datetime.datetime,
-    ) -> float:
+    ) -> int:
         passed_milliseconds = (
             timestamp.timestamp() * 1000
             - self._simulation_config.start_date.timestamp() * 1000
         )
         plausibility_check = (
-            passed_milliseconds % self._simulation_config.step_size_in_ms
-        ) == 0
+            passed_milliseconds % self._simulation_config.step_size_in_ms == 0
+        )
         if not plausibility_check:
             raise RuntimeError(f"Timestamp {timestamp} is not a plausible step time.")
-        return passed_milliseconds / self._simulation_config.step_size_in_ms
+        return int(passed_milliseconds / self._simulation_config.step_size_in_ms)
+
+    def calculate_current_execution_step_or_exception(self) -> int:
+        latest_completed_step_by_client: dict[ClientID, int] = dict[ClientID, int]()
+        latest_timestep: int = self._get_latest_timestep()
+        second_latest_timestep: int = self._get_latest_timestep()
+        clients_with_missing_steps: List[ClientID] = []
+        for client in self._simulation_config.clients:
+            latest_step_for_client = latest_timestep
+            if client.client_id not in self._entries[latest_timestep].keys():
+                if client.client_id not in self._entries[second_latest_timestep].keys():
+                    clients_with_missing_steps.append(client.client_id)
+                    continue
+                latest_step_for_client = second_latest_timestep
+            client_interfaces = [
+                interface.name
+                for interface in self._entries[latest_step_for_client][client.client_id]
+            ]
+            latest_completed_step_by_client[client.client_id] = latest_timestep
+            for interface in client.interfaces:
+                if interface.name not in client_interfaces:
+                    latest_completed_step_by_client[client.client_id] = (
+                        second_latest_timestep
+                    )
+                    break
+        if len(clients_with_missing_steps) > 0:
+            raise RuntimeError(
+                f"Cannot calculate current execution step because some clients are missing steps: {clients_with_missing_steps}",
+            )
+        return (
+            min(latest_completed_step_by_client.values()) + 1
+        )  # the step after the latest min completed step needs to be executed
+
+    def _get_latest_timestep(self) -> int:
+        if not self._entries:
+            return 0
+        return max(self._entries.keys())
 
 
 class InterfaceValueHistoryEntry:

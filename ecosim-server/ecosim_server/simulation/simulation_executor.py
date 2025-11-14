@@ -43,7 +43,7 @@ class SimulationExecutor:
         self.simulation_config = simulation_config
         self._server_config = server_config
         self._server_state = server_state
-        self._current_step = 0
+        self._current_step: int = 0
         self._value_history = InterfaceValueHistory(repositories, simulation_config)
         self._client_communication: ClientCommunication = ClientCommunication(
             client_states=server_state.client_states,
@@ -155,10 +155,19 @@ class SimulationExecutor:
             "Restoring simulation on all clients and wait for successful start",
         )
         self._value_history.init_from_repositories()
-
+        self._current_step = (
+            self._value_history.calculate_current_execution_step_or_exception()
+        )
         self._start_simulation_of_all_clients(store_default_values_in_history=False)
+        for client_id in self._server_state.client_states.all_client_ids():
+            # TODO send to each client the simulation batch steps message
+            #      -> only send for the latest completed step (you probably need to return the latest steps in
+            #         calculate_current_execution_step_or_exception() -> probably return a result object with
+            #         the current_step and the latest step for each client)
+            # TODO handle the result of the simulation batch steps message (there is nothing specified currently)
+            pass
         SimulationExecutor.logger.debug(
-            "Restoring simulation on all clients successful",
+            f"Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
     def _execute_steps(self) -> None:
