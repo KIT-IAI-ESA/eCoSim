@@ -87,7 +87,7 @@ integration_test_ecosim:
   script:
     - cd $SRC_DIR/integration-tests
     - uv sync
-    - uv run pytest --ignore=integration_test/locally
+    - uv run pytest
   artifacts:
     expire_in: 14 days
     reports:
@@ -103,7 +103,8 @@ integration_test_db:
   script:
     - cd $SRC_DIR/integration-tests
     - uv sync
-    - uv run pytest integration_tests/locally \
+    - uv run pytest integration_tests/locally/database/ \
+        -o python_files=*.py \
         --junitxml=integration-tests/report_db.xml
   artifacts:
     expire_in: 14 days
