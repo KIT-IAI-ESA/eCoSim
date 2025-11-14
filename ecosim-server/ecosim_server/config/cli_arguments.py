@@ -154,6 +154,9 @@ class CLIArguments(AppConfig):
     def image_renderer_interval(self) -> int | None:
         return self._args.image_renderer_interval
 
+    def restore_simulation_run(self) -> bool:
+        return self._args.restore_simulation_run
+
     @property
     def port(self) -> int | None:
         return self._args.port
@@ -174,7 +177,6 @@ class CLIArguments(AppConfig):
         return ServerConfigOverride(
             server_host=self._args.host,
             server_port=self._args.port,
-            restore_simulation_run=self._args.restore_simulation_run,
         )
 
 
@@ -182,4 +184,3 @@ class CLIArguments(AppConfig):
 class ServerConfigOverride:
     server_host: str | None
     server_port: int | None
-    restore_simulation_run: bool | None

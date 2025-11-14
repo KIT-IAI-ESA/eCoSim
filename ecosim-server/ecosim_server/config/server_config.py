@@ -52,7 +52,6 @@ class MainConfig:
     port: int
     image_renderer_port: int | None = None
     image_renderer_interval: int | None = None
-    restore_simulation_run: bool = False
 
     @staticmethod
     def of_config_parser(
@@ -60,7 +59,6 @@ class MainConfig:
         config_override: ServerConfigOverride = ServerConfigOverride(
             server_host=None,
             server_port=None,
-            restore_simulation_run=False,
         ),
         image_renderer_port: int | None = None,
         image_renderer_interval: int | None = None,
@@ -71,12 +69,6 @@ class MainConfig:
             or config_parser.get_string("server", "host", default="localhost"),
             image_renderer_port=image_renderer_port,
             image_renderer_interval=image_renderer_interval,
-            restore_simulation_run=config_override.restore_simulation_run
-            or config_parser.get_bool(
-                "server",
-                "restore_simulation_run",
-                default=False,
-            ),
         )
 
     @staticmethod
