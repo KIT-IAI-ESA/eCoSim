@@ -129,7 +129,7 @@ def test_db_persistence_float(
 
     client.start()
 
-    server_thread.join()
+    server_thread.join(timeout=20)
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
@@ -142,6 +142,8 @@ def test_db_persistence_float(
         assert row['o_testinterface_json'] is None
 
     cursor.close()
+    server.force_stop()
+    client.on_app_shutdown()
 
 
 def test_db_persistence_matrix(
@@ -225,7 +227,7 @@ def test_db_persistence_matrix(
 
     client.start()
 
-    server_thread.join()
+    server_thread.join(timeout=20)
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
@@ -238,3 +240,5 @@ def test_db_persistence_matrix(
         assert row['o_testinterface_json'] == matrix
 
     cursor.close()
+    server.force_stop()
+    client.on_app_shutdown()
