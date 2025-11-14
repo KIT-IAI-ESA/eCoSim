@@ -90,7 +90,7 @@ class Server(AbstractServer):
         self._server_state.wait_for_all_clients_connected_and_ready()
         Server._logger.info("All clients connected - starting simulation")
         self._server_state.set_simulation_state(SimulationState.READY)
-        self._simulation_executor.execute(self._rendering_socket)
+        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
 
@@ -144,7 +144,6 @@ class Server(AbstractServer):
                 self._handle_interface_request(client_id, connection)
                 self._handle_interface_settings(client_id, connection)
                 self._handle_simulation_setup(client_id, connection)
-                self._handle_simulation_run_restore(client_id, connection)
 
                 self._server_state.client_states.set_client_ready_for_simulation(
                     client_id,
@@ -176,7 +175,7 @@ class Server(AbstractServer):
         client_id: ClientID,
         connection: ClientConnection,
     ) -> None:
-        if not self._server_config.server.restore_simulation_run:
+        if not self._simulation_config.restore:
             Server._logger.debug(
                 "[Restore Run] Restoring simulation run is disabled - so nothing happens.",
             )
