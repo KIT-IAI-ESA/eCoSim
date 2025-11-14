@@ -103,8 +103,7 @@ integration_test_db:
   script:
     - cd $SRC_DIR/integration-tests
     - uv sync
-    - uv run pytest integration_tests/locally/database/ \
-        -o python_files=*.py
+    - uv run pytest integration_tests/locally/database -o python_files=*.py
   artifacts:
     expire_in: 14 days
     reports:
