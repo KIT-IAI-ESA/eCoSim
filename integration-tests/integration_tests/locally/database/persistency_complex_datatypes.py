@@ -30,7 +30,7 @@ os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 def postgres_container() -> Generator[PostgresContainer, Any, None]:
     container = (
         PostgresContainer("postgres:16-alpine", port=5432)
-        .with_bind_ports(5432, 5432)
+        # .with_bind_ports(5432, 5432) # deactivate comment to bind database to port 5432 -> necessary to look into database from ide
         .with_name("persistence_db")
     )
 
@@ -49,14 +49,12 @@ def db_connection(postgres_container: PostgresContainer) -> Generator[connection
         password=postgres_container.password,
         cursor_factory=DictCursor,
     )
+
     yield conn
     conn.close()
 
 
-def test_db_persistence_float(
-    postgres_container: PostgresContainer,
-    db_connection: connection,
-) -> None:
+def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: connection) -> None:
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
