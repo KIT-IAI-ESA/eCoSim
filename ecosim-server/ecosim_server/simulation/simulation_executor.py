@@ -80,8 +80,8 @@ class SimulationExecutor:
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
             for message in self._client_communication.messages_of(
-                    client_ids=self._server_state.client_states.all_client_ids(),
-                    message_types=(MessageType.SIMULATION_STOP,),
+                client_ids=self._server_state.client_states.all_client_ids(),
+                message_types=(MessageType.SIMULATION_STOP,),
             ):
                 self._server_state.client_states.simulation_stopped(client_id=message.client_id)
             sleep(2)
@@ -94,8 +94,8 @@ class SimulationExecutor:
         while ((not self._server_state.have_all_clients_started_simulation()) and
                self._server_state.are_all_clients_connected_and_ready()):
             for message in self._client_communication.messages_of(
-                    client_ids=self._server_state.client_states.all_client_ids(),
-                    message_types=(MessageType.SIMULATION_START,),
+                client_ids=self._server_state.client_states.all_client_ids(),
+                message_types=(MessageType.SIMULATION_START,),
             ):
                 self._server_state.client_states.simulation_started(client_id=message.client_id)
                 self._value_history.add_default_values(
@@ -242,3 +242,8 @@ class SimulationExecutor:
         end_event = self._rendering_socket.request_and_send_images(step)
         if wait_for_finish_timeout is not None:
             end_event.wait(wait_for_finish_timeout)
+
+    def force_stop(self) -> None:
+        if self._server_state.is_running():
+            SimulationExecutor.logger.debug("Executing force shutdown")
+            self._server_state.force_stop()

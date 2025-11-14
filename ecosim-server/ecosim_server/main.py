@@ -40,6 +40,7 @@ def main() -> None:
 
     repositories: Repositories = RepositoriesDB(
         _simulation_config=simulation_config,
+        _db_connection=db_connections.main,
         simulation_state_repository=SimulationStateRepositoryDB(db_connection=db_connections.main),
         server_time_measurement_repository=ServerTimeMeasurementRepositoryDB(db_connection=db_connections.main),
     )
