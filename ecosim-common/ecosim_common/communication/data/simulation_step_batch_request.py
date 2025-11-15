@@ -17,7 +17,7 @@ from ecosim_common.tech.datetime.date_time_to_millis import (
 @dataclass(frozen=True)
 class SimulationStepBatchRequest(MessageData):
     start_datetime: datetime.datetime
-    inputs: dict[datetime.datetime, List[ProtocolInterfaceValue]]
+    inputs: SimulationStepBatchRequestInputs
 
     @classmethod
     @override
@@ -26,7 +26,7 @@ class SimulationStepBatchRequest(MessageData):
         value: Dict[str, Any],
     ) -> SimulationStepBatchRequest:
         raw_inputs = value.get("inputs", {})
-        parsed_inputs: dict[datetime.datetime, List[ProtocolInterfaceValue]] = {
+        parsed_inputs: SimulationStepBatchRequestInputs = {
             millis_since_unix_epoch_to_date_time(date_time): [
                 ProtocolInterfaceValue(
                     name=interface_value["name"],
@@ -49,9 +49,10 @@ class SimulationStepBatchRequest(MessageData):
         return {
             "start_datetime": date_time_to_millis_since_unix_epoch(self.start_datetime),
             "inputs": {
-                date_time_to_millis_since_unix_epoch(dt): [
-                    interface_value.to_json() for interface_value in interface_values
-                ]
+                date_time_to_millis_since_unix_epoch(dt): [interface_value.to_json() for interface_value in interface_values]
                 for dt, interface_values in self.inputs.items()
             },
         }
+
+
+SimulationStepBatchRequestInputs = dict[datetime.datetime, List[ProtocolInterfaceValue]]

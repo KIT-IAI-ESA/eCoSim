@@ -1,5 +1,6 @@
 from __future__ import annotations
 import threading
+
 import time
 from time import sleep
 from typing import List
@@ -7,6 +8,8 @@ from typing import List
 from ecosim_common.communication.channel.esp_channel_message_json import (
     ESPChannelMessageJson,
 )
+from ecosim_common.communication.correlation_id import CorrelationId
+from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -59,9 +62,7 @@ class SimulationExecutor:
         else:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
-        self._rendering_interval: int | None = (
-            self._server_config.server.image_renderer_interval
-        )
+        self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
 
     def execute(
         self,
@@ -130,9 +131,7 @@ class SimulationExecutor:
             ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START),
         )
 
-        while (
-            not self._server_state.have_all_clients_started_simulation()
-        ) and self._server_state.are_all_clients_connected_and_ready():
+        while (not self._server_state.have_all_clients_started_simulation()) and self._server_state.are_all_clients_connected_and_ready():
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_START,),
@@ -151,22 +150,59 @@ class SimulationExecutor:
         )
 
     def _restore_simulation_run(self) -> None:
-        SimulationExecutor.logger.info(
-            "Restoring simulation on all clients and wait for successful start",
-        )
+        SimulationExecutor.logger.info("Restoring simulations for all clients and waiting for successful start.")
         self._value_history.init_from_repositories()
-        self._current_step = (
-            self._value_history.calculate_current_execution_step_or_exception()
-        )
+        restore_data = self._value_history.calculate_current_execution_step_or_exception()
+        self._current_step = restore_data.current_step
         self._start_simulation_of_all_clients(store_default_values_in_history=False)
+        SimulationExecutor.logger.debug("Restoring simulation... sending step batch to clients")
+
+        # In theory, you can slice the batch data into different chunks. E.g. to keep the transferred data smaller.
+        # To do this, you need to slice the batch and set for each batch its own start_date.
+        # The start_date is used to correlate the responses from the clients.
+        # Then you can wait after each chunk for its response and then, you can send the next chunk.
+
+        start_date = self.simulation_config.start_date
+
         for client_id in self._server_state.client_states.all_client_ids():
-            # TODO send to each client the simulation batch steps message
-            #      -> only send for the latest completed step (you probably need to return the latest steps in
-            #         calculate_current_execution_step_or_exception() -> probably return a result object with
-            #         the current_step and the latest step for each client)
-            # TODO handle the result of the simulation batch steps message (there is nothing specified currently)
-            pass
-        SimulationExecutor.logger.debug(
+            self._client_communication.send_simulation_step_batch(
+                client_id=client_id,
+                data=SimulationStepBatchRequest(
+                    start_datetime=start_date,
+                    inputs=restore_data.client_restore_data[client_id],
+                ),
+            )
+
+        SimulationExecutor.logger.debug("Restoring simulation... waiting for step batch responses")
+        responses = {client_id: threading.Event() for client_id in self.simulation_config.client_ids()}
+
+        def handle_batch_response(message: BufferedClientMessage) -> None:
+            client_id = message.client_id
+            if message.message.correlation_id() != CorrelationId.of_date_time(start_date):
+                self.logger.error(
+                    f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id} with a wrong correlation_id. "
+                    + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
+                )
+                return
+            self.logger.debug(f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id}")
+            responses[client_id].set()
+
+        self._client_communication.on_messages(
+            client_ids=self.simulation_config.client_ids(),
+            message_types=(MessageType.SIMULATION_STEP_BATCH,),
+            callback=handle_batch_response,
+        )
+
+        for client_id, event in responses.items():
+            if not event.wait(timeout=60 * 60):
+                raise RuntimeError(f"Timeout while waiting for restore response from client {client_id}")
+
+        self._client_communication.remove_on_message_callback(
+            client_ids=self.simulation_config.client_ids(),
+            message_types=(MessageType.SIMULATION_STEP_BATCH,),
+        )
+
+        SimulationExecutor.logger.info(
             f"Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
@@ -197,9 +233,7 @@ class SimulationExecutor:
             self.logger.info(
                 f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'",
             )
-            for logical_delay_connection in delays_by_delay_step[
-                delayed_time_steps
-            ].connections:
+            for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                 self.logger.debug(
                     f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': "
                     + f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
@@ -231,9 +265,7 @@ class SimulationExecutor:
                 client_id=client_id,
                 values=ready_for_execution_data_by_clients[client_id],
             )
-        handled_clients: dict[ClientID, bool] = {
-            client_id: False for client_id in ready_for_execution_data_by_clients
-        }
+        handled_clients: dict[ClientID, bool] = {client_id: False for client_id in ready_for_execution_data_by_clients}
 
         client_ids = tuple(handled_clients.keys())
         if len(handled_clients) == 0:
@@ -292,8 +324,7 @@ class SimulationExecutor:
         self._value_history.add(
             time_step=self._current_step,
             client_id=client_id,
-            interface_values=interface_values
-            + tuple(ready_for_execution_data_by_clients[client_id]),
+            interface_values=interface_values + tuple(ready_for_execution_data_by_clients[client_id]),
         )
         self._current_step_data.add_received_data(client_id, interface_values)
         handled_clients[client_id] = True
@@ -316,11 +347,7 @@ class SimulationExecutor:
             return
         step = self._current_step
         # NOTE: step counts start from zero (so for modulo we need to add 1)
-        if (
-            step != 0
-            and (step + 1) % self._rendering_interval != 0
-            or step >= self.simulation_config.steps
-        ):
+        if step != 0 and (step + 1) % self._rendering_interval != 0 or step >= self.simulation_config.steps:
             return
         SimulationExecutor.logger.debug(f"Rendering images at {step}")
         end_event = self._rendering_socket.request_and_send_images(step)

@@ -1,6 +1,6 @@
+line-length = 150
+
 [lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
-select = ["E4", "E7", "E9", "F"]
+# Enable pycodestyle (E) and Pyflakes (F) rules (flake8's default rule sets), and warnings (W)
+select = ["E", "F", "W"]
 ignore = []

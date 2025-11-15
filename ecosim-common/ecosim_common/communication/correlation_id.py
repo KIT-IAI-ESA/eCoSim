@@ -1,5 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from datetime import datetime
+
+from ecosim_common.tech.datetime.date_time_to_millis import date_time_to_millis_since_unix_epoch
 
 
 @dataclass(frozen=True)
@@ -19,6 +22,10 @@ class CorrelationId:
     @staticmethod
     def of_int(value: int) -> CorrelationId:
         return CorrelationId(_value=value)
+
+    @staticmethod
+    def of_date_time(value: datetime) -> CorrelationId:
+        return CorrelationId(_value=int(date_time_to_millis_since_unix_epoch(value) / 1000))
 
     @staticmethod
     def default_id() -> CorrelationId:
