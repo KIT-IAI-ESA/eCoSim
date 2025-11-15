@@ -52,9 +52,7 @@ class SimulationConfig:
         return SimulationConfig(
             clients=clients,
             steps=steps,
-            step_size_in_ms=step_size_override
-            if step_size_override
-            else int(config["setup"]["delta_t"]),
+            step_size_in_ms=step_size_override if step_size_override else int(config["setup"]["delta_t"]),
             pace=pace,
             start_date=datetime.fromisoformat(
                 config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),
@@ -94,10 +92,7 @@ class SimulationConfig:
         client_id: ClientID,
     ) -> ClientSimulatorConfig | None:
         for client in self.clients:
-            if (
-                client.model_name == client_id.model_name
-                and client.simulator_name == client_id.simulator_name
-            ):
+            if client.model_name == client_id.model_name and client.simulator_name == client_id.simulator_name:
                 return client
         SimulationConfig.logger.warning(
             f"Cannot find simulator config for client {client_id}",
@@ -116,11 +111,7 @@ class SimulationConfig:
         defined_interfaces = client_simulation_config.interfaces
 
         for defined_interface in defined_interfaces:
-            if (
-                defined_interface.required
-                and defined_interface.model_interface_id
-                not in client_interface_ids.interfaces
-            ):
+            if defined_interface.required and defined_interface.model_interface_id not in client_interface_ids.interfaces:
                 SimulationConfig.logger.error(
                     f"Client {client_id} does not contain required interface {defined_interface.name}",
                 )
@@ -177,6 +168,9 @@ class SimulationConfig:
             },
         )
 
+    def client_ids(self) -> Tuple[ClientID, ...]:
+        return tuple([client.client_id for client in self.clients])
+
 
 @dataclass(frozen=True)
 class ClientSimulatorConfig:
@@ -213,16 +207,8 @@ class ClientSimulatorConfig:
         )
 
     def to_server_interface_settings(self) -> ServerInterfaceSettings:
-        inputs = [
-            interface.interface_id()
-            for interface in self.interfaces
-            if interface.type == InterfaceType.INPUT
-        ]
-        outputs = [
-            interface.interface_id()
-            for interface in self.interfaces
-            if interface.type == InterfaceType.OUTPUT
-        ]
+        inputs = [interface.interface_id() for interface in self.interfaces if interface.type == InterfaceType.INPUT]
+        outputs = [interface.interface_id() for interface in self.interfaces if interface.type == InterfaceType.OUTPUT]
         return ServerInterfaceSettings(
             inputs=inputs,
             outputs=outputs,
@@ -238,28 +224,16 @@ class ClientSimulatorConfig:
         return False
 
     def output_interfaces(self) -> Tuple[ModelInterfaceServer, ...]:
-        return tuple(
-            interface
-            for interface in self.interfaces
-            if interface.type == InterfaceType.OUTPUT
-        )
+        return tuple(interface for interface in self.interfaces if interface.type == InterfaceType.OUTPUT)
 
     def output_interfaces_model_interface_ids(self) -> Tuple[ModelInterfaceId, ...]:
-        return tuple(
-            interface.model_interface_id for interface in self.output_interfaces()
-        )
+        return tuple(interface.model_interface_id for interface in self.output_interfaces())
 
     def input_interfaces(self) -> Tuple[ModelInterfaceServer, ...]:
-        return tuple(
-            interface
-            for interface in self.interfaces
-            if interface.type == InterfaceType.INPUT
-        )
+        return tuple(interface for interface in self.interfaces if interface.type == InterfaceType.INPUT)
 
     def input_interfaces_model_interface_ids(self) -> Tuple[ModelInterfaceId, ...]:
-        return tuple(
-            interface.model_interface_id for interface in self.input_interfaces()
-        )
+        return tuple(interface.model_interface_id for interface in self.input_interfaces())
 
 
 class LogicalDelay:
@@ -277,9 +251,7 @@ class LogicalDelay:
                     clients,
                     logical_delay_index,
                 )
-                for logical_delay_interface in logical_delay_block_raw_json[
-                    "output_connections"
-                ]
+                for logical_delay_interface in logical_delay_block_raw_json["output_connections"]
             ],
         )
 
@@ -289,9 +261,7 @@ class LogicalDelay:
         logical_delay_connections: List[LogicalDelayConnection],
     ):
         self.delayed_time_steps: int = delayed_time_steps
-        self.logical_delay_connections: List[LogicalDelayConnection] = (
-            logical_delay_connections
-        )
+        self.logical_delay_connections: List[LogicalDelayConnection] = logical_delay_connections
 
     def __str__(self) -> str:
         return f"LogicalDelay(delayed_time_step: {self.delayed_time_steps}, connections: [{self.logical_delay_connections}])"
@@ -327,11 +297,9 @@ class LogicalDelayConnection:
         clients: List[ClientSimulatorConfig],
         logical_delay_index: int,
     ) -> SimulatorInterfaceId:
-        output_interface = (
-            LogicalDelayConnection.server_model_interface_by_simulator_interface_id(
-                clients=clients,
-                simulator_interface_id=output_simulator_interface_id,
-            )
+        output_interface = LogicalDelayConnection.server_model_interface_by_simulator_interface_id(
+            clients=clients,
+            simulator_interface_id=output_simulator_interface_id,
         )
         if not output_interface:
             raise RuntimeError(
@@ -343,8 +311,7 @@ class LogicalDelayConnection:
             matching_interfaces = [
                 connected_to_data.simulator_interface_id
                 for client_interface in client.interfaces
-                if output_simulator_interface_id
-                == client_interface.simulator_interface_id
+                if output_simulator_interface_id == client_interface.simulator_interface_id
                 for connected_to_data in client_interface.connected_to
                 if str(logical_delay_index + 1) in connected_to_data.delay_path
             ]
@@ -373,8 +340,7 @@ class LogicalDelayConnection:
                 client
                 for client in clients
                 if client.simulator_name == simulator_interface_id.simulator_name
-                and client.model_name
-                == simulator_interface_id.model_interface_id.model_name
+                and client.model_name == simulator_interface_id.model_interface_id.model_name
             ),
             None,
         )

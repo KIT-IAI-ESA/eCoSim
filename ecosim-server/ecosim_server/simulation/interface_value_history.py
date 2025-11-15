@@ -1,3 +1,5 @@
+from __future__ import annotations
+import dataclasses
 import datetime
 import threading
 from typing import List, Tuple
@@ -6,6 +8,7 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
 )
+from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequestInputs
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
@@ -53,7 +56,7 @@ class InterfaceValueHistory:
                 interface_values=interface_values,
             )
             self._add_to_repository_internal(
-                time_step=time_step,
+                step=time_step,
                 client_id=client_id,
                 values=interface_values,
             )
@@ -82,16 +85,14 @@ class InterfaceValueHistory:
 
     def _add_to_repository_internal(
         self,
-        time_step: float,
+        step: int,
         client_id: ClientID,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
-        if time_step != InterfaceValueHistory._default_values_marker:
+        if step != InterfaceValueHistory._default_values_marker:
             self._repositories.measurement_repository(client_id).add(
                 values=values,
-                timestamp=self._simulation_config.date_time_for_step(
-                    time_step,
-                ),
+                timestamp=self._simulation_config.date_time_for_step(step),
             )
 
     def init_from_repositories(self) -> None:
@@ -121,47 +122,38 @@ class InterfaceValueHistory:
         self,
         timestamp: datetime.datetime,
     ) -> int:
-        passed_milliseconds = (
-            timestamp.timestamp() * 1000
-            - self._simulation_config.start_date.timestamp() * 1000
-        )
-        plausibility_check = (
-            passed_milliseconds % self._simulation_config.step_size_in_ms == 0
-        )
+        passed_milliseconds = timestamp.timestamp() * 1000 - self._simulation_config.start_date.timestamp() * 1000
+        plausibility_check = passed_milliseconds % self._simulation_config.step_size_in_ms == 0
         if not plausibility_check:
             raise RuntimeError(f"Timestamp {timestamp} is not a plausible step time.")
         return int(passed_milliseconds / self._simulation_config.step_size_in_ms)
 
-    def calculate_current_execution_step_or_exception(self) -> int:
+    def calculate_current_execution_step_or_exception(self) -> RestoreData:
         latest_completed_step_by_client: dict[ClientID, int] = dict[ClientID, int]()
-        latest_timestep: int = self._get_latest_timestep()
+        latest_step: int = self._get_latest_timestep()
         second_latest_timestep: int = self._get_latest_timestep()
         clients_with_missing_steps: List[ClientID] = []
         for client in self._simulation_config.clients:
-            latest_step_for_client = latest_timestep
-            if client.client_id not in self._entries[latest_timestep].keys():
+            latest_step_for_client = latest_step
+            if client.client_id not in self._entries[latest_step].keys():
                 if client.client_id not in self._entries[second_latest_timestep].keys():
                     clients_with_missing_steps.append(client.client_id)
                     continue
                 latest_step_for_client = second_latest_timestep
-            client_interfaces = [
-                interface.name
-                for interface in self._entries[latest_step_for_client][client.client_id]
-            ]
-            latest_completed_step_by_client[client.client_id] = latest_timestep
+            client_interfaces = [interface.name for interface in self._entries[latest_step_for_client][client.client_id]]
+            latest_completed_step_by_client[client.client_id] = latest_step
             for interface in client.interfaces:
                 if interface.name not in client_interfaces:
-                    latest_completed_step_by_client[client.client_id] = (
-                        second_latest_timestep
-                    )
+                    latest_completed_step_by_client[client.client_id] = second_latest_timestep
                     break
         if len(clients_with_missing_steps) > 0:
             raise RuntimeError(
                 f"Cannot calculate current execution step because some clients are missing steps: {clients_with_missing_steps}",
             )
-        return (
-            min(latest_completed_step_by_client.values()) + 1
-        )  # the step after the latest min completed step needs to be executed
+        return RestoreData.of(
+            latest_completed_step_by_client=latest_completed_step_by_client,
+            repositories=self._repositories,
+        )
 
     def _get_latest_timestep(self) -> int:
         if not self._entries:
@@ -177,3 +169,35 @@ class InterfaceValueHistoryEntry:
     ):
         self.time = time_step
         self.interface_values = interface_values
+
+
+@dataclasses.dataclass(frozen=True)
+class RestoreData:
+    current_step: int
+    client_restore_data: dict[ClientID, SimulationStepBatchRequestInputs]
+
+    @staticmethod
+    def of(
+        latest_completed_step_by_client: dict[ClientID, int],
+        repositories: Repositories,
+    ) -> RestoreData:
+        return RestoreData(
+            current_step=min(latest_completed_step_by_client.values()) + 1,  # the step after the latest min completed step needs to be executed
+            client_restore_data=RestoreData._transform_history_to_restore_data(
+                latest_completed_step_by_client=latest_completed_step_by_client,
+                repositories=repositories,
+            ),
+        )
+
+    @staticmethod
+    def _transform_history_to_restore_data(
+        latest_completed_step_by_client: dict[ClientID, int],
+        repositories: Repositories,
+    ) -> dict[ClientID, SimulationStepBatchRequestInputs]:
+        result: dict[ClientID, SimulationStepBatchRequestInputs] = {}
+        for client_id, latest_completed_step in latest_completed_step_by_client.items():
+            client_repository = repositories.measurement_repository(client_id)
+            all_entries = client_repository.all()
+            transformed_entries: SimulationStepBatchRequestInputs = {entry.timestamp: list(entry.values) for entry in all_entries}
+            result[client_id] = transformed_entries
+        return result
