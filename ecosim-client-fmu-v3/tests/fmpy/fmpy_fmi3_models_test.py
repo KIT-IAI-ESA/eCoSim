@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os.path
 import shutil
 
 from fmpy import read_model_description, extract
@@ -10,7 +11,7 @@ from tests.tech.resource_utils import resource_path
 
 # This is only a test to play around with the FMI3 implementation of fmpy
 def test_feedthrough() -> None:
-    fmu_file = resource_path() / "test_fmus/Feedthrough.fmu"
+    fmu_file = os.path.join(resource_path(), "test_fmus", "Feedthrough.fmu")
     model_description = read_model_description(f"{fmu_file}")
 
     unzipdir = extract(fmu_file)
@@ -89,7 +90,7 @@ def test_feedthrough() -> None:
 
 # This is only a test to play around with the FMI3 implementation of fmpy
 def test_state_space() -> None:
-    fmu_file = resource_path() / "test_fmus/StateSpace.fmu"
+    fmu_file = os.path.join(resource_path(), "test_fmus", "StateSpace.fmu")
     model_description = read_model_description(f"{fmu_file}")
 
     unzipdir = extract(fmu_file)

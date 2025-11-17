@@ -10,6 +10,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -32,8 +33,12 @@ class AbstractServer(ABC):
     def print_measurement_statistics(self) -> None:
         pass
 
+    @abstractmethod
+    def force_stop(self) -> None:
+        pass
 
-class Server(AbstractServer):
+
+class Server(AbstractServer, ShutdownListener):
     _logger = ESPLogger("Server")
 
     def __init__(
@@ -62,6 +67,7 @@ class Server(AbstractServer):
         # self.socket = ServerSocket(
         #     connection_address=ConnectionAddress(ip=server_config.server.host, port=server_config.server.port))
         self._rendering_socket: RenderingSocket | None = None
+        ShutdownManager().register_listener(self)
 
     @override
     def start(self) -> None:
@@ -202,3 +208,13 @@ class Server(AbstractServer):
             return
         SimulationExecutor.logger.info("Stopping image renderer socket.")
         self._rendering_socket.close()
+
+    @override
+    def on_app_shutdown(self) -> None:
+        self._channel_endpoint.close()
+        self._stop_image_renderer_socket()
+
+    @override
+    def force_stop(self) -> None:
+        self.on_app_shutdown()
+        self._simulation_executor.force_stop()
