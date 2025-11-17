@@ -87,7 +87,7 @@ integration_test_ecosim:
   script:
     - cd $SRC_DIR/integration-tests
     - uv sync
-    - uv run pytest
+    - uv run pytest --ignore=integration_tests/locally
   artifacts:
     expire_in: 14 days
     reports:

@@ -15,7 +15,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Integration Tests",
-#    "License :: OSI Approved :: MIT License",
+    #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
@@ -56,4 +56,5 @@ addopts = [
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",
+    "--ignore=locally"
 ]
