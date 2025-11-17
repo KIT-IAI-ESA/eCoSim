@@ -154,6 +154,7 @@ class SimulationExecutor:
         self._value_history.init_from_repositories()
         restore_data = self._value_history.calculate_current_execution_step_or_exception()
         self._current_step = restore_data.current_step
+        SimulationExecutor.logger.debug(f"[Restore simulation] the latest completed step is: {self._current_step} -> restoring until this step.")
         save_defaults = False
         if not self._value_history.contains_all_default_values():
             SimulationExecutor.logger.debug("[Restore simulation] no (or not all default) values are stored in the history: saving them now")
@@ -185,6 +186,7 @@ class SimulationExecutor:
 
         if len(handled_client_ids) > 0:
             SimulationExecutor.logger.debug("[Restore simulation] waiting for step batch responses")
+            self._current_step_data.reset_for_new_step(step=self._current_step)
             responses = {client_id: threading.Event() for client_id in self.simulation_config.client_ids()}
 
             def handle_batch_response(message: BufferedClientMessage) -> None:
@@ -195,7 +197,6 @@ class SimulationExecutor:
                         + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
                     )
                     return
-                self.logger.debug(f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id}")
                 responses[client_id].set()
 
             self._client_communication.on_messages(
@@ -328,20 +329,38 @@ class SimulationExecutor:
         client_sim_step_data: ClientSimStepData = received_message.payload(
             ClientSimStepData,
         )
-        interface_values = tuple(client_sim_step_data.interface_values)
-        self.logger.debug(
-            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} on step {self._current_step}: {client_sim_step_data}",
+        self._process_sim_step_message(
+            client_id=client_id,
+            sim_step_data=client_sim_step_data,
+            ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
         )
+        handled_clients[client_id] = True
+
+        if all(handled_clients.values()):
+            all_clients_handled_event.set()
+
+    def _process_sim_step_message(
+        self,
+        client_id: ClientID,
+        sim_step_data: ClientSimStepData,
+        ready_for_execution_data_by_clients: dict[
+            ClientID,
+            List[ProtocolInterfaceValue],
+        ],
+    ) -> None:
+        self.logger.debug(
+            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}",
+        )
+        interface_values = tuple(sim_step_data.interface_values)
         self._value_history.add(
             time_step=self._current_step,
             client_id=client_id,
             interface_values=interface_values + tuple(ready_for_execution_data_by_clients[client_id]),
         )
         self._current_step_data.add_received_data(client_id, interface_values)
-        handled_clients[client_id] = True
-
-        if all(handled_clients.values()):
-            all_clients_handled_event.set()
+        self.logger.debug(
+            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}: DONE",
+        )
 
     def _pace_throttle(self) -> None:
         if self._pace_sleep == 0:
