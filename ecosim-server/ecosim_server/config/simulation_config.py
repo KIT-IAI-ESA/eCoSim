@@ -155,8 +155,19 @@ class SimulationConfig:
         self,
         step: int,
     ) -> datetime:
-        # (step + 1) because the first step is step 0 and therefor the simulation time is already start_date + simulation_steps_in_ms
+        # (step + 1) because the first step is step 0 and therefore the simulation time is already start_date + simulation_steps_in_ms
         return self.start_date + timedelta(milliseconds=(step + 1) * self.step_size_in_ms)
+
+    def date_time_to_step(
+        self,
+        date: datetime,
+    ) -> int:
+        passed_milliseconds = date.timestamp() * 1000 - self.start_date.timestamp() * 1000
+        plausibility_check = passed_milliseconds % self.step_size_in_ms == 0
+        if not plausibility_check:
+            raise RuntimeError(f"Date time {date} is not a plausible step time.")
+        # (step - 1) because the first step is step 0
+        return int(passed_milliseconds / self.step_size_in_ms) - 1
 
     def print_for_start_up(self) -> None:
         GlobalLogger.print_values(
