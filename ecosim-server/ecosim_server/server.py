@@ -1,6 +1,6 @@
 import threading
 from abc import abstractmethod, ABC
-from typing import override, List
+from typing import override
 
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.channel.esp_channel_endpoint import (
@@ -9,9 +9,6 @@ from ecosim_common.communication.channel.esp_channel_endpoint import (
 )
 from ecosim_common.communication.channel.esp_channel_message_json import (
     ESPChannelMessageJson,
-)
-from ecosim_common.communication.data.simulation_step_batch_request import (
-    SimulationStepBatchRequest,
 )
 
 from ecosim_common.communication.message_type import MessageType
@@ -26,7 +23,6 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.server_time_measurement import (
     ServerTimeMeasurement,
     ServerTimeMeasurementType,
@@ -169,39 +165,6 @@ class Server(AbstractServer):
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _handle_simulation_run_restore(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        if not self._simulation_config.restore:
-            Server._logger.debug(
-                "[Restore Run] Restoring simulation run is disabled - so nothing happens.",
-            )
-            return
-        Server._logger.debug("[Restore Run] Restoring simulation run if needed...")
-        client_repository = self._repositories.measurement_repository(client_id)
-        existing_values: List[MeasurementEntry] = client_repository.all()
-        if len(existing_values) == 0:
-            Server._logger.debug(
-                f"[Restore Run] no values found for restoring for client {client_id}.",
-            )
-            return
-        Server._logger.debug(
-            f"[Restore Run] found {len(existing_values)} values to restore for client {client_id}.",
-        )
-        connection.send(
-            ESPChannelMessageJson.create(
-                type=MessageType.SIMULATION_STEP_BATCH,
-                payload=SimulationStepBatchRequest(
-                    start_datetime=self._simulation_config.start_date,
-                    inputs={
-                        entry.timestamp: list(entry.values) for entry in existing_values
-                    },
-                ),
-            ),
-        )
 
     def _handle_simulation_setup(
         self,

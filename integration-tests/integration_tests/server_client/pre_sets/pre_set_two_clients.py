@@ -1,17 +1,19 @@
 import dataclasses
 import threading
-from datetime import datetime, timedelta
-from typing import Generator, Any
+from datetime import datetime
+from typing import Generator, Any, Tuple
 
 import pytest
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.simulation.interface_id import InterfaceId
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import SimpleTestServer, generate_simple_test_server
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.test_client_data import TestClientData
 
 
@@ -33,10 +35,10 @@ class PreSetTwoClientsData:
         return self.server.repositories.measurement_repository(client_id=self.client_2.client_id)
 
     def client_2_output_value_at_step(self, step: int) -> float:
-        return -step * self.step_size_in_seconds * 10_000
+        return -(step+1) * self.step_size_in_seconds * 10_000
 
     def client_1_output_value_at_step(self, step: int) -> float:
-        return step * self.step_size_in_seconds + self.client_2_output_value_at_step(step)
+        return (step+1) * self.step_size_in_seconds + self.client_2_output_value_at_step(step)
 
     def add_client_1_measurement(
         self,
@@ -74,10 +76,10 @@ class PreSetTwoClientsData:
         )
 
     def _step_to_date(self, step: int) -> datetime:
-        return self.start_date + timedelta(seconds=step * self.step_size_in_seconds)
+        return self.server.simulation_config.date_time_for_step(step)
 
     def date_to_step(self, date: datetime) -> int:
-        return int((date - self.start_date).total_seconds() / self.step_size_in_seconds)
+        return int((date - self.start_date).total_seconds() / self.step_size_in_seconds) - 1  # '-1' because the first step is step 0
 
     @property
     def step_size_in_seconds(self) -> float:
@@ -95,11 +97,51 @@ class PreSetTwoClientsData:
     def start_client_2_async(self) -> None:
         self.client_2.start()
 
+    def verify_successful_run(self) -> None:
+        client_1_measurement_repository = self.measurement_repository_client_1()
+
+        if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
+            raise RuntimeError("You can only use in memory DBs")
+
+        client_1_measurement_repository.assert_entry_count(self.steps)
+
+        def assert_for_each_record(
+            timestamp: datetime,
+            values: Tuple[ProtocolInterfaceValue, ...],
+        ) -> bool:
+            current_step = self.date_to_step(timestamp)
+
+            output_value: InterfaceValueType | None = None
+            input_value: InterfaceValueType | None = None
+            for value in values:
+                if value.name == "Interface_Output_1":
+                    output_value = value.value
+                elif value.name == "Interface_Input_1":
+                    input_value = value.value
+            assert output_value is not None, (
+                f"Missing output interface value for step {current_step}"
+            )
+            assert input_value is not None, (
+                f"Missing input interface value for step {current_step}"
+            )
+
+            expected_output = self.client_1_output_value_at_step(int(current_step))
+            expected_input = self.client_2_output_value_at_step(int(current_step))
+            assert input_value == expected_input, (
+                f"failed at step {current_step} for input value: actual: {input_value} | expected {expected_input}"
+            )
+            assert output_value == expected_output, (
+                f"failed at step {current_step} for output value: actual: {output_value} | expected {expected_output}"
+            )
+            return values[0].value == expected_output
+
+        client_1_measurement_repository.assert_for_each_record(assert_for_each_record)
+
 
 @pytest.fixture(scope="function", autouse=False)
 def pre_set_two_clients() -> Generator[PreSetTwoClientsData, Any, None]:
     server_host = "localhost"
-    server_port = 47189
+    server_port = get_free_port()
     steps = 10
     step_size_in_ms = 2_500
     simulation_start_date: datetime = datetime(
@@ -187,7 +229,7 @@ def pre_set_two_clients() -> Generator[PreSetTwoClientsData, Any, None]:
         test_client_data=client_data_2,
         on_simulation_step_return=lambda _self,
                                          received_inputs,
-                                         steps: ClientSimStepData(
+                                         step_size_in_seconds: ClientSimStepData(
             interface_values=[
                 client_data_2.interface_protocol_value_of(
                     "Interface_Output_2",

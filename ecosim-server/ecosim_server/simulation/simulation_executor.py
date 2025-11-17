@@ -150,12 +150,16 @@ class SimulationExecutor:
         )
 
     def _restore_simulation_run(self) -> None:
-        SimulationExecutor.logger.info("Restoring simulations for all clients and waiting for successful start.")
+        SimulationExecutor.logger.info("[Restore simulation] Starting restore for all clients and waiting for successful start.")
         self._value_history.init_from_repositories()
         restore_data = self._value_history.calculate_current_execution_step_or_exception()
         self._current_step = restore_data.current_step
-        self._start_simulation_of_all_clients(store_default_values_in_history=False)
-        SimulationExecutor.logger.debug("Restoring simulation... sending step batch to clients")
+        save_defaults = False
+        if not self._value_history.contains_all_default_values():
+            SimulationExecutor.logger.debug("[Restore simulation] no (or not all default) values are stored in the history: saving them now")
+            save_defaults = True
+        self._start_simulation_of_all_clients(store_default_values_in_history=save_defaults)
+        SimulationExecutor.logger.debug("[Restore simulation] sending step batch to clients")
 
         # In theory, you can slice the batch data into different chunks. E.g. to keep the transferred data smaller.
         # To do this, you need to slice the batch and set for each batch its own start_date.
@@ -163,47 +167,54 @@ class SimulationExecutor:
         # Then you can wait after each chunk for its response and then, you can send the next chunk.
 
         start_date = self.simulation_config.start_date
+        handled_client_ids: List[ClientID] = []
 
         for client_id in self._server_state.client_states.all_client_ids():
+            data_for_restoration = restore_data.client_restore_data[client_id]
+            if not data_for_restoration or len(data_for_restoration) == 0:
+                SimulationExecutor.logger.debug(f"[Restore simulation] sending step batch to clients: client {client_id} has no data to restore.")
+                continue
+            handled_client_ids.append(client_id)
             self._client_communication.send_simulation_step_batch(
                 client_id=client_id,
                 data=SimulationStepBatchRequest(
                     start_datetime=start_date,
-                    inputs=restore_data.client_restore_data[client_id],
+                    inputs=data_for_restoration,
                 ),
             )
 
-        SimulationExecutor.logger.debug("Restoring simulation... waiting for step batch responses")
-        responses = {client_id: threading.Event() for client_id in self.simulation_config.client_ids()}
+        if len(handled_client_ids) > 0:
+            SimulationExecutor.logger.debug("[Restore simulation] waiting for step batch responses")
+            responses = {client_id: threading.Event() for client_id in self.simulation_config.client_ids()}
 
-        def handle_batch_response(message: BufferedClientMessage) -> None:
-            client_id = message.client_id
-            if message.message.correlation_id() != CorrelationId.of_date_time(start_date):
-                self.logger.error(
-                    f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id} with a wrong correlation_id. "
-                    + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
-                )
-                return
-            self.logger.debug(f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id}")
-            responses[client_id].set()
+            def handle_batch_response(message: BufferedClientMessage) -> None:
+                client_id = message.client_id
+                if message.message.correlation_id() != CorrelationId.of_date_time(start_date):
+                    self.logger.error(
+                        f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id} with a wrong correlation_id. "
+                        + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
+                    )
+                    return
+                self.logger.debug(f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id}")
+                responses[client_id].set()
 
-        self._client_communication.on_messages(
-            client_ids=self.simulation_config.client_ids(),
-            message_types=(MessageType.SIMULATION_STEP_BATCH,),
-            callback=handle_batch_response,
-        )
+            self._client_communication.on_messages(
+                client_ids=tuple(handled_client_ids),
+                message_types=(MessageType.SIMULATION_STEP_BATCH,),
+                callback=handle_batch_response,
+            )
 
-        for client_id, event in responses.items():
-            if not event.wait(timeout=60 * 60):
-                raise RuntimeError(f"Timeout while waiting for restore response from client {client_id}")
+            for client_id, event in responses.items():
+                if not event.wait(timeout=60 * 60):
+                    raise RuntimeError(f"Timeout while waiting for restore response from client {client_id}")
 
-        self._client_communication.remove_on_message_callback(
-            client_ids=self.simulation_config.client_ids(),
-            message_types=(MessageType.SIMULATION_STEP_BATCH,),
-        )
+            self._client_communication.remove_on_message_callback(
+                client_ids=self.simulation_config.client_ids(),
+                message_types=(MessageType.SIMULATION_STEP_BATCH,),
+            )
 
         SimulationExecutor.logger.info(
-            f"Restoring simulation on all clients successful - continuing from step {self._current_step}.",
+            f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
     def _execute_steps(self) -> None:

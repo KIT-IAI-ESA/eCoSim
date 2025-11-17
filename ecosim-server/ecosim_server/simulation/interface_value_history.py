@@ -118,6 +118,14 @@ class InterfaceValueHistory:
                 f"Initializing from repositories for client {client.client_id}: successfully restored {len(sorted_entries)} entries",
             )
 
+    def contains_all_default_values(self) -> bool:
+        return (
+            InterfaceValueHistory._default_values_marker in self._entries.keys() and
+            self._entries[InterfaceValueHistory._default_values_marker].keys() == {
+                client.client_id for client in self._simulation_config.clients
+            }
+        )
+
     def _timestamp_to_step(
         self,
         timestamp: datetime.datetime,
@@ -129,11 +137,16 @@ class InterfaceValueHistory:
         return int(passed_milliseconds / self._simulation_config.step_size_in_ms)
 
     def calculate_current_execution_step_or_exception(self) -> RestoreData:
+        InterfaceValueHistory._logger.debug("Calculating current execution step...")
         latest_completed_step_by_client: dict[ClientID, int] = dict[ClientID, int]()
         latest_step: int = self._get_latest_timestep()
-        second_latest_timestep: int = self._get_latest_timestep()
+        second_latest_timestep: int = latest_step - 1 if latest_step > 0 else 0
         clients_with_missing_steps: List[ClientID] = []
         for client in self._simulation_config.clients:
+            if len(self._entries.keys()) == 0:
+                InterfaceValueHistory._logger.debug("No entries in self._entries -> skipping any calculation")
+                latest_completed_step_by_client[client.client_id] = -1
+                continue
             latest_step_for_client = latest_step
             if client.client_id not in self._entries[latest_step].keys():
                 if client.client_id not in self._entries[second_latest_timestep].keys():
@@ -150,15 +163,17 @@ class InterfaceValueHistory:
             raise RuntimeError(
                 f"Cannot calculate current execution step because some clients are missing steps: {clients_with_missing_steps}",
             )
-        return RestoreData.of(
+        restore_data = RestoreData.of(
             latest_completed_step_by_client=latest_completed_step_by_client,
             repositories=self._repositories,
         )
+        InterfaceValueHistory._logger.debug(f"Calculating current execution step... finished. restore_data={restore_data}")
+        return restore_data
 
     def _get_latest_timestep(self) -> int:
         if not self._entries:
             return 0
-        return max(self._entries.keys())
+        return max(self._entries.keys()) - 1
 
 
 class InterfaceValueHistoryEntry:
