@@ -185,9 +185,11 @@ class RestoreData:
         latest_completed_step_by_client: dict[ClientID, int],
         repositories: Repositories,
     ) -> RestoreData:
+        common_latest_completed_step = min(latest_completed_step_by_client.values())
         return RestoreData(
-            current_step=min(latest_completed_step_by_client.values()) + 1,  # the step after the latest min completed step needs to be executed
+            current_step=common_latest_completed_step + 1,  # the step after the latest min completed step needs to be executed
             client_restore_data=RestoreData._transform_history_to_restore_data(
+                common_latest_completed_step=common_latest_completed_step,
                 latest_completed_step_by_client=latest_completed_step_by_client,
                 repositories=repositories,
             ),
@@ -195,13 +197,17 @@ class RestoreData:
 
     @staticmethod
     def _transform_history_to_restore_data(
+        common_latest_completed_step: int,
         latest_completed_step_by_client: dict[ClientID, int],
         repositories: Repositories,
     ) -> dict[ClientID, SimulationStepBatchRequestInputs]:
         result: dict[ClientID, SimulationStepBatchRequestInputs] = {}
-        for client_id, latest_completed_step in latest_completed_step_by_client.items():
+        for client_id, latest_completed_step_client in latest_completed_step_by_client.items():
             client_repository = repositories.measurement_repository(client_id)
             all_entries = client_repository.all()
+            if latest_completed_step_client != common_latest_completed_step:
+                all_entries = sorted(all_entries, key=lambda it: it.timestamp)
+                all_entries.pop()
             transformed_entries: SimulationStepBatchRequestInputs = {entry.timestamp: list(entry.values) for entry in all_entries}
             result[client_id] = transformed_entries
         return result
