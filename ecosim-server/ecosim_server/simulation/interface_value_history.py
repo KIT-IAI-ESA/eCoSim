@@ -1,6 +1,5 @@
 from __future__ import annotations
 import dataclasses
-import datetime
 import threading
 from typing import List, Tuple
 
@@ -112,7 +111,7 @@ class InterfaceValueHistory:
                 f"Initializing from repositories for client {client.client_id}: found {len(sorted_entries)} entries",
             )
             for entry in sorted_entries:
-                step: int = self._timestamp_to_step(entry.timestamp)
+                step: int = self._simulation_config.date_time_to_step(entry.timestamp)
                 self._add_to_entries_internal(step, client.client_id, entry.values)
             InterfaceValueHistory._logger.debug(
                 f"Initializing from repositories for client {client.client_id}: successfully restored {len(sorted_entries)} entries",
@@ -125,16 +124,6 @@ class InterfaceValueHistory:
                 client.client_id for client in self._simulation_config.clients
             }
         )
-
-    def _timestamp_to_step(
-        self,
-        timestamp: datetime.datetime,
-    ) -> int:
-        passed_milliseconds = timestamp.timestamp() * 1000 - self._simulation_config.start_date.timestamp() * 1000
-        plausibility_check = passed_milliseconds % self._simulation_config.step_size_in_ms == 0
-        if not plausibility_check:
-            raise RuntimeError(f"Timestamp {timestamp} is not a plausible step time.")
-        return int(passed_milliseconds / self._simulation_config.step_size_in_ms)
 
     def calculate_current_execution_step_or_exception(self) -> RestoreData:
         InterfaceValueHistory._logger.debug("Calculating current execution step...")
@@ -154,7 +143,7 @@ class InterfaceValueHistory:
                     continue
                 latest_step_for_client = second_latest_timestep
             client_interfaces = [interface.name for interface in self._entries[latest_step_for_client][client.client_id]]
-            latest_completed_step_by_client[client.client_id] = latest_step
+            latest_completed_step_by_client[client.client_id] = latest_step_for_client
             for interface in client.interfaces:
                 if interface.name not in client_interfaces:
                     latest_completed_step_by_client[client.client_id] = second_latest_timestep
@@ -173,7 +162,7 @@ class InterfaceValueHistory:
     def _get_latest_timestep(self) -> int:
         if not self._entries:
             return 0
-        return max(self._entries.keys()) - 1
+        return max(self._entries.keys())  # the keys are the steps, so they range from 0 to the latest step
 
 
 class InterfaceValueHistoryEntry:

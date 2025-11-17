@@ -79,7 +79,7 @@ class PreSetTwoClientsData:
         return self.server.simulation_config.date_time_for_step(step)
 
     def date_to_step(self, date: datetime) -> int:
-        return int((date - self.start_date).total_seconds() / self.step_size_in_seconds) - 1  # '-1' because the first step is step 0
+        return self.server.simulation_config.date_time_to_step(date)
 
     @property
     def step_size_in_seconds(self) -> float:
