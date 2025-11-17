@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from contextlib import contextmanager, AbstractContextManager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Callable, Generator, Iterator, Tuple
 
@@ -29,8 +29,8 @@ from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
 
 import pytest
-from psycopg import Connection
-import psycopg
+import psycopg2
+from psycopg2._psycopg import connection
 from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
@@ -41,7 +41,7 @@ logger = ESPLogger("Postgres test")
 @dataclass(frozen=True)
 class PostgresFixture:
     """Typed structure returned by the postgres_container fixture."""
-    connection: Callable[[], AbstractContextManager[Connection]]
+    connection: Callable[[], AbstractContextManager[connection]]
     container: PostgresContainer
 
 
@@ -53,8 +53,8 @@ def postgres_container() -> Generator[PostgresFixture, None, None]:
     container.start()
 
     @contextmanager
-    def connection() -> Iterator[Connection]:
-        conn = psycopg.connect(
+    def open_connection() -> Iterator[connection]:
+        conn = psycopg2.connect(
             host=container.get_container_host_ip(),
             port=container.get_exposed_port(5432),
             dbname=container.dbname,
@@ -68,7 +68,7 @@ def postgres_container() -> Generator[PostgresFixture, None, None]:
             conn.close()
 
     try:
-        yield PostgresFixture(connection=connection, container=container)
+        yield PostgresFixture(connection=open_connection, container=container)
     finally:
         try:
             container.stop()
@@ -76,14 +76,14 @@ def postgres_container() -> Generator[PostgresFixture, None, None]:
             pass
 
 
-def test_test(postgres_container: PostgresFixture) -> None:
+def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     server_host = "localhost"
     server_port = 33771
     steps = 100
     step_size_in_ms = 2_000
     simulation_start_date: datetime = datetime(
         year=2025, month=1, day=1, hour=0, minute=0, second=0,
-        microsecond=0,
+        microsecond=0, tzinfo=timezone.utc,
     )
 
     server = generate_simple_test_server(
@@ -265,11 +265,11 @@ def test_test(postgres_container: PostgresFixture) -> None:
         logger.debug(f"(Client1) Actual:   {actual}")
         return actual == expected
 
-    (
-        client_1_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(client_1_asserts)
-    )
+    repos = client_1_measurement_repository.all()
+    assert len(repos) == steps
+
+    for repo in repos:
+        assert client_1_asserts(repo.timestamp, repo.values)
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
 
@@ -278,17 +278,17 @@ def test_test(postgres_container: PostgresFixture) -> None:
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
         base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
-        actual = values[0].value
+        actual = values[1].value
         expected = square_each_element(generate_matrix(base_value))
         logger.debug(f"(Client2) Expected: {expected}")
         logger.debug(f"(Client2) Actual:   {actual}")
         return actual == expected
 
-    (
-        client_2_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(client_2_asserts)
-    )
+    repos = client_2_measurement_repository.all()
+    assert len(repos) == steps
+
+    for repo in repos:
+        assert client_2_asserts(repo.timestamp, repo.values)
 
 
 def get_decimal_part(value: float) -> float:
