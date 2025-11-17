@@ -129,7 +129,6 @@ class InterfaceValueHistory:
         InterfaceValueHistory._logger.debug("Calculating current execution step...")
         latest_completed_step_by_client: dict[ClientID, int] = dict[ClientID, int]()
         latest_step: int = self._get_latest_timestep()
-        second_latest_timestep: int = latest_step - 1 if latest_step > 0 else 0
         clients_with_missing_steps: List[ClientID] = []
         for client in self._simulation_config.clients:
             if len(self._entries.keys()) == 0:
@@ -138,15 +137,21 @@ class InterfaceValueHistory:
                 continue
             latest_step_for_client = latest_step
             if client.client_id not in self._entries[latest_step].keys():
-                if client.client_id not in self._entries[second_latest_timestep].keys():
+                found_latest_step_for_client: bool = False
+                while latest_step_for_client > 0 and not found_latest_step_for_client:
+                    latest_step_for_client -= 1
+                    if client.client_id not in self._entries[latest_step_for_client].keys():
+                        continue
+                    found_latest_step_for_client = True
+                if not found_latest_step_for_client:
                     clients_with_missing_steps.append(client.client_id)
                     continue
-                latest_step_for_client = second_latest_timestep
             client_interfaces = [interface.name for interface in self._entries[latest_step_for_client][client.client_id]]
             latest_completed_step_by_client[client.client_id] = latest_step_for_client
+            # check if all interfaces are present -> otherwise it is an uncompleted step
             for interface in client.interfaces:
                 if interface.name not in client_interfaces:
-                    latest_completed_step_by_client[client.client_id] = second_latest_timestep
+                    latest_completed_step_by_client[client.client_id] = latest_step_for_client - 1
                     break
         if len(clients_with_missing_steps) > 0:
             raise RuntimeError(
@@ -204,10 +209,13 @@ class RestoreData:
         result: dict[ClientID, SimulationStepBatchRequestInputs] = {}
         for client_id, latest_completed_step_client in latest_completed_step_by_client.items():
             client_repository = repositories.measurement_repository(client_id)
-            all_entries = client_repository.all()
-            if latest_completed_step_client != common_latest_completed_step:
-                all_entries = sorted(all_entries, key=lambda it: it.timestamp)
+            all_entries = sorted(client_repository.all(), key=lambda it: it.timestamp)
+            too_many_entries = latest_completed_step_client - common_latest_completed_step
+            for i in range(too_many_entries):
                 all_entries.pop()
+            InterfaceValueHistory._logger.debug(
+                f"Transforming history to restore data for client {client_id}: found {len(all_entries)} entries",
+            )
             transformed_entries: SimulationStepBatchRequestInputs = {entry.timestamp: list(entry.values) for entry in all_entries}
             result[client_id] = transformed_entries
         return result
