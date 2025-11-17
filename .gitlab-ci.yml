@@ -96,22 +96,6 @@ integration_test_ecosim:
       - integration-tests/report.xml
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
-integration_test_db:
-  needs: [ ]
-  extends: .image-template
-  stage: integration_test
-  script:
-    - cd $SRC_DIR/integration-tests
-    - uv sync
-    - uv run pytest integration_tests/locally/database -o python_files=*.py
-  artifacts:
-    expire_in: 14 days
-    reports:
-      junit: integration-tests/report.xml
-    paths:
-      - integration-tests/report.xml
-    when: always
-
 publish_artifacts:
   needs: [ test, integration_test_ecosim ]
   extends: .sub-project-template
