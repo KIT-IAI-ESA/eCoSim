@@ -86,6 +86,9 @@ class SimpleTestClient(Client):
             ClientSimStepData,
         ] = on_simulation_step_return
 
+    def reset_accumulated_step_sizes(self) -> None:
+        self.accumulated_step_sizes_in_seconds.set(0.0)
+
     def on_simulation_start(self) -> ClientSimStepData:
         self._on_simulation_start_calls.inc()
         return ClientSimStepData(

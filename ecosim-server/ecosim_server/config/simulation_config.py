@@ -153,9 +153,10 @@ class SimulationConfig:
 
     def date_time_for_step(
         self,
-        step: float,
+        step: int,
     ) -> datetime:
-        return self.start_date + timedelta(milliseconds=step * self.step_size_in_ms)
+        # (step + 1) because the first step is step 0 and therefor the simulation time is already start_date + simulation_steps_in_ms
+        return self.start_date + timedelta(milliseconds=(step + 1) * self.step_size_in_ms)
 
     def print_for_start_up(self) -> None:
         GlobalLogger.print_values(
