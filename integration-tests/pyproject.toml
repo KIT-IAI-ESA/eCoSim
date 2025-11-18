@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "integration-tests"
-version = "0.11.3"
+version = "0.12.0"
 description = "Integration tests for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -20,9 +20,9 @@ classifiers = [
 ]
 dependencies = [
     "docker==7.1.0",
-    "ecosim-client-fmu-v3>=0.11.3",
-    "ecosim-common>=0.11.3",
-    "ecosim-server>=0.11.3",
+    "ecosim-client-fmu-v3>=0.12.0",
+    "ecosim-common>=0.12.0",
+    "ecosim-server>=0.12.0",
     "mypy==1.18.2",
     "pytest-cov==6.1.1",
     "pytest-html==4.1.1",
