@@ -8,7 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 virtualenv at ~/dev/ecosim/ecosim-server/.venv" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-server)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
   </component>

@@ -5,26 +5,19 @@ import time
 from time import sleep
 from typing import List
 
-from ecosim_common.communication.channel.esp_channel_message_json import (
-    ESPChannelMessageJson,
-)
+from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import (
-    ProtocolInterfaceValue,
-)
+from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.server_time_measurement import (
-    ServerTimeMeasurement,
-    ServerTimeMeasurementType,
-)
+from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.message_buffer import BufferedClientMessage
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
@@ -97,16 +90,12 @@ class SimulationExecutor:
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
     def _stop_simulation(self) -> None:
-        SimulationExecutor.logger.info(
-            "Sending 'stop simulation' signal to all clients",
-        )
+        SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
 
         self._handle_image_renderer(wait_for_finish_timeout=9)
 
-        self._client_communication.broadcast(
-            ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP),
-        )
+        self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
@@ -116,9 +105,7 @@ class SimulationExecutor:
                     client_id=message.client_id,
                 )
             sleep(2)
-        SimulationExecutor.logger.info(
-            "All clients stopped (or are not connected anymore)",
-        )
+        SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
     def _start_simulation_of_all_clients(
         self,
@@ -131,7 +118,8 @@ class SimulationExecutor:
             ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START),
         )
 
-        while (not self._server_state.have_all_clients_started_simulation()) and self._server_state.are_all_clients_connected_and_ready():
+        while ((not self._server_state.have_all_clients_started_simulation()) and
+               self._server_state.are_all_clients_connected_and_ready()):
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_START,),
@@ -221,9 +209,7 @@ class SimulationExecutor:
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
         while self._current_step < self.simulation_config.steps:
-            self.logger.info(
-                f"Step {self._current_step}: Executing step {self._current_step}",
-            )
+            self.logger.info(f"Step {self._current_step}: Executing step {self._current_step}")
             self._current_step_data.reset_for_new_step(step=self._current_step)
             self._execute_logical_delays()
 
@@ -242,13 +228,11 @@ class SimulationExecutor:
         self.logger.debug(f"Step {self._current_step}: Execute logical delays")
         delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step()
         for delayed_time_steps in sorted(delays_by_delay_step.keys()):
-            self.logger.info(
-                f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'",
-            )
+            self.logger.info(f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'")
             for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                 self.logger.debug(
-                    f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': "
-                    + f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
+                    f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': " +
+                    f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
                 )
                 self._current_step_data.set_value(
                     logical_delay_connection.output_interface,
@@ -264,8 +248,8 @@ class SimulationExecutor:
             List[ProtocolInterfaceValue],
         ] = self._current_step_data.get_ready_for_execution()
         self.logger.info(
-            f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:"
-            + f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
+            f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:" +
+            f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
         )
         for client_id in ready_for_execution_data_by_clients:
             self.logger.debug(
@@ -312,18 +296,15 @@ class SimulationExecutor:
     def _handle_received_sim_step(
         self,
         received_message: BufferedClientMessage,
-        ready_for_execution_data_by_clients: dict[
-            ClientID,
-            List[ProtocolInterfaceValue],
-        ],
+        ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
         handled_clients: dict[ClientID, bool],
         all_clients_handled_event: threading.Event,
     ) -> None:
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             self.logger.error(
-                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-                + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
+                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. " +
+                f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
             )
             return
         client_sim_step_data: ClientSimStepData = received_message.payload(
@@ -383,3 +364,8 @@ class SimulationExecutor:
         end_event = self._rendering_socket.request_and_send_images(step)
         if wait_for_finish_timeout is not None:
             end_event.wait(wait_for_finish_timeout)
+
+    def force_stop(self) -> None:
+        if self._server_state.is_running():
+            SimulationExecutor.logger.debug("Executing force shutdown")
+            self._server_state.force_stop()
