@@ -1,8 +1,7 @@
 import os
 import threading
 
-from psycopg2 import sql
-from psycopg2._psycopg import connection
+from psycopg import sql, Connection
 from testcontainers.postgres import PostgresContainer
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
@@ -22,7 +21,7 @@ from integration_tests.server_client.simple_test_server import generate_simple_t
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 
-def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: connection) -> None:
+def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: Connection) -> None:
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
@@ -114,7 +113,7 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
 
 def test_db_persistence_matrix(
     postgres_container: PostgresContainer,
-    db_connection: connection,
+    db_connection: Connection,
 ) -> None:
     matrix: InterfaceValueType = [
         [1.1, 2.2, 3.3],
