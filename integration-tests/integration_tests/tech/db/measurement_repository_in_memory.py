@@ -34,7 +34,7 @@ class MeasurementRepositoryInMemory(MeasurementRepository):
         self,
         entry_count: int,
     ) -> MeasurementRepositoryInMemory:
-        assert len(self._records) == entry_count
+        assert len(self._records) == entry_count, f"Expected {entry_count} entries, got {len(self._records)}"
         return self
 
     def assert_for_each_record(

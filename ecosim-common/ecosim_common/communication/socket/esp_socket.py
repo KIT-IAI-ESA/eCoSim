@@ -2,7 +2,11 @@ import socket
 import threading
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.socket.socket_messages import SocketMessage, ReceivedMessage, SocketMessageHeader
+from ecosim_common.communication.socket.socket_messages import (
+    SocketMessage,
+    ReceivedMessage,
+    SocketMessageHeader,
+)
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -40,7 +44,9 @@ class ESPSocket(ShutdownListener):
 
     def on_app_shutdown(self) -> None:
         if not self._closed.is_set():
-            ESPSocket._logger.info("Internal shutdown signal triggered - closing socket...")
+            ESPSocket._logger.info(
+                "Internal shutdown signal triggered - closing socket...",
+            )
             self.close()
 
     def connect(
@@ -65,17 +71,34 @@ class ESPSocket(ShutdownListener):
                 ESPSocket._logger.warning("Tried to close an already closed socket.")
             return
         closing_calls = self._closing_calls.inc()
-        ESPSocket._logger.debug(f"Closing socket... (_closing_calls={closing_calls})")
+        ESPSocket._logger.debug(
+            f"Closing socket {self.connection_address()}... (_closing_calls={closing_calls})",
+        )
         self._closed.set()
         self._connected = False
         if closing_calls == 1:
             try:
                 self._internal_socket.shutdown(socket.SHUT_RDWR)
             except Exception as e:
-                if not ShutdownManager().shutdown_event.is_set() or self._closing_calls.value == 1:
+                if (
+                    not ShutdownManager().shutdown_event.is_set()
+                    or self._closing_calls.value == 1
+                ):
                     # if it is during shutdown AND 'close' is called more than once,
                     # no error is printed since this is most likely due to race conditions
-                    ESPSocket._logger.error(f"Failed to send shutdown to socket due to '{e}'. (_closing_calls: {self._closing_calls.value})")
+                    ESPSocket._logger.error(
+                        f"Failed to send shutdown to socket due to '{e}'. (_closing_calls: {self._closing_calls.value}) "
+                        + "-> trying to force close socket.",
+                    )
+                    try:
+                        self._internal_socket.close()
+                        ESPSocket._logger.info(
+                            f"Successfully force closed socket. (_closing_calls: {self._closing_calls.value})",
+                        )
+                    except Exception as e:
+                        ESPSocket._logger.error(
+                            f"Failed to force close socket due to '{e}'. (_closing_calls: {self._closing_calls.value})",
+                        )
                 return
             self._internal_socket.close()
             ESPSocket._logger.info("Successfully closed socket.")
@@ -114,11 +137,17 @@ class ESPSocket(ShutdownListener):
             ESPSocket._logger.debug("Received no valid header")
             return None
 
-        data: bytes = b''
+        data: bytes = b""
         while len(data) < message_header.data_length:
             chunk = connection.recv(message_header.data_length - len(data))
             if not chunk:
                 raise ConnectionError("Error while receiving junks.")
             data += chunk
-        ESPSocket._logger.debug(f"Received message of type {message_header.message_type}")
-        return ReceivedMessage(message_header, data, ConnectionAddress.of_socket(connection))
+        ESPSocket._logger.debug(
+            f"Received message of type {message_header.message_type}",
+        )
+        return ReceivedMessage(
+            message_header,
+            data,
+            ConnectionAddress.of_socket(connection),
+        )
