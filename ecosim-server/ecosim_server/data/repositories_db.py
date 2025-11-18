@@ -1,18 +1,19 @@
 from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
+from typing import override
 
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.tech.db.ServerTimeMeasurementRepositoryDB import ServerTimeMeasurementRepositoryDB
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_tech_abstract import DbTechAbstract
 from ecosim_server.tech.db.postgres_tech import PostgresTech
-from ecosim_server.tech.db.simdb.MeasurementRepositoryDB import MeasurementRepositoryDB
-from ecosim_server.tech.db.simdb.SimulationStateRepositoryDB import SimulationStateRepositoryDB
+from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementRepositoryDB
+from ecosim_server.tech.db.simdb.measurement_repository_db import MeasurementRepositoryDB
+from ecosim_server.tech.db.simdb.simulation_state_repository_db import SimulationStateRepositoryDB
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,7 @@ class RepositoriesDB(Repositories):
             server_time_measurement_repository=ServerTimeMeasurementRepositoryDB(db_connection=db_connection),
         )
 
+    @override
     def measurement_repository(
         self,
         client_id: ClientID,

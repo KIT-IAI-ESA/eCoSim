@@ -23,13 +23,13 @@ If you use PyCharm as the IDE you should do the following steps:
 - install `mypy` plugin from Peter Szabo
     - after the installation reference the `mypy.ini` file as config file
         - Settings -> Tools -> MyPy -> Config file
-          ![mypy settings](mypy_settings.png)
+          ![mypy settings](resources/mypy_settings.png)
 - it should be enough to open the project root (`ecosim`) to load the project including the subprojects
     - **only** if this is not working and if you need to set everything up manually, follow the next steps
         - open the project root
         - remove all content root
             - Settings -> Project -> Project Structure -> remove the 'content root' on the right
-              ![remove content root](remove_content_root.png)
+              ![remove content root](resources/remove_content_root.png)
         - open `ecosim-common` and select `Attach`
         - repeat for all subprojects
         - set up the interpreter for each subproject
@@ -41,11 +41,19 @@ If you use PyCharm as the IDE you should do the following steps:
 
 ## Troubleshooting
 
-### Test configuration does not work
+### (PyCharm) Test configuration does not work
 
 - with PyCharm, the test configuration should work after you synced the projects with `uv`
 - if it does not, please check the settings of the integrated tools
   - Settings -> Python -> Integrated Tools
     - select `pytest` as default test runner
     - if you get a warning that `pytest runner` is not found, click the `Fix` button
-    ![remove content root](fix_pytest.png)
+    ![fix pytest](resources/fix_pytest.png)
+
+
+## (PyCharm) Mypy shows import errors for subprojects
+
+- e.g. if imports like `import ecosim_common.config` are marked as errors you probably have the wrong mypy executable selected
+- Settings -> Tools -> Mypy -> Mypy executable
+    - make sure the executable points to the `mypy` executable in the virtual environment of the project root
+  ![set mypy exec](resources/set_mypy_exec.png)

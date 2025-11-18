@@ -25,6 +25,14 @@ class AtomicFloat:
             self._value -= d
             return self._value
 
+    def set(
+        self,
+        d: float,
+    ) -> float:
+        with self._lock:
+            self._value = d
+            return self._value
+
     @property
     def value(self) -> float:
         with self._lock:

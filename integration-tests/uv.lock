@@ -292,7 +292,7 @@ wheels = [
 
 [[package]]
 name = "ecosim-client-fmu-v3"
-version = "0.11.2"
+version = "0.11.3"
 source = { editable = "../ecosim-client-fmu-v3" }
 dependencies = [
     { name = "art" },
@@ -320,7 +320,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "ecosim-common"
-version = "0.11.2"
+version = "0.11.3"
 source = { editable = "../ecosim-common" }
 dependencies = [
     { name = "art" },
@@ -345,7 +345,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "ecosim-server"
-version = "0.11.2"
+version = "0.11.3"
 source = { editable = "../ecosim-server" }
 dependencies = [
     { name = "art" },
@@ -457,7 +457,7 @@ wheels = [
 
 [[package]]
 name = "integration-tests"
-version = "0.11.2"
+version = "0.11.3"
 source = { editable = "." }
 dependencies = [
     { name = "docker" },
