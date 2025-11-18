@@ -17,4 +17,6 @@ class SimulationStateRepositoryInMemory(SimulationStateRepository):
         self._states.append(state)
 
     def current(self) -> SimulationState:
+        if len(self._states) == 0:
+            return SimulationState.NOT_READY
         return self._states[-1]

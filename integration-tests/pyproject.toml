@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "integration-tests"
-version = "0.11.2"
+version = "0.11.3"
 description = "Integration tests for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -15,23 +15,25 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Integration Tests",
-#    "License :: OSI Approved :: MIT License",
+    #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "docker==7.1.0",
-    "ecosim-client-fmu-v3>=0.11.2",
-    "ecosim-common>=0.11.2",
-    "ecosim-server>=0.11.2",
+    "ecosim-client-fmu-v3>=0.11.3",
+    "ecosim-common>=0.11.3",
+    "ecosim-server>=0.11.3",
     "mypy==1.18.2",
     "pytest-cov==6.1.1",
     "pytest-html==4.1.1",
     "pytest-mock==3.15.1",
     "pytest==8.3.5",
     "testcontainers[postgres]==4.13.0",
-    "types-docker==7.1.0.20250916",
+    "types-docker==7.1.0.20251009",
     "uv==0.9.6",
     "websockets==15.0.1",
+    "pip==25.3",
+    "psycopg[binary]==3.2.12",
 ]
 
 [tool.uv.sources]
@@ -53,4 +55,5 @@ addopts = [
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",
+    "--ignore=locally"
 ]

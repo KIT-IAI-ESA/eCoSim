@@ -3,30 +3,21 @@ from abc import abstractmethod, ABC
 from typing import override
 
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
-from ecosim_common.communication.channel.esp_channel_endpoint import (
-    ESPChannelEndpoint,
-    ConnectionData,
-)
-from ecosim_common.communication.channel.esp_channel_message_json import (
-    ESPChannelMessageJson,
-)
+from ecosim_common.communication.channel.esp_channel_endpoint import ESPChannelEndpoint, ConnectionData
+from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
-from ecosim_common.communication.data.simulation_setup_message import (
-    SimulationSetupMessage,
-)
+from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.server_time_measurement import (
-    ServerTimeMeasurement,
-    ServerTimeMeasurementType,
-)
+from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
@@ -42,8 +33,12 @@ class AbstractServer(ABC):
     def print_measurement_statistics(self) -> None:
         pass
 
+    @abstractmethod
+    def force_stop(self) -> None:
+        pass
 
-class Server(AbstractServer):
+
+class Server(AbstractServer, ShutdownListener):
     _logger = ESPLogger("Server")
 
     def __init__(
@@ -71,6 +66,7 @@ class Server(AbstractServer):
         )
         self._rendering_socket: RenderingSocket | None = None
         self._repositories = repositories
+        ShutdownManager().register_listener(self)
 
     @override
     def start(self) -> None:
@@ -114,22 +110,13 @@ class Server(AbstractServer):
             try:
                 Server._logger.debug("Handling new client connection")
 
-                connection.send(
-                    ESPChannelMessageJson.empty(
-                        type=MessageType.CLIENT_META_DATA_REQUEST,
-                    ),
-                )
+                connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
 
-                message = connection.receive(
-                    expected_type=MessageType.CLIENT_META_DATA_REQUEST,
-                )
+                message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 if message is None:
                     raise Exception(f"No message received from client {client_id}")
                 client_config: ClientMetaData = message.payload(ClientMetaData)
-                if not self._server_state.client_states.add_if_needed(
-                    client_config,
-                    connection,
-                ):
+                if not self._server_state.client_states.add_if_needed(client_config, connection):
                     Server._logger.warning(
                         f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
                     )
@@ -263,3 +250,13 @@ class Server(AbstractServer):
             return
         SimulationExecutor.logger.info("Stopping image renderer socket.")
         self._rendering_socket.close()
+
+    @override
+    def on_app_shutdown(self) -> None:
+        self._channel_endpoint.close()
+        self._stop_image_renderer_socket()
+
+    @override
+    def force_stop(self) -> None:
+        self.on_app_shutdown()
+        self._simulation_executor.force_stop()

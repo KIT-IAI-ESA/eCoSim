@@ -137,7 +137,7 @@ class DatabaseConfig:
         )
 
     def generate_sqlalchemy_db_url(self) -> str:
-        return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
+        return f"postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
 
     def generate_sqlalchemy_root_url(self) -> str:
-        return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
+        return f"postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
