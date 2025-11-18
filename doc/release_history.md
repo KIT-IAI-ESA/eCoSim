@@ -2,7 +2,7 @@
 
 ## v0.12.0
 - added restore functionality
-- [BugFix] start with the correct date
+- [BugFix] start the database entries with the correct date
 
 ## v0.11.3
 - replaced psycopg2 with psycopg (which is the current version)
