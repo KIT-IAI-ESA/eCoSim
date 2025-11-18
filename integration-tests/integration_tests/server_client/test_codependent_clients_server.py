@@ -1,6 +1,7 @@
 import threading
 from datetime import datetime
 from decimal import Decimal
+from typing import Tuple
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
@@ -287,56 +288,48 @@ def test_codependent_clients_server() -> None:
     server_thread.join()
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
-    step_size_in_seconds = step_size_in_ms / 1000
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
+
+    def assert_client_1_records(timestamp: datetime, values: Tuple[ProtocolInterfaceValue, ...]) -> bool:
+        # adding the offset of the lambda from TestClient_1
+        assert add_floats(((timestamp - simulation_start_date).total_seconds()), 0.11) == values[0].value
+        return add_floats(((timestamp - simulation_start_date).total_seconds()), 0.11) == values[0].value
 
     (
         client_1_measurement_repository
         .assert_entry_count(steps)
-        .assert_for_each_record(
-            lambda timestamp,
-            values: add_floats(
-                ((timestamp - simulation_start_date).total_seconds()),
-                step_size_in_seconds,
-                0.11,
-            ) ==  # adding the offset of the lambda from TestClient_1
-                    values[0].value,
-        )
+        .assert_for_each_record(assert_client_1_records)
     )
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
-    step_size_in_seconds = step_size_in_ms / 1000
+
+    def assert_client_2_records(timestamp: datetime, values: Tuple[ProtocolInterfaceValue, ...]) -> bool:
+        # adding the offset of the lambda from TestClient_2 and adding the decimal part of the return of TestClient_1
+        assert add_floats((timestamp - simulation_start_date).total_seconds(), 0.22, 0.11) == values[0].value
+        return add_floats((timestamp - simulation_start_date).total_seconds(), 0.22, 0.11) == values[0].value
+
     (
         client_2_measurement_repository
         .assert_entry_count(steps)
-        .assert_for_each_record(
-            lambda timestamp,
-            # adding the offset of the lambda from TestClient_2 and adding the decimal part of the return of TestClient_1
-            values: add_floats(
-                (timestamp - simulation_start_date).total_seconds(),
-                step_size_in_seconds, 0.22, 0.11,
-            ) == values[0].value,
-        )
+        .assert_for_each_record(assert_client_2_records)
     )
 
     client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
-    step_size_in_seconds = step_size_in_ms / 1000
+
+    def assert_client_3_records(timestamp: datetime, values: Tuple[ProtocolInterfaceValue, ...]) -> bool:
+        # adding the offset of the lambda from TestClient_3 and adding the decimal part of the return of TestClient_2
+        assert add_floats((timestamp - simulation_start_date).total_seconds(), 0.33, 0.33) == values[0].value
+        return add_floats((timestamp - simulation_start_date).total_seconds(), 0.33, 0.33) == values[0].value
+
     (
         client_3_measurement_repository
         .assert_entry_count(steps)
-        .assert_for_each_record(
-            lambda timestamp,
-            # adding the offset of the lambda from TestClient_3 and adding the decimal part of the return of TestClient_2
-            values: add_floats(
-                (timestamp - simulation_start_date).total_seconds(),
-                step_size_in_seconds, 0.33, 0.33,
-            ) == values[0].value,
-        )
+        .assert_for_each_record(assert_client_3_records)
     )
 
 
