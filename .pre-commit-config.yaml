@@ -34,36 +34,51 @@ repos:
     hooks:
       - id: mypy
         name: mypy (ecosim-common)
-        entry: python dev/run-mypy.py ecosim-common
+        entry: python dev/run_mypy.py ecosim-common
         language: system
         files: ^ecosim-common/
         pass_filenames: false
         types: [ python ]
       - id: mypy
         name: mypy (ecosim-server)
-        entry: python dev/run-mypy.py ecosim-server
+        entry: python dev/run_mypy.py ecosim-server
         language: system
         files: ^ecosim-server/
         pass_filenames: false
         types: [ python ]
       - id: mypy
         name: mypy (ecosim-client-matlab)
-        entry: python dev/run-mypy.py ecosim-client-matlab
+        entry: python dev/run_mypy.py ecosim-client-matlab
         language: system
         files: ^ecosim-client-matlab/
         pass_filenames: false
         types: [ python ]
       - id: mypy
         name: mypy (ecosim-client-fmu-v2)
-        entry: python dev/run-mypy.py ecosim-client-fmu-v2
+        entry: python dev/run_mypy.py ecosim-client-fmu-v2
         language: system
         files: ^ecosim-client-fmu-v2/
         pass_filenames: false
         types: [ python ]
       - id: mypy
         name: mypy (ecosim-client-fmu-v3)
-        entry: python dev/run-mypy.py ecosim-client-fmu-v3
+        entry: python dev/run_mypy.py ecosim-client-fmu-v3
         language: system
         files: ^ecosim-client-fmu-v3/
         pass_filenames: false
         types: [ python ]
+      - id: check-py-filenames
+        name: Check Python filenames are snake_case
+        entry: python dev/validate_file_name.py
+        language: system
+        types: [ python ]
+        files: .*\.py
+        pass_filenames: true
+
+# disable ruff until the aggressive collapsing is configurable
+#  - repo: https://github.com/astral-sh/ruff-pre-commit
+#    rev: v0.14.4
+#    hooks:
+#      - id: ruff
+#        args: [--fix]
+#      - id: ruff-format

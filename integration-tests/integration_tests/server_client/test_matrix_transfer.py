@@ -191,11 +191,10 @@ def test_matrix_transfer() -> None:
         timestamp: datetime,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
-        base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
+        base_value = (timestamp - simulation_start_date).total_seconds()
         expected = generate_matrix(base_value)
         actual = values[0].value
-        logger.debug(f"(Client1) Expected: {expected}")
-        logger.debug(f"(Client1) Actual:   {actual}")
+        assert actual == expected, f"Expected: {expected}, Actual: {actual}"
         return actual == expected
 
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
@@ -215,11 +214,10 @@ def test_matrix_transfer() -> None:
         timestamp: datetime,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
-        base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
+        base_value = (timestamp - simulation_start_date).total_seconds()
         actual = values[0].value
         expected = square_each_element(generate_matrix(base_value))
-        logger.debug(f"(Client2) Expected: {expected}")
-        logger.debug(f"(Client2) Actual:   {actual}")
+        assert actual == expected, f"Expected: {expected}, Actual: {actual}"
         return actual == expected
 
     (

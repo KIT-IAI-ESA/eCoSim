@@ -1,0 +1,6 @@
+line-length = 150
+
+[lint]
+# Enable pycodestyle (E) and Pyflakes (F) rules (flake8's default rule sets), and warnings (W)
+select = ["E", "F", "W"]
+ignore = []

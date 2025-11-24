@@ -1,9 +1,9 @@
 from typing import Generator, Any
 
-import psycopg2
+import psycopg
 import pytest
-from psycopg2._psycopg import connection
-from psycopg2.extras import DictCursor
+from psycopg import Connection
+from psycopg.rows import dict_row
 from testcontainers.postgres import PostgresContainer
 
 
@@ -21,14 +21,14 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
 
 
 @pytest.fixture(scope="function", autouse=True)
-def db_connection(postgres_container: PostgresContainer) -> Generator[connection, Any, None]:
-    conn = psycopg2.connect(
+def db_connection(postgres_container: PostgresContainer) -> Generator[Connection, Any, None]:
+    conn = psycopg.connect(
         host=postgres_container.get_container_host_ip(),
         port=postgres_container.get_exposed_port(5432),
-        database=postgres_container.dbname,
+        dbname=postgres_container.dbname,
         user=postgres_container.username,
         password=postgres_container.password,
-        cursor_factory=DictCursor,
+        row_factory=dict_row,
     )
 
     yield conn

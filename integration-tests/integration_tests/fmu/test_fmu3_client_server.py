@@ -168,9 +168,12 @@ def test_fmu3_client_server() -> None:
         date: datetime,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
-        passed_seconds = (date - start_date).total_seconds() + 1
+        passed_seconds = (date - start_date).total_seconds()
         u = [v for v in values if v.name == 'u'][0]
         y = [v for v in values if v.name == 'y'][0]
+
+        assert u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
+        assert y.value == fmu3_state_space_results[int(passed_seconds - 1)]
 
         return (
             u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds] and
