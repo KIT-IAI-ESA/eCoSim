@@ -91,23 +91,35 @@ class ConfigParser:
                 f"In section {section} the key {option} does not exist",
             ) from e
 
-    def extract_last_section(self) -> str:
-        return ConfigParser.extract_last_section_from_config_file(self.config_file)
+    def extract_sections(self) -> list[str]:
+        return ConfigParser.extract_sections_from_config_file(self.config_file)
 
     @staticmethod
-    def extract_last_section_from_config_file(path: str | Path) -> str:
+    def extract_sections_from_config_file(path: str | Path) -> list[str]:
         with open(path, 'r', encoding='utf-8') as f:
             text = f.read()
-        return ConfigParser._extract_last_section_from_text(text)
+        return ConfigParser._extract_sections_from_text(text)
 
     @staticmethod
-    def _extract_last_section_from_text(text: str) -> str:
-        pattern = re.compile(r'^\s*\[.+?\]\s*$', re.MULTILINE)
-        matches = list(pattern.finditer(text))
+    def _extract_sections_from_text(text: str) -> list[str]:
+        # Find all section headers like [SectionName]
+        header_pattern = re.compile(r'^\s*\[(.+?)\]\s*$', re.MULTILINE)
+        matches = list(header_pattern.finditer(text))
         if not matches:
-            raise ValueError("Config enthält keine Sektionen.")
-        start = matches[-1].start()
-        return text[start:].strip()
+            return []
+
+        excluded = {"server", "simulator"}
+        sections: list[str] = []
+        for i, m in enumerate(matches):
+            name = m.group(1).strip()
+            if name.lower() in excluded:
+                continue
+            start = m.start()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            block = text[start:end].strip()
+            sections.append(block)
+
+        return sections
 
     @staticmethod
     def config_string_to_string_array(string: str | None) -> List[str]:
