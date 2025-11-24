@@ -41,6 +41,3 @@ class ClientType(Enum):
         source: str,
     ) -> bool:
         return source.lower() in self._matches_internal
-
-    def __str__(self) -> str:
-        return self.serialized
