@@ -78,6 +78,24 @@ class ConfigParser:
         except configparser.NoOptionError as e:
             raise ConfigParserException(f"In section {section} the key {option} does not exist") from e
 
+    def extract_last_section(self) -> str:
+        return ConfigParser.extract_last_section_from_config_file(self.config_file)
+
+    @staticmethod
+    def extract_last_section_from_config_file(path: str | Path) -> str:
+        with open(path, 'r', encoding='utf-8') as f:
+            text = f.read()
+        return ConfigParser._extract_last_section_from_text(text)
+
+    @staticmethod
+    def _extract_last_section_from_text(text: str) -> str:
+        pattern = re.compile(r'^\s*\[.+?\]\s*$', re.MULTILINE)
+        matches = list(pattern.finditer(text))
+        if not matches:
+            raise ValueError("Config enthält keine Sektionen.")
+        start = matches[-1].start()
+        return text[start:].strip()
+
     @staticmethod
     def config_string_to_string_array(string: str | None) -> List[str]:
         if not string:

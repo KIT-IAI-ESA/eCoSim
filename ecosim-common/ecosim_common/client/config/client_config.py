@@ -48,6 +48,15 @@ class ClientConfig(ABC):
             model_name=self.simulator_config().model_name,
         )
 
+    def generate_config(self) -> str:
+        return (
+            f"""
+{self.server_config().as_string()}
+
+{self.simulator_config().as_string()}
+        """
+        ).strip()  # todo type-file anpassen
+
     def meta_data(self) -> ClientMetaData:
         return ClientMetaData(
             version=ClientConfig.__protocol_version,
@@ -88,8 +97,8 @@ class SimpleClientConfig(ClientConfig):
 
     @staticmethod
     def of_config_parser(
-            config_parser: ConfigParser,
-            config_override: ClientConfigOverride | None = None,
+        config_parser: ConfigParser,
+        config_override: ClientConfigOverride | None = None,
     ) -> SimpleClientConfig:
         simulator_config = SimulatorConfig.of_config_parser(config_parser)
         return SimpleClientConfig(
@@ -119,10 +128,17 @@ class ServerConfig:
     server_address: ConnectionAddress
     image_renderer_port: int | None = None
 
+    def as_string(self) -> str:
+        return (f'''
+[server]
+port = {self.server_address.port}
+ip = {self.server_address.ip}
+        ''').strip()
+
     @staticmethod
     def of_config_parser(
-            config: ConfigParser,
-            config_override: ClientConfigOverride | None = None,
+        config: ConfigParser,
+        config_override: ClientConfigOverride | None = None,
     ) -> ServerConfig:
         ip: str = if_exists(config_override).server_host or config.get_string('server', 'ip')
         port: int = if_exists(config_override).server_port or config.get_int('server', 'port')
@@ -139,9 +155,17 @@ class SimulatorConfig:
     fmc_file: str
     type: ClientType
 
+    def as_string(self) -> str:
+        return (f'''[simulator]
+simulator_name = {self.simulator_name}
+model_name = {self.model_name}
+fmc_file = {self.fmc_file}
+type = {self.type}
+        ''').strip()
+
     @staticmethod
     def of_config_parser(
-            config: ConfigParser,
+        config: ConfigParser,
     ) -> SimulatorConfig:
         return SimulatorConfig(
             simulator_name=config.get_string(
@@ -171,8 +195,8 @@ class ClientInterfaceConfig:
 
     @staticmethod
     def of_simulator_config(
-            simulator_config: SimulatorConfig,
-            config_path: Path = Path("."),
+        simulator_config: SimulatorConfig,
+        config_path: Path = Path("."),
     ) -> ClientInterfaceConfig:
         interfaces: List[ModelInterfaceClient] = []
         if not simulator_config.fmc_file:
