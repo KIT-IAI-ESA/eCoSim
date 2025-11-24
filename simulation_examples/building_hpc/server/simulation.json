@@ -1,0 +1,513 @@
+{
+  "simulators": [
+    {
+      "name": "house",
+      "model": "house",
+      "interfaces": [
+        {
+          "name": "weatherBus_TDryBul",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus_TDryBul",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.TDryBul"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_HDifHor",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus_HDifHor",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.HDifHor"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_HDirNor",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus_HDirNor",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.HDirNor"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_HGloHor",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus_HGloHor",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.HGloHor"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_alt",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus_alt",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.alt"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_cloTim",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.cloTim",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.cloTim"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_lat",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.lat",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.lat"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_pAtm",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.pAtm",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.pAtm"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_relHum",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.relHum",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.relHum"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_solTim",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.solTim",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.solTim"
+            }
+          ]
+        },
+        {
+          "name": "weatherBus_solZen",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.solZen",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "2",
+              "interface": "weatherBus.solZen"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_Qdot_sen_human",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_sen_human",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.Qdot_sen_human"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_Qdot_lat_human",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_lat_human",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.Qdot_lat_human"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_CO2_flow_human",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.CO2_flow_human",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.CO2_flow_human"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_Pe_appliances",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Pe_appliances",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.Pe_appliances"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_Qdot_appliances",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_appliances",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.Qdot_appliances"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_m_airflow_RH",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.m_airflow_RH",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.m_airflow_RH"
+            }
+          ]
+        },
+        {
+          "name": "occupancyBus_m_waterflow_DHW",
+          "type": "Input",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.m_waterflow_DHW",
+          "description": "",
+          "connected_to": [
+            {
+              "simulator": "1",
+              "interface": "occupancyBus.m_waterflow_DHW"
+            }
+          ]
+        },
+        {
+          "name": "T_indoor",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "T_indoor",
+          "description": ""
+        },
+        {
+          "name": "Pe_gen",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "Pe_gen",
+          "description": ""
+        },
+        {
+          "name": "Pe_load",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "Pe_load",
+          "description": ""
+        },
+        {
+          "name": "Pe_feed_to_grid",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "Pe_feed_to_grid",
+          "description": ""
+        },
+        {
+          "name": "CO2_emi",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "CO2_emi",
+          "description": ""
+        },
+        {
+          "name": "Cost_flow",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "Cost_flow",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "occupancy",
+      "model": "occupancy",
+      "interfaces": [
+        {
+          "name": "occupancyBus.Qdot_sen_human",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_sen_human",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.Qdot_lat_human",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_lat_human",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.CO2_flow_human",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.CO2_flow_human",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.Pe_appliances",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Pe_appliances",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.Qdot_appliances",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.Qdot_appliances",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.m_airflow_RH",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.m_airflow_RH",
+          "description": ""
+        },
+        {
+          "name": "occupancyBus.m_waterflow_DHW",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "occupancyBus.m_waterflow_DHW",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "weather",
+      "model": "weather",
+      "interfaces": [
+        {
+          "name": "weatherBus.TDryBul",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.TDryBul",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.HDifHor",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.HDifHor",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.HDirNor",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.HDirNor",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.HGloHor",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.HGloHor",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.alt",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.alt",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.cloTim",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.cloTim",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.lat",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.lat",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.pAtm",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.pAtm",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.relHum",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.relHum",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.solTim",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.solTim",
+          "description": ""
+        },
+        {
+          "name": "weatherBus.solZen",
+          "type": "Output",
+          "report": "true",
+          "required": "false",
+          "unit": "",
+          "shortname": "weatherBus.solZen",
+          "description": ""
+        }
+      ]
+    }
+  ],
+  "logical_delays": [],
+  "setup": {
+    "delta_t": "900000",
+    "start_date": "2023-01-01T00:00:00.000Z"
+  }
+}
