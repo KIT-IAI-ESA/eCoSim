@@ -57,7 +57,7 @@ class ClientConfig(ABC):
 
 {self.simulator_config().as_string()}
         """
-        ).strip()  # todo type-file anpassen
+        ).strip()
 
     def meta_data(self) -> ClientMetaData:
         return ClientMetaData(
@@ -171,11 +171,12 @@ class SimulatorConfig:
     type: ClientType
 
     def as_string(self) -> str:
-        return (f'''[simulator]
+        return (f'''
+[simulator]
 simulator_name = {self.simulator_name}
 model_name = {self.model_name}
 fmc_file = {self.fmc_file}
-type = {self.type}
+type = {self.type.serialized}
         ''').strip()
 
     @staticmethod
