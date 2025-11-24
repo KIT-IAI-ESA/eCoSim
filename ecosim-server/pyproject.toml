@@ -15,13 +15,13 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Server",
-#    "License :: OSI Approved :: MIT License",
+    #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "ecosim-common>=0.11.2",
     "art==6.5",
-    "pydantic==2.11.9",
+    "pydantic==2.12.4",
     "sqlalchemy==2.0.41",
     "psycopg2-binary==2.9.11",
 ]
