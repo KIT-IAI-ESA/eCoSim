@@ -29,8 +29,8 @@ from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
 
 import pytest
-import psycopg2
-from psycopg2._psycopg import connection
+from psycopg import Connection
+import psycopg
 from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
@@ -41,7 +41,8 @@ logger = ESPLogger("Postgres test")
 @dataclass(frozen=True)
 class PostgresFixture:
     """Typed structure returned by the postgres_container fixture."""
-    connection: Callable[[], AbstractContextManager[connection]]
+
+    connection: Callable[[], AbstractContextManager[Connection]]
     container: PostgresContainer
 
 
@@ -53,8 +54,8 @@ def postgres_container() -> Generator[PostgresFixture, None, None]:
     container.start()
 
     @contextmanager
-    def open_connection() -> Iterator[connection]:
-        conn = psycopg2.connect(
+    def open_connection() -> Iterator[Connection]:
+        conn = psycopg.connect(
             host=container.get_container_host_ip(),
             port=container.get_exposed_port(5432),
             dbname=container.dbname,
@@ -82,8 +83,14 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     steps = 100
     step_size_in_ms = 2_000
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
-        microsecond=0, tzinfo=timezone.utc,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+        tzinfo=timezone.utc,
     )
 
     server = generate_simple_test_server(
@@ -157,7 +164,8 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                                 delay_path=[],
                             ),
                         ],
-                    ), ModelInterfaceServer(
+                    ),
+                    ModelInterfaceServer(
                         SimulatorInterfaceId(
                             simulator_name="TestSimulator_2",
                             model_interface_id=ModelInterfaceId(
@@ -199,15 +207,17 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
             ],
         ),
         on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        received_inputs,
+        current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_1",
-                    value=generate_matrix(_self.accumulated_step_sizes_in_seconds.value),
+                    value=generate_matrix(
+                        _self.accumulated_step_sizes_in_seconds.value,
+                    ),
                 ),
             ],
-                                         ),
+        ),
     )
     client_2 = SimpleTestClient.generate(
         server_host=server_host,
@@ -314,7 +324,7 @@ def handle_client_2_sim_step(
 ) -> ClientSimStepData:
     logger.debug(f"Received values: {received_values}")
     assert len(received_values.keys()) == 1
-    received_value: InterfaceValueType = received_values['TestInterface_2']
+    received_value: InterfaceValueType = received_values["TestInterface_2"]
     assert isinstance(received_value, list)
     return_value = square_each_element(received_value)
     logger.debug(f"Return value: {return_value}")

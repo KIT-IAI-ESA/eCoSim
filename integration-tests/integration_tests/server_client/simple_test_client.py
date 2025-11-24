@@ -3,27 +3,37 @@ from __future__ import annotations
 from typing import Callable, override
 
 from ecosim_common.client.client import Client
-from ecosim_common.client.config.client_config import ClientConfig, SimulatorConfig, ClientInterfaceConfig, ServerConfig
+from ecosim_common.client.config.client_config import (
+    ClientConfig,
+    SimulatorConfig,
+    ClientInterfaceConfig,
+    ServerConfig,
+)
 from ecosim_common.client.config.client_type import ClientType
-from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
+from ecosim_common.client.renderer.simulation_renderer_service import (
+    SimulationRendererService,
+)
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.atomic.atomic_float import AtomicFloat
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 class SimpleTestClient(Client):
-
     @staticmethod
     def generate(
-            server_host: str,
-            server_port: int,
-            on_simulation_step_return: Callable[[SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData],
-            model_name: str = "TestModel",
-            simulator_name: str = "TestSimulator",
-            interface_config: ClientInterfaceConfig = ClientInterfaceConfig(interfaces=[]),
+        server_host: str,
+        server_port: int,
+        on_simulation_step_return: Callable[
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            ClientSimStepData,
+        ],
+        model_name: str = "TestModel",
+        simulator_name: str = "TestSimulator",
+        interface_config: ClientInterfaceConfig = ClientInterfaceConfig(interfaces=[]),
     ) -> SimpleTestClient:
         return SimpleTestClient(
             client_config=TestClientConfig(
@@ -36,11 +46,33 @@ class SimpleTestClient(Client):
             on_simulation_step_return=on_simulation_step_return,
         )
 
+    @staticmethod
+    def of_test_data(
+        server_host: str,
+        server_port: int,
+        on_simulation_step_return: Callable[
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            ClientSimStepData,
+        ],
+        test_client_data: TestClientData,
+    ) -> SimpleTestClient:
+        return SimpleTestClient(
+            client_config=TestClientConfig(
+                server_host=server_host,
+                server_port=server_port,
+                simulator_name=test_client_data.simulator_name,
+                model_name=test_client_data.model_name,
+                interface_config=test_client_data.to_client_interface_config(),
+            ),
+            on_simulation_step_return=on_simulation_step_return,
+        )
+
     def __init__(
         self,
         client_config: ClientConfig,
         on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData,
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            ClientSimStepData,
         ],
     ):
         super().__init__(client_config)
@@ -50,8 +82,12 @@ class SimpleTestClient(Client):
         self.accumulated_step_sizes_in_seconds = AtomicFloat(0.0)
         # the parameters: the instance of itself, the received_inputs and the step_size_in_seconds
         self._on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float], ClientSimStepData,
+            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            ClientSimStepData,
         ] = on_simulation_step_return
+
+    def reset_accumulated_step_sizes(self) -> None:
+        self.accumulated_step_sizes_in_seconds.set(0.0)
 
     def on_simulation_start(self) -> ClientSimStepData:
         self._on_simulation_start_calls.inc()
@@ -66,7 +102,11 @@ class SimpleTestClient(Client):
     ) -> ClientSimStepData:
         self._on_simulation_step_calls.inc()
         self.accumulated_step_sizes_in_seconds.inc(step_size_in_seconds)
-        return self._on_simulation_step_return(self, received_inputs, step_size_in_seconds)
+        return self._on_simulation_step_return(
+            self,
+            received_inputs,
+            step_size_in_seconds,
+        )
 
     @override
     def on_simulation_stop(self) -> None:
@@ -78,7 +118,6 @@ class SimpleTestClient(Client):
 
 
 class TestClientConfig(ClientConfig):
-
     def __init__(
         self,
         server_host: str,

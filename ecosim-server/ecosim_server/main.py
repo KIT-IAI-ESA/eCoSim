@@ -31,6 +31,7 @@ def main() -> None:
         steps=args.simulation_steps(),
         step_size_override=args.step_size_override(),
         pace=args.pace(),
+        restore=args.restore_simulation_run(),
     )
 
     repositories: Repositories = RepositoriesDB.create(
@@ -47,5 +48,5 @@ def main() -> None:
     ShutdownManager().set_shutdown_at_application_end()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

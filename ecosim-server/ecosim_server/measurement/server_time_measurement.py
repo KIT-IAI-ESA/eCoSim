@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 
@@ -21,7 +20,9 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning(f"Start time for {type} is already set -> nothing happens")
+            ServerTimeMeasurement._logger.warning(
+                f"Start time for {type} is already set -> nothing happens",
+            )
             return
         self._start_times[type] = datetime.now()
 
@@ -30,7 +31,9 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._end_times.keys():
-            ServerTimeMeasurement._logger.warning(f"End time for {type} is already set -> nothing happens")
+            ServerTimeMeasurement._logger.warning(
+                f"End time for {type} is already set -> nothing happens",
+            )
             return
         self._end_times[type] = datetime.now()
 
@@ -58,10 +61,18 @@ class ServerTimeMeasurement:
         GlobalLogger.print_values(
             header="SERVER MEASUREMENT",
             value_pairs={
-                "Simulation start time": self._run_time_hh_mm_ss(ServerTimeMeasurementType.SIMULATION_START),
-                "Simulation execution time": self._run_time_hh_mm_ss(ServerTimeMeasurementType.SIMULATION_EXECUTION),
-                "Simulation stop time": self._run_time_hh_mm_ss(ServerTimeMeasurementType.SIMULATION_STOP),
-                "Server uptime": self._run_time_hh_mm_ss(ServerTimeMeasurementType.SERVER_UPTIME),
+                "Simulation start time": self._run_time_hh_mm_ss(
+                    ServerTimeMeasurementType.SIMULATION_START,
+                ),
+                "Simulation execution time": self._run_time_hh_mm_ss(
+                    ServerTimeMeasurementType.SIMULATION_EXECUTION,
+                ),
+                "Simulation stop time": self._run_time_hh_mm_ss(
+                    ServerTimeMeasurementType.SIMULATION_STOP,
+                ),
+                "Server uptime": self._run_time_hh_mm_ss(
+                    ServerTimeMeasurementType.SERVER_UPTIME,
+                ),
             },
         )
 
@@ -97,3 +108,4 @@ class ServerTimeMeasurementType(Enum):
     SIMULATION_EXECUTION = 1
     SIMULATION_STOP = 2
     SERVER_UPTIME = 3
+    RESTORE_SIMULATION_RUN = 3

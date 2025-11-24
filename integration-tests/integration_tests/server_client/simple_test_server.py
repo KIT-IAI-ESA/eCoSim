@@ -43,12 +43,18 @@ def generate_simple_test_server(
     steps: int = 100,
     step_size_in_ms: int = 1_000,
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
         microsecond=0,
     ),
     repository_type: RepositoryType = RepositoryType.IN_MEMORY,
     clients: List[ClientSimulatorConfig] | None = None,
     database_config: DatabaseConfig | None = None,
+    restore_simulation_run: bool = False,
 ) -> SimpleTestServer:
     clients = clients or [
         ClientSimulatorConfig(
@@ -82,6 +88,7 @@ def generate_simple_test_server(
         pace=pace,
         steps=steps,
         step_size_in_ms=step_size_in_ms,
+        restore=restore_simulation_run,
     )
     if repository_type == RepositoryType.DB:
         repositories: Repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
