@@ -91,7 +91,7 @@ class SimpleClientConfig(ClientConfig):
     _server_config: ServerConfig
     _simulator_config: SimulatorConfig
     _interfaces_config: ClientInterfaceConfig
-    _other_sections: List[str]
+    _extra_sections: List[str]
 
     @staticmethod
     def of_path_string(path: str) -> ClientConfig:
@@ -113,8 +113,7 @@ class SimpleClientConfig(ClientConfig):
                 config_path=config_parser.config_file.parent,
                 simulator_config=simulator_config,
             ),
-            _other_sections=config_parser.extract_other_sections(),  # todo update generation of other-sections
-            # currently these are only copied from original client-config
+            _extra_sections=config_parser.extract_extra_sections(),
         )
 
     def simulator_config(self) -> SimulatorConfig:
@@ -130,7 +129,7 @@ class SimpleClientConfig(ClientConfig):
         return self._simulator_config.type
 
     def generate_config(self) -> str:
-        other_sections_str = "\n\n".join(s for s in self._other_sections if s)
+        extra_sections_str = "\n\n".join(s for s in self._extra_sections if s)
 
         return (
             f"""
@@ -138,7 +137,7 @@ class SimpleClientConfig(ClientConfig):
 
 {self.simulator_config().as_string()}
 
-{other_sections_str}
+{extra_sections_str}
         """
         ).strip()
 

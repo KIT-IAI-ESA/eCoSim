@@ -91,17 +91,17 @@ class ConfigParser:
                 f"In section {section} the key {option} does not exist",
             ) from e
 
-    def extract_other_sections(self) -> List[str]:
-        return ConfigParser.extract_sections_from_config_file(self.config_file)
+    def extract_extra_sections(self) -> List[str]:
+        return ConfigParser.extract_extra_sections_from_config_file(self.config_file)
 
     @staticmethod
-    def extract_sections_from_config_file(path: str | Path) -> List[str]:
+    def extract_extra_sections_from_config_file(path: str | Path) -> List[str]:
         with open(path, 'r', encoding='utf-8') as f:
             text = f.read()
-        return ConfigParser._extract_sections_from_text(text)
+        return ConfigParser._extract_extra_sections_from_text(text)
 
     @staticmethod
-    def _extract_sections_from_text(text: str) -> List[str]:
+    def _extract_extra_sections_from_text(text: str) -> List[str]:
         # Find all section headers like [SectionName]
         header_pattern = re.compile(r'^\s*\[(.+?)\]\s*$', re.MULTILINE)
         matches = list(header_pattern.finditer(text))
@@ -110,12 +110,12 @@ class ConfigParser:
 
         excluded = {"server", "simulator"}
         sections: list[str] = []
-        for i, m in enumerate(matches):
-            name = m.group(1).strip()
-            if name.lower() in excluded:
+        for index, match in enumerate(matches):
+            section_name = match.group(1).strip()
+            if section_name.lower() in excluded:
                 continue
-            start = m.start()
-            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            start = match.start()
+            end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
             block = text[start:end].strip()
             sections.append(block)
 

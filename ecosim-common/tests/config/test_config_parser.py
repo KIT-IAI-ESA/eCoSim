@@ -144,15 +144,15 @@ def test_parse_int_array() -> None:
     assert actual[1] == 222
 
 
-def test_extract_sections_not_server_and_simulator() -> None:
+def test_extract_extra_sections() -> None:
     config = config_parser_for_resource('client_config.ini')
-    assert len(config.extract_other_sections()) == 1
-    assert config.extract_other_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
+    assert len(config.extract_extra_sections()) == 1
+    assert config.extract_extra_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
 
 
 def test_extract_multiple_sections() -> None:
     config = config_parser_for_resource('config.ini')
-    assert len(config.extract_other_sections()) == 2
+    assert len(config.extract_extra_sections()) == 2
 
 
 def test_no_extra_sections() -> None:
@@ -162,4 +162,4 @@ port=1234
 [simulator]
 name=test12
     """
-    assert ConfigParser._extract_sections_from_text(config_text) == []
+    assert ConfigParser._extract_extra_sections_from_text(config_text) == []
