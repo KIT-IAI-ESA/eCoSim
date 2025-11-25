@@ -21,8 +21,13 @@ class ConnectionAddress:
 
     @staticmethod
     def of_raw_dask_client_address(raw_address: str) -> "ConnectionAddress":
-        split_address = raw_address.split(":")[1:]
-        return ConnectionAddress(split_address[0][2:], int(split_address[1]))
+        connection_type, address = dd.comm.parse_address(raw_address)
+        if connection_type == "tcp":
+            split_address = address.split(":")
+            return ConnectionAddress(split_address[0], int(split_address[1]))
+        elif connection_type == "inproc":
+            split_address = address.split("/")
+            return ConnectionAddress(split_address[0], split_address[1]+"/"+split_address[2])
 
     @staticmethod
     def of_dask_client(raw_dask_client: dd.Client) -> "ConnectionAddress":

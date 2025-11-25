@@ -19,6 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "dask",
+    "distributed",
     "docker==7.1.0",
     "ecosim-client-fmu-v3>=0.11.0",
     "ecosim-common>=0.11.0",
