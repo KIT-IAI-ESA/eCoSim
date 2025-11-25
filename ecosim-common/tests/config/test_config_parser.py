@@ -151,15 +151,16 @@ def test_extract_extra_sections() -> None:
 
 
 def test_extract_multiple_sections() -> None:
-    config = config_parser_for_resource('config.ini')
+    config = config_parser_for_resource('config_multiple_sections.ini')
     assert len(config.extract_extra_sections()) == 2
+    assert config.extract_extra_sections()[0] == """[Section1]
+string = string1234
+int = 12"""
+    assert config.extract_extra_sections()[1] == """[Section2]
+string = string5678
+int = 23"""
 
 
 def test_no_extra_sections() -> None:
-    config_text = """
-[server]
-port=1234
-[simulator]
-name=test12
-    """
-    assert ConfigParser._extract_extra_sections_from_text(config_text) == []
+    config = config_parser_for_resource('config_no_extra_section.ini')
+    assert config.extract_extra_sections() == []
