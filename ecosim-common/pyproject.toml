@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-common"
-version = "0.12.0"
+version = "0.13.0"
 description = "Common utilities and abstractions for eCoSim"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
