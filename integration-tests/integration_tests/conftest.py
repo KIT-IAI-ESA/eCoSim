@@ -2,6 +2,7 @@ import logging
 from typing import Any, Generator
 
 import pytest
+import dask.distributed as dd
 
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -19,3 +20,9 @@ def teardown_shutdown_manager() -> Generator[None, Any, None]:
     """runs once after all tests"""
     yield
     ShutdownManager().set_shutdown_at_application_end()
+    try:
+        client = dd.get_client()
+        print("Tearing down Dask Client")
+        client.close()
+    except ValueError:
+        pass
