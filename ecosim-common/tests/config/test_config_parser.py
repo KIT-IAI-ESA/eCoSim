@@ -146,13 +146,13 @@ def test_parse_int_array() -> None:
 
 def test_extract_sections_not_server_and_simulator() -> None:
     config = config_parser_for_resource('client_config.ini')
-    assert len(config.extract_sections()) == 1
-    assert config.extract_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
+    assert len(config.extract_other_sections()) == 1
+    assert config.extract_other_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
 
 
 def test_extract_multiple_sections() -> None:
     config = config_parser_for_resource('config.ini')
-    assert len(config.extract_sections()) == 2
+    assert len(config.extract_other_sections()) == 2
 
 
 def test_no_extra_sections() -> None:
