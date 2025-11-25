@@ -94,8 +94,14 @@ class SimpleClientConfig(ClientConfig):
     _extra_sections: List[str]
 
     @staticmethod
-    def of_path_string(path: str) -> ClientConfig:
-        return SimpleClientConfig.of_config_parser(ConfigParser(path=Path(path)))
+    def of_path_string(
+        path: str,
+        config_override: ClientConfigOverride | None = None,
+    ) -> ClientConfig:
+        return SimpleClientConfig.of_config_parser(
+            config_parser=ConfigParser(path=Path(path)),
+            config_override=config_override,
+        )
 
     @staticmethod
     def of_config_parser(
