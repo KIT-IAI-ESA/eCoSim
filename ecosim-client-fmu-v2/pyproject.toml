@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-client-fmu-v2"
-version = "0.12.0"
+version = "0.13.0"
 description = "The FMU v2 client for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "art==6.5",
-    "ecosim-common>=0.12.0",
+    "ecosim-common>=0.13.0",
     "setuptools==80.8.0",
     "fmpy==0.3.25",
     "pydantic==2.12.4",

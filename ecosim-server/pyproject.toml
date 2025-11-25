@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ecosim-server"
 requires-python = ">=3.12"
-version = "0.12.0"
+version = "0.13.0"
 description = "The server to handle the eCoSim clients"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "ecosim-common>=0.12.0",
+    "ecosim-common>=0.13.0",
     "art==6.5",
     "pydantic==2.12.4",
     "sqlalchemy==2.0.41",
