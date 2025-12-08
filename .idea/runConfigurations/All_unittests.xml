@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All unittests" type="CompoundRunConfigurationType">
+    <toRun name="'common' tests" type="tests" />
+    <toRun name="'fmu2' tests" type="tests" />
+    <toRun name="'fmu3' tests" type="tests" />
+    <toRun name="'server' tests" type="tests" />
+    <method v="2" />
+  </configuration>
+</component>

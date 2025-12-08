@@ -93,6 +93,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         tzinfo=timezone.utc,
     )
 
+    simulator_name = "TestSimulator_PostgresIntegration"
     server = generate_simple_test_server(
         host=server_host,
         port=server_port,
@@ -113,9 +114,9 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         ),
         clients=[
             ClientSimulatorConfig(
-                simulator_name="TestSimulator_1",
+                simulator_name=f"{simulator_name}_1",
                 model_name="TestModel_1",
-                client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
+                client_id=ClientID(model_name="TestModel_1", simulator_name=f"{simulator_name}_1"),
                 interfaces=[
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
@@ -135,13 +136,13 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                 ],
             ),
             ClientSimulatorConfig(
-                simulator_name="TestSimulator_2",
+                simulator_name=f"{simulator_name}_2",
                 model_name="TestModel_2",
-                client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
+                client_id=ClientID(model_name="TestModel_2", simulator_name=f"{simulator_name}_2"),
                 interfaces=[
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
-                            simulator_name="TestSimulator_2",
+                            simulator_name=f"{simulator_name}_2",
                             model_interface_id=ModelInterfaceId(
                                 model_name="TestModel_2",
                                 interface="TestInterface_2",
@@ -155,7 +156,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                         connected_to=[
                             ConnectedToData(
                                 simulator_interface_id=SimulatorInterfaceId(
-                                    simulator_name="TestSimulator_1",
+                                    simulator_name=f"{simulator_name}_1",
                                     model_interface_id=ModelInterfaceId(
                                         interface="TestInterface_1",
                                         model_name="TestModel_1",
@@ -167,7 +168,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                     ),
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
-                            simulator_name="TestSimulator_2",
+                            simulator_name=f"{simulator_name}_2",
                             model_interface_id=ModelInterfaceId(
                                 model_name="TestModel_2",
                                 interface="TestInterface_2_2",
@@ -190,7 +191,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
-        simulator_name="TestSimulator_1",
+        simulator_name=f"{simulator_name}_1",
         interface_config=ClientInterfaceConfig(
             interfaces=[
                 ModelInterfaceClient(
@@ -223,7 +224,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
-        simulator_name="TestSimulator_2",
+        simulator_name=f"{simulator_name}_2",
         interface_config=ClientInterfaceConfig(
             interfaces=[
                 ModelInterfaceClient(
@@ -268,7 +269,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         timestamp: datetime,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
-        base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
+        base_value = (timestamp - simulation_start_date).total_seconds()
         expected = generate_matrix(base_value)
         actual = values[0].value
         logger.debug(f"(Client1) Expected: {expected}")
@@ -287,7 +288,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         timestamp: datetime,
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
-        base_value = (timestamp - simulation_start_date).total_seconds() + (step_size_in_ms / 1000)
+        base_value = (timestamp - simulation_start_date).total_seconds()
         actual = values[1].value
         expected = square_each_element(generate_matrix(base_value))
         logger.debug(f"(Client2) Expected: {expected}")

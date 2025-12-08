@@ -142,3 +142,25 @@ def test_parse_int_array() -> None:
     actual = ConfigParser.config_string_to_int_array(string_array)
     assert actual[0] == 888
     assert actual[1] == 222
+
+
+def test_extract_extra_sections() -> None:
+    config = config_parser_for_resource('client_config.ini')
+    assert len(config.extract_extra_sections()) == 1
+    assert config.extract_extra_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
+
+
+def test_extract_multiple_sections() -> None:
+    config = config_parser_for_resource('config_multiple_sections.ini')
+    assert len(config.extract_extra_sections()) == 2
+    assert config.extract_extra_sections()[0] == """[Section1]
+string = string1234
+int = 12"""
+    assert config.extract_extra_sections()[1] == """[Section2]
+string = string5678
+int = 23"""
+
+
+def test_no_extra_sections() -> None:
+    config = config_parser_for_resource('config_no_extra_section.ini')
+    assert config.extract_extra_sections() == []

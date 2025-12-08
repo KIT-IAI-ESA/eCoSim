@@ -91,6 +91,36 @@ class ConfigParser:
                 f"In section {section} the key {option} does not exist",
             ) from e
 
+    def extract_extra_sections(self) -> List[str]:
+        return ConfigParser.extract_extra_sections_from_config_file(self.config_file)
+
+    @staticmethod
+    def extract_extra_sections_from_config_file(path: str | Path) -> List[str]:
+        with open(path, 'r', encoding='utf-8') as f:
+            text = f.read()
+        return ConfigParser._extract_extra_sections_from_text(text)
+
+    @staticmethod
+    def _extract_extra_sections_from_text(text: str) -> List[str]:
+        # Find all section headers like [SectionName]
+        header_pattern = re.compile(r'^\s*\[(.+?)\]\s*$', re.MULTILINE)
+        matches = list(header_pattern.finditer(text))
+        if not matches:
+            return []
+
+        excluded = {"server", "simulator"}
+        sections: list[str] = []
+        for index, match in enumerate(matches):
+            section_name = match.group(1).strip()
+            if section_name.lower() in excluded:
+                continue
+            start = match.start()
+            end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+            block = text[start:end].strip()
+            sections.append(block)
+
+        return sections
+
     @staticmethod
     def config_string_to_string_array(string: str | None) -> List[str]:
         if not string:

@@ -22,6 +22,7 @@ os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 
 def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: Connection) -> None:
+    simulator_name = "TestSimulator_PersistenceFloat"
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
@@ -39,13 +40,13 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
         ),
         clients=[
             ClientSimulatorConfig(
-                simulator_name="TestSimulator",
+                simulator_name=simulator_name,
                 model_name="TestModel",
-                client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
+                client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
                 interfaces=[
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
-                            simulator_name="TestSimulator",
+                            simulator_name=simulator_name,
                             model_interface_id=ModelInterfaceId(
                                 model_name="TestModel",
                                 interface="TestInterface",
@@ -67,7 +68,7 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
         server_host="localhost",
         server_port=6543,
         model_name="TestModel",
-        simulator_name="TestSimulator",
+        simulator_name=simulator_name,
         interface_config=ClientInterfaceConfig(
             interfaces=[
                 ModelInterfaceClient(
@@ -99,9 +100,10 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
 
-    cursor.execute("SELECT * FROM module_testsimulator")
+    cursor.execute(f"SELECT * FROM module_{simulator_name.lower()}")
     rows = cursor.fetchall()
 
+    assert len(rows) == 10
     for row in rows:
         assert row['o_testinterface'] == 2.5
         assert row['o_testinterface_json'] is None
@@ -121,6 +123,7 @@ def test_db_persistence_matrix(
         [7.7, 8.8, 9.9],
     ]
 
+    simulator_name = "TestSimulator_PersistenceMatrix"
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
@@ -138,9 +141,9 @@ def test_db_persistence_matrix(
         ),
         clients=[
             ClientSimulatorConfig(
-                simulator_name="TestSimulator",
+                simulator_name=simulator_name,
                 model_name="TestModel",
-                client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
+                client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
                 interfaces=[
                     ModelInterfaceServer(
                         SimulatorInterfaceId(
@@ -163,9 +166,10 @@ def test_db_persistence_matrix(
     )
 
     client = SimpleTestClient.generate(
-        server_host="localhost", server_port=6543,
+        server_host="localhost",
+        server_port=6543,
         model_name="TestModel",
-        simulator_name="TestSimulator",
+        simulator_name=simulator_name,
         interface_config=ClientInterfaceConfig(
             interfaces=[
                 ModelInterfaceClient(
@@ -197,9 +201,10 @@ def test_db_persistence_matrix(
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
 
-    cursor.execute("SELECT * FROM module_testsimulator")
+    cursor.execute(f"SELECT * FROM module_{simulator_name.lower()}")
     rows = cursor.fetchall()
 
+    assert len(rows) == 10
     for row in rows:
         assert row['o_testinterface'] is None
         assert row['o_testinterface_json'] == matrix
