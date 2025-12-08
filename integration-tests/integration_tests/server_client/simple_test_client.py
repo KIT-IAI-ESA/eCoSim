@@ -149,3 +149,6 @@ class TestClientConfig(ClientConfig):
             fmc_file="",
             type=ClientType.FMU_3,
         )
+
+    def generate_config(self) -> str:
+        return ""

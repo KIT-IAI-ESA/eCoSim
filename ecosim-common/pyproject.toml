@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-common"
-version = "0.12.0"
+version = "0.13.0"
 description = "Common utilities and abstractions for eCoSim"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "art==6.5",
-    "pydantic==2.11.9",
+    "pydantic==2.12.4",
     "websockets==15.0.1",
     "dask==2025.10.0",
     "dask[distributed]==2025.10.0",
