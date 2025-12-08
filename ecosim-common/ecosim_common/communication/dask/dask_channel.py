@@ -9,29 +9,26 @@ from ecosim_common.communication.dask.simple_dask_message import SimpleDaskMessa
 from ecosim_common.communication.dask.esp_dask import ESPDask
 from ecosim_common.communication.dask.dask_messages import ReceivedMessage
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.config.client_id import ClientID
 
 
 def _listen_blocking(
                     on_message: Callable[[ESPChannelMessage], None],
-                    client_id: ClientID,
                     dask_client: ESPDask,
-) -> dd.Event:
+) -> None:
     client = dd.get_client()
     finish_channel = dd.Variable("finished_channel", client=client)
     is_finished = finish_channel.get()
     while not is_finished.is_set():
-        message: ReceivedMessage | None = dask_client.receive(client_id=client_id)
+        is_finished = dd.Variable("finished_channel", client=client).get()
+        message: ReceivedMessage | None = dask_client.receive()
         if not message:
             is_finished.set()
-            finish_channel = dd.Variable("finished_channel", client=client)
-            finish_channel.set(is_finished)
+            # finish_channel = dd.Variable("finished_channel", client=client)
+            # finish_channel.set(is_finished)
             DaskChannel._logger.info("Received empty message -> closing connection")
 
         if (message is not None) and (message.to_esp_channel_message() is not None):
             on_message(message.to_esp_channel_message())
-
-        is_finished = dd.Variable("finished_channel", client=client).get()
 
 
 class DaskChannel(ESPChannel):
@@ -60,12 +57,11 @@ class DaskChannel(ESPChannel):
     def listen_async(
         self,
         on_message: Callable[[ESPChannelMessage], None],
-        client_id: ClientID,
     ) -> None:
         dask_client = dd.get_client()
 
-        async def listen_start():
-            future = dask_client.submit(_listen_blocking, on_message, client_id, self._internal_dask_client)
+        async def listen_start() -> None:
+            future = dask_client.submit(_listen_blocking, on_message,  self._internal_dask_client)
             dd.fire_and_forget(future)
 
         dask_client.sync(listen_start)
@@ -91,10 +87,9 @@ class DaskChannel(ESPChannel):
     @override
     def listen_blocking(
         self,
-        client_id: ClientID,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
-        message: ReceivedMessage | None = self._internal_dask_client.receive(client_id=client_id)
+        message: ReceivedMessage | None = self._internal_dask_client.receive()
         dask_client = dd.get_client()
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
@@ -108,14 +103,12 @@ class DaskChannel(ESPChannel):
     def send(
         self,
         message: ESPChannelMessage,
-        client_id: ClientID,
     ) -> None:
         if not self._internal_dask_client.is_connected():
             raise Exception("Dask client already closed")
         try:
             self._internal_dask_client.send(
                 SimpleDaskMessage.of_esp_channel_message(message=message),
-                client_id=client_id,
             )
         except Exception as e:
             DaskChannel._logger.debug(
@@ -124,5 +117,4 @@ class DaskChannel(ESPChannel):
             self._internal_dask_client.connect(connection_address=self._internal_dask_client.connection_address())
             self._internal_dask_client.send(
                 SimpleDaskMessage.of_esp_channel_message(message=message),
-                client_id=client_id,
             )

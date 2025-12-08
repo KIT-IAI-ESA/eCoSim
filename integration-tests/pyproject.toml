@@ -4,36 +4,38 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "integration-tests"
-version = "0.11.0"
+version = "0.12.0"
 description = "Integration tests for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Integration Tests",
-#    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.13",
+    #    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "dask",
     "distributed",
     "docker==7.1.0",
-    "ecosim-client-fmu-v3>=0.11.0",
-    "ecosim-common>=0.11.0",
-    "ecosim-server>=0.11.0",
+    "ecosim-client-fmu-v3>=0.12.0",
+    "ecosim-common>=0.12.0",
+    "ecosim-server>=0.12.0",
     "mypy==1.18.2",
     "pytest-cov==6.1.1",
     "pytest-html==4.1.1",
     "pytest-mock==3.15.1",
     "pytest==8.3.5",
     "testcontainers[postgres]==4.13.0",
-    "types-docker==7.1.0.20250916",
-    "uv==0.8.22",
+    "types-docker==7.1.0.20251009",
+    "uv==0.9.6",
     "websockets==15.0.1",
+    "pip==25.3",
+    "psycopg[binary]==3.2.12",
 ]
 
 [tool.uv.sources]
@@ -42,10 +44,12 @@ ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server"]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v3"]
+check_untyped_defs = true
+disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["integration_tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -53,4 +57,5 @@ addopts = [
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",
+    "--ignore=locally"
 ]

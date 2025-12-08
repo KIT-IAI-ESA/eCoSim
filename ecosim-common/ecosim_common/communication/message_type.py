@@ -9,7 +9,7 @@ _message_type_logger = ESPLogger("MessageType")
 class MessageType(Enum):
     """
     The MessageType determines the type of channel messages.
-    The internal representation are values from 0 to 255.
+    The internal representations are values from 0 to 255.
     This restriction will ensure certainty about the byte size and encoding for underlying protocols.
     """
 
@@ -20,6 +20,7 @@ class MessageType(Enum):
     SIMULATION_START = 5
     SIMULATION_STEP = 6
     SIMULATION_STOP = 7
+    SIMULATION_STEP_BATCH = 8
     UNKNOWN = 255
 
     def to_int(self) -> int:
@@ -49,6 +50,8 @@ class MessageType(Enum):
             return MessageType.SIMULATION_STEP
         elif value == 7:
             return MessageType.SIMULATION_STOP
+        elif value == 8:
+            return MessageType.SIMULATION_STEP_BATCH
         else:
             _message_type_logger.error(
                 f'Message type deserialization failed. Value was in range (0-255) but is unknown: {value}.',

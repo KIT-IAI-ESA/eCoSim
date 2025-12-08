@@ -25,13 +25,17 @@ class ConnectionAddress:
         if connection_type == "tcp":
             split_address = address.split(":")
             return ConnectionAddress(split_address[0], int(split_address[1]))
-        elif connection_type == "inproc":
+        else:
+            assert connection_type == "inproc"
             split_address = address.split("/")
             return ConnectionAddress(split_address[0], split_address[1]+"/"+split_address[2])
 
     @staticmethod
     def of_dask_client(raw_dask_client: dd.Client) -> "ConnectionAddress":
-        return ConnectionAddress.of_raw_dask_client_address(raw_dask_client.scheduler.addr)
+        if not raw_dask_client.scheduler:
+            raise AttributeError
+        else:
+            return ConnectionAddress.of_raw_dask_client_address(raw_dask_client.scheduler.addr)
 
     def __str__(self) -> str:
         return f"{self.ip}:{self.port}"

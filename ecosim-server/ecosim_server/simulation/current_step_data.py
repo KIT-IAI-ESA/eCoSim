@@ -29,11 +29,11 @@ class CurrentStepData:
     def reset_for_new_step(
         self,
         step: int,
-    ):
+    ) -> None:
         self._step = step
         self._reset_interfaces_by_client()
 
-    def _init_logical_delays(self):
+    def _init_logical_delays(self) -> None:
         for logical_delay in self._simulation_config.logical_delays:
             delayed_time_steps = logical_delay.delayed_time_steps
             if delayed_time_steps not in self._logical_delays:
@@ -50,7 +50,7 @@ class CurrentStepData:
                     ),
                 )
 
-    def _reset_interfaces_by_client(self):
+    def _reset_interfaces_by_client(self) -> None:
         self._data_by_client = {}
         for client in self._simulation_config.clients:
             self._data_by_client[client.client_id] = CurrentStepClientData(executed=False, interface_data=[])
@@ -68,7 +68,7 @@ class CurrentStepData:
         self,
         interface: SimulatorInterfaceId,
         value: InterfaceValueType,
-    ):
+    ) -> None:
         client_data = self._data_by_client[interface.client_id()]
         if client_data.executed:
             CurrentStepData._logger.error(
@@ -108,7 +108,7 @@ class CurrentStepData:
         self,
         client_id_sender: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
-    ):
+    ) -> None:
         client_config_sender = self._simulation_config.client_simulator_config_for(client_id_sender)
 
         if client_config_sender is None:
@@ -154,13 +154,13 @@ class CurrentStepData:
                             )
                         logical_delay_connection.current_value = new_value
 
-    def all_clients_executed(self):
+    def all_clients_executed(self) -> bool:
         return all([self._data_by_client[client_id].executed for client_id in self._data_by_client.keys()])
 
     def set_is_executed(
         self,
         client_id: ClientID,
-    ):
+    ) -> None:
         self._data_by_client[client_id].executed = True
 
     def logical_delays_by_delay_step(self) -> dict[int, CurrentStepLogicalDelay]:

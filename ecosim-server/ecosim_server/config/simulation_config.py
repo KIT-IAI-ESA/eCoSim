@@ -10,7 +10,9 @@ from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
-from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
+from ecosim_common.communication.data.server_interface_settings import (
+    ServerInterfaceSettings,
+)
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
@@ -27,20 +29,25 @@ class SimulationConfig:
     start_date: datetime
     logical_delays: List[LogicalDelay]
     pace: float = 1.0
+    restore: bool = False
 
     @staticmethod
     def of_config_file_and_params(
-            simulation_config_file: Path,
-            steps: int,
-            step_size_override: int | None = None,
-            pace: float = 1.0,
+        simulation_config_file: Path,
+        steps: int,
+        step_size_override: int | None = None,
+        pace: float = 1.0,
+        restore: bool = False,
     ) -> SimulationConfig:
         config = SimulationConfig._load_config(simulation_config_file)
-        clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(config)
+        clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(
+            config,
+        )
         logical_delays: List[LogicalDelay] = [
-            LogicalDelay.of_config(logical_delay, logical_delay_index, clients) for
-            logical_delay_index, logical_delay in
-            enumerate(config["logical_delays"])
+            LogicalDelay.of_config(logical_delay, logical_delay_index, clients)
+            for logical_delay_index, logical_delay in enumerate(
+                config["logical_delays"],
+            )
         ]
         return SimulationConfig(
             clients=clients,
@@ -51,6 +58,7 @@ class SimulationConfig:
                 config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),
             ),
             logical_delays=logical_delays,
+            restore=restore,
         )
 
     def __post_init__(self) -> None:
@@ -86,7 +94,9 @@ class SimulationConfig:
         for client in self.clients:
             if client.model_name == client_id.model_name and client.simulator_name == client_id.simulator_name:
                 return client
-        SimulationConfig.logger.warning(f"Cannot find simulator config for client {client_id}")
+        SimulationConfig.logger.warning(
+            f"Cannot find simulator config for client {client_id}",
+        )
         return None
 
     def validate_interfaces(
@@ -123,7 +133,9 @@ class SimulationConfig:
                 interface=interface_name,
             ),
         )
-        return self.connected_output_interfaces_by_simulator_interface_id(simulator_interface_id)
+        return self.connected_output_interfaces_by_simulator_interface_id(
+            simulator_interface_id,
+        )
 
     def connected_output_interfaces_by_simulator_interface_id(
         self,
@@ -141,9 +153,21 @@ class SimulationConfig:
 
     def date_time_for_step(
         self,
-        step: float,
+        step: int,
     ) -> datetime:
-        return self.start_date + timedelta(milliseconds=step * self.step_size_in_ms)
+        # (step + 1) because the first step is step 0 and therefore the simulation time is already start_date + simulation_steps_in_ms
+        return self.start_date + timedelta(milliseconds=(step + 1) * self.step_size_in_ms)
+
+    def date_time_to_step(
+        self,
+        date: datetime,
+    ) -> int:
+        passed_milliseconds = date.timestamp() * 1000 - self.start_date.timestamp() * 1000
+        plausibility_check = passed_milliseconds % self.step_size_in_ms == 0
+        if not plausibility_check:
+            raise RuntimeError(f"Date time {date} is not a plausible step time.")
+        # (step - 1) because the first step is step 0
+        return int(passed_milliseconds / self.step_size_in_ms) - 1
 
     def print_for_start_up(self) -> None:
         GlobalLogger.print_values(
@@ -156,6 +180,9 @@ class SimulationConfig:
             },
         )
 
+    def client_ids(self) -> Tuple[ClientID, ...]:
+        return tuple([client.client_id for client in self.clients])
+
 
 @dataclass(frozen=True)
 class ClientSimulatorConfig:
@@ -166,8 +193,8 @@ class ClientSimulatorConfig:
 
     @staticmethod
     def of_configs(
-            config: dict[str, Any],
-            server_config: dict[str, Any],
+        config: dict[str, Any],
+        server_config: dict[str, Any],
     ) -> ClientSimulatorConfig:
         simulator_name = config["name"]
         model_name = config["model"]
@@ -175,10 +202,10 @@ class ClientSimulatorConfig:
         for interface in config["interfaces"]:
             interfaces.append(
                 ModelInterfaceServer.of_config_json(
-                simulator_name=simulator_name,
-                model_name=model_name,
-                raw_interface=interface,
-                raw_simulators=server_config["simulators"],
+                    simulator_name=simulator_name,
+                    model_name=model_name,
+                    raw_interface=interface,
+                    raw_simulators=server_config["simulators"],
                 ),
             )
         return ClientSimulatorConfig(
@@ -222,22 +249,21 @@ class ClientSimulatorConfig:
 
 
 class LogicalDelay:
-
     @staticmethod
     def of_config(
-            logical_delay_block_raw_json: dict[str, Any],
-            logical_delay_index: int,
-            clients: List[ClientSimulatorConfig],
+        logical_delay_block_raw_json: dict[str, Any],
+        logical_delay_index: int,
+        clients: List[ClientSimulatorConfig],
     ) -> LogicalDelay:
         return LogicalDelay(
             delayed_time_steps=int(logical_delay_block_raw_json["delay"]),
             logical_delay_connections=[
                 LogicalDelayConnection.of_config(
-                    logical_delay_interface, clients,
+                    logical_delay_interface,
+                    clients,
                     logical_delay_index,
-                ) for
-                logical_delay_interface in
-                logical_delay_block_raw_json["output_connections"]
+                )
+                for logical_delay_interface in logical_delay_block_raw_json["output_connections"]
             ],
         )
 
@@ -257,14 +283,16 @@ class LogicalDelay:
 
 
 class LogicalDelayConnection:
-
     @staticmethod
     def of_config(
-            delay_raw_json: dict[str, Any],
-            clients: List[ClientSimulatorConfig],
-            logical_delay_index: int,
+        delay_raw_json: dict[str, Any],
+        clients: List[ClientSimulatorConfig],
+        logical_delay_index: int,
     ) -> LogicalDelayConnection:
-        output_interface = LogicalDelayConnection._find_output_interface(delay_raw_json, clients)
+        output_interface = LogicalDelayConnection._find_output_interface(
+            delay_raw_json,
+            clients,
+        )
         return LogicalDelayConnection(
             start_value=float(delay_raw_json["start_value"]),
             input_interface=LogicalDelayConnection._find_input_interface_for(
@@ -277,9 +305,9 @@ class LogicalDelayConnection:
 
     @staticmethod
     def _find_input_interface_for(
-            output_simulator_interface_id: SimulatorInterfaceId,
-            clients: List[ClientSimulatorConfig],
-            logical_delay_index: int,
+        output_simulator_interface_id: SimulatorInterfaceId,
+        clients: List[ClientSimulatorConfig],
+        logical_delay_index: int,
     ) -> SimulatorInterfaceId:
         output_interface = LogicalDelayConnection.server_model_interface_by_simulator_interface_id(
             clients=clients,
@@ -293,57 +321,60 @@ class LogicalDelayConnection:
 
         for client in clients:
             matching_interfaces = [
-                connected_to_data.simulator_interface_id for client_interface in client.interfaces if
-                output_simulator_interface_id == client_interface.simulator_interface_id for
-                connected_to_data in
-                client_interface.connected_to if
-                str(logical_delay_index + 1) in connected_to_data.delay_path
+                connected_to_data.simulator_interface_id
+                for client_interface in client.interfaces
+                if output_simulator_interface_id == client_interface.simulator_interface_id
+                for connected_to_data in client_interface.connected_to
+                if str(logical_delay_index + 1) in connected_to_data.delay_path
             ]
             if len(matching_interfaces) == 1:
                 input_interface_id = matching_interfaces[0]
             elif len(matching_interfaces) >= 1:
                 SimulationConfig.logger.error(
-                    f"There are multiple matching input interfaces for {output_simulator_interface_id} but there must only be one. " +
-                    "The first one is used but you need to investigate this issue.",
+                    f"There are multiple matching input interfaces for {output_simulator_interface_id} but there must only be one. "
+                    + "The first one is used but you need to investigate this issue.",
                 )
                 input_interface_id = matching_interfaces[0]
         if input_interface_id:
             return input_interface_id
         else:
-            raise RuntimeError(f"No input interface for {output_simulator_interface_id} found.")
+            raise RuntimeError(
+                f"No input interface for {output_simulator_interface_id} found.",
+            )
 
     @staticmethod
     def server_model_interface_by_simulator_interface_id(
-            clients: List[ClientSimulatorConfig],
-            simulator_interface_id: SimulatorInterfaceId,
+        clients: List[ClientSimulatorConfig],
+        simulator_interface_id: SimulatorInterfaceId,
     ) -> ModelInterfaceServer | None:
         client = next(
             (
-                client for client in clients if
-                client.simulator_name == simulator_interface_id.simulator_name and
-                client.model_name == simulator_interface_id.model_interface_id.model_name
+                client
+                for client in clients
+                if client.simulator_name == simulator_interface_id.simulator_name
+                and client.model_name == simulator_interface_id.model_interface_id.model_name
             ),
             None,
         )
         if client is None:
             SimulationConfig.logger.warning(
-                f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> " +
-                "no clients match the criteria",
+                f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> "
+                + "no clients match the criteria",
             )
             return None
         for interface in client.interfaces:
             if interface.simulator_interface_id == simulator_interface_id:
                 return interface
         SimulationConfig.logger.warning(
-            f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> client was found " +
-            f"({client.client_id}) but does not contain a matching interface",
+            f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> client was found "
+            + f"({client.client_id}) but does not contain a matching interface",
         )
         return None
 
     @staticmethod
     def _find_output_interface(
-            delay_raw_json: dict[str, Any],
-            clients: List[ClientSimulatorConfig],
+        delay_raw_json: dict[str, Any],
+        clients: List[ClientSimulatorConfig],
     ) -> SimulatorInterfaceId:
         output_simulator_name: str = delay_raw_json["destination_simulator_name"]
         for client in clients:
@@ -371,8 +402,10 @@ class LogicalDelayConnection:
         self.output_interface = output_interface
 
     def __str__(self) -> str:
-        return (f"LogicalDelayConnection(start_value={self.start_value}, input_interface='{self.input_interface}', " +
-                f"output_interface='{self.output_interface}')")
+        return (
+            f"LogicalDelayConnection(start_value={self.start_value}, input_interface='{self.input_interface}', "
+            + f"output_interface='{self.output_interface}')"
+        )
 
     def __repr__(self) -> str:
         return self.__str__()

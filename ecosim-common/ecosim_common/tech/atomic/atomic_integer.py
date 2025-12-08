@@ -26,6 +26,14 @@ class AtomicInteger:
             self._value -= d
             return self._value
 
+    def set(
+        self,
+        d: int,
+    ) -> int:
+        with self._lock:
+            self._value = d
+            return self._value
+
     @property
     def value(self) -> int:
         with self._lock:

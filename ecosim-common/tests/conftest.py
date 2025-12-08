@@ -1,3 +1,5 @@
+from typing import Generator
+
 import logging
 
 import pytest
@@ -7,14 +9,14 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_logging():
+def setup_logging() -> None:
     """runs once before all tests"""
     ShutdownManager().init()
     init_logger(log_level=logging.DEBUG)
 
 
 @pytest.fixture(scope="session", autouse=True)
-def teardown_shutdown_manager():
+def teardown_shutdown_manager() -> Generator[None, None, None]:
     """runs once after all tests"""
     yield
     ShutdownManager().set_shutdown_at_application_end()

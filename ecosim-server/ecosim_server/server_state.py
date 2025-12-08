@@ -55,3 +55,7 @@ class ServerState(ShutdownListener):
 
     def set_simulation_state(self, simulation_state: SimulationState) -> None:
         self._simulation_state_repository.update(simulation_state)
+
+    def force_stop(self) -> None:
+        self.on_app_shutdown()
+        self._is_finished = True

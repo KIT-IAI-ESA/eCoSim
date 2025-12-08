@@ -9,7 +9,6 @@ from ecosim_common.communication.channel.connection_address import ConnectionAdd
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.dask.endpoint_dask import EndpointDask
 from ecosim_common.communication.dask.dask_connector import DaskConnector
-from ecosim_common.config.client_id import ClientID
 from integration_tests.communication.message_data_for_test import MessageDataForTest
 
 
@@ -18,6 +17,7 @@ def dask_client(scope="session", autouse=True):
     print("Dask client setup")
     client = dd.Client(processes=False)
     yield client
+    client.close()
 
 
 def clear_datasets(client: dd.Client) -> None:
@@ -37,7 +37,7 @@ def test_happy_path(dask_client) -> None:
     def handle_message(message: ESPChannelMessage) -> None:
         message_queue.put(message)
 
-    dask_client_channel.listen_async(on_message=handle_message, client_id=ClientID("test model", "test simulator"))
+    dask_client_channel.listen_async(on_message=handle_message)
 
     correlation_id = CorrelationId.of_int(7777)
     data = MessageDataForTest(
@@ -50,7 +50,6 @@ def test_happy_path(dask_client) -> None:
             correlation_id=correlation_id,
             payload=data,
         ),
-        client_id=ClientID("test model 2", "test simulator 2"),
     )
 
     received_data = message_queue.get()
@@ -73,7 +72,7 @@ def test_big_data(dask_client) -> None:
     def handle_message(message: ESPChannelMessage) -> None:
         message_queue.put(message)
 
-    dask_client_channel.listen_async(on_message=handle_message, client_id=ClientID("test model", "test simulator"))
+    dask_client_channel.listen_async(on_message=handle_message)
 
     correlation_id = CorrelationId.of_int(7777)
 
@@ -96,7 +95,6 @@ def test_big_data(dask_client) -> None:
             correlation_id=correlation_id,
             payload=data,
         ),
-        client_id=ClientID("test model 2", "test simulator 2"),
     )
 
     received_data = message_queue.get()
@@ -108,7 +106,7 @@ def test_big_data(dask_client) -> None:
 
 
 def _mirror_message(connection_data: ConnectionData) -> None:
-    data = connection_data.channel.listen_blocking(ClientID("test model 2", "test simulator 2"))
+    data = connection_data.channel.listen_blocking()
     if not data:
         return
-    connection_data.channel.send(data, client_id=ClientID("test model", "test simulator"))
+    connection_data.channel.send(data)

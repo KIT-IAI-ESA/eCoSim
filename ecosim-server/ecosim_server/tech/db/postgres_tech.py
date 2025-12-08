@@ -23,14 +23,14 @@ class PostgresTech(DbTechAbstract):
             base_model=SimControlDB_Base,
         )
 
-    def init_db(self):
+    def init_db(self) -> None:
         root_engine = create_engine(self.server_config.database.generate_sqlalchemy_root_url())
         self._prepare_database(root_engine)
 
     def _prepare_database(
         self,
         root_engine: Engine,
-    ):
+    ) -> None:
         db_name = self.server_config.database.name
         schema = self.server_config.database.schema
         with root_engine.connect() as root_connection:

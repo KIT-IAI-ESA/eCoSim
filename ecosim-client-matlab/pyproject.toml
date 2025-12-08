@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecosim-client-matlab"
+version = "0.12.0"
+description = "The matlab client for the eCoSim project"
+authors = [
+    { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
+]
+readme = "README.md"
+requires-python = "==3.12.*"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: eCoSim :: Matlab client",
+#    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "art==6.5",
+    "ecosim-common>=0.12.0",
+    "pydantic==2.11.9",
+]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov==6.1.1",
+    "pytest-html==4.1.1",
+    "mypy==1.18.2",
+    "uv==0.9.6",
+    "pip==25.3",
+]
+R2024b = ["matlabengine==24.2.1"]
+
+#[project.urls]
+#Homepage = "https://github.com/yourusername/myapp"
+#Repository = "https://github.com/yourusername/myapp"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_client_matlab",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_client_matlab"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
+
+[tool.mypy]
+mypy_path = "../ecosim-common"
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # Ignore fmpy library (not typed)
+    "fmpy",
+    "fmpy.*",
+    # Ignore fmpy library (not typed)
+    "art",
+    # Ignore matlab (not available in the CI)
+    "matlab",
+    "matlab.engine",
+]
+ignore_missing_imports = true

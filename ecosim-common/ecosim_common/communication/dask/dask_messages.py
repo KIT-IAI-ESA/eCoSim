@@ -82,8 +82,8 @@ class ReceivedMessage(DaskMessage):
     def raw_message(self) -> bytes:
         return self._header.raw() + self._data
 
-    def header(self) -> bytes:
-        return self._data
+    def header(self) -> DaskMessageHeader:
+        return self._header
 
     def raw_data(self) -> bytes:
         return self._data
