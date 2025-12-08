@@ -6,8 +6,6 @@ from art import tprint
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
-from ecosim_server.tech.db.ServerTimeMeasurementRepositoryDB import ServerTimeMeasurementRepositoryDB
-from ecosim_server.tech.db.db_connections import DBConnections
 from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -15,7 +13,6 @@ from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.server import Server
-from ecosim_server.tech.db.simdb.SimulationStateRepositoryDB import SimulationStateRepositoryDB
 
 
 def main() -> None:
@@ -34,14 +31,12 @@ def main() -> None:
         steps=args.simulation_steps(),
         step_size_override=args.step_size_override(),
         pace=args.pace(),
+        restore=args.restore_simulation_run(),
     )
 
-    db_connections = DBConnections(server_config)
-
-    repositories: Repositories = RepositoriesDB(
-        _simulation_config=simulation_config,
-        simulation_state_repository=SimulationStateRepositoryDB(db_connection=db_connections.main),
-        server_time_measurement_repository=ServerTimeMeasurementRepositoryDB(db_connection=db_connections.main),
+    repositories: Repositories = RepositoriesDB.create(
+        server_config=server_config,
+        simulation_config=simulation_config,
     )
 
     server = Server(server_config, simulation_config, repositories)
@@ -53,5 +48,5 @@ def main() -> None:
     ShutdownManager().set_shutdown_at_application_end()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -22,7 +22,7 @@ cache:
     - "$VENV_DIR"
 
 .image-template:
-  image: astral/uv:python3.13-trixie-slim
+  image: astral/uv:python3.13-trixie
 
 .sub-project-template:
   extends: .image-template
@@ -32,21 +32,25 @@ cache:
           - $SRC_DIR/ecosim-common
           - $SRC_DIR/ecosim-client-fmu-v2
           - $SRC_DIR/ecosim-client-fmu-v3
+          - $SRC_DIR/ecosim-client-matlab
           - $SRC_DIR/ecosim-server
   before_script:
     - cd ${PROJECT_DIR}
 
 precommit_hooks:
-  image: python:3.13
-  needs: []
+  extends: .image-template
+  needs: [ ]
   stage: static-code-analysis
   script:
-    - git config --global --add safe.directory $CI_PROJECT_DIR
-    - pip install pre-commit
-    - pre-commit run --all-files
+    - git config --global --add safe.directory $CI_PROJECT_DIR  # we need a git project for pre-commit hooks to work
+    - cd ${SRC_DIR}/dev
+    - python sync_projects.py
+    - cd ${SRC_DIR}
+    - uv sync --extra dev
+    - uv run pre-commit run --all-files
 
 my_py:
-  needs: []
+  needs: [ ]
   extends: .sub-project-template
   stage: static-code-analysis
   script:
@@ -54,7 +58,7 @@ my_py:
     - uv run mypy .
 
 test:
-  needs: []
+  needs: [ ]
   extends: .sub-project-template
   stage: test
   script:
@@ -77,13 +81,13 @@ test:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 integration_test_ecosim:
-  needs: []
+  needs: [ ]
   extends: .image-template
   stage: integration_test
   script:
     - cd $SRC_DIR/integration-tests
     - uv sync
-    - uv run pytest
+    - uv run pytest --ignore=integration_tests/locally
   artifacts:
     expire_in: 14 days
     reports:
@@ -93,14 +97,26 @@ integration_test_ecosim:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 publish_artifacts:
-  needs: [test, integration_test_ecosim]
+  needs: [ test, integration_test_ecosim ]
   extends: .sub-project-template
   stage: artifacts
   script:
     - |
-      if [ "$CI_COMMIT_BRANCH" != "release" ]; then
-      DEV_VERSION="0.0.dev+$(date +%Y%m%d.%H%M%S)_${CI_COMMIT_BRANCH}_${CI_COMMIT_SHORT_SHA}"
-      sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
+      # If this pipeline is for a tagged commit and the branch is main or empty, use the version of the tag
+      # (without the leading 'v')
+      if [ -n "$CI_COMMIT_TAG" ] && \
+        ( [ "$CI_COMMIT_BRANCH" == "main" ] || [ -z "$CI_COMMIT_BRANCH" ] ) && \
+        echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+(\.[0-9]+)*$'; then
+          RELEASE_VERSION="${CI_COMMIT_TAG#v}"
+          sed -i "s/^version = .*/version = \"$RELEASE_VERSION\"/" pyproject.toml
+      elif [ "$CI_COMMIT_BRANCH" == "main" ]; then
+          BASE_VERSION=$(sed -n 's/^version = "\([^"]*\)".*/\1/p' pyproject.toml | head -n1)
+          MAIN_VERSION="${BASE_VERSION}+$(date +%Y%m%d.%H%M%S)_${CI_COMMIT_SHORT_SHA}"
+          sed -i "s/^version = .*/version = \"$MAIN_VERSION\"/" pyproject.toml
+      else
+          SAFE_BRANCH=$(echo "$CI_COMMIT_BRANCH" | tr '/' '-' | tr -d ' ')
+          DEV_VERSION="0.0.dev+$(date +%Y%m%d.%H%M%S)_${SAFE_BRANCH}_${CI_COMMIT_SHORT_SHA}"
+          sed -i "s/^version = .*/version = \"$DEV_VERSION\"/" pyproject.toml
       fi
     - uv sync
     - uv build
@@ -111,7 +127,7 @@ publish_artifacts:
       - $PROJECT_DIR/dist/*
 
 cleanup:old-dev-packages:
-  needs: [publish_artifacts]
+  needs: [ publish_artifacts ]
   stage: cleanup
   image: alpine:latest
   variables:

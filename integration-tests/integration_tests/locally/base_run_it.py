@@ -1,4 +1,5 @@
 import io
+import tempfile
 import tarfile
 from pathlib import Path
 from typing import Tuple
@@ -11,10 +12,10 @@ import uuid
 
 # Function to copy files from a container and save as a tar file
 def save_tar_from_container(
-        client,
-        container_name,
-        src_path,
-        tar_dest_path,
+    client,
+    container_name,
+    src_path,
+    tar_dest_path,
 ):
     container = client.containers.get(container_name)
     # Retrieve the archive from the container
@@ -33,12 +34,12 @@ def save_tar_from_container(
 
 
 def run_integration_test(
-        start_script: str,
-        copy_results: bool = False,
-        copy_logs: bool = False,
-        copy_destination_path: str | None = None,
-        # ecosimpy_dir must be aligned with ECOSIMPY_DIR in config.sh in integration test container
-        ecosimpy_dir: str = "/builds/ecosimpy",
+    start_script: str,
+    copy_results: bool = False,
+    copy_logs: bool = False,
+    copy_destination_path: str | None = None,
+    # ecosimpy_dir must be aligned with ECOSIMPY_DIR in config.sh in integration test container
+    ecosimpy_dir: str = "/builds/ecosimpy",
 ):
     docker_client: DockerClient = docker.from_env()
 
@@ -69,8 +70,8 @@ def run_integration_test(
         print(f"Unexpected error: {e}")
 
     def create_tarfile(
-            source_dir: str,
-            exclude_dirs: Tuple[str, ...] = (),
+        source_dir: str,
+        exclude_dirs: Tuple[str, ...] = (),
     ):
 
         def should_exclude(
@@ -86,7 +87,7 @@ def run_integration_test(
             """
             for exclude_dir in exclude_dirs:
                 if path == exclude_dir or path == f'./{exclude_dir}' or path.startswith(
-                        exclude_dir + os.sep,
+                    exclude_dir + os.sep,
                 ) or path.startswith(f'./{exclude_dir}{os.sep}'):
                     return True
             return False
@@ -191,7 +192,7 @@ def run_integration_test(
             print('Integration test failed.')
 
     finally:
-        copy_destination_path = copy_destination_path or "/tmp"
+        copy_destination_path = copy_destination_path or tempfile.gettempdir()
         if copy_logs:
             save_tar_from_container(
                 client=docker_client,

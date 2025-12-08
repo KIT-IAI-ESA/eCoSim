@@ -247,7 +247,7 @@ def test_load() -> None:
     )
 
 
-def test_without_start_date():
+def test_without_start_date() -> None:
     config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_without_start_date.json'), 1221)
 
     assert config.step_size_in_ms == 60000
@@ -255,7 +255,7 @@ def test_without_start_date():
     assert config.start_date == datetime(year=2024, month=1, day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
 
 
-def test_date_time_for_step():
+def test_date_time_for_step() -> None:
     config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
     assert config.step_size_in_ms == 60000
     assert config.start_date == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=7, microsecond=123000, tzinfo=timezone.utc)
@@ -263,15 +263,27 @@ def test_date_time_for_step():
     step_1 = config.date_time_for_step(1)
     step_10 = config.date_time_for_step(10)
     step_777 = config.date_time_for_step(777)
-    step_0_5 = config.date_time_for_step(0.5)
 
-    assert step_1 == datetime(year=2024, month=3, day=17, hour=14, minute=0, second=7, microsecond=123000, tzinfo=timezone.utc)
-    assert step_10 == datetime(year=2024, month=3, day=17, hour=14, minute=9, second=7, microsecond=123000, tzinfo=timezone.utc)
-    assert step_777 == datetime(year=2024, month=3, day=18, hour=2, minute=56, second=7, microsecond=123000, tzinfo=timezone.utc)
-    assert step_0_5 == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=37, microsecond=123000, tzinfo=timezone.utc)
+    assert step_1 == datetime(year=2024, month=3, day=17, hour=14, minute=1, second=7, microsecond=123000, tzinfo=timezone.utc)
+    assert step_10 == datetime(year=2024, month=3, day=17, hour=14, minute=10, second=7, microsecond=123000, tzinfo=timezone.utc)
+    assert step_777 == datetime(year=2024, month=3, day=18, hour=2, minute=57, second=7, microsecond=123000, tzinfo=timezone.utc)
 
 
-def test_step_size_default():
+def test_date_time_to_step() -> None:
+    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
+    assert config.step_size_in_ms == 60000
+    assert config.start_date == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=7, microsecond=123000, tzinfo=timezone.utc)
+
+    step_1 = config.date_time_to_step(datetime(year=2024, month=3, day=17, hour=14, minute=1, second=7, microsecond=123000, tzinfo=timezone.utc))
+    step_10 = config.date_time_to_step(datetime(year=2024, month=3, day=17, hour=14, minute=10, second=7, microsecond=123000, tzinfo=timezone.utc))
+    step_777 = config.date_time_to_step(datetime(year=2024, month=3, day=18, hour=2, minute=57, second=7, microsecond=123000, tzinfo=timezone.utc))
+
+    assert step_1 == 1
+    assert step_10 == 10
+    assert step_777 == 777
+
+
+def test_step_size_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -280,7 +292,7 @@ def test_step_size_default():
     assert config.step_size_in_ms == 60000
 
 
-def test_step_size_override():
+def test_step_size_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -289,7 +301,7 @@ def test_step_size_override():
     assert config.step_size_in_ms == 833
 
 
-def test_pace_default():
+def test_pace_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,
@@ -297,7 +309,7 @@ def test_pace_default():
     assert config.pace == 1.0
 
 
-def test_pace_override():
+def test_pace_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
         simulation_config_file=resource_path_file('simulation.json'),
         steps=1221,

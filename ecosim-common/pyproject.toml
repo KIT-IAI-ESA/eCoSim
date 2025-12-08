@@ -4,24 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-common"
-version = "0.11.0"
+version = "0.12.0"
 description = "Common utilities and abstractions for eCoSim"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Common Code",
     #    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "art==6.5",
     "pydantic==2.11.9",
     "websockets==15.0.1",
+    "dask==2025.10.0",
+    "dask[distributed]==2025.10.0",
 ]
 
 [tool.setuptools.package-data]
@@ -34,12 +36,17 @@ dev = [
     "pytest-cov==7.0.0",
     "pytest-html==4.1.1",
     "mypy==1.18.2",
-    "uv==0.8.22",
+    "uv==0.9.6",
+    "pip==25.3"
 ]
 
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"
 #Repository = "https://github.com/yourusername/myapp"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

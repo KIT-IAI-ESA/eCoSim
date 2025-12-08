@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim.iml" filepath="$PROJECT_DIR$/.idea/ecosim.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml" filepath="$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml" filepath="$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml" filepath="$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml" filepath="$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml" />
-      <module fileurl="file://$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml" filepath="$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml" />
-    </modules>
-  </component>
+    <component name="ProjectModuleManager">
+        <modules>
+            <module fileurl="file://$PROJECT_DIR$/.idea/ecosim.iml" filepath="$PROJECT_DIR$/.idea/ecosim.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml"
+                    filepath="$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml"
+                    filepath="$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml"
+                    filepath="$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml"
+                    filepath="$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml"
+                    filepath="$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml"/>
+            <module fileurl="file://$PROJECT_DIR$/ecosim-client-matlab/.idea/ecosim-client-matlab.iml"
+                    filepath="$PROJECT_DIR$/ecosim-client-matlab/.idea/ecosim-client-matlab.iml"/>
+        </modules>
+    </component>
 </project>

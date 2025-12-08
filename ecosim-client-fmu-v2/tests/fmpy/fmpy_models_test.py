@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
+import platform
 import shutil
+import sys
 from dataclasses import dataclass
 from typing import List
 from uuid import uuid4
@@ -20,8 +23,13 @@ class FMUInput:
     increase_by_step: float
 
 
+def get_os_name_lower_case() -> str:
+    return str.lower(platform.system())
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
 def test_sim() -> None:
-    fmu_file = resource_path() / "test_fmus/Sub1_Linux.fmu"
+    fmu_file = os.path.join(resource_path(), "test_fmus", "Sub1_Linux.fmu")
     # fmu_file = 'CoupledClutches.fmu'
     # download_test_file('2.0', 'CoSimulation', 'MapleSim', '2016.2', 'CoupledClutches', fmu_file)
     model_description = read_model_description(f"{fmu_file}")
@@ -107,11 +115,12 @@ def test_sim() -> None:
     shutil.rmtree(unzipdir)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
 def test_fmpy() -> None:
     print("")
     print("")
 
-    fmu_file = resource_path() / "test_fmus/Sub2_Linux.fmu"
+    fmu_file = os.path.join(resource_path(), "test_fmus", "Sub2_Linux.fmu")
     unzip_dir = fmpy.extract(fmu_file)
 
     step_size = 1.0
@@ -165,7 +174,7 @@ def test_fmpy_coupled_clutches() -> None:
     print("")
     print("")
 
-    fmu_file = resource_path() / "test_fmus/CoupledClutches.fmu"
+    fmu_file = os.path.join(resource_path(), "test_fmus", "CoupledClutches.fmu")
     unzip_dir = fmpy.extract(fmu_file)
 
     step_size = 100000.0
@@ -213,7 +222,7 @@ def test_fmpy_coupled_clutches() -> None:
 
 def test_fmpy_houses_weather() -> None:
     _execute_fmu(
-        fmu_file="models/house/linux/weather.fmu",
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "weather.fmu"),
         steps=12,
         step_size=60000,
         inputs=[],
@@ -223,7 +232,7 @@ def test_fmpy_houses_weather() -> None:
 
 def test_fmpy_houses_house() -> None:
     _execute_fmu(
-        fmu_file="models/house/linux/house.fmu",
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "house.fmu"),
         steps=10,
         step_size=100,
         inputs=[
@@ -260,7 +269,7 @@ def test_fmpy_houses_house() -> None:
 
 def test_fmpy_houses_heating() -> None:
     _execute_fmu(
-        fmu_file="models/house/linux/heating.fmu",
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "heating.fmu"),
         steps=10,
         step_size=60,
         inputs=[
@@ -276,7 +285,7 @@ def test_fmpy_houses_heating() -> None:
 
 def test_fmpy_houses_ventilation() -> None:
     _execute_fmu(
-        fmu_file="models/house/linux/ventilation.fmu",
+        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "ventilation.fmu"),
         steps=10,
         step_size=60,
         inputs=[
@@ -291,15 +300,15 @@ def test_fmpy_houses_ventilation() -> None:
 
 
 def _execute_fmu(
-        fmu_file: str,
-        steps: int,
-        step_size: float,
-        inputs: List[FMUInput],
-        outputs: List[str],
+    fmu_file: str,
+    steps: int,
+    step_size: float,
+    inputs: List[FMUInput],
+    outputs: List[str],
 ) -> None:
     print("")
     print("")
-    full_path = f"{resource_path()}/{fmu_file}"
+    full_path = os.path.join(resource_path(), fmu_file)
     unzip_dir = fmpy.extract(full_path)
     model_description = fmpy.read_model_description(full_path)
 
@@ -344,4 +353,5 @@ def _execute_fmu(
         print("")
         print("")
 
+    fmu_instance.freeInstance()
     shutil.rmtree(unzip_dir)

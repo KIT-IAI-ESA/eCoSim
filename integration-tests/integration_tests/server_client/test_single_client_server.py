@@ -1,5 +1,6 @@
 import threading
 from datetime import datetime
+from typing import Tuple
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
@@ -52,12 +53,12 @@ def test_client_server_single() -> None:
     if not isinstance(client_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    step_size_in_seconds = step_size_in_ms / 1000
+    def assert_records(timestamp: datetime, values: Tuple[ProtocolInterfaceValue, ...]) -> bool:
+        assert (timestamp - simulation_start_date).total_seconds() == values[0].value
+        return (timestamp - simulation_start_date).total_seconds() == values[0].value
+
     (
         client_measurement_repository
         .assert_entry_count(steps)
-        .assert_for_each_record(
-            lambda timestamp,
-            values: (timestamp - simulation_start_date).total_seconds() + step_size_in_seconds == values[0].value,
-        )
+        .assert_for_each_record(assert_records)
     )

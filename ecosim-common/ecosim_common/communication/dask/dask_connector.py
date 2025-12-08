@@ -7,7 +7,7 @@ from ecosim_common.communication.channel.connection_address import ConnectionAdd
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
 from ecosim_common.communication.dask.dask_channel import DaskChannel
-from ecosim_common.communication.dask.esp_dask import ESPDask
+from ecosim_common.communication.dask.esp_dask import create_internal_dask_id, ESPDask
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -22,7 +22,7 @@ class DaskConnector(ESPChannelConnector):
         timeout_in_seconds: int = 30,
     ) -> ESPChannel:
         start_time = time.time()
-        esp_dask = ESPDask()
+        esp_dask = ESPDask(internal_dask_id=create_internal_dask_id())
         connected: bool = False
         while not connected and (time.time() - start_time) < timeout_in_seconds:
             try:

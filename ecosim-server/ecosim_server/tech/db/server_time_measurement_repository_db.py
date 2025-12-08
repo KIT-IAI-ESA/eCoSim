@@ -24,7 +24,7 @@ class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
     def put(
         self,
         server_time_measurement: ServerTimeMeasurement,
-    ):
+    ) -> None:
         for measurement_type in ServerTimeMeasurementType:
             self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(server_time_measurement.get(measurement_type)))
 

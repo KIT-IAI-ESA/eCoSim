@@ -29,7 +29,7 @@ class ImageCache:
         self,
         client_header: RenderingMessageClientHeader,
         reply: RenderingImageReplyMessage,
-    ):
+    ) -> None:
         _image_cache_logger.debug(f"New image for time step {reply.time_step} from {client_header.client_id}")
         with self._lock:
             self._image_cache[reply.time_step][client_header.client_id] = reply
@@ -50,7 +50,7 @@ class ImageCache:
         self,
         time_step: int,
         client_ids: Set[str],
-    ):
+    ) -> None:
         if self.contains(time_step, client_ids):
             return
         with self._lock:

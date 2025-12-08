@@ -5,9 +5,14 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim_server.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-server)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
   </component>
 </module>
