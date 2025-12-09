@@ -69,7 +69,7 @@ class ESPDask(ShutdownListener):
                 ESPDask._logger.info("Successfully disconnected from Dask client.")
             else:
                 ESPDask._logger.info("Disconnection to Dask Client already in progress.")
-        except dd.comm.core.CommClosedError:
+        except (dd.comm.core.CommClosedError, KeyError):
             ESPDask._logger.info("Dask client already closed.")
 
     def send(
