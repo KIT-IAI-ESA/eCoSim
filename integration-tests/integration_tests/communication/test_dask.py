@@ -17,7 +17,7 @@ def dask_client(scope="session", autouse=True):
     print("Dask client setup")
     client = dd.Client(processes=False)
     yield client
-    client.close()
+    # client.close()
 
 
 def clear_datasets(client: dd.Client) -> None:
@@ -53,11 +53,11 @@ def test_happy_path(dask_client) -> None:
     )
 
     received_data = message_queue.get()
-    server_dask_client.close()
+    # server_dask_client.close()
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
-    clear_datasets(dask_client)
+    # clear_datasets(dask_client)
 
 
 def test_big_data(dask_client) -> None:
@@ -98,11 +98,11 @@ def test_big_data(dask_client) -> None:
     )
 
     received_data = message_queue.get()
-    server_dask_client.close()
+    # server_dask_client.close()
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
-    clear_datasets(dask_client)
+    # clear_datasets(dask_client)
 
 
 def _mirror_message(connection_data: ConnectionData) -> None:
