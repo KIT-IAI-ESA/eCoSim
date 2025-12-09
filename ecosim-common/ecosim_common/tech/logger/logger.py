@@ -26,6 +26,7 @@ def init_logger(log_level: int = logging.INFO) -> None:
     logging.getLogger('websockets.server').setLevel(logging.ERROR)
     logging.getLogger('websockets.client').setLevel(logging.ERROR)
     logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
+    logging.getLogger('distributed').setLevel(logging.ERROR)
 
 
 class ESPLogger:
