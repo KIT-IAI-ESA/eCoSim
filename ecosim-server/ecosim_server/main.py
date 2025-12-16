@@ -30,6 +30,7 @@ def main() -> None:
         simulation_config_file=args.simulation_config(),
         steps=args.simulation_steps(),
         step_size_override=args.step_size_override(),
+        time_unit_override=args.time_unit_override(),
         pace=args.pace(),
         restore=args.restore_simulation_run(),
     )

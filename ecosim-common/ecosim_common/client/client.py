@@ -233,9 +233,12 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Handling simulation setup")
-        self._execution_config.set_step_size_in_ms(
-            message.payload(SimulationSetupMessage).step_size_in_ms,
-        )
+        setup_message = message.payload(SimulationSetupMessage)
+        # Use microseconds if available, otherwise fall back to milliseconds
+        if setup_message.step_size_in_us is not None:
+            self._execution_config.set_step_size_in_us(setup_message.step_size_in_us)
+        else:
+            self._execution_config.set_step_size_in_ms(setup_message.step_size_in_ms)
         Client.logger.debug(
             f"  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}",
         )

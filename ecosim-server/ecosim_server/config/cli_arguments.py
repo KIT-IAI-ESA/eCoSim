@@ -49,7 +49,12 @@ class CLIArguments(AppConfig):
                 AppConfigParameter(
                     name="step-size",
                     transform=lambda x: int(x),
-                    help_text="The step size in milliseconds.",
+                    help_text="The step size value. Unit is determined by --time-unit (defaults to milliseconds).",
+                ),
+                AppConfigParameter(
+                    name="time-unit",
+                    default_value="milliseconds",
+                    help_text="The time unit for --step-size. Valid values: 'milliseconds', 'microseconds'. Defaults to milliseconds.",
                 ),
                 AppConfigParameter(
                     name="pace",
@@ -141,6 +146,9 @@ class CLIArguments(AppConfig):
 
     def step_size_override(self) -> int | None:
         return self._args.step_size
+
+    def time_unit_override(self) -> str:
+        return self._args.time_unit
 
     def pace(self) -> float:
         return self._args.pace

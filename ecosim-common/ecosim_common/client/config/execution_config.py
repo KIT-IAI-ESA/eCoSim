@@ -13,6 +13,7 @@ class ExecutionConfig:
         step_size_in_ms: int = 1_000,
     ) -> None:
         self._step_size_in_ms: int = step_size_in_ms
+        self._step_size_in_us: int | None = None
         self._server_interface_settings: ServerInterfaceSettings | None = None
 
     def set_server_interface_settings(
@@ -32,6 +33,8 @@ class ExecutionConfig:
         return self._server_interface_settings.outputs
 
     def step_size_in_seconds(self) -> float:
+        if self._step_size_in_us is not None:
+            return self._step_size_in_us / 1_000_000
         return self._step_size_in_ms / 1000
 
     def set_step_size_in_ms(
@@ -39,3 +42,11 @@ class ExecutionConfig:
         step_size_in_ms: int,
     ) -> None:
         self._step_size_in_ms = step_size_in_ms
+
+    def set_step_size_in_us(
+        self,
+        step_size_in_us: int,
+    ) -> None:
+        self._step_size_in_us = step_size_in_us
+        # Keep ms in sync for backward compatibility
+        self._step_size_in_ms = step_size_in_us // 1000

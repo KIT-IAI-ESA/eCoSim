@@ -163,6 +163,7 @@ class Server(AbstractServer, ShutdownListener):
                 type=MessageType.SIMULATION_SETUP,
                 payload=SimulationSetupMessage(
                     step_size_in_ms=self._simulation_config.step_size_in_ms,
+                    step_size_in_us=self._simulation_config.step_size_in_us,
                 ),
             ),
         )

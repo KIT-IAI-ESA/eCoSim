@@ -30,12 +30,21 @@ class SimulationConfig:
     logical_delays: List[LogicalDelay]
     pace: float = 1.0
     restore: bool = False
+    step_size_in_us: int | None = None
+
+    @property
+    def step_size_in_microseconds(self) -> int:
+        """Returns step size in microseconds, converting from milliseconds if needed."""
+        if self.step_size_in_us is not None:
+            return self.step_size_in_us
+        return self.step_size_in_ms * 1000
 
     @staticmethod
     def of_config_file_and_params(
         simulation_config_file: Path,
         steps: int,
         step_size_override: int | None = None,
+        time_unit_override: str = "milliseconds",
         pace: float = 1.0,
         restore: bool = False,
     ) -> SimulationConfig:
@@ -49,10 +58,42 @@ class SimulationConfig:
                 config["logical_delays"],
             )
         ]
+
+        # Handle time unit configuration
+        setup = config["setup"]
+
+        if step_size_override:
+            # CLI override: use time_unit_override to determine interpretation
+            time_unit = time_unit_override.lower()
+            if time_unit == "microseconds":
+                step_size_in_us = step_size_override
+                step_size_in_ms = step_size_override // 1000
+            elif time_unit == "milliseconds":
+                step_size_in_ms = step_size_override
+                step_size_in_us = step_size_override * 1000
+            else:
+                raise ValueError(f"Invalid time_unit_override '{time_unit}'. Must be 'milliseconds' or 'microseconds'")
+        elif "delta_t" not in setup:
+            raise ValueError("Config must specify 'delta_t' in setup section")
+        else:
+            # Check time_unit flag (defaults to milliseconds for backward compatibility)
+            time_unit = setup.get("time_unit", "milliseconds").lower()
+            delta_t = int(setup["delta_t"])
+
+            if time_unit == "microseconds":
+                step_size_in_us = delta_t
+                step_size_in_ms = delta_t // 1000
+            elif time_unit == "milliseconds":
+                step_size_in_ms = delta_t
+                step_size_in_us = delta_t * 1000
+            else:
+                raise ValueError(f"Invalid time_unit '{time_unit}'. Must be 'milliseconds' or 'microseconds'")
+
         return SimulationConfig(
             clients=clients,
             steps=steps,
-            step_size_in_ms=step_size_override if step_size_override else int(config["setup"]["delta_t"]),
+            step_size_in_ms=step_size_in_ms,
+            step_size_in_us=step_size_in_us,
             pace=pace,
             start_date=datetime.fromisoformat(
                 config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),
@@ -155,29 +196,31 @@ class SimulationConfig:
         self,
         step: int,
     ) -> datetime:
-        # (step + 1) because the first step is step 0 and therefore the simulation time is already start_date + simulation_steps_in_ms
-        return self.start_date + timedelta(milliseconds=(step + 1) * self.step_size_in_ms)
+        # (step + 1) because the first step is step 0 and therefore the simulation time is already start_date + step_size
+        return self.start_date + timedelta(microseconds=(step + 1) * self.step_size_in_microseconds)
 
     def date_time_to_step(
         self,
         date: datetime,
     ) -> int:
-        passed_milliseconds = date.timestamp() * 1000 - self.start_date.timestamp() * 1000
-        plausibility_check = passed_milliseconds % self.step_size_in_ms == 0
+        passed_microseconds = date.timestamp() * 1_000_000 - self.start_date.timestamp() * 1_000_000
+        plausibility_check = passed_microseconds % self.step_size_in_microseconds == 0
         if not plausibility_check:
             raise RuntimeError(f"Date time {date} is not a plausible step time.")
         # (step - 1) because the first step is step 0
-        return int(passed_milliseconds / self.step_size_in_ms) - 1
+        return int(passed_microseconds / self.step_size_in_microseconds) - 1
 
     def print_for_start_up(self) -> None:
+        value_pairs = {
+            "Step size (in us)": self.step_size_in_microseconds,
+            "Step size (in ms)": self.step_size_in_ms,
+            "Steps": self.steps,
+            "Simulated start time": self.start_date,
+            "Expected clients": [client.client_id for client in self.clients],
+        }
         GlobalLogger.print_values(
             header="SIMULATION CONFIG",
-            value_pairs={
-                "Step size (in ms)": self.step_size_in_ms,
-                "Steps": self.steps,
-                "Simulated start time": self.start_date,
-                "Expected clients": [client.client_id for client in self.clients],
-            },
+            value_pairs=value_pairs,
         )
 
     def client_ids(self) -> Tuple[ClientID, ...]:
