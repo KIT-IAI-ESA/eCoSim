@@ -10,10 +10,11 @@ from pyro_simulator import PyroSimulator
 
 class PyroClient(Client):
 
-    def __init__(self,
-                 config_parser: ConfigParser,
-                 config_override: ClientConfigOverride,
-                 ):
+    def __init__(
+        self,
+        config_parser: ConfigParser,
+        config_override: ClientConfigOverride,
+    ):
         super().__init__(SimpleClientConfig(config_parser, config_override))
         self._simulator: PyroSimulator = PyroSimulator(self._execution_config, self._client_config, PyroConfig(config_parser))
         self._is_finished = False
@@ -25,10 +26,11 @@ class PyroClient(Client):
         self._simulator.initialize(start_time=0.0)
         return self._simulator.server_used_output_values()
 
-    def on_simulation_step(self,
-                           received_inputs: dict[InterfaceId, float],
-                           step_size_in_seconds: float
-                           ) -> ClientSimStepData:
+    def on_simulation_step(
+        self,
+        received_inputs: dict[InterfaceId, float],
+        step_size_in_seconds: float,
+    ) -> ClientSimStepData:
         self._simulator.do_step(
             input_values=received_inputs,
             step_size_in_seconds=step_size_in_seconds,

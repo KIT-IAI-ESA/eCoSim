@@ -16,11 +16,12 @@ For the usage of the Pyro simulator check the appropriate section in the README
 class PyroSimulator(ShutdownListener):
     _logger = ESPLogger("PyroSimulator")
 
-    def __init__(self,
-                 execution_config: ExecutionConfig,
-                 client_config: ClientConfig,
-                 pyro_config: PyroConfig,
-                 ):
+    def __init__(
+        self,
+        execution_config: ExecutionConfig,
+        client_config: ClientConfig,
+        pyro_config: PyroConfig,
+    ):
         self._execution_config: ExecutionConfig = execution_config
         self._client_config: ClientConfig = client_config
         self._start_time: float = 17280000.0
@@ -32,9 +33,10 @@ class PyroSimulator(ShutdownListener):
         self._output_dict = {}
         ShutdownManager().register_listener(self)
 
-    def initialize(self,
-                   start_time: float = 0.0
-                   ):
+    def initialize(
+        self,
+        start_time: float = 0.0,
+    ):
         if self._is_initialized:
             PyroSimulator._logger.warning("Already initialized ... aborting second initialization.")
             return
@@ -46,41 +48,48 @@ class PyroSimulator(ShutdownListener):
         self._output_dict = self._simulation_object.initialize()
         PyroSimulator._logger.debug("Initializing... finished.")
 
-    def set_input_float(self,
-                        name: str,
-                        value: float
-                        ):
+    def set_input_float(
+        self,
+        name: str,
+        value: float,
+    ):
         PyroSimulator._logger.debug(f"Setting float input {name} to {value}")
         self._input_dict[name] = value
 
-    def get_output_float(self,
-                         name: str
-                         ) -> float:
+    def get_output_float(
+        self,
+        name: str,
+    ) -> float:
         value = self._output_dict[name]
         PyroSimulator._logger.debug(f"Getting float output {name}: {value}")
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
         return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(name=interface_name,
-                                   # we always assume float (like in the Java client)
-                                   value=self.get_output_float(interface_name))
+            ProtocolInterfaceValue(
+                name=interface_name,
+                # we always assume float (like in the Java client)
+                value=self.get_output_float(interface_name),
+            )
             for interface_name in self._execution_config.server_used_outputs()
         ])
 
-    def do_step(self,
-                input_values: dict[InterfaceId, float],
-                step_size_in_seconds: float,
-                ):
+    def do_step(
+        self,
+        input_values: dict[InterfaceId, float],
+        step_size_in_seconds: float,
+    ):
         self._simulation_object._pyroClaimOwnership()
         for interface_id, value in input_values.items():
             self.set_input_float(interface_id, value)
         PyroSimulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...")
+            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+        )
         self._output_dict = self._simulation_object.do_step(self._input_dict)
         self._current_simulation_time += step_size_in_seconds
         PyroSimulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).")
+            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
+        )
 
     def clear(self):
         self._simulation_object._pyroClaimOwnership()
