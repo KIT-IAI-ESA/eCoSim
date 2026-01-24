@@ -5,7 +5,7 @@ from ecosim_common.client.client import Client
 from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.simulation.interface_id import InterfaceId
-from pyro_simulator import PyroSimulator
+from ecosim_client_pyro5.pyro_simulator import PyroSimulator
 
 
 class PyroClient(Client):
@@ -15,7 +15,7 @@ class PyroClient(Client):
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
     ):
-        super().__init__(SimpleClientConfig(config_parser, config_override))
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._simulator: PyroSimulator = PyroSimulator(self._execution_config, self._client_config, PyroConfig(config_parser))
         self._is_finished = False
 
