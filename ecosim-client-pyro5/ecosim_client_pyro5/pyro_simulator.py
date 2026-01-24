@@ -92,13 +92,17 @@ class PyroSimulator(ShutdownListener):
         )
 
     def clear(self):
-        self._simulation_object._pyroClaimOwnership()
         if self._is_cleared:
             PyroSimulator._logger.warning("Already cleared ... aborting second clearing.")
             return
         PyroSimulator._logger.info("Clearing PyroSimulatorV2...")
         PyroSimulator._logger.debug("        ->> terminating instance...")
-        self._simulation_object.clear()
+        try:
+            if self._simulation_object is not None:
+                self._simulation_object._pyroClaimOwnership()
+                self._simulation_object.clear()
+        except Exception as e:
+            PyroSimulator._logger.warning(f"Could not clear remote simulation object: {e}")
         PyroSimulator._logger.debug("Clearing PyroSimulatorV2...finished")
         self._is_cleared = True
 
