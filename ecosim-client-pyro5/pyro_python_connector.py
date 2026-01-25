@@ -6,6 +6,9 @@ This represents the Pyro5 server side of the connection, while the client side i
 """
 import sys
 import os
+import argparse
+from configparser import ConfigParser
+from pathlib import Path
 
 PF_PATH = r"C:\Program Files\DIgSILENT\PowerFactory 2024 SP7"
 PF_PYTHON_PATH = os.path.join(PF_PATH, "Python", "3.12")
@@ -26,11 +29,11 @@ class Sub_server:
     def __init__(
         self,
         daemon,
-        project_name: str = "Nine-bus System",
-        study_case: str = "01- Load Flow",
-        terminal_name: str = "Bus 1",
-        current_source_name: str = "Current Source",
-        dt: float = 25e-6,
+        project_name: str,
+        study_case: str,
+        terminal_name: str,
+        current_source_name: str,
+        dt: float,
     ):
         self.daemon = daemon
         self.project_name = project_name
@@ -223,28 +226,72 @@ class Sub_server:
         }
 
 
-print("PowerFactory Pyro5 Server - EMT Mode")
-print("Listening on localhost:9090")
-print("Timestep: 25.0 µs\n")
+def load_config(config_file: Path) -> dict:
+    """Load configuration from INI file."""
+    config = ConfigParser()
+    config.read(config_file)
 
-try:
-    Pyro5.config.SERVERTYPE = "multiplex"
-    pyro_simulator = Sub_server(None)
-    daemon = Pyro5.server.Daemon(host="localhost", port=9090)
-    uri = daemon.register(pyro_simulator, "powerfactory")
+    return {
+        'project_name': config.get('powerfactory', 'project_name'),
+        'study_case': config.get('powerfactory', 'study_case'),
+        'terminal_name': config.get('powerfactory', 'terminal_name'),
+        'current_source_name': config.get('powerfactory', 'current_source_name'),
+        'timestep': config.getfloat('powerfactory', 'timestep'),
+        'pyro_host': config.get('pyro', 'host'),
+        'pyro_port': config.getint('pyro', 'port'),
+        'pyro_object_name': config.get('pyro', 'object_name'),
+    }
 
-    daemon.requestLoop()
 
-except KeyboardInterrupt:
-    print("\nServer stopped by user")
-except Exception as e:
-    print("\n!!! SERVER ERROR !!!")
-    print(f"Type: {type(e).__name__}")
-    print(f"Message: {e}")
-    import traceback
-    traceback.print_exc()
-    import sys
-    sys.exit(1)
-finally:
-    if 'daemon' in locals():
-        daemon.close()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='PowerFactory Pyro5 Server')
+    parser.add_argument('--config-file', type=str, help='Path to configuration file (default: pyro_config.ini in script directory)')
+    args = parser.parse_args()
+
+    # Determine config file path
+    if args.config_file:
+        config_path = Path(args.config_file)
+    else:
+        config_path = Path(__file__).parent / "pyro_config.ini"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    # Load configuration
+    config = load_config(config_path)
+
+    print("PowerFactory Pyro5 Server - EMT Mode")
+    print(f"Config: {config_path}")
+    print(f"Listening on {config['pyro_host']}:{config['pyro_port']}")
+    print(f"Timestep: {config['timestep']*1e6:.1f} µs")
+    print(f"Project: {config['project_name']}")
+    print(f"Study case: {config['study_case']}\n")
+
+    try:
+        Pyro5.config.SERVERTYPE = "multiplex"
+        pyro_simulator = Sub_server(
+            None,
+            project_name=config['project_name'],
+            study_case=config['study_case'],
+            terminal_name=config['terminal_name'],
+            current_source_name=config['current_source_name'],
+            dt=config['timestep'],
+        )
+        daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
+        uri = daemon.register(pyro_simulator, config['pyro_object_name'])
+
+        daemon.requestLoop()
+
+    except KeyboardInterrupt:
+        print("\nServer stopped by user")
+    except Exception as e:
+        print("\n!!! SERVER ERROR !!!")
+        print(f"Type: {type(e).__name__}")
+        print(f"Message: {e}")
+        import traceback
+        traceback.print_exc()
+        import sys
+        sys.exit(1)
+    finally:
+        if 'daemon' in locals():
+            daemon.close()
