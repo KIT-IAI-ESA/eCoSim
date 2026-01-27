@@ -49,6 +49,7 @@ class Sub_server:
         self.current_source = None
         self.terminal = None
         self.inc = None
+        self.sim = None
         self.current_time = 0.0
         self.current_step = 0
         self.output_dict = {}
@@ -99,17 +100,18 @@ class Sub_server:
         else:
             self.current_source = None
 
-# Get ComInc command for incremental EMT simulation
+# Get ComInc command for initial conditions
         self.inc = self.app.GetFromStudyCase("ComInc")
         if not self.inc:
             raise RuntimeError("ComInc command not found in study case")
 
-        # Set timestep - SetAttribute returns None, don't check return value
-        self.inc.SetAttribute("dtemt", self.dt)
+        # Get ComSim for time domain simulation
+        self.sim = self.app.GetFromStudyCase("ComSim")
+        if not self.sim:
+            raise RuntimeError("ComSim command not found in study case")
 
-        ldf = self.app.GetFromStudyCase("ComLdf")
-        if ldf:
-            ldf.Execute()
+        # Execute ComInc once to compute initial conditions for EMT
+        self.inc.Execute()
 
         self.output_dict = self._read_outputs()
         result = {
@@ -144,6 +146,7 @@ class Sub_server:
         self.current_source = None
         self.terminal = None
         self.inc = None
+        self.sim = None
 
     def _apply_inputs(self, input_dict):
         if self.current_source is None:
@@ -170,11 +173,31 @@ class Sub_server:
                     pass
 
     def _step_emt(self):
-        # EMT incremental simulation
-        self.inc.SetAttribute("tstart", self.current_time)
-        self.inc.SetAttribute("iopt_save", 1)
-        self.inc.SetAttribute("iopt_load", 1 if self.current_step > 0 else 0)
-        self.inc.Execute()
+        # EMT simulation using ComSim with snapshots
+        print(f"\n_step_emt called: step={self.current_step}, time={self.current_time}")
+
+        # Set stop time to run one timestep from current_time
+        try:
+            tstop_value = self.current_time + self.dt
+            print(f"Setting tstop to {tstop_value}")
+            self.sim.SetAttribute("tstop", tstop_value)
+            print("tstop set successfully")
+        except Exception as e:
+            print(f"ERROR setting tstop: {e}")
+            raise
+
+        # For steps after the first, load the previous snapshot
+        if self.current_step > 0:
+            # ComSim will automatically load the last saved state
+            pass
+
+        print("Executing ComSim...")
+        try:
+            self.sim.Execute()
+            print("ComSim executed successfully")
+        except Exception as e:
+            print(f"ERROR executing ComSim: {e}")
+            raise
 
     def _read_outputs(self):
         if self.terminal is None:
