@@ -34,6 +34,7 @@ class Sub_server:
         terminal_name: str,
         current_source_name: str,
         dt: float,
+        bus_name: str,
     ):
         self.daemon = daemon
         self.project_name = project_name
@@ -41,13 +42,13 @@ class Sub_server:
         self.terminal_name = terminal_name
         self.current_source_name = current_source_name
         self.dt = dt
+        self.bus_name = bus_name
 
         self.app = None
         self.project = None
         self.current_source = None
         self.terminal = None
         self.inc = None
-
         self.current_time = 0.0
         self.current_step = 0
         self.output_dict = {}
@@ -98,14 +99,13 @@ class Sub_server:
         else:
             self.current_source = None
 
+# Get ComInc command for incremental EMT simulation
         self.inc = self.app.GetFromStudyCase("ComInc")
         if not self.inc:
-            raise RuntimeError("EMT simulation command (ComInc) not found in study case")
+            raise RuntimeError("ComInc command not found in study case")
 
-        try:
-            self.inc.SetAttribute("dtemt", self.dt)
-        except Exception as e:
-            raise RuntimeError(f"Could not set timestep: {e}")
+        # Set timestep - SetAttribute returns None, don't check return value
+        self.inc.SetAttribute("dtemt", self.dt)
 
         ldf = self.app.GetFromStudyCase("ComLdf")
         if ldf:
@@ -170,10 +170,10 @@ class Sub_server:
                     pass
 
     def _step_emt(self):
+        # EMT incremental simulation
         self.inc.SetAttribute("tstart", self.current_time)
         self.inc.SetAttribute("iopt_save", 1)
         self.inc.SetAttribute("iopt_load", 1 if self.current_step > 0 else 0)
-        print(f"  EMT step: tstart={self.current_time:.6f}s, load={1 if self.current_step > 0 else 0}")
         self.inc.Execute()
 
     def _read_outputs(self):
@@ -198,16 +198,16 @@ class Sub_server:
         ia = ib = ic = freq = p = q = 0.0
         if self.current_source:
             try:
-                ia = self.current_source.GetAttribute("m:I:bus1:A") or 0.0
-                ib = self.current_source.GetAttribute("m:I:bus1:B") or 0.0
-                ic = self.current_source.GetAttribute("m:I:bus1:C") or 0.0
+                ia = self.current_source.GetAttribute(f"m:I:{self.bus_name}:A") or 0.0
+                ib = self.current_source.GetAttribute(f"m:I:{self.bus_name}:B") or 0.0
+                ic = self.current_source.GetAttribute(f"m:I:{self.bus_name}:C") or 0.0
             except Exception:
                 pass
 
         try:
             freq = self.terminal.GetAttribute("m:fe") or 60.0
-            p = self.terminal.GetAttribute("m:P:bus1") or 0.0
-            q = self.terminal.GetAttribute("m:Q:bus1") or 0.0
+            p = self.terminal.GetAttribute(f"m:P:{self.bus_name}") or 0.0
+            q = self.terminal.GetAttribute(f"m:Q:{self.bus_name}") or 0.0
         except Exception:
             pass
 
@@ -237,6 +237,7 @@ def load_config(config_file: Path) -> dict:
         'terminal_name': config.get('powerfactory', 'terminal_name'),
         'current_source_name': config.get('powerfactory', 'current_source_name'),
         'timestep': config.getfloat('powerfactory', 'timestep'),
+        'bus_name': config.get('powerfactory', 'bus_name'),
         'pyro_host': config.get('pyro', 'host'),
         'pyro_port': config.getint('pyro', 'port'),
         'pyro_object_name': config.get('pyro', 'object_name'),
@@ -276,6 +277,7 @@ if __name__ == "__main__":
             terminal_name=config['terminal_name'],
             current_source_name=config['current_source_name'],
             dt=config['timestep'],
+            bus_name=config['bus_name'],
         )
         daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
         uri = daemon.register(pyro_simulator, config['pyro_object_name'])
