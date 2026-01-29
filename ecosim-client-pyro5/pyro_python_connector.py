@@ -55,64 +55,46 @@ class Sub_server:
         self.output_dict = {}
 
     @expose
-    def ping(self) -> str:
-        return "pong"
-
-    @expose
     def initialize(self) -> dict[str, float]:
+        # Import and connect to PowerFactory
         global pf
         if pf is None:
-            try:
-                import powerfactory as pf_module
-                pf = pf_module
-            except Exception as e:
-                raise RuntimeError(f"Failed to import PowerFactory module: {e}")
+            import powerfactory as pf_module
+            pf = pf_module
 
-        try:
-            self.app = pf.GetApplicationExt() or pf.GetApplication()
-            if not self.app:
-                raise RuntimeError("Failed to connect to PowerFactory")
-        except Exception as e:
-            raise RuntimeError(f"PowerFactory connection failed: {e}")
+        self.app = pf.GetApplicationExt() or pf.GetApplication()
+        if not self.app:
+            raise RuntimeError("Failed to connect to PowerFactory")
 
-        err = self.app.ActivateProject(self.project_name)
-        if err:
-            raise RuntimeError(f"Project activation failed (error {err})")
+        # Activate project and study case
+        if self.app.ActivateProject(self.project_name):
+            raise RuntimeError(f"Project activation failed: {self.project_name}")
 
         self.project = self.app.GetActiveProject()
-        study_folder = self.app.GetProjectFolder("study")
-        study_cases = study_folder.GetContents(f"{self.study_case}.IntCase")
-
+        study_cases = self.app.GetProjectFolder("study").GetContents(f"{self.study_case}.IntCase")
         if not study_cases:
-            raise RuntimeError(f"Study case '{self.study_case}' not found")
-
+            raise RuntimeError(f"Study case not found: {self.study_case}")
         study_cases[0].Activate()
 
+        # Get terminal and current source objects
         terminals = self.app.GetCalcRelevantObjects(f"{self.terminal_name}.ElmTerm")
         if not terminals:
-            raise RuntimeError(f"Terminal '{self.terminal_name}' not found")
-
+            raise RuntimeError(f"Terminal not found: {self.terminal_name}")
         self.terminal = terminals[0]
 
         sources = self.app.GetCalcRelevantObjects(f"{self.current_source_name}.ElmIsc*")
-        if sources:
-            self.current_source = sources[0]
-        else:
-            self.current_source = None
+        self.current_source = sources[0] if sources else None
 
-# Get ComInc command for initial conditions
+        # Get simulation commands (ComInc for initial conditions, ComSim for time-domain)
         self.inc = self.app.GetFromStudyCase("ComInc")
-        if not self.inc:
-            raise RuntimeError("ComInc command not found in study case")
-
-        # Get ComSim for time domain simulation
         self.sim = self.app.GetFromStudyCase("ComSim")
-        if not self.sim:
-            raise RuntimeError("ComSim command not found in study case")
+        if not self.inc or not self.sim:
+            raise RuntimeError("ComInc or ComSim command not found")
 
-        # Execute ComInc once to compute initial conditions for EMT
+        # Compute initial steady-state conditions
         self.inc.Execute()
 
+        # Return initial voltages
         self.output_dict = self._read_outputs()
         result = {
             "Va": self.output_dict["Va"],
@@ -124,12 +106,20 @@ class Sub_server:
 
     @expose
     def do_step(self, input_dict: dict[str, float]) -> dict[str, float]:
+        # Apply FMU currents to PowerFactory
         self._apply_inputs(input_dict)
-        self._step_emt()
 
+        # Execute ComSim for one timestep (incremental tstop)
+        # ComSim maintains continuous state between Execute() calls
+        tstop_value = self.current_time + self.dt
+        self.sim.SetAttribute("tstop", tstop_value)
+        self.sim.Execute()
+
+        # Update time tracking
         self.current_time += self.dt
         self.current_step += 1
 
+        # Read and return voltages
         self.output_dict = self._read_outputs()
         result = {
             "Va": self.output_dict["Va"],
@@ -171,33 +161,6 @@ class Sub_server:
                     self.current_source.SetAttribute("ip_ctrl", i_mag)
                 except Exception:
                     pass
-
-    def _step_emt(self):
-        # EMT simulation using ComSim with snapshots
-        print(f"\n_step_emt called: step={self.current_step}, time={self.current_time}")
-
-        # Set stop time to run one timestep from current_time
-        try:
-            tstop_value = self.current_time + self.dt
-            print(f"Setting tstop to {tstop_value}")
-            self.sim.SetAttribute("tstop", tstop_value)
-            print("tstop set successfully")
-        except Exception as e:
-            print(f"ERROR setting tstop: {e}")
-            raise
-
-        # For steps after the first, load the previous snapshot
-        if self.current_step > 0:
-            # ComSim will automatically load the last saved state
-            pass
-
-        print("Executing ComSim...")
-        try:
-            self.sim.Execute()
-            print("ComSim executed successfully")
-        except Exception as e:
-            print(f"ERROR executing ComSim: {e}")
-            raise
 
     def _read_outputs(self):
         if self.terminal is None:
