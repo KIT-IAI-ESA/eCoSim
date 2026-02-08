@@ -22,8 +22,9 @@ class FMU3Client(Client):
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride | None = None,
+        dask_connector: bool = False,
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connector)
         self._config_path = config_parser.config_file
         self._fmu_config = FMU3Config.of(config_parser)
         self._simulator: FMU3Simulator | None = None

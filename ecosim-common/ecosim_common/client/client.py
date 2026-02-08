@@ -28,6 +28,7 @@ from ecosim_common.communication.data.simulation_step_request import (
     SimulationStepRequest,
 )
 from ecosim_common.communication.socket.socket_connector import SocketConnector
+from ecosim_common.communication.dask.dask_connector import DaskConnector
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
@@ -50,11 +51,12 @@ class Client(ShutdownListener):
     def __init__(
         self,
         client_config: ClientConfig,
+        dask_connector: bool = False,
     ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
-        self._channel_connector: ESPChannelConnector = SocketConnector()
+        self._channel_connector: ESPChannelConnector = DaskConnector() if dask_connector else SocketConnector()
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
         self._is_finished = False
@@ -239,6 +241,7 @@ class Client(ShutdownListener):
         Client.logger.debug(
             f"  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}",
         )
+        Client.logger.debug("Attempting to send back")
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
     def _handle_simulation_start(
@@ -354,7 +357,6 @@ class Client(ShutdownListener):
             error_message = "No simulation step was executed."
             Client.logger.error(error_message)
             raise RuntimeError(error_message)
-
         self._channel.send(
             ESPChannelMessageJson.answer_with_payload(
                 request_message=message,
