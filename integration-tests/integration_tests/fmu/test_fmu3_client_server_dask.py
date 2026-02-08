@@ -1,0 +1,185 @@
+import pytest
+import sys
+import threading
+from datetime import datetime
+from typing import Tuple
+
+from ecosim_client_fmu_v3.fmu3_client import FMU3Client
+from ecosim_common.client.config.client_config import ClientConfigOverride, ClientInterfaceConfig
+from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.config.client_id import ClientID
+from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.config.model_interface_client import ModelInterfaceClient
+from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.simulation.model_interface_id import ModelInterfaceId
+from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_server.config.simulation_config import ClientSimulatorConfig
+from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
+from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.tech.resource_utils import config_parser_for_resource
+# import dask.distributed as dd
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+def test_fmu3_client_server() -> None:
+    mock_client_interface = SimulatorInterfaceId(
+        simulator_name="Mock_1",
+        model_interface_id=ModelInterfaceId(
+            model_name="Mock_1",
+            interface="Interface_1",
+        ),
+    )
+    server_host = "localhost"
+    server_port = 23291
+    steps = 100
+    start_date = datetime(2020, 1, 1)
+    server = generate_simple_test_server(
+        host=server_host,
+        port=server_port,
+        steps=steps,
+        simulation_start_date=start_date,
+        clients=[
+            ClientSimulatorConfig(
+                simulator_name=mock_client_interface.simulator_name,
+                model_name=mock_client_interface.model_interface_id.model_name,
+                client_id=ClientID(
+                    model_name=mock_client_interface.model_interface_id.model_name,
+                    simulator_name=mock_client_interface.simulator_name,
+                ),
+                interfaces=[
+                    ModelInterfaceServer(
+                        simulator_interface_id=mock_client_interface,
+                        name=mock_client_interface.model_interface_id.interface,
+                        unit="float64_matrix",
+                        description="",
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[],
+                    ),
+                ],
+            ),
+            ClientSimulatorConfig(
+                simulator_name="fmu3",
+                model_name="state_space",
+                client_id=ClientID(model_name="state_space", simulator_name="fmu3"),
+                interfaces=[
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="fmu3",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="state_space",
+                                interface="u",
+                            ),
+                        ),
+                        name="u",
+                        unit="float64_matrix",
+                        description="",
+                        interface_type=InterfaceType.INPUT,
+                        required=True,
+                        connected_to=[
+                            ConnectedToData(
+                                simulator_interface_id=mock_client_interface,
+                                delay_path=[],
+                            ),
+                        ],
+                    ),
+                    ModelInterfaceServer(
+                        SimulatorInterfaceId(
+                            simulator_name="fmu3",
+                            model_interface_id=ModelInterfaceId(
+                                model_name="state_space",
+                                interface="y",
+                            ),
+                        ),
+                        name="y",
+                        description="",
+                        unit="",
+                        interface_type=InterfaceType.OUTPUT,
+                        required=True,
+                        connected_to=[
+                            ConnectedToData(
+                                simulator_interface_id=mock_client_interface,
+                                delay_path=[],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    repositories = server.repositories
+
+    mock_client = SimpleTestClient.generate(
+        simulator_name=mock_client_interface.simulator_name,
+        model_name=mock_client_interface.model_interface_id.model_name,
+        server_host=server_host,
+        server_port=server_port,
+        interface_config=ClientInterfaceConfig(
+            interfaces=[
+                ModelInterfaceClient(
+                    name=mock_client_interface.model_interface_id.interface,
+                    type=InterfaceType.OUTPUT,
+                    unit=None,
+                    description="",
+                    required=False,
+                    model_interface_id=mock_client_interface.model_interface_id,
+                ),
+            ],
+        ),
+        on_simulation_step_return=lambda _self,
+                                         received_inputs,
+                                         steps: ClientSimStepData(
+            interface_values=[
+                ProtocolInterfaceValue(
+                    name=mock_client_interface.model_interface_id.interface,
+                    value=[
+                        1 * _self.accumulated_step_sizes_in_seconds.value,
+                        1_000 * _self.accumulated_step_sizes_in_seconds.value,
+                        100_000 * _self.accumulated_step_sizes_in_seconds.value,
+                    ],
+                ),
+            ],
+                                         ),
+    )
+
+    fmu3_client = FMU3Client(
+        config_parser=config_parser_for_resource("models/fmu3/configs/state_space.ini"),
+        config_override=ClientConfigOverride(
+            server_host=server_host,
+            server_port=server_port,
+        ),
+        dask_connector=True,
+    )
+
+    server_thread = threading.Thread(target=server.start)
+    server_thread.daemon = True
+    server_thread.start()
+
+    fmu3_client.start()
+    mock_client.start()
+
+    server_thread.join(timeout=60)
+
+    fmu3_measurement_repo: MeasurementRepositoryInMemory = repositories.measurement_repository(fmu3_client.client_id)  # type: ignore
+    fmu3_measurement_repo.assert_entry_count(steps)
+
+    def assert_for_each_record(
+        date: datetime,
+        values: Tuple[ProtocolInterfaceValue, ...],
+    ) -> bool:
+        passed_seconds = (date - start_date).total_seconds()
+        u = [v for v in values if v.name == 'u'][0]
+        y = [v for v in values if v.name == 'y'][0]
+
+        assert u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
+        assert y.value == fmu3_state_space_results[int(passed_seconds - 1)]
+
+        return (
+            u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds] and
+            y.value == fmu3_state_space_results[int(passed_seconds - 1)]
+        )
+
+    fmu3_measurement_repo.assert_for_each_record(assertion=assert_for_each_record)
