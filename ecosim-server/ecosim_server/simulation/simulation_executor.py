@@ -1,5 +1,6 @@
 from __future__ import annotations
 import threading
+import dask.distributed as dd
 
 import time
 from time import sleep
@@ -35,6 +36,7 @@ class SimulationExecutor:
         server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
+        using_dask: bool = False,
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -56,12 +58,19 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
+        self._using_dask = using_dask
+        if using_dask:
+            self._state_variable = dd.Queue("server_state")
 
     def execute(
         self,
         rendering_socket: RenderingSocket | None,
     ) -> None:
         self._rendering_socket = rendering_socket
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
+            self._state_variable.put(self._server_state)
         if not self._server_state.are_all_clients_connected_and_ready():
             raise RuntimeError(
                 "Tried to start simulation executor but not all clients are connected and ready",
@@ -90,13 +99,21 @@ class SimulationExecutor:
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
     def _stop_simulation(self) -> None:
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
-
+        if self._using_dask:
+            self._state_variable.put(self._server_state)
         self._handle_image_renderer(wait_for_finish_timeout=9)
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
+            print([(state.client_id, state.stopped_simulation, state.connected) for state in self._server_state.client_states.client_states.values()])
+            if self._using_dask:
+                self._server_state = self._state_variable.get()
+                self._update_client_communication()
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_STOP,),
@@ -104,6 +121,8 @@ class SimulationExecutor:
                 self._server_state.client_states.simulation_stopped(
                     client_id=message.client_id,
                 )
+            if self._using_dask:
+                self._state_variable.put(self._server_state)
             sleep(2)
         SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
@@ -114,12 +133,22 @@ class SimulationExecutor:
         SimulationExecutor.logger.info(
             "Starting simulation on all clients and wait for successful start",
         )
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
+            self._state_variable.put(self._server_state)
         self._client_communication.broadcast(
             ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START),
         )
-
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
+            self._state_variable.put(self._server_state)
         while ((not self._server_state.have_all_clients_started_simulation()) and
                self._server_state.are_all_clients_connected_and_ready()):
+            if self._using_dask:
+                self._server_state = self._state_variable.get()
+                self._update_client_communication()
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_START,),
@@ -132,6 +161,9 @@ class SimulationExecutor:
                         client_id=message.client_id,
                         client_sim_step_data=message.payload(ClientSimStepData),
                     )
+            if self._using_dask:
+                self._state_variable.put(self._server_state)
+
             sleep(2)
         SimulationExecutor.logger.debug(
             "Starting of simulations of all clients successful",
@@ -158,6 +190,10 @@ class SimulationExecutor:
         start_date = self.simulation_config.start_date
         handled_client_ids: List[ClientID] = []
 
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
+            self._state_variable.put(self._server_state)
         for client_id in self._server_state.client_states.all_client_ids():
             data_for_restoration = restore_data.client_restore_data[client_id]
             if not data_for_restoration or len(data_for_restoration) == 0:
@@ -187,6 +223,13 @@ class SimulationExecutor:
                     return
                 responses[client_id].set()
 
+            if self._using_dask:
+                while len(self._server_state.message_buffer._buffer) < len(handled_client_ids):
+                    self._server_state = self._state_variable.get()
+                    self._update_client_communication()
+                    self._state_variable.put(self._server_state)
+                self._server_state = self._state_variable.get()
+                self._update_client_communication()
             self._client_communication.on_messages(
                 client_ids=tuple(handled_client_ids),
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
@@ -201,7 +244,8 @@ class SimulationExecutor:
                 client_ids=self.simulation_config.client_ids(),
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
             )
-
+            if self._using_dask:
+                self._state_variable.put(self._server_state)
         SimulationExecutor.logger.info(
             f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
@@ -273,6 +317,13 @@ class SimulationExecutor:
         message_types = (MessageType.SIMULATION_STEP,)
         all_clients_handled_event = threading.Event()
 
+        if self._using_dask:
+            while len(self._server_state.message_buffer._buffer) < len(client_ids):
+                self._server_state = self._state_variable.get()
+                self._update_client_communication()
+                self._state_variable.put(self._server_state)
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
         self._client_communication.on_messages(
             client_ids=client_ids,
             message_types=message_types,
@@ -288,6 +339,8 @@ class SimulationExecutor:
         )
         all_clients_handled_event.wait()
         self._client_communication.remove_on_message_callback(client_ids, message_types)
+        if self._using_dask:
+            self._state_variable.put(self._server_state)
         for client in handled_clients:
             self._current_step_data.set_is_executed(client)
 
@@ -366,6 +419,17 @@ class SimulationExecutor:
             end_event.wait(wait_for_finish_timeout)
 
     def force_stop(self) -> None:
+        if self._using_dask:
+            self._server_state = self._state_variable.get()
+            self._update_client_communication()
         if self._server_state.is_running():
             SimulationExecutor.logger.debug("Executing force shutdown")
             self._server_state.force_stop()
+            if self._using_dask:
+                self._state_variable.put(self._server_state)
+
+    def _update_client_communication(self) -> None:
+        self._client_communication = ClientCommunication(
+            client_states=self._server_state.client_states,
+            client_message_buffer=self._server_state.message_buffer,
+        )
