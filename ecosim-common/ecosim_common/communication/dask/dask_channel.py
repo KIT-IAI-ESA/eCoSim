@@ -12,7 +12,7 @@ from ecosim_common.tech.logger.logger import ESPLogger
 
 
 def _listen_blocking(
-                    on_message: Callable[[ESPChannelMessage], None],
+                    on_rec: Callable[[ESPChannelMessage], None],
                     dask_client: ESPDask,
 ) -> None:
     client = dd.get_client()
@@ -21,14 +21,13 @@ def _listen_blocking(
     while not is_finished.is_set():
         is_finished = dd.Variable("finished_channel", client=client).get()
         message: ReceivedMessage | None = dask_client.receive()
+
         if not message:
             is_finished.set()
-            # finish_channel = dd.Variable("finished_channel", client=client)
-            # finish_channel.set(is_finished)
             DaskChannel._logger.info("Received empty message -> closing connection")
 
         if (message is not None) and (message.to_esp_channel_message() is not None):
-            on_message(message.to_esp_channel_message())
+            on_rec(message.to_esp_channel_message())
 
 
 class DaskChannel(ESPChannel):
@@ -51,7 +50,7 @@ class DaskChannel(ESPChannel):
         connection_address = self._internal_dask_client.connection_address()
         DaskChannel._logger.debug(f"Closing connections to Dask client {connection_address}...")
         self._internal_dask_client.close()
-        DaskChannel._logger.info(f"Connection to Dask cleint {connection_address} closed.")
+        DaskChannel._logger.info(f"Connection to Dask client {connection_address} closed.")
 
     @override
     def listen_async(
@@ -61,7 +60,7 @@ class DaskChannel(ESPChannel):
         dask_client = dd.get_client()
 
         async def listen_start() -> None:
-            future = dask_client.submit(_listen_blocking, on_message,  self._internal_dask_client)
+            future = dask_client.submit(_listen_blocking, on_rec=on_message,  dask_client=self._internal_dask_client)
             dd.fire_and_forget(future)
 
         dask_client.sync(listen_start)
@@ -89,14 +88,15 @@ class DaskChannel(ESPChannel):
         self,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
-        message: ReceivedMessage | None = self._internal_dask_client.receive()
         dask_client = dd.get_client()
+        message: ReceivedMessage | None = self._internal_dask_client.receive()
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
             self._is_finished.set()
             finish_channel = dd.Variable("finished_channel", client=dask_client)
             finish_channel.set(self._is_finished)
             return None
+        # print(message.to_esp_channel_message())
         return message.to_esp_channel_message()
 
     @override
