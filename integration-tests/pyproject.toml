@@ -36,6 +36,7 @@ dependencies = [
     "websockets==15.0.1",
     "pip==25.3",
     "psycopg[binary]==3.2.12",
+    "multiprocessing-logging>=0.3.4",
 ]
 
 [tool.uv.sources]

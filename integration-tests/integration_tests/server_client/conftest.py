@@ -11,8 +11,11 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 def teardown_shutdown_manager() -> Generator[None, Any, None]:
     """runs once after all tests"""
     yield
-    client = dd.get_client()
-    for key in client.datasets.keys():
-        print(key, client.get_dataset(key))
-    ShutdownManager().set_shutdown_at_application_end()
-    client.close()
+    try:
+        client = dd.get_client()
+        for key in client.datasets.keys():
+            print(key, client.get_dataset(key))
+        ShutdownManager().set_shutdown_at_application_end()
+        client.close()
+    except ValueError:
+        ShutdownManager().set_shutdown_at_application_end()
