@@ -1,5 +1,7 @@
+from dask.distributed import get_client
+
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_server.client.client_state import ClientStates
+from ecosim_server.client.client_state import ClientStates, ClientStatesDask
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
 from ecosim_server.message_buffer import ClientMessageBuffer
@@ -16,7 +18,11 @@ class ServerState(ShutdownListener):
     ):
         ShutdownManager().register_listener(self)
         self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
-        self.client_states: ClientStates = ClientStates(simulation_config)
+        try:
+            get_client()
+            self.client_states: ClientStates | ClientStatesDask = ClientStatesDask(simulation_config)
+        except ValueError:
+            self.client_states = ClientStates(simulation_config)
         self._is_finished = False
         self._is_interrupted = False
         self.message_buffer: ClientMessageBuffer = ClientMessageBuffer()

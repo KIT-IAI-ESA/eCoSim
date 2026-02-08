@@ -1,5 +1,6 @@
 from __future__ import annotations
 import threading
+import dask.distributed as dd
 import time
 from dataclasses import dataclass
 from typing import List, Tuple, Set, Callable, Type, Any
@@ -16,8 +17,14 @@ class ClientMessageBuffer:
 
     def __init__(self) -> None:
         self._buffer: List[BufferedClientMessage] = []
-        self._buffer_lock = threading.Lock()
-        self._callbacks_lock = threading.Lock()
+        try:  # use dask.Lock if using dask
+            dd.get_client()
+            self._buffer_lock: threading.Lock | dd.Lock = dd.Lock()
+            self._callbacks_lock: threading.Lock | dd.Lock = dd.Lock()
+        except ValueError:  # otherwise normal threading.Lock
+            self._buffer_lock = threading.Lock()
+            self._callbacks_lock = threading.Lock()
+
         self._on_message_callbacks: Set[OnMessageCallbackHandler] = set()
 
     def add(
@@ -29,7 +36,6 @@ class ClientMessageBuffer:
             f"Adding new message to buffer. CorrelationID: {message.correlation_id()}  |  Type: {message.type()} | client_id: {client_id}",
         )
         buffered_message = BufferedClientMessage(client_id, message)
-
         with self._callbacks_lock:
             callback = self._find_on_message_callback(buffered_message)
         if callback is not None:
