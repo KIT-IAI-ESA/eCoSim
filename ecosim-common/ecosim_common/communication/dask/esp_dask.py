@@ -14,10 +14,20 @@ def create_internal_dask_id() -> str:
 
 def is_raw_dask_client_connected(raw_dask_id: str) -> bool:
     dask_client = dd.get_client()
-    if raw_dask_id in dask_client.datasets.keys():
+    if dask_client.status == "running":
         return True
     else:
         return False
+    # if raw_dask_id in dask_client.datasets.keys():
+    #     return True
+    # else:
+    #     return False
+    # try:
+    #     data_var = dd.Variable(raw_dask_id,dask_client)
+    #     data_var.get(timeout=10)
+    #     return True
+    # except TimeoutError:
+    #     return False
 
 
 class ESPDask(ShutdownListener):
@@ -32,7 +42,7 @@ class ESPDask(ShutdownListener):
         self._closed: dd.Event = dd.Event()
         self._internal_dask_id = internal_dask_id
         self._connected: bool = is_raw_dask_client_connected(internal_dask_id)
-        self._origin_id: int = uuid.uuid4().int
+        self._origin_id: int = uuid.uuid4().int & (1 << 64) - 1
 
     def on_app_shutdown(self) -> None:
         if not self._closed.is_set():
@@ -44,6 +54,8 @@ class ESPDask(ShutdownListener):
         connection_address: ConnectionAddress,
     ) -> None:
         dask_client = dd.get_client()
+        data_var = dd.Variable(self._internal_dask_id, dask_client)
+        data_var.set(None)
         dask_client.datasets[self._internal_dask_id] = None
         self._connected = True
 
@@ -65,11 +77,19 @@ class ESPDask(ShutdownListener):
             self._connected = False
             if closing_calls == 1:
                 dask_client = dd.get_client()
-                dask_client.unpublish_dataset(self._internal_dask_id)
-                ESPDask._logger.info("Successfully disconnected from Dask client.")
+                # if self._internal_dask_id in dask_client.datasets.keys():
+                # dask_client.unpublish_dataset(self._internal_dask_id)
+                try:
+                    data_var = dd.Variable(self._internal_dask_id, dask_client)
+                    data_var.get(timeout=10)
+                    data_var.set("empty")
+                    ESPDask._logger.info("Successfully disconnected from Dask client.")
+                # else:
+                except TimeoutError:
+                    ESPDask._logger.info("Already disconnected from Dask Client.")
             else:
                 ESPDask._logger.info("Disconnection to Dask Client already in progress.")
-        except (dd.comm.core.CommClosedError, KeyError):
+        except dd.comm.core.CommClosedError:
             ESPDask._logger.info("Dask client already closed.")
 
     def send(
@@ -79,7 +99,7 @@ class ESPDask(ShutdownListener):
         if self._closed.is_set():
             raise Exception("Dask client has already or in the process of being disconnected.")
         dask_client = dd.get_client()
-        ESPDask._logger.debug(f"Sending messages {message.header().message_type}")
+        ESPDask._logger.debug(f"Sending messages {message.header().message_type} from {self._origin_id}")
         ESPDask.send_to_dask_client(dask_client, message, self._internal_dask_id, self._origin_id)
 
     def receive(
@@ -97,8 +117,11 @@ class ESPDask(ShutdownListener):
         dask_id: str,
         origin_id: int,
     ) -> None:
-        if dask_id in connection.datasets.keys() and connection.get_dataset(dask_id) is None:
-            connection.publish_dataset((message.raw_message(), origin_id), name=dask_id, override=True)
+        # if dask_id in connection.datasets.keys() and connection.get_dataset(dask_id) is None:
+        data_var = dd.Variable(dask_id)
+        if data_var.get() is None:
+            data_var.set((message.raw_message(), origin_id))
+            # connection.publish_dataset((message.raw_message(), origin_id), name=dask_id, override=True)
 
     @staticmethod
     def receive_from_dask_client(
@@ -108,17 +131,25 @@ class ESPDask(ShutdownListener):
     ) -> ReceivedMessage | None:
         while True:
             received_id = None
-            raw_message = connection.get_dataset(dask_id, default="empty")
+            data_var = dd.Variable(dask_id, connection)
+            try:
+                raw_message = data_var.get(timeout=5)
+            except TimeoutError:
+                ESPDask._logger.debug(f"Received no data at {origin_id}")
+                return None
+            # raw_message = connection.get_dataset(dask_id, default="empty")
+            # print(raw_message, origin_id)
             try:
                 raw_message, received_id = raw_message
             except (ValueError, TypeError):
                 pass
             if not raw_message or received_id == origin_id:
                 continue
-            if raw_message == "empty":
-                ESPDask._logger.debug("Received no data")
+            if raw_message == "empty" or dask_id not in connection.datasets.keys():
+                ESPDask._logger.debug(f"Received no data at {origin_id}")
                 return None
-            connection.publish_dataset(None, name=dask_id, override=True)
+            # connection.publish_dataset(None, name=dask_id, override=True)
+            data_var.set(None)
             raw_header = raw_message[0:DaskMessage.HEADER_BYTES]
             message_header = DaskMessageHeader(raw_header)
             if not message_header:
@@ -130,5 +161,5 @@ class ESPDask(ShutdownListener):
                 if not chunk:
                     raise ConnectionError("Error while receiving junks.")
                 data += chunk
-            ESPDask._logger.debug(f"Received message of type {message_header.message_type}")
+            ESPDask._logger.debug(f"Received message of type {message_header.message_type} at {origin_id} from {received_id}")
             return ReceivedMessage(message_header, data, ConnectionAddress.of_dask_client(connection))

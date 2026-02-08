@@ -1,6 +1,6 @@
 import dask.distributed as dd
 from dataclasses import dataclass, field
-from typing import override, Callable, Any
+from typing import override, Callable
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_endpoint import ESPChannelEndpoint, ConnectionData
@@ -19,15 +19,13 @@ def _listen(
     EndpointDask._logger.debug("Now listening to Dask Client")
     closed = dd.Variable("closed")
     is_closed = closed.get()
-    current_connections: dd.publish.Datasets | dict[Any, Any] = {}  # dask_client.datasets
+    current_connections: list[str] = []  # dd.publish.Datasets | dict[Any, Any] = {}  # dask_client.datasets
     while not is_closed.is_set():
         closed = dd.Variable("closed")
         is_closed = closed.get()
-
         if dask_client.status != 'running':
             EndpointDask._logger.error("Cannot listen to Dask client")
             raise Exception
-
         if len(dask_client.datasets) == len(current_connections):
             continue
         elif len(dask_client.datasets) < len(current_connections):
@@ -36,7 +34,7 @@ def _listen(
             raise Exception("Server listening ended sooner than anticipated.")
         else:
             for dask_id in dask_client.datasets.keys():
-                if dask_id in current_connections:
+                if dask_id in current_connections:  # .keys():
                     continue
 
                 client_address = ConnectionAddress.of_dask_client(dask_client)
@@ -46,8 +44,7 @@ def _listen(
                         client_address=client_address,
                 ),
                 )
-            current_connections = dask_client.datasets
-
+                current_connections.append(dask_id)
     EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
 
 
@@ -100,6 +97,8 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
                 try:
                     for key in self._internal_dask_client.datasets.keys():
                         self._internal_dask_client.unpublish_dataset(key)
+                except KeyError:
+                    print(self._internal_dask_client.datasets.keys())
 
                 except Exception as e:
                     EndpointDask._logger.error(f"Something went wrong with closing connection on {self._connection_address}: {e}")
