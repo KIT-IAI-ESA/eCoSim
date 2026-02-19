@@ -266,7 +266,6 @@ class ClientStatesDask(ShutdownListener):
 
     def wait_for_all_clients_starting_simulation(self) -> None:
         while not self.have_all_clients_started_simulation():
-            sleep(2)
             ClientStatesDask._logger.debug(
                 "Waiting for all clients starting simulation: " +
                 f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
@@ -317,7 +316,6 @@ class ClientStatesDask(ShutdownListener):
 
     def wait_for_all_clients_connected_and_ready(self) -> None:
         while not self.are_all_clients_connected_and_ready():
-            sleep(2)
             ClientStatesDask._logger.info(
                 message="Waiting for all clients to connect: " +
                         f"{
