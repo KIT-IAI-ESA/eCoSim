@@ -20,10 +20,11 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.message_buffer import BufferedClientMessage
-from ecosim_server.server_state import ServerState
+from ecosim_server.server_state import ServerState, ServerStateDask
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
+from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
 class SimulationExecutor:
@@ -33,7 +34,7 @@ class SimulationExecutor:
         self,
         simulation_config: SimulationConfig,
         server_config: ServerConfig,
-        server_state: ServerState,
+        server_state: ServerState | ServerStateDask,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
         using_dask: bool = False,
@@ -61,6 +62,7 @@ class SimulationExecutor:
         self._using_dask = using_dask
         if using_dask:
             self._state_variable = dd.Queue("server_state")
+            self._sim_repo = repositories.simulation_state_repository
 
     def execute(
         self,
@@ -106,11 +108,11 @@ class SimulationExecutor:
         self._server_state.set_is_finished(True)
         if self._using_dask:
             self._state_variable.put(self._server_state)
+            self._sim_repo.update(SimulationState.FINISHED)
         self._handle_image_renderer(wait_for_finish_timeout=9)
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
-            print([(state.client_id, state.stopped_simulation, state.connected) for state in self._server_state.client_states.client_states.values()])
             if self._using_dask:
                 self._server_state = self._state_variable.get()
                 self._update_client_communication()
@@ -123,7 +125,8 @@ class SimulationExecutor:
                 )
             if self._using_dask:
                 self._state_variable.put(self._server_state)
-            sleep(2)
+            if not self._using_dask:
+                sleep(2)
         SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
     def _start_simulation_of_all_clients(
@@ -163,8 +166,8 @@ class SimulationExecutor:
                     )
             if self._using_dask:
                 self._state_variable.put(self._server_state)
-
-            sleep(2)
+            if not self._using_dask:
+                sleep(2)
         SimulationExecutor.logger.debug(
             "Starting of simulations of all clients successful",
         )
@@ -318,6 +321,8 @@ class SimulationExecutor:
         all_clients_handled_event = threading.Event()
 
         if self._using_dask:
+            # This while loop can take between 0.03 and 0.13 seconds to complete.
+            # Might need to look into alternative.
             while len(self._server_state.message_buffer._buffer) < len(client_ids):
                 self._server_state = self._state_variable.get()
                 self._update_client_communication()

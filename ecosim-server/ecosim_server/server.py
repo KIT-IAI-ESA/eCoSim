@@ -21,7 +21,7 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
-from ecosim_server.server_state import ServerState
+from ecosim_server.server_state import ServerState, ServerStateDask
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
@@ -277,9 +277,8 @@ class Dask_Server(AbstractServer, ShutdownListener):
         self.server_measurements = ServerTimeMeasurement()
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
-        self._server_state: ServerState = ServerState(
+        self._server_state: ServerStateDask = ServerStateDask(
             simulation_config=simulation_config,
-            simulation_state_repository=repositories.simulation_state_repository,
         )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,
@@ -315,7 +314,7 @@ class Dask_Server(AbstractServer, ShutdownListener):
             server_state.put(self._server_state)
         Server._logger.info("All clients connected - starting simulation")
         self._server_state = server_state.get()
-        self._server_state.set_simulation_state(SimulationState.READY)
+        self._set_simulation_state(SimulationState.READY)
         server_state.put(self._server_state)
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
@@ -374,8 +373,13 @@ class Dask_Server(AbstractServer, ShutdownListener):
         SimulationExecutor.logger.info("Stopping image renderer socket.")
         self._rendering_socket.close()
 
+    def _set_simulation_state(self, simulation_state: SimulationState) -> None:
+        self._repositories.simulation_state_repository.update(simulation_state)
+
     @override
     def on_app_shutdown(self) -> None:
+        if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
+            self._set_simulation_state(SimulationState.FAILED)
         self._channel_endpoint.close()
         self._stop_image_renderer_socket()
 
