@@ -19,11 +19,12 @@ def _listen_blocking(
     finish_channel = dd.Variable("finished_channel", client=client)
     is_finished = finish_channel.get()
     while not is_finished.is_set():
-        is_finished = dd.Variable("finished_channel", client=client).get()
+        is_finished = finish_channel.get()
         message: ReceivedMessage | None = dask_client.receive()
 
         if not message:
             is_finished.set()
+            finish_channel.set(is_finished)
             DaskChannel._logger.info("Received empty message -> closing connection")
 
         if (message is not None) and (message.to_esp_channel_message() is not None):
@@ -42,8 +43,9 @@ class DaskChannel(ESPChannel):
 
     @override
     def close(self) -> None:
-        if not self._internal_dask_client.is_connected() or self._is_finished.is_set():
-            return
+        # if not self._internal_dask_client.is_connected() or self._is_finished.is_set():
+        #     return
+
         self._is_finished.set()
         finished = dd.Variable("finished_channel")
         finished.set(self._is_finished)
@@ -81,7 +83,11 @@ class DaskChannel(ESPChannel):
         self,
         timeout_in_seconds: int | None = None,
     ) -> None:
-        self._is_finished.wait(timeout_in_seconds)
+        is_finished = dd.Variable("finished_channel")
+        self._is_finished = is_finished.get()
+        while not self._is_finished.is_set():
+            self._is_finished = is_finished.get()
+        # self._is_finished.wait(timeout_in_seconds)
 
     @override
     def listen_blocking(
