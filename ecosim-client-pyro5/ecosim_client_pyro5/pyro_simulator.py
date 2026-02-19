@@ -23,7 +23,7 @@ class PyroSimulator(ShutdownListener):
                  ):
         self._execution_config: ExecutionConfig = execution_config
         self._client_config: ClientConfig = client_config
-        self._start_time: float = 17280000.0
+        self._start_time: float = 0.0
         self._is_initialized: bool = False
         self._is_cleared: bool = False
         self._current_simulation_time: float = 0.0
