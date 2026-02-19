@@ -151,7 +151,7 @@ def test_fmu3_client_server() -> None:
             server_host=server_host,
             server_port=server_port,
         ),
-        dask_connector=True,
+        dask_connection=True,
     )
 
     server_thread = threading.Thread(target=server.start)
