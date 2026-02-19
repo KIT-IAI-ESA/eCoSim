@@ -1,0 +1,59 @@
+[project]
+name = "ecosim-hpc"
+version = "0.1.0"
+description = "HPC interface for the eCoSim Project"
+readme = "README.md"
+authors = [
+    { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "dask>=2025.10.0",
+    "distributed>=2025.10.0",
+    "ecosim-client-fmu-v2",
+    "ecosim-client-fmu-v3",
+    "ecosim-client-matlab",
+    "ecosim-common",
+    "ecosim-server",
+    "fmpy>=0.3.25",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-server = { path = "../ecosim-server", editable = true }
+ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
+ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
+ecosim-client-matlab = { path = "../ecosim-client-matlab", editable = true }
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov==6.1.1",
+    "pytest-html==4.1.1",
+    "mypy==1.18.2",
+    "uv==0.9.6",
+]
+
+
+[tool.mypy]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # Ignore fmpy library (not typed)
+    "fmpy",
+    "fmpy.*",
+    # Ignore art library (not typed)
+    "art",
+    # Ignore matlab (not available in the CI)
+    "matlab",
+    "matlab.engine",
+    "sqlalchemy",
+]
+ignore_missing_imports = true

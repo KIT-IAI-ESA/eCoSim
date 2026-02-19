@@ -67,6 +67,13 @@ repos:
         files: ^ecosim-client-fmu-v3/
         pass_filenames: false
         types: [ python ]
+      - id: mypy
+        name: mypy (ecosim-hpc)
+        entry: python dev/run_mypy.py ecosim-hpc
+        language: system
+        files: ^ecosim-hpc/
+        pass_filenames: false
+        types: [ python ]
       - id: check-py-filenames
         name: Check Python filenames are snake_case
         entry: python dev/validate_file_name.py

@@ -8,7 +8,7 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.cli_arguments import CLIArguments, ServerConfigOverride
+from ecosim_server.config.cli_arguments import CLIArguments, CLIArgumentsHPC, ServerConfigOverride
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class ServerConfig:
     database: DatabaseConfig
 
     @staticmethod
-    def of_cli_args(args: CLIArguments) -> ServerConfig:
+    def of_cli_args(args: CLIArguments | CLIArgumentsHPC) -> ServerConfig:
         config = ConfigParser(args.server_config())
         return ServerConfig(
             server=MainConfig.of_config_parser(
