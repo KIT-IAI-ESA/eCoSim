@@ -22,9 +22,12 @@ dependencies = [
     "art==6.5",
     "ecosim-common>=0.9.0",
     "setuptools==80.8.0",
-    "pydantic==2.11.5",
+    "pydantic>=2.11.5",
     "Pyro5==5.15",
 ]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
 
 [project.optional-dependencies]
 dev = [
@@ -32,7 +35,23 @@ dev = [
     "pytest-cov==6.1.1",
     "pytest-html==4.1.1",
     "mypy==1.15.0",
+    "uv==0.9.6",
 ]
+
+[tool.mypy]
+mypy_path = "../ecosim-common"
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # Ignore art library (not typed)
+    "art",
+    # Ignore Pyro5 library (not typed)
+    "Pyro5",
+    "Pyro5.*",
+]
+ignore_missing_imports = true
 
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"

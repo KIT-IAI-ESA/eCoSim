@@ -67,6 +67,11 @@ repos:
         files: ^ecosim-client-fmu-v3/
         pass_filenames: false
         types: [ python ]
+      - id: mypy
+        name: mypy (ecosim-client-pyro5)
+        entry: python dev/run_mypy.py ecosim-client-pyro5
+        language: system
+        files: ^ecosim-client-pyro5/
       - id: check-py-filenames
         name: Check Python filenames are snake_case
         entry: python dev/validate_file_name.py
