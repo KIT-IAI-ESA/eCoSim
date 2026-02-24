@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "dask>=2025.10.0",
     "distributed>=2025.10.0",
@@ -15,6 +15,7 @@ dependencies = [
     "ecosim-client-matlab",
     "ecosim-common",
     "ecosim-server",
+    "ecosim-client-pyro",
     "fmpy>=0.3.25",
 ]
 
@@ -28,6 +29,7 @@ ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 ecosim-client-matlab = { path = "../ecosim-client-matlab", editable = true }
+ecosim-client-pyro = { path = "../ecosim-client-pyro5", editable = true }
 
 [project.optional-dependencies]
 dev = [
@@ -40,7 +42,7 @@ dev = [
 
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab"]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5",]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
@@ -55,5 +57,8 @@ module = [
     "matlab",
     "matlab.engine",
     "sqlalchemy",
+    # Ignore Pyro5 (not typed)
+    "Pyro5",
+    "Pyro5.*",
 ]
 ignore_missing_imports = true

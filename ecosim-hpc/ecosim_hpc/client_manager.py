@@ -1,6 +1,7 @@
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_client_matlab.matlab_client import MatlabClient
+from ecosim_client_pyro5.pyro_client import PyroClient
 from ecosim_common.client.client import Client
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.client.config.client_config import ClientConfigOverride
@@ -68,6 +69,7 @@ class ClientManager(ShutdownListener):
                         dd.fire_and_forget(future)
                 else:
                     ClientManager.logger.error(f"Unable to load {simulator}. FMU V1 format not supported.")
+
             for simulator in simulator_path.glob("*.m"):
                 matlab_client = MatlabClient(
                     config_parser=simulator_config,
@@ -80,6 +82,20 @@ class ClientManager(ShutdownListener):
                 if matlab_client._client_config.simulator_config().model_name in client_dict.keys():
                     future = dask_client.submit(self.client_run, matlab_client)
                     client_dict[matlab_client._client_config.simulator_config().model_name] = future
+                    dd.fire_and_forget(future)
+
+            for simulator in simulator_path.glob("*.py"):
+                pyro_client = PyroClient(
+                    config_parser=simulator_config,
+                    config_override=ClientConfigOverride(
+                        server_host=self._server_args._args.host,
+                        server_port=self._server_args._args.port,
+                    ),
+                    dask_connection=True,
+                )
+                if pyro_client._client_config.simulator_config().model_name in client_dict.keys():
+                    future = dask_client.submit(self.client_run, pyro_client)
+                    client_dict[pyro_client._client_config.simulator_config().model_name] = future
                     dd.fire_and_forget(future)
 
     @override
