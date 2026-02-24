@@ -29,7 +29,7 @@ def get_version() -> str:
         return "1.0"
 
 
-def main():
+def main() -> None:
     tprint("eCoSimPy", font="tarty1", chr_ignore=True)
     print(f"Pyro Client - {get_version()}")
     sleep(0.5)

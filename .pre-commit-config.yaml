@@ -68,6 +68,11 @@ repos:
         pass_filenames: false
         types: [ python ]
       - id: mypy
+        name: mypy (ecosim-client-pyro5)
+        entry: python dev/run_mypy.py ecosim-client-pyro5
+        language: system
+        files: ^ecosim-client-pyro5/
+      - id: mypy
         name: mypy (ecosim-hpc)
         entry: python dev/run_mypy.py ecosim-hpc
         language: system
