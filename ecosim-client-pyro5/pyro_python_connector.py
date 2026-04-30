@@ -7,6 +7,8 @@ This represents the Pyro5 server side of the connection, while the client side i
 import sys
 import os
 import argparse
+import logging
+import time
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -18,9 +20,16 @@ os.add_dll_directory(PF_PATH)
 from Pyro5.api import expose, behavior  # noqa: E402
 import Pyro5.api  # noqa: E402
 import Pyro5.server  # noqa: E402
-import numpy as np  # noqa: E402
 
 pf = None
+
+
+def sanitize_name(name: str) -> str:
+    """Convert a PowerFactory loc_name to a valid dict key by replacing non-identifier characters."""
+    result = name
+    for ch in (" ", "/", "-", ".", ":"):
+        result = result.replace(ch, "_")
+    return result
 
 
 @expose
@@ -32,30 +41,277 @@ class Sub_server:
         project_name: str,
         study_case: str,
         terminal_name: str,
-        current_source_name: str,
+        line_names: list[str],
         dt: float,
-        bus_name: str,
     ):
+        if dt <= 0.0:
+            raise ValueError(f"dt must be > 0, got {dt}")
+        if not line_names:
+            raise ValueError("line_names must not be empty")
+
         self.daemon = daemon
         self.project_name = project_name
         self.study_case = study_case
         self.terminal_name = terminal_name
-        self.current_source_name = current_source_name
+        # Supports an arbitrary number of lines; resolved during initialize().
+        self.line_names: list[str] = line_names
         self.dt = dt
-        self.bus_name = bus_name
 
         self.app = None
-        self.project = None
-        self.current_source = None
         self.terminal = None
+        self.lines: list = []               # PF ElmLne objects, ordered as line_names
+        self.line_sides: dict[str, str] = {}  # maps loc_name -> "bus1" or "bus2"
         self.inc = None
         self.sim = None
         self.current_time = 0.0
         self.current_step = 0
-        self.output_dict = {}
+
+        self.logger = logging.getLogger("pf_pyro_validation")
+        if not self.logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+            self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+        self.logger.propagate = False
+
+        self._reset_runtime_state()
+
+    def _reset_runtime_state(self) -> None:
+        """Reset dynamic state so initialize() always starts from a clean baseline."""
+        self.current_time = 0.0
+        self.current_step = 0
+
+    def _read_required_attribute(self, obj, name: str, label: str) -> float:
+        """Read a required PowerFactory attribute and fail with context if unavailable."""
+        try:
+            value = obj.GetAttribute(name)
+            if value is None:
+                raise RuntimeError(f"Attribute {name} returned None")
+            return float(value)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to read {label} from attribute {name}: {exc}") from exc
+
+    def _get_object_attribute_or_none(self, obj, name: str):
+        """Best-effort attribute getter for PowerFactory objects."""
+        try:
+            return getattr(obj, name)
+        except Exception:
+            pass
+        try:
+            return obj.GetAttribute(name)
+        except Exception:
+            return None
+
+    def _object_loc_name(self, obj) -> str | None:
+        """Best-effort loc_name extraction for matching/logging."""
+        if obj is None:
+            return None
+        loc_name = self._get_object_attribute_or_none(obj, "loc_name")
+        if loc_name is None:
+            return None
+        return str(loc_name)
+
+    def _line_side_matches_terminal(self, line_obj, side: str, terminal_obj) -> bool:
+        """Return True if line side bus1/bus2 refers to the configured terminal."""
+        side_obj = self._get_object_attribute_or_none(line_obj, side)
+        if side_obj is None:
+            return False
+
+        candidates = [side_obj]
+        side_terminal = self._get_object_attribute_or_none(side_obj, "cterm")
+        if side_terminal is not None:
+            candidates.append(side_terminal)
+
+        terminal_name = self._object_loc_name(terminal_obj)
+        for candidate in candidates:
+            if candidate is terminal_obj:
+                return True
+            candidate_name = self._object_loc_name(candidate)
+            if terminal_name is not None and candidate_name == terminal_name:
+                return True
+        return False
+
+    def _resolve_line_current_side_for_terminal(self, line_obj, line_label: str) -> str:
+        """Resolve whether bus1 or bus2 corresponds to the configured terminal for a line."""
+        match_bus1 = self._line_side_matches_terminal(line_obj, "bus1", self.terminal)
+        match_bus2 = self._line_side_matches_terminal(line_obj, "bus2", self.terminal)
+
+        if match_bus1 and not match_bus2:
+            return "bus1"
+        if match_bus2 and not match_bus1:
+            return "bus2"
+
+        bus1_name = self._object_loc_name(self._get_object_attribute_or_none(line_obj, "bus1"))
+        bus2_name = self._object_loc_name(self._get_object_attribute_or_none(line_obj, "bus2"))
+        terminal_name = self._object_loc_name(self.terminal)
+        raise RuntimeError(
+            f"Could not uniquely resolve bus side for {line_label} and terminal '{terminal_name}'. "
+            f"match_bus1={match_bus1}, match_bus2={match_bus2}, "
+            f"line.bus1='{bus1_name}', line.bus2='{bus2_name}'",
+        )
+
+    def _read_line_phase_current_emt_side(self, line_obj, side: str, phase: str, label: str) -> float:
+        """Read EMT line current in kA on a given side (bus1/bus2) for phase A/B/C."""
+        attr = f"m:I:{side}:{phase}"
+        return self._read_required_attribute(line_obj, attr, label)
+
+    def _read_line_psum_side(self, line_obj, side: str, label: str) -> float:
+        """Read EMT line active power sum in MW on a given side (bus1/bus2)."""
+        attr = f"m:Psum:{side}"
+        return self._read_required_attribute(line_obj, attr, label)
+
+    def _execute_incremental_step(self) -> None:
+        """Advance ComSim by one incremental EMT step."""
+        tstop_value = self.current_time + self.dt
+        self.sim.SetAttribute("tstop", tstop_value)
+        ret = self.sim.Execute()
+        if ret:
+            raise RuntimeError(f"ComSim.Execute() failed at step {self.current_step + 1} with return code {ret}")
+        # Derive time from step count to avoid floating-point drift.
+        self.current_step += 1
+        self.current_time = self.current_step * self.dt
+
+    def _resolve_single_object(self, name: str, class_name: str, label: str):
+        """Resolve one calc-relevant object by exact loc_name within the given class."""
+        objects = self.app.GetCalcRelevantObjects(f"*.{class_name}") or []
+
+        matches = []
+        available_names = []
+        for obj in objects:
+            try:
+                loc_name = obj.loc_name
+            except Exception:
+                loc_name = obj.GetAttribute("loc_name")
+            if loc_name is not None:
+                available_names.append(str(loc_name))
+            if loc_name == name:
+                matches.append(obj)
+
+        if not matches:
+            available_display = sorted(set(available_names))
+            raise RuntimeError(
+                f"{label} not found: requested name='{name}', class='{class_name}'. "
+                f"Available loc_name values: {available_display}",
+            )
+
+        if len(matches) > 1:
+            self.logger.warning(
+                "Multiple %s objects found with loc_name '%s' in class %s, using first match",
+                label,
+                name,
+                class_name,
+            )
+        return matches[0]
+
+    def _read_measurements(self) -> tuple[float, float, float, dict[str, dict[str, float]], float, float, float, float]:
+        """Read voltages, per-line currents (kA), total currents (A), and total active power (MW).
+
+        Supports an arbitrary number of lines configured in line_names.
+        m:U:A/B/C are phase voltages in kV, converted to V for FMU compatibility.
+        m:I:<side>:<phase> are in kA; per-line values kept in kA, summed totals converted to A.
+        Power computation is performed exclusively by the FMU — only Psum reference values are read here.
+        """
+        # Phase voltages: kV -> V
+        va = self._read_required_attribute(self.terminal, "m:U:A", "Va") * 1e3
+        vb = self._read_required_attribute(self.terminal, "m:U:B", "Vb") * 1e3
+        vc = self._read_required_attribute(self.terminal, "m:U:C", "Vc") * 1e3
+
+        # Loop over all configured lines; accumulate per-line data and running totals.
+        per_line: dict[str, dict[str, float]] = {}
+        ia_total_ka = 0.0
+        ib_total_ka = 0.0
+        ic_total_ka = 0.0
+        p_pf = 0.0
+
+        for name, line_obj in zip(self.line_names, self.lines):
+            side = self.line_sides[name]
+            ia_ka = self._read_line_phase_current_emt_side(line_obj, side, "A", f"Ia_{name}")
+            ib_ka = self._read_line_phase_current_emt_side(line_obj, side, "B", f"Ib_{name}")
+            ic_ka = self._read_line_phase_current_emt_side(line_obj, side, "C", f"Ic_{name}")
+            p_mw = self._read_line_psum_side(line_obj, side, f"P_{name}")
+            per_line[name] = {"ia_ka": ia_ka, "ib_ka": ib_ka, "ic_ka": ic_ka, "p_mw": p_mw}
+            ia_total_ka += ia_ka
+            ib_total_ka += ib_ka
+            ic_total_ka += ic_ka
+            p_pf += p_mw
+
+        # Convert summed line currents from kA to A for FMU input.
+        ia = ia_total_ka * 1e3
+        ib = ib_total_ka * 1e3
+        ic = ic_total_ka * 1e3
+
+        return va, vb, vc, per_line, ia, ib, ic, p_pf
+
+    def _build_result(
+        self,
+        va: float,
+        vb: float,
+        vc: float,
+        per_line: dict[str, dict[str, float]],
+        ia: float,
+        ib: float,
+        ic: float,
+        p_pf: float,
+        step_pf_time_s: float,
+        step_total_time_s: float,
+    ) -> dict[str, float]:
+        """Build step result payload.
+
+        Voltages (V) and currents (A/kA) are raw measurements for the FMU.
+        Power computation is performed exclusively by the FMU.
+        P_pf and per-line P_<name>_MW are PowerFactory reference values from m:Psum (MW).
+
+        Generalized keys are always added for every configured line:
+            Ia_<sanitized_name>_kA, Ib_<sanitized_name>_kA, Ic_<sanitized_name>_kA
+            P_<sanitized_name>_MW
+        For backward compatibility, when exactly two lines are configured the legacy keys
+            Ia_line_1, Ib_line_1, ..., P_line_1, P_line_2 are also included.
+        """
+        result: dict[str, float] = {
+            "Va": va,
+            "Vb": vb,
+            "Vc": vc,
+            "Va_V": va,
+            "Vb_V": vb,
+            "Vc_V": vc,
+            "Ia": ia,
+            "Ib": ib,
+            "Ic": ic,
+            "Ia_A": ia,
+            "Ib_A": ib,
+            "Ic_A": ic,
+            "P_pf": p_pf,
+            "step_pf_time_s": float(step_pf_time_s),
+            "step_total_time_s": float(step_total_time_s),
+            "time": float(self.current_time),
+            "step": int(self.current_step),
+        }
+
+        # Generalized per-line keys: work for any number of lines.
+        for name, data in per_line.items():
+            key = sanitize_name(name)
+            result[f"Ia_{key}_kA"] = data["ia_ka"]
+            result[f"Ib_{key}_kA"] = data["ib_ka"]
+            result[f"Ic_{key}_kA"] = data["ic_ka"]
+            result[f"P_{key}_MW"] = data["p_mw"]
+
+        # Backward-compatible legacy keys — preserved when exactly two lines are configured.
+        if len(self.line_names) == 2:
+            name1, name2 = self.line_names
+            result["Ia_line_1"] = per_line[name1]["ia_ka"]
+            result["Ib_line_1"] = per_line[name1]["ib_ka"]
+            result["Ic_line_1"] = per_line[name1]["ic_ka"]
+            result["Ia_line_2"] = per_line[name2]["ia_ka"]
+            result["Ib_line_2"] = per_line[name2]["ib_ka"]
+            result["Ic_line_2"] = per_line[name2]["ic_ka"]
+            result["P_line_1"] = per_line[name1]["p_mw"]
+            result["P_line_2"] = per_line[name2]["p_mw"]
+
+        return result
 
     @expose
     def initialize(self) -> dict[str, float]:
+        """Initialize PowerFactory handles and reset state for a new validation run."""
         # Import and connect to PowerFactory
         global pf
         if pf is None:
@@ -69,21 +325,24 @@ class Sub_server:
         # Activate project and study case
         if self.app.ActivateProject(self.project_name):
             raise RuntimeError(f"Project activation failed: {self.project_name}")
-
-        self.project = self.app.GetActiveProject()
         study_cases = self.app.GetProjectFolder("study").GetContents(f"{self.study_case}.IntCase")
         if not study_cases:
             raise RuntimeError(f"Study case not found: {self.study_case}")
         study_cases[0].Activate()
 
-        # Get terminal and current source objects
-        terminals = self.app.GetCalcRelevantObjects(f"{self.terminal_name}.ElmTerm")
-        if not terminals:
-            raise RuntimeError(f"Terminal not found: {self.terminal_name}")
-        self.terminal = terminals[0]
+        # Get terminal and all configured line objects.
+        self.terminal = self._resolve_single_object(self.terminal_name, "ElmTerm", "Terminal")
+        self.lines = []
+        self.line_sides = {}
+        for i, name in enumerate(self.line_names, start=1):
+            line_obj = self._resolve_single_object(name, "ElmLne", f"Line {i} ({name})")
+            side = self._resolve_line_current_side_for_terminal(line_obj, f"Line {i} ({name})")
+            self.lines.append(line_obj)
+            self.line_sides[name] = side
 
-        sources = self.app.GetCalcRelevantObjects(f"{self.current_source_name}.ElmIsc*")
-        self.current_source = sources[0] if sources else None
+        # EMT line currents and powers are read from the resolved terminal side (bus1 or bus2) of each line.
+
+        self._reset_runtime_state()
 
         # Get simulation commands (ComInc for initial conditions, ComSim for time-domain)
         self.inc = self.app.GetFromStudyCase("ComInc")
@@ -92,124 +351,54 @@ class Sub_server:
             raise RuntimeError("ComInc or ComSim command not found")
 
         # Compute initial steady-state conditions
-        self.inc.Execute()
+        ret = self.inc.Execute()
+        if ret:
+            raise RuntimeError(f"ComInc.Execute() failed with return code {ret}")
 
-        # Return initial voltages
-        self.output_dict = self._read_outputs()
-        result = {
-            "Va": self.output_dict["Va"],
-            "Vb": self.output_dict["Vb"],
-            "Vc": self.output_dict["Vc"],
-        }
-        print(f"Initialize: Va={result['Va']:.1f}V, Vb={result['Vb']:.1f}V, Vc={result['Vc']:.1f}V")
+        va, vb, vc, per_line, ia, ib, ic, p_pf = self._read_measurements()
+        result = self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, 0.0, 0.0)
+        self.logger.info(
+            "Initialize: Va=%.6e V, Vb=%.6e V, Vc=%.6e V; P_pf=%.6e MW",
+            result["Va"], result["Vb"], result["Vc"], result["P_pf"],
+        )
+        self.logger.info(
+            "Voltage attributes: m:U:A/B/C (kV → V); Current attributes: m:I:<side>:A/B/C (kA → A)",
+        )
+        for name in self.line_names:
+            self.logger.info(
+                "Line '%s': side=%s", name, self.line_sides[name],
+            )
         return result
 
     @expose
-    def do_step(self, input_dict: dict[str, float]) -> dict[str, float]:
-        # Apply FMU currents to PowerFactory
-        self._apply_inputs(input_dict)
+    def do_step(self, _input_dict: dict[str, float]) -> dict[str, float]:
+        """Run one aligned incremental step and return validation signals."""
+        total_start = time.perf_counter()
+        pf_start = time.perf_counter()
+        self._execute_incremental_step()
+        step_pf_time_s = time.perf_counter() - pf_start
+        va, vb, vc, per_line, ia, ib, ic, p_pf = self._read_measurements()
+        step_total_time_s = time.perf_counter() - total_start
 
-        # Execute ComSim for one timestep (incremental tstop)
-        # ComSim maintains continuous state between Execute() calls
-        tstop_value = self.current_time + self.dt
-        self.sim.SetAttribute("tstop", tstop_value)
-        self.sim.Execute()
+        self.logger.debug(
+            "Step %d | pf_time=%.6e s | total_time=%.6e s",
+            self.current_step,
+            step_pf_time_s,
+            step_total_time_s,
+        )
 
-        # Update time tracking
-        self.current_time += self.dt
-        self.current_step += 1
-
-        # Read and return voltages
-        self.output_dict = self._read_outputs()
-        result = {
-            "Va": self.output_dict["Va"],
-            "Vb": self.output_dict["Vb"],
-            "Vc": self.output_dict["Vc"],
-        }
-        print(f"Step {self.current_step}: Va={result['Va']:.1f}V, Vb={result['Vb']:.1f}V, Vc={result['Vc']:.1f}V")
-        return result
+        return self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, step_pf_time_s, step_total_time_s)
 
     @expose
     def clear(self):
+        """Release references and transient state for cleanup."""
         self.app = None
-        self.project = None
-        self.current_source = None
         self.terminal = None
+        self.lines = []
+        self.line_sides = {}
         self.inc = None
         self.sim = None
-
-    def _apply_inputs(self, input_dict):
-        if self.current_source is None:
-            return
-
-        if "Ia" in input_dict and "Ib" in input_dict and "Ic" in input_dict:
-            ia_peak = input_dict["Ia"]
-            ib_peak = input_dict["Ib"]
-            ic_peak = input_dict["Ic"]
-
-            sqrt2 = np.sqrt(2)
-            ia_rms = ia_peak / sqrt2
-            ib_rms = ib_peak / sqrt2
-            ic_rms = ic_peak / sqrt2
-
-            i_mag = np.mean([abs(ia_rms), abs(ib_rms), abs(ic_rms)])
-
-            try:
-                self.current_source.SetAttribute("i_ph", i_mag)
-            except Exception:
-                try:
-                    self.current_source.SetAttribute("ip_ctrl", i_mag)
-                except Exception:
-                    pass
-
-    def _read_outputs(self):
-        if self.terminal is None:
-            return {}
-
-        va = self.terminal.GetAttribute("m:u:A")
-        vb = self.terminal.GetAttribute("m:u:B")
-        vc = self.terminal.GetAttribute("m:u:C")
-
-        if va is None or vb is None or vc is None:
-            raise RuntimeError("Terminal voltages not available")
-
-        v_base_kv = self.terminal.GetAttribute("uknom")
-        v_base_v = v_base_kv * 1000 / np.sqrt(3)
-
-        if abs(va) < 10:
-            va *= v_base_v
-            vb *= v_base_v
-            vc *= v_base_v
-
-        ia = ib = ic = freq = p = q = 0.0
-        if self.current_source:
-            try:
-                ia = self.current_source.GetAttribute(f"m:I:{self.bus_name}:A") or 0.0
-                ib = self.current_source.GetAttribute(f"m:I:{self.bus_name}:B") or 0.0
-                ic = self.current_source.GetAttribute(f"m:I:{self.bus_name}:C") or 0.0
-            except Exception:
-                pass
-
-        try:
-            freq = self.terminal.GetAttribute("m:fe") or 60.0
-            p = self.terminal.GetAttribute(f"m:P:{self.bus_name}") or 0.0
-            q = self.terminal.GetAttribute(f"m:Q:{self.bus_name}") or 0.0
-        except Exception:
-            pass
-
-        return {
-            "Va": float(va),
-            "Vb": float(vb),
-            "Vc": float(vc),
-            "Ia": float(ia),
-            "Ib": float(ib),
-            "Ic": float(ic),
-            "freq": float(freq),
-            "P": float(p),
-            "Q": float(q),
-            "time": float(self.current_time),
-            "step": int(self.current_step),
-        }
+        self._reset_runtime_state()
 
 
 def load_config(config_file: Path) -> dict:
@@ -217,13 +406,22 @@ def load_config(config_file: Path) -> dict:
     config = ConfigParser()
     config.read(config_file)
 
+    timestep = config.getfloat('powerfactory', 'timestep')
+    if timestep <= 0.0:
+        raise ValueError(f"powerfactory.timestep must be > 0, got {timestep}")
+
+    # line_names is a comma-separated list, e.g.: Line 5-10/1, Line 5-10/2
+    raw_line_names = config.get('powerfactory', 'line_names')
+    line_names = [name.strip() for name in raw_line_names.split(',') if name.strip()]
+    if not line_names:
+        raise ValueError("powerfactory.line_names must contain at least one line name")
+
     return {
         'project_name': config.get('powerfactory', 'project_name'),
         'study_case': config.get('powerfactory', 'study_case'),
         'terminal_name': config.get('powerfactory', 'terminal_name'),
-        'current_source_name': config.get('powerfactory', 'current_source_name'),
-        'timestep': config.getfloat('powerfactory', 'timestep'),
-        'bus_name': config.get('powerfactory', 'bus_name'),
+        'line_names': line_names,
+        'timestep': timestep,
         'pyro_host': config.get('pyro', 'host'),
         'pyro_port': config.getint('pyro', 'port'),
         'pyro_object_name': config.get('pyro', 'object_name'),
@@ -252,34 +450,25 @@ if __name__ == "__main__":
     print(f"Listening on {config['pyro_host']}:{config['pyro_port']}")
     print(f"Timestep: {config['timestep']*1e6:.1f} µs")
     print(f"Project: {config['project_name']}")
-    print(f"Study case: {config['study_case']}\n")
+    print(f"Study case: {config['study_case']}")
+    print(f"Terminal: {config['terminal_name']}")
+    for i, name in enumerate(config['line_names'], start=1):
+        print(f"Line {i}: {name}")
+    print()
+
+    Pyro5.config.SERVERTYPE = "multiplex"
+    pyro_simulator = Sub_server(
+        None,
+        project_name=config['project_name'],
+        study_case=config['study_case'],
+        terminal_name=config['terminal_name'],
+        line_names=config['line_names'],
+        dt=config['timestep'],
+    )
+    daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
+    daemon.register(pyro_simulator, config['pyro_object_name'])
 
     try:
-        Pyro5.config.SERVERTYPE = "multiplex"
-        pyro_simulator = Sub_server(
-            None,
-            project_name=config['project_name'],
-            study_case=config['study_case'],
-            terminal_name=config['terminal_name'],
-            current_source_name=config['current_source_name'],
-            dt=config['timestep'],
-            bus_name=config['bus_name'],
-        )
-        daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
-        uri = daemon.register(pyro_simulator, config['pyro_object_name'])
-
         daemon.requestLoop()
-
-    except KeyboardInterrupt:
-        print("\nServer stopped by user")
-    except Exception as e:
-        print("\n!!! SERVER ERROR !!!")
-        print(f"Type: {type(e).__name__}")
-        print(f"Message: {e}")
-        import traceback
-        traceback.print_exc()
-        import sys
-        sys.exit(1)
     finally:
-        if 'daemon' in locals():
-            daemon.close()
+        daemon.close()
