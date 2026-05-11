@@ -38,6 +38,9 @@ class Sub_server:
         load_names: list[str] | None = None,
         load_p_mw: float | None = None,
         load_q_mvar: float | None = None,
+        fmu_power_key: str = "",
+        load_step_threshold_mw: float = 10.0,
+        load_step_min_step: int = 200,
     ):
         self.daemon = daemon
         self.project_name = project_name
@@ -48,6 +51,15 @@ class Sub_server:
         self.load_names: list[str] = load_names or []
         self.load_p_mw: float | None = load_p_mw
         self.load_q_mvar: float | None = load_q_mvar
+        # FMU-driven load change: autonomous step detection via power delta
+        self.fmu_power_key: str = fmu_power_key
+        self.load_step_threshold_mw: float = load_step_threshold_mw
+        self.load_step_min_step: int = load_step_min_step  # skip initial transient
+        self._load_changed: bool = False
+        self._load_changed_at_step: int = -1
+        self._current_load_p_mw: float | None = load_p_mw
+        self._current_load_q_mvar: float | None = load_q_mvar
+        self._prev_fmu_power: float | None = None
 
         self.logger = logging.getLogger("pf_pyro_validation")
         if not self.logger.handlers:
@@ -120,6 +132,12 @@ class Sub_server:
         if ret:
             raise RuntimeError(f"ComInc.Execute() failed with return code {ret}")
 
+        self._load_changed = False
+        self._load_changed_at_step = -1
+        self._current_load_p_mw = self.load_p_mw
+        self._current_load_q_mvar = self.load_q_mvar
+        self._prev_fmu_power = None
+
         va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf = self._read_measurements()
         result = self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, 0.0, 0.0)
         self.logger.info(
@@ -129,13 +147,23 @@ class Sub_server:
         return result
 
     @expose
-    def do_step(self, _input_dict: dict[str, float]) -> dict[str, float]:
+    def do_step(self, input_dict: dict[str, float]) -> dict[str, float]:
         """Run one aligned incremental step and return validation signals."""
+        self._check_load_step(input_dict)
+
         total_start = time.perf_counter()
         self._execute_incremental_step()
         step_pf_time_s = time.perf_counter() - total_start
         va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf = self._read_measurements()
         step_total_time_s = time.perf_counter() - total_start
+
+        # Log first post-change step to verify whether EMT responded
+        if self._load_changed and self.current_step == self._load_changed_at_step + 1:
+            self.logger.info(
+                "Post-change state at step %d: Va=%.6e V, Vb=%.6e V, Vc=%.6e V, "
+                "Ia=%.6e A, P_total=%.6e MW",
+                self.current_step, va, vb, vc, ia, p_pf,
+            )
 
         self.logger.debug(
             "Step %d | pf_time=%.6e s | total_time=%.6e s",
@@ -159,6 +187,11 @@ class Sub_server:
         self.sim = None
         self.current_time = 0.0
         self.current_step = 0
+        self._load_changed = False
+        self._load_changed_at_step = -1
+        self._current_load_p_mw = self.load_p_mw
+        self._current_load_q_mvar = self.load_q_mvar
+        self._prev_fmu_power = None
 
     def _resolve_single_object(self, name: str, class_name: str, label: str):
         objects = self.app.GetCalcRelevantObjects(f"*.{class_name}") or []
@@ -191,6 +224,55 @@ class Sub_server:
             f"Could not uniquely resolve bus side for {line_label} at terminal '{self.terminal_name}'. "
             f"match_bus1={match_bus1}, match_bus2={match_bus2}",
         )
+
+    def _check_load_step(self, input_dict: dict[str, float]) -> None:
+        """Detect a load step from FMU power and trigger load halving if threshold exceeded."""
+        if not self.fmu_power_key:
+            return
+        fmu_p = input_dict.get(self.fmu_power_key)
+        if fmu_p is None:
+            return
+        in_warmup = self._prev_fmu_power is None or self.current_step < self.load_step_min_step
+        if not in_warmup:
+            delta = abs(fmu_p - self._prev_fmu_power)
+            if not self._load_changed and self.loads and delta >= self.load_step_threshold_mw:
+                self.logger.info(
+                    "Load step detected at step %d (t=%.6f s): "
+                    "FMU power %.4f\u2192%.4f MW (delta=%.4f MW >= threshold=%.4f MW)",
+                    self.current_step, self.current_time,
+                    self._prev_fmu_power, fmu_p, delta, self.load_step_threshold_mw,
+                )
+                self._apply_runtime_load_change()
+        elif self.current_step == self.load_step_min_step - 1:
+            self.logger.info(
+                "Step %d: warmup done, load-step detection active (baseline AP=%.4f MW)",
+                self.current_step, fmu_p,
+            )
+        self._prev_fmu_power = fmu_p
+
+    def _apply_runtime_load_change(self) -> None:
+        """Halve the current load setpoints directly between ComSim.Execute() calls."""
+        new_p = (self._current_load_p_mw * 0.5) if self._current_load_p_mw is not None else None
+        new_q = (self._current_load_q_mvar * 0.5) if self._current_load_q_mvar is not None else None
+
+        self.logger.info(
+            "Halving load at step %d (t=%.6f s): P=%.4f→%.4f MW, Q=%.4f→%.4f Mvar",
+            self.current_step, self.current_time,
+            self._current_load_p_mw if self._current_load_p_mw is not None else float("nan"),
+            new_p if new_p is not None else float("nan"),
+            self._current_load_q_mvar if self._current_load_q_mvar is not None else float("nan"),
+            new_q if new_q is not None else float("nan"),
+        )
+        for name, load_obj in zip(self.load_names, self.loads):
+            if new_p is not None:
+                load_obj.SetAttribute("plini", new_p)
+            if new_q is not None:
+                load_obj.SetAttribute("qlini", new_q)
+
+        self._current_load_p_mw = new_p
+        self._current_load_q_mvar = new_q
+        self._load_changed = True
+        self._load_changed_at_step = self.current_step
 
     def _execute_incremental_step(self) -> None:
         """Advance ComSim by one incremental EMT step."""
@@ -276,6 +358,8 @@ class Sub_server:
             "step_total_time_s": float(step_total_time_s),
             "time": float(self.current_time),
             "step": int(self.current_step),
+            "load_p_mw_setpoint": float(self._current_load_p_mw) if self._current_load_p_mw is not None else float("nan"),
+            "load_q_mvar_setpoint": float(self._current_load_q_mvar) if self._current_load_q_mvar is not None else float("nan"),
         }
         _sanitize = str.maketrans(" /-.:", "_____")
         for name, data in per_line.items():
@@ -320,6 +404,10 @@ def load_config(config_file: Path) -> dict:
     load_q_mvar_str = config.get('powerfactory', 'load_q_mvar')
     load_q_mvar = float(load_q_mvar_str) if load_q_mvar_str.strip() else None
 
+    fmu_power_key = config.get('powerfactory', 'fmu_power_key', fallback='')
+    load_step_threshold_mw = config.getfloat('powerfactory', 'load_step_threshold_mw', fallback=10.0)
+    load_step_min_step = config.getint('powerfactory', 'load_step_min_step', fallback=200)
+
     return {
         'project_name': config.get('powerfactory', 'project_name'),
         'study_case': config.get('powerfactory', 'study_case'),
@@ -328,6 +416,9 @@ def load_config(config_file: Path) -> dict:
         'load_names': load_names,
         'load_p_mw': load_p_mw,
         'load_q_mvar': load_q_mvar,
+        'fmu_power_key': fmu_power_key,
+        'load_step_threshold_mw': load_step_threshold_mw,
+        'load_step_min_step': load_step_min_step,
         'timestep': timestep,
         'pyro_host': config.get('pyro', 'host'),
         'pyro_port': config.getint('pyro', 'port'),
@@ -374,6 +465,13 @@ if __name__ == "__main__":
             logger.info("  Initial P: %s MW", config['load_p_mw'])
         if config['load_q_mvar'] is not None:
             logger.info("  Initial Q: %s Mvar", config['load_q_mvar'])
+        if config['fmu_power_key']:
+            logger.info(
+                "  FMU-driven load halving: power key='%s', threshold=%.2f MW, min_step=%d",
+                config['fmu_power_key'],
+                config['load_step_threshold_mw'],
+                config['load_step_min_step'],
+            )
 
     Pyro5.config.SERVERTYPE = "multiplex"
     pyro_simulator = Sub_server(
@@ -386,6 +484,9 @@ if __name__ == "__main__":
         load_names=config['load_names'],
         load_p_mw=config['load_p_mw'],
         load_q_mvar=config['load_q_mvar'],
+        fmu_power_key=config['fmu_power_key'],
+        load_step_threshold_mw=config['load_step_threshold_mw'],
+        load_step_min_step=config['load_step_min_step'],
     )
     daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
     daemon.register(pyro_simulator, config['pyro_object_name'])
