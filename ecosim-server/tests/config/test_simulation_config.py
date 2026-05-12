@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ConnectedToData
+from ecosim_common.client.config.execution_config import ExecutionConfig
 
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
@@ -316,3 +317,97 @@ def test_pace_override() -> None:
         pace=0.3,
     )
     assert config.pace == 0.3
+
+
+# ---------------------------------------------------------------------------
+# UT1 – Config file parsing: time_unit = microseconds
+# ---------------------------------------------------------------------------
+
+def test_load_microsecond_config() -> None:
+    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_us.json'), 400)
+    assert config.step_size_in_us == 25
+    assert config.step_size_in_ms == 0           # floor(25 // 1000)
+    assert config.step_size_in_microseconds == 25
+
+
+# ---------------------------------------------------------------------------
+# UT2 – CLI override: --step-size 25 --time-unit microseconds
+# ---------------------------------------------------------------------------
+
+def test_cli_step_size_microseconds_override() -> None:
+    config = SimulationConfig.of_config_file_and_params(
+        simulation_config_file=resource_path_file('simulation.json'),
+        steps=400,
+        step_size_override=25,
+        time_unit_override='microseconds',
+    )
+    assert config.step_size_in_us == 25
+    assert config.step_size_in_microseconds == 25
+
+
+def test_cli_step_size_milliseconds_override_sets_us() -> None:
+    config = SimulationConfig.of_config_file_and_params(
+        simulation_config_file=resource_path_file('simulation.json'),
+        steps=400,
+        step_size_override=1000,
+        time_unit_override='milliseconds',
+    )
+    assert config.step_size_in_ms == 1000
+    assert config.step_size_in_us == 1_000_000
+    assert config.step_size_in_microseconds == 1_000_000
+
+
+# ---------------------------------------------------------------------------
+# UT3 – Timestamp generation at µs resolution
+# ---------------------------------------------------------------------------
+
+def test_date_time_for_step_microseconds() -> None:
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_us.json'), 4000)
+    assert config.start_date == start
+
+    assert config.date_time_for_step(0) == start + timedelta(microseconds=25)
+    assert config.date_time_for_step(3) == start + timedelta(microseconds=100)
+    assert config.date_time_for_step(3999) == start + timedelta(microseconds=100_000)
+
+
+# ---------------------------------------------------------------------------
+# UT4 – Timestamp round-trip (verifies W1 fix)
+# ---------------------------------------------------------------------------
+
+def test_date_time_to_step_microseconds_roundtrip() -> None:
+    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_us.json'), 4000)
+    for step in [0, 1, 100, 999, 3999]:
+        dt = config.date_time_for_step(step)
+        recovered = config.date_time_to_step(dt)
+        assert recovered == step, f"Round-trip failed for step {step}: got {recovered}"
+
+
+# ---------------------------------------------------------------------------
+# UT5 – ExecutionConfig precision
+# ---------------------------------------------------------------------------
+
+def test_execution_config_us_25() -> None:
+    ec = ExecutionConfig()
+    ec.set_step_size_in_us(25)
+    assert ec.step_size_in_seconds() == 25 / 1_000_000
+    assert ec._step_size_in_ms == 0          # integer floor division, documented behaviour
+
+
+def test_execution_config_us_not_overridden_by_ms() -> None:
+    ec = ExecutionConfig(step_size_in_ms=1000)
+    ec.set_step_size_in_us(25)
+    # must return the µs-derived value, not the ms constructor value
+    assert ec.step_size_in_seconds() == 25e-6
+
+
+# ---------------------------------------------------------------------------
+# UT6 – Backward compatibility: config without time_unit defaults to ms
+# ---------------------------------------------------------------------------
+
+def test_load_config_without_time_unit_defaults_to_ms() -> None:
+    # simulation.json has no "time_unit" key → must behave exactly as before
+    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
+    assert config.step_size_in_ms == 60000
+    assert config.step_size_in_us == 60_000_000
+    assert config.step_size_in_microseconds == 60_000_000

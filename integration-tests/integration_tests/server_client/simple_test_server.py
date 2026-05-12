@@ -42,6 +42,7 @@ def generate_simple_test_server(
     pace: float = 1.0,
     steps: int = 100,
     step_size_in_ms: int = 1_000,
+    step_size_in_us: int | None = None,
     simulation_start_date: datetime = datetime(
         year=2025,
         month=1,
@@ -87,7 +88,8 @@ def generate_simple_test_server(
         logical_delays=[],
         pace=pace,
         steps=steps,
-        step_size_in_ms=step_size_in_ms,
+        step_size_in_ms=step_size_in_ms if step_size_in_us is None else step_size_in_us // 1000,
+        step_size_in_us=step_size_in_us,
         restore=restore_simulation_run,
     )
     if repository_type == RepositoryType.DB:
