@@ -203,12 +203,12 @@ class SimulationConfig:
         self,
         date: datetime,
     ) -> int:
-        passed_microseconds = date.timestamp() * 1_000_000 - self.start_date.timestamp() * 1_000_000
+        passed_microseconds = int((date - self.start_date) / timedelta(microseconds=1))
         plausibility_check = passed_microseconds % self.step_size_in_microseconds == 0
         if not plausibility_check:
             raise RuntimeError(f"Date time {date} is not a plausible step time.")
         # (step - 1) because the first step is step 0
-        return int(passed_microseconds / self.step_size_in_microseconds) - 1
+        return passed_microseconds // self.step_size_in_microseconds - 1
 
     def print_for_start_up(self) -> None:
         value_pairs = {
