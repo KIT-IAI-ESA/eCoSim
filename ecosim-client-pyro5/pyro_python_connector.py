@@ -41,7 +41,6 @@ class Sub_server:
         fmu_power_key: str = "",
         load_step_threshold_mw: float = 10.0,
         load_step_min_step: int = 200,
-        current_source_name: str = "",
     ):
         self.daemon = daemon
         self.project_name = project_name
@@ -56,10 +55,6 @@ class Sub_server:
         self.fmu_power_key: str = fmu_power_key
         self.load_step_threshold_mw: float = load_step_threshold_mw
         self.load_step_min_step: int = load_step_min_step  # skip initial transient
-        # Experimental: runtime ElmIac signal injection test
-        self.current_source_name: str = current_source_name
-        self.current_source = None  # resolved in initialize()
-        self.current_source_update_done: bool = False
         self._load_changed: bool = False
         self._load_changed_at_step: int = -1
         self._current_load_p_mw: float | None = load_p_mw
@@ -67,12 +62,7 @@ class Sub_server:
         self._prev_fmu_power: float | None = None
 
         self.logger = logging.getLogger("pf_pyro_validation")
-        if not self.logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
-            self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
-        self.logger.propagate = False
 
     @expose
     def initialize(self) -> dict[str, float]:
@@ -109,13 +99,6 @@ class Sub_server:
         for i, name in enumerate(self.load_names, start=1):
             load_obj = self._resolve_single_object(name, "ElmLod", f"Load {i} ({name})")
             self.loads.append(load_obj)
-
-        # Optional: resolve ElmIac for runtime injection test (skipped if name is empty).
-        self.current_source = (
-            self._resolve_single_object(self.current_source_name, "ElmIac", "AC Current Source")
-            if self.current_source_name else None
-        )
-        self.current_source_update_done = False
 
         self.current_time = 0.0
         self.current_step = 0
@@ -167,17 +150,6 @@ class Sub_server:
         self._execute_incremental_step()
         step_pf_time_s = time.perf_counter() - total_start
 
-        # Experimental: inject balanced 3-phase current into ElmIac once after t >= 1.5 s.
-        if self.current_source is not None and not self.current_source_update_done and self.current_time >= 1.5:
-            self.logger.info("[InjTest] t=%.6f s step %d: setting signals on '%s'", self.current_time, self.current_step, self.current_source_name)
-            for sig, val in {"s:I_A": 0.2, "s:I_B": 0.2, "s:I_C": 0.2, "s:phii": 0.0, "s:dphii": 0.0}.items():
-                try:
-                    ret = self.current_source.SetAttribute(sig, val)
-                    self.logger.info("[InjTest] set %-10s = %.4f  ret=%s  readback=%s", sig, val, ret, self.current_source.GetAttribute(sig))
-                except Exception as exc:  # noqa: BLE001
-                    self.logger.warning("[InjTest] set %s failed: %s", sig, exc)
-            self.current_source_update_done = True
-
         va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf = self._read_measurements()
         step_total_time_s = time.perf_counter() - total_start
 
@@ -209,8 +181,6 @@ class Sub_server:
         self.ldf = None
         self.inc = None
         self.sim = None
-        self.current_source = None
-        self.current_source_update_done = False
         self.current_time = 0.0
         self.current_step = 0
         self._load_changed = False
@@ -433,7 +403,6 @@ def load_config(config_file: Path) -> dict:
     fmu_power_key = config.get('powerfactory', 'fmu_power_key', fallback='')
     load_step_threshold_mw = config.getfloat('powerfactory', 'load_step_threshold_mw', fallback=10.0)
     load_step_min_step = config.getint('powerfactory', 'load_step_min_step', fallback=200)
-    current_source_name = config.get('powerfactory', 'current_source_name', fallback='')
 
     return {
         'project_name': config.get('powerfactory', 'project_name'),
@@ -446,7 +415,6 @@ def load_config(config_file: Path) -> dict:
         'fmu_power_key': fmu_power_key,
         'load_step_threshold_mw': load_step_threshold_mw,
         'load_step_min_step': load_step_min_step,
-        'current_source_name': current_source_name,
         'timestep': timestep,
         'pyro_host': config.get('pyro', 'host'),
         'pyro_port': config.getint('pyro', 'port'),
@@ -471,11 +439,17 @@ if __name__ == "__main__":
     # Load configuration
     config = load_config(config_path)
 
-    logging.basicConfig(
-        level=logging.INFO, stream=sys.stdout,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
+    _log_fmt = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    _log_file = Path(__file__).parent / "pyro_connector.log"
+    _fh = logging.FileHandler(_log_file, encoding="utf-8")
+    _fh.setFormatter(_log_fmt)
+    _sh = logging.StreamHandler(sys.stdout)
+    _sh.setFormatter(_log_fmt)
+    logging.root.setLevel(logging.INFO)
+    logging.root.addHandler(_fh)
+    logging.root.addHandler(_sh)
     logger = logging.getLogger("pf_pyro_main")
+    logger.info("Log file: %s", _log_file)
 
     logger.info("PowerFactory Pyro5 Server - EMT Mode")
     logger.info("Config: %s", config_path)
@@ -515,7 +489,6 @@ if __name__ == "__main__":
         fmu_power_key=config['fmu_power_key'],
         load_step_threshold_mw=config['load_step_threshold_mw'],
         load_step_min_step=config['load_step_min_step'],
-        current_source_name=config['current_source_name'],
     )
     daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
     daemon.register(pyro_simulator, config['pyro_object_name'])
