@@ -38,9 +38,19 @@ class Sub_server:
         load_names: list[str] | None = None,
         load_p_mw: float | None = None,
         load_q_mvar: float | None = None,
-        fmu_power_key: str = "",
-        load_step_threshold_mw: float = 10.0,
-        load_step_min_step: int = 200,
+        load_change_time_s: float = -1.0,
+        dsl_signal_name: str = "",
+        iac_source_name: str = "",
+        # Live DSL command interface (per-step current injection)
+        iac_ia_cmd_key: str = "Ia_ka",
+        iac_ib_cmd_key: str = "Ib_ka",
+        iac_ic_cmd_key: str = "Ic_ka",
+        # Unit conversion: multiply incoming values by this factor before SetAttribute.
+        # FMU outputs A, DSL model expects kA → default 1e-3.
+        iac_current_scale: float = 1e-3,
+        # Delay injection until simulation time reaches this value (seconds).
+        # Negative value = inject from t=0. Useful to show baseline before injection starts.
+        iac_injection_start_time_s: float = -1.0,
     ):
         self.daemon = daemon
         self.project_name = project_name
@@ -51,15 +61,21 @@ class Sub_server:
         self.load_names: list[str] = load_names or []
         self.load_p_mw: float | None = load_p_mw
         self.load_q_mvar: float | None = load_q_mvar
-        # FMU-driven load change: autonomous step detection via power delta
-        self.fmu_power_key: str = fmu_power_key
-        self.load_step_threshold_mw: float = load_step_threshold_mw
-        self.load_step_min_step: int = load_step_min_step  # skip initial transient
+        self.load_change_time_s: float = load_change_time_s
+        self.dsl_signal_name: str = dsl_signal_name
+        self.iac_source_name: str = iac_source_name
+        # Live DSL command interface
+        self.iac_ia_cmd_key: str = iac_ia_cmd_key
+        self.iac_ib_cmd_key: str = iac_ib_cmd_key
+        self.iac_ic_cmd_key: str = iac_ic_cmd_key
+        self.iac_current_scale: float = iac_current_scale
+        self.iac_injection_start_time_s: float = iac_injection_start_time_s
+        self.dsl_signal = None
+        self.iac_source = None
         self._load_changed: bool = False
         self._load_changed_at_step: int = -1
         self._current_load_p_mw: float | None = load_p_mw
         self._current_load_q_mvar: float | None = load_q_mvar
-        self._prev_fmu_power: float | None = None
 
         self.logger = logging.getLogger("pf_pyro_validation")
         self.logger.setLevel(logging.INFO)
@@ -100,6 +116,17 @@ class Sub_server:
             load_obj = self._resolve_single_object(name, "ElmLod", f"Load {i} ({name})")
             self.loads.append(load_obj)
 
+        # Resolve DSL signal source and zero IAC command params before load flow.
+        if self.dsl_signal_name:
+            self.dsl_signal = self._resolve_single_object(self.dsl_signal_name, "ElmDsl", "DSL signal source")
+            for cmd in ("IA_cmd", "IB_cmd", "IC_cmd"):
+                self.dsl_signal.SetAttribute(cmd, 0.0)
+
+        # Resolve ElmIac current source for measurement readback.
+        if self.iac_source_name:
+            self.iac_source = self._resolve_single_object(self.iac_source_name, "ElmIac", "AC current source")
+            self.logger.info("AC current source resolved: '%s'", self.iac_source_name)
+
         self.current_time = 0.0
         self.current_step = 0
 
@@ -107,6 +134,9 @@ class Sub_server:
         self.ldf = self.app.GetFromStudyCase("ComLdf")
         self.inc = self.app.GetFromStudyCase("ComInc")
         self.sim = self.app.GetFromStudyCase("ComSim")
+
+        self.inc.SetAttribute("dtgrd", self.dt)
+        self.logger.info("ComInc dtgrd set to %.6f s", self.dt)
 
         # 1. Set load operating points before load flow (if configured).
         for name, load_obj in zip(self.load_names, self.loads):
@@ -131,10 +161,9 @@ class Sub_server:
         self._load_changed_at_step = -1
         self._current_load_p_mw = self.load_p_mw
         self._current_load_q_mvar = self.load_q_mvar
-        self._prev_fmu_power = None
 
-        va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf = self._read_measurements()
-        result = self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, 0.0, 0.0)
+        va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, ia_iac, ib_iac, ic_iac = self._read_measurements()
+        result = self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, ia_iac, ib_iac, ic_iac, 0.0, 0.0)
         self.logger.info(
             "Initialize: Va=%.6e V, Vb=%.6e V, Vc=%.6e V; P_pf=%.6e MW",
             result["Va"], result["Vb"], result["Vc"], result["P_pf"],
@@ -144,13 +173,14 @@ class Sub_server:
     @expose
     def do_step(self, input_dict: dict[str, float]) -> dict[str, float]:
         """Run one aligned incremental step and return validation signals."""
-        self._check_load_step(input_dict)
+        self._check_load_step()
+        self._apply_iac_current_command(input_dict)
 
         total_start = time.perf_counter()
         self._execute_incremental_step()
         step_pf_time_s = time.perf_counter() - total_start
 
-        va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf = self._read_measurements()
+        va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, ia_iac, ib_iac, ic_iac = self._read_measurements()
         step_total_time_s = time.perf_counter() - total_start
 
         # Log first post-change step to verify whether EMT responded
@@ -168,7 +198,10 @@ class Sub_server:
             step_total_time_s,
         )
 
-        return self._build_result(va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, step_pf_time_s, step_total_time_s)
+        return self._build_result(
+            va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf,
+            ia_iac, ib_iac, ic_iac, step_pf_time_s, step_total_time_s,
+        )
 
     @expose
     def clear(self):
@@ -181,13 +214,38 @@ class Sub_server:
         self.ldf = None
         self.inc = None
         self.sim = None
+        self.dsl_signal = None
+        self.iac_source = None
         self.current_time = 0.0
         self.current_step = 0
         self._load_changed = False
         self._load_changed_at_step = -1
         self._current_load_p_mw = self.load_p_mw
         self._current_load_q_mvar = self.load_q_mvar
-        self._prev_fmu_power = None
+
+    def _apply_iac_current_command(self, input_dict: dict[str, float]) -> None:
+        """Forward IA_cmd/IB_cmd/IC_cmd from input_dict to the DSL model before each step.
+
+        Values are scaled by iac_current_scale before being passed to SetAttribute.
+        Default scale 1e-3 converts the incoming A values to kA as the DSL model expects.
+        Injection is suppressed (0 A) until current_time >= iac_injection_start_time_s.
+        """
+        if self.dsl_signal is None:
+            return
+        # Hold at zero until the configured start time.
+        inject = self.iac_injection_start_time_s < 0 or self.current_time >= self.iac_injection_start_time_s
+        if not inject:
+            for attr in ("IA_cmd", "IB_cmd", "IC_cmd"):
+                self.dsl_signal.SetAttribute(attr, 0.0)
+            return
+        for key, attr in [
+            (self.iac_ia_cmd_key, "IA_cmd"),
+            (self.iac_ib_cmd_key, "IB_cmd"),
+            (self.iac_ic_cmd_key, "IC_cmd"),
+        ]:
+            v = input_dict.get(key)
+            if v is not None:
+                self.dsl_signal.SetAttribute(attr, float(v) * self.iac_current_scale)
 
     def _resolve_single_object(self, name: str, class_name: str, label: str):
         objects = self.app.GetCalcRelevantObjects(f"*.{class_name}") or []
@@ -221,30 +279,16 @@ class Sub_server:
             f"match_bus1={match_bus1}, match_bus2={match_bus2}",
         )
 
-    def _check_load_step(self, input_dict: dict[str, float]) -> None:
-        """Detect a load step from FMU power and trigger load halving if threshold exceeded."""
-        if not self.fmu_power_key:
+    def _check_load_step(self) -> None:
+        """Apply timed load halving when simulation time reaches load_change_time_s."""
+        if self.load_change_time_s < 0 or self._load_changed or not self.loads:
             return
-        fmu_p = input_dict.get(self.fmu_power_key)
-        if fmu_p is None:
-            return
-        in_warmup = self._prev_fmu_power is None or self.current_step < self.load_step_min_step
-        if not in_warmup:
-            delta = abs(fmu_p - self._prev_fmu_power)
-            if not self._load_changed and self.loads and delta >= self.load_step_threshold_mw:
-                self.logger.info(
-                    "Load step detected at step %d (t=%.6f s): "
-                    "FMU power %.4f\u2192%.4f MW (delta=%.4f MW >= threshold=%.4f MW)",
-                    self.current_step, self.current_time,
-                    self._prev_fmu_power, fmu_p, delta, self.load_step_threshold_mw,
-                )
-                self._apply_runtime_load_change()
-        elif self.current_step == self.load_step_min_step - 1:
+        if self.current_time >= self.load_change_time_s:
             self.logger.info(
-                "Step %d: warmup done, load-step detection active (baseline AP=%.4f MW)",
-                self.current_step, fmu_p,
+                "Timed load change at step %d (t=%.6f s >= %.6f s)",
+                self.current_step, self.current_time, self.load_change_time_s,
             )
-        self._prev_fmu_power = fmu_p
+            self._apply_runtime_load_change()
 
     def _apply_runtime_load_change(self) -> None:
         """Halve the current load setpoints directly between ComSim.Execute() calls."""
@@ -281,8 +325,10 @@ class Sub_server:
         self.current_step += 1
         self.current_time = self.current_step * self.dt
 
-    def _read_measurements(self) -> tuple[float, float, float, dict[str, dict[str, float]], float, float, float, float, float, float, float]:
-        """Read voltages (kV→V), per-line currents (kA→A), and active power (MW) from PowerFactory."""
+    def _read_measurements(
+        self,
+    ) -> tuple[float, float, float, dict[str, dict[str, float]], float, float, float, float, float, float, float, float, float, float]:
+        """Read voltages (kV→V), per-line currents (kA→A), active power (MW), and ElmIac currents (A)."""
         va = self._read_required_attribute(self.terminal, "m:U:A") * 1e3
         vb = self._read_required_attribute(self.terminal, "m:U:B") * 1e3
         vc = self._read_required_attribute(self.terminal, "m:U:C") * 1e3
@@ -321,7 +367,15 @@ class Sub_server:
         ib = ib_total_ka * 1e3
         ic = ic_total_ka * 1e3
 
-        return va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf
+        ia_iac = 0.0
+        ib_iac = 0.0
+        ic_iac = 0.0
+        if self.iac_source is not None:
+            ia_iac = self._read_required_attribute(self.iac_source, "m:I:bus1:A") * 1e3
+            ib_iac = self._read_required_attribute(self.iac_source, "m:I:bus1:B") * 1e3
+            ic_iac = self._read_required_attribute(self.iac_source, "m:I:bus1:C") * 1e3
+
+        return va, vb, vc, per_line, ia, ib, ic, p_pf, pa_pf, pb_pf, pc_pf, ia_iac, ib_iac, ic_iac
 
     def _build_result(
         self,
@@ -336,6 +390,9 @@ class Sub_server:
         pa_pf: float,
         pb_pf: float,
         pc_pf: float,
+        ia_iac: float,
+        ib_iac: float,
+        ic_iac: float,
         step_pf_time_s: float,
         step_total_time_s: float,
     ) -> dict[str, float]:
@@ -343,9 +400,12 @@ class Sub_server:
             "Va": va,
             "Vb": vb,
             "Vc": vc,
-            "Ia": ia,
-            "Ib": ib,
-            "Ic": ic,
+            "Ia_meas": ia,
+            "Ib_meas": ib,
+            "Ic_meas": ic,
+            "Ia_iac": ia_iac,
+            "Ib_iac": ib_iac,
+            "Ic_iac": ic_iac,
             "P_pf": p_pf,
             "Pa_pf": pa_pf,
             "Pb_pf": pb_pf,
@@ -400,9 +460,15 @@ def load_config(config_file: Path) -> dict:
     load_q_mvar_str = config.get('powerfactory', 'load_q_mvar')
     load_q_mvar = float(load_q_mvar_str) if load_q_mvar_str.strip() else None
 
-    fmu_power_key = config.get('powerfactory', 'fmu_power_key', fallback='')
-    load_step_threshold_mw = config.getfloat('powerfactory', 'load_step_threshold_mw', fallback=10.0)
-    load_step_min_step = config.getint('powerfactory', 'load_step_min_step', fallback=200)
+    load_change_time_s = config.getfloat('powerfactory', 'load_change_time_s', fallback=-1.0)
+
+    dsl_signal_name = config.get('powerfactory', 'dsl_signal_name', fallback='')
+    iac_ia_cmd_key = config.get('powerfactory', 'iac_ia_cmd_key', fallback='Ia_ka')
+    iac_ib_cmd_key = config.get('powerfactory', 'iac_ib_cmd_key', fallback='Ib_ka')
+    iac_ic_cmd_key = config.get('powerfactory', 'iac_ic_cmd_key', fallback='Ic_ka')
+    iac_source_name = config.get('powerfactory', 'iac_source_name', fallback='')
+    iac_current_scale = config.getfloat('powerfactory', 'iac_current_scale', fallback=1e-3)
+    iac_injection_start_time_s = config.getfloat('powerfactory', 'iac_injection_start_time_s', fallback=-1.0)
 
     return {
         'project_name': config.get('powerfactory', 'project_name'),
@@ -412,9 +478,14 @@ def load_config(config_file: Path) -> dict:
         'load_names': load_names,
         'load_p_mw': load_p_mw,
         'load_q_mvar': load_q_mvar,
-        'fmu_power_key': fmu_power_key,
-        'load_step_threshold_mw': load_step_threshold_mw,
-        'load_step_min_step': load_step_min_step,
+        'load_change_time_s': load_change_time_s,
+        'dsl_signal_name': dsl_signal_name,
+        'iac_source_name': iac_source_name,
+        'iac_ia_cmd_key': iac_ia_cmd_key,
+        'iac_ib_cmd_key': iac_ib_cmd_key,
+        'iac_ic_cmd_key': iac_ic_cmd_key,
+        'iac_current_scale': iac_current_scale,
+        'iac_injection_start_time_s': iac_injection_start_time_s,
         'timestep': timestep,
         'pyro_host': config.get('pyro', 'host'),
         'pyro_port': config.getint('pyro', 'port'),
@@ -467,13 +538,16 @@ if __name__ == "__main__":
             logger.info("  Initial P: %s MW", config['load_p_mw'])
         if config['load_q_mvar'] is not None:
             logger.info("  Initial Q: %s Mvar", config['load_q_mvar'])
-        if config['fmu_power_key']:
-            logger.info(
-                "  FMU-driven load halving: power key='%s', threshold=%.2f MW, min_step=%d",
-                config['fmu_power_key'],
-                config['load_step_threshold_mw'],
-                config['load_step_min_step'],
-            )
+        if config['load_change_time_s'] >= 0:
+            logger.info("  Timed load halving at t=%.4f s", config['load_change_time_s'])
+    if config['dsl_signal_name']:
+        logger.info("DSL signal source: '%s'", config['dsl_signal_name'])
+        logger.info(
+            "  Command keys: %s, %s, %s",
+            config['iac_ia_cmd_key'], config['iac_ib_cmd_key'], config['iac_ic_cmd_key'],
+        )
+    if config['iac_source_name']:
+        logger.info("AC current source (ElmIac): '%s'", config['iac_source_name'])
 
     Pyro5.config.SERVERTYPE = "multiplex"
     pyro_simulator = Sub_server(
@@ -486,9 +560,14 @@ if __name__ == "__main__":
         load_names=config['load_names'],
         load_p_mw=config['load_p_mw'],
         load_q_mvar=config['load_q_mvar'],
-        fmu_power_key=config['fmu_power_key'],
-        load_step_threshold_mw=config['load_step_threshold_mw'],
-        load_step_min_step=config['load_step_min_step'],
+        load_change_time_s=config['load_change_time_s'],
+        dsl_signal_name=config['dsl_signal_name'],
+        iac_source_name=config['iac_source_name'],
+        iac_ia_cmd_key=config['iac_ia_cmd_key'],
+        iac_ib_cmd_key=config['iac_ib_cmd_key'],
+        iac_ic_cmd_key=config['iac_ic_cmd_key'],
+        iac_current_scale=config['iac_current_scale'],
+        iac_injection_start_time_s=config['iac_injection_start_time_s'],
     )
     daemon = Pyro5.server.Daemon(host=config['pyro_host'], port=config['pyro_port'])
     daemon.register(pyro_simulator, config['pyro_object_name'])
