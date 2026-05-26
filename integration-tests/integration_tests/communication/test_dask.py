@@ -15,7 +15,7 @@ from integration_tests.communication.message_data_for_test import MessageDataFor
 @pytest.fixture
 def dask_client(scope="session", autouse=True):
     print("Dask client setup")
-    client = dd.Client(processes=True, silence_logs=False, n_workers=4, threads_per_worker=4)
+    client = dd.Client(n_workers=4, threads_per_worker=4)
     client.forward_logging()
     print(client)
     yield client
