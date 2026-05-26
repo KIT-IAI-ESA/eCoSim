@@ -1,5 +1,6 @@
 import threading
 import dask.distributed as dd
+from distributed.protocol import serialize, deserialize
 import uuid
 from abc import abstractmethod, ABC
 from typing import override
@@ -25,6 +26,7 @@ from ecosim_server.server_state import ServerState, ServerStateDask
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
+from ecosim_server.class_serializer import serialize_classes
 
 
 class AbstractServer(ABC):
@@ -293,6 +295,9 @@ class Dask_Server(AbstractServer, ShutdownListener):
         )
         self._rendering_socket: RenderingSocket | None = None
         self._repositories = repositories
+        serialize_classes()
+        dask_client = dd.get_client()
+        dask_client.run(serialize_classes)
         ShutdownManager().register_listener(self)
 
     @override
@@ -303,36 +308,25 @@ class Dask_Server(AbstractServer, ShutdownListener):
         self._simulation_config.print_for_start_up()
         self._server_config.print_config_for_start_up()
         server_state = dd.Queue("server_state")
-        server_state.put(self._server_state)
+        server_state.put(serialize(self._server_state))
         self._channel_endpoint.listen_async(
             on_new_channel=Channel_Handling(simulation_config=self._simulation_config)._handle_new_channel,      #
         )
         Server._logger.info("Waiting for all clients to connect...")
-        # self._server_state.wait_for_all_clients_connected_and_ready()
+
         while not self._server_state.are_all_clients_connected_and_ready():
-            self._server_state = server_state.get()
-            server_state.put(self._server_state)
+            self._server_state = deserialize(*server_state.get())
+            server_state.put(serialize(self._server_state))
+
         Server._logger.info("All clients connected - starting simulation")
-        self._server_state = server_state.get()
+        self._server_state = deserialize(*server_state.get())
         self._set_simulation_state(SimulationState.READY)
-        server_state.put(self._server_state)
+        server_state.put(serialize(self._server_state))
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
         while server_state.qsize() > 0:
             server_state.get()
-
-    # def _handle_new_channel(self,
-    #     connection_data: ConnectionData,
-    #     ) -> None:
-    #     dask_client = dd.get_client()
-    #     sim_config = self._simulation_config
-    #     print(f"sim_config pickles: {dill.pickles}")
-    #     async def async_handle() -> None:
-    #         future = dask_client.submit(Channel_Handling(sim_config)._handle_client, connection_data)
-    #         dd.fire_and_forget(future)
-
-    #     dask_client.sync(async_handle)
 
     @override
     def print_measurement_statistics(self) -> None:
@@ -396,8 +390,8 @@ class Channel_Handling:
                      simulation_config: SimulationConfig,
     ) -> None:
         server_state = dd.Queue("server_state")
-        self._server_state: ServerState = server_state.get()
-        server_state.put(self._server_state)
+        self._server_state: ServerState = deserialize(*server_state.get())
+        server_state.put(serialize(self._server_state))
         self._simulation_config = simulation_config
 
     def _handle_new_channel(
@@ -423,11 +417,13 @@ class Channel_Handling:
         connection: ClientConnection,
     ) -> None:
         client_id: ClientID | None = None
+        dd.get_client()
+        dd.secede()
         with connection:
             server_state = dd.Queue("server_state")
             try:
                 Server._logger.debug("Handling new client connection")
-                self._server_state = server_state.get()
+                self._server_state = deserialize(*server_state.get())
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 if message is None:
@@ -448,33 +444,42 @@ class Channel_Handling:
                 self._server_state.client_states.set_client_ready_for_simulation(
                     client_id,
                 )
-                server_state.put(self._server_state)
-
+                server_state.put(serialize(self._server_state))
+                calls = 0  # Terminate server if no clients are connected after queue timeout
                 while (
                     self._server_state.is_running()
                     and self._server_state.client_states.is_connected(client_id)
                 ):
-                    self._server_state = server_state.get()
-                    server_state.put(self._server_state)
+                    # self._server_state = server_state.get()
+                    # server_state.put(self._server_state)
                     received_message = connection.receive()
+
                     if received_message is None:
                         Server._logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
+                        calls += 1
+                        if calls == 2:
+                            raise TimeoutError(f"No response from client {client_id} after 120 seconds.")
+                            # connection.close()
+                            # self._server_state = deserialize(*server_state.get())
+                            # self._server_state.force_stop()
+                            # dd.Event(name="stop_execution").set()
+                            # server_state.put(serialize(self._server_state))
                         continue
-                    self._server_state = server_state.get()
+                    self._server_state = deserialize(*server_state.get())
                     self._server_state.message_buffer.add(
                         client_id=client_id,
                         message=received_message,
                     )
-                    server_state.put(self._server_state)
+                    server_state.put(serialize(self._server_state))
 
             except Exception as e:
                 connection.close()
                 if client_id:
-                    self._server_state = server_state.get()
+                    self._server_state = deserialize(*server_state.get())
                     self._server_state.client_states.reset_state(client_id)
-                    server_state.put(self._server_state)
+                    server_state.put(serialize(self._server_state))
                 raise e
 
     def _handle_simulation_setup(

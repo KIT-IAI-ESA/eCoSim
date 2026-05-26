@@ -33,6 +33,7 @@ class FMU2Client(Client):
     @override
     def on_app_shutdown(self) -> None:
         super().on_app_shutdown()
+        print(f"Simulator is finished: {self._is_finished}")
         if self._simulator is not None:
             self._simulator.on_app_shutdown()
 

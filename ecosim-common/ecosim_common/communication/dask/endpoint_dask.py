@@ -17,19 +17,18 @@ def _listen(
 
     dask_client = dd.get_client()
     EndpointDask._logger.debug("Now listening to Dask Client")
-    closed = dd.Variable("closed")
-    is_closed = closed.get()
+    closed = dd.Event(name="server_closed")
     current_connections: list[str] = []  # dd.publish.Datasets | dict[Any, Any] = {}  # dask_client.datasets
-    while not is_closed.is_set():
-        closed = dd.Variable("closed")
-        is_closed = closed.get()
+    while not closed.is_set():
+        # closed = dd.Variable("closed")
+        # is_closed = closed.get()
         if dask_client.status != 'running':
             EndpointDask._logger.error("Cannot listen to Dask client")
             raise Exception
         if len(dask_client.datasets) == len(current_connections):
             continue
         elif len(dask_client.datasets) < len(current_connections):
-            if is_closed.is_set():
+            if closed.is_set():
                 return
             raise Exception("Server listening ended sooner than anticipated.")
         else:
@@ -60,6 +59,11 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
+        self._closed.name = "server_closed"
+        self._listening.name = "server_listen"
+        # Ensure Events are cleared. Mostly for testing purposes
+        self._closed.clear()
+        self._listening.clear()
 
     @override
     def listen_async(
@@ -80,19 +84,19 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
             dd.fire_and_forget(future)
 
         self._internal_dask_client.sync(listen_start)
-        closed_event = dd.Event()
-        closed = dd.Variable("closed")
-        closed.set(closed_event)
+        # closed_event = dd.Event()
+        # closed = dd.Variable("closed")
+        # closed.set(closed_event)
 
     @override
     def close(self) -> None:
         if self._listening.is_set():
             self._listening.clear()
             self._closed.set()
-            closed = dd.Variable("closed")
-            closed.set(self._closed)
-            channel_close = dd.Variable("finished_channel")
-            channel_close.set(self._closed)
+            # closed = dd.Variable("closed")
+            # closed.set(self._closed)
+            # channel_close = dd.Variable("finished_channel")
+            # channel_close.set(self._closed)
             if self._internal_dask_client.status == "running":
                 try:
                     for key in self._internal_dask_client.datasets.keys():

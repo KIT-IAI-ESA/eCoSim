@@ -3,6 +3,7 @@ from __future__ import annotations
 import signal
 import sys
 import threading
+import dask.distributed as dd
 from abc import ABC, abstractmethod
 from types import FrameType
 from typing import List, Type, Any
@@ -23,7 +24,7 @@ class ShutdownManager:
     _logger = ESPLogger("ShutdownManager")
     _listener: List[ShutdownListener] = []
     _init: bool = False
-    shutdown_event: threading.Event
+    shutdown_event: threading.Event | dd.Event
 
     def __new__(
         cls: Type[ShutdownManager],
@@ -34,7 +35,10 @@ class ShutdownManager:
             with cls._lock:
                 if not cls._instance:
                     cls._instance = super(ShutdownManager, cls).__new__(cls, *args, **kwargs)
-                    cls._instance.shutdown_event = threading.Event()
+                    try:  # If dask client present, use dask.distributed.Event
+                        cls._instance.shutdown_event = dd.Event()
+                    except ValueError:  # otherwise normal threading.Event
+                        cls._instance.shutdown_event = threading.Event()
         return cls._instance
 
     def init(self) -> None:
@@ -103,3 +107,46 @@ class ShutdownManager:
     def set_shutdown_at_application_end(self) -> None:
         self._logger.debug("Shutdown was triggered at the end of the application.")
         self.__trigger_shutdown()
+
+    def set_dask_shutdown(self) -> None:
+        self._logger.debug("Shutting down simulators on Dask Client")
+        self.__trigger_shutdown()
+
+
+class ShutdownCommDask:
+    def init(self) -> None:
+        signal.signal(signal.SIGINT, self._interrupt_signal_handler)
+        signal.signal(signal.SIGTERM, self._terminate_signal_handler)
+        # Setup handlers for exception-related signals
+        signal.signal(signal.SIGSEGV, self._other_interrupts_handler)
+        signal.signal(signal.SIGABRT, self._other_interrupts_handler)
+        signal.signal(signal.SIGFPE, self._other_interrupts_handler)
+        self._dask_client = dd.get_client()
+
+    def _interrupt_signal_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
+        print("PROCESS INTERRUPTED!!!!!!!")
+        self._dask_client.run(ShutdownManager().set_dask_shutdown, wait=True)
+        self._dask_client.shutdown()
+        self._dask_client.close()
+
+    def _terminate_signal_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
+        self._dask_client.run(ShutdownManager().set_dask_shutdown, wait=True)
+        self._dask_client.shutdown()
+        self._dask_client.close()
+
+    def _other_interrupts_handler(
+        self,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
+        self._dask_client.run(ShutdownManager.set_dask_shutdown, wait=True)
+        self._dask_client.shutdown()
+        self._dask_client.close()

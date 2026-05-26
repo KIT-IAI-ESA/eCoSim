@@ -30,7 +30,15 @@ class FMU2SimulatorConfig:
         simulator_name: str,
         fmu_config: FMU2Config,
     ) -> FMU2SimulatorConfig:
-        model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
+        try:
+            model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
+        except Exception as e:
+            # For identifying FMUs that throw XMLParseErrors
+            unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir="./failed_fmus/"+simulator_name)
+            FMU2SimulatorConfig._logger.error(str(e))
+            FMU2SimulatorConfig._logger.error(f"HERE IS THE UNZIP_DIR FOR THE FAIL: {unzip_dir}")
+            raise
+
         input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
         output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
         unzip_dir = fmpy.extract(fmu_config.fmu_file)

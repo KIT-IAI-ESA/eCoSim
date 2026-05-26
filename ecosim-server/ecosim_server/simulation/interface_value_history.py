@@ -2,6 +2,7 @@ from __future__ import annotations
 import dataclasses
 import threading
 from typing import List, Tuple
+import dask.distributed as dd
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -23,7 +24,11 @@ class InterfaceValueHistory:
         repositories: Repositories,
         simulation_config: SimulationConfig,
     ):
-        self.__thread_lock = threading.Lock()
+        try:  # use dask.Lock if using dask
+            dd.get_client()
+            self.__thread_lock: dd.Lock | threading.Lock = dd.Lock()
+        except ValueError:  # otherwise normal threading.Lock
+            self.__thread_lock = threading.Lock()
         self._entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
         self._repositories = repositories
         self._simulation_config = simulation_config

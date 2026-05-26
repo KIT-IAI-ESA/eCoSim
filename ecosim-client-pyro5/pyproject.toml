@@ -24,6 +24,7 @@ dependencies = [
     "setuptools==80.8.0",
     "pydantic>=2.11.5",
     "Pyro5==5.15",
+    "pandapower>=3.4.0",
 ]
 
 [tool.uv.sources]

@@ -17,6 +17,8 @@ dependencies = [
     "ecosim-server",
     "ecosim-client-pyro",
     "fmpy>=0.3.25",
+    "dask-mpi>=2025.10.0",
+    "bokeh[dev]>=3.8.2",
 ]
 
 [build-system]
@@ -38,6 +40,7 @@ dev = [
     "pytest-html==4.1.1",
     "mypy==1.18.2",
     "uv==0.9.6",
+    "dask-pyspy",
 ]
 
 
@@ -60,5 +63,8 @@ module = [
     # Ignore Pyro5 (not typed)
     "Pyro5",
     "Pyro5.*",
+    # Ignore dask-mpi (not typed)
+    "dask_mpi",
+    "dask_mpi.*"
 ]
 ignore_missing_imports = true

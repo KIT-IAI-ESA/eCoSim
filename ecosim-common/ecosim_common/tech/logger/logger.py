@@ -3,7 +3,6 @@ import sys
 import traceback
 from logging import StreamHandler
 from typing import Any
-# from multiprocessing_logging import install_mp_handler
 
 default_log_format = '%(asctime)s - %(levelname)s - %(message)s'
 default_handlers = [logging.StreamHandler()]
@@ -28,8 +27,7 @@ def init_logger(log_level: int = logging.INFO) -> None:
     logging.getLogger('websockets.client').setLevel(logging.ERROR)
     logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
     logging.getLogger('distributed').setLevel(logging.ERROR)
-    logging.getLogger('distributed.worker').setLevel(logging.DEBUG)
-    # install_mp_handler()
+    logging.getLogger('distributed.worker').setLevel(logging.ERROR)
 
 
 class ESPLogger:

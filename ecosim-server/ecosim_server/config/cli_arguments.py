@@ -297,6 +297,11 @@ class CLIArgumentsHPC(AppConfig):
                     help_text="If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous "
                     + "simulation run, the simulation is executed normally.",
                 ),
+                AppConfigParameter(
+                    name="interactive",
+                    is_flag=True,
+                    help_text="Establishes interactive version of Dask-MPI. If not set, the simulation will run in batch mode.",
+                ),
             ],
         )
 
@@ -332,6 +337,9 @@ class CLIArgumentsHPC(AppConfig):
 
     def restore_simulation_run(self) -> bool:
         return self._args.restore_simulation_run
+
+    def interactive(self) -> bool:
+        return self._args.interactive
 
     @property
     def port(self) -> int | None:
