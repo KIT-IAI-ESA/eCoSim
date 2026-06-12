@@ -4,6 +4,7 @@ import dask.distributed as dd
 from distributed.protocol import serialize, deserialize
 
 import time
+import sys
 from time import sleep
 from datetime import datetime
 from functools import partial
@@ -169,6 +170,11 @@ class SimulationExecutor:
                     )
             if self._using_dask:
                 self._state_variable.put(serialize(self._server_state))
+                # In case of XMLParseError during initialization, break the loop
+                if dd.Event(name="global_finish").is_set():
+                    SimulationExecutor.logger.error("Error occured when starting simulators. Exitting...")
+                    self.force_stop()
+                    sys.exit(1)
             if not self._using_dask:
                 sleep(2)
         SimulationExecutor.logger.debug(
@@ -306,6 +312,12 @@ class SimulationExecutor:
                     self.logger.debug(
                         f"Step {self._current_step}: Waiting for all clients to be executed in a 'possible parts' execution",
                     )
+
+                if self._using_dask:
+                    if dd.Event(name="global_finish").is_set():
+                        SimulationExecutor.logger.error("Error occured while running simulators. Exitting...")
+                        self.force_stop()
+                        sys.exit(1)
 
             self._handle_image_renderer()
             self._current_step += 1

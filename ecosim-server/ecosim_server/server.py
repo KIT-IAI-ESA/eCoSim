@@ -383,7 +383,7 @@ class Dask_Server(AbstractServer, ShutdownListener):
         self._simulation_executor.force_stop()
 
 
-class Channel_Handling:
+class Channel_Handling():
 
     def __init__(
         self,
@@ -459,8 +459,8 @@ class Channel_Handling:
                             f"Received 'none' from client {client_id}.",
                         )
                         calls += 1
-                        if calls == 2:
-                            raise TimeoutError(f"No response from client {client_id} after 120 seconds.")
+                        if dd.Event(name="global_finish").is_set():
+                            connection.close()
                             # connection.close()
                             # self._server_state = deserialize(*server_state.get())
                             # self._server_state.force_stop()

@@ -18,8 +18,9 @@ def _listen(
     dask_client = dd.get_client()
     EndpointDask._logger.debug("Now listening to Dask Client")
     closed = dd.Event(name="server_closed")
+    global_finish = dd.Event(name="global_finish")
     current_connections: list[str] = []  # dd.publish.Datasets | dict[Any, Any] = {}  # dask_client.datasets
-    while not closed.is_set():
+    while not closed.is_set() and not global_finish.is_set():
         # closed = dd.Variable("closed")
         # is_closed = closed.get()
         if dask_client.status != 'running':

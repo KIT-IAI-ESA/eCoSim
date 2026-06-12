@@ -9,6 +9,7 @@ from ecosim_common.communication.dask.simple_dask_message import SimpleDaskMessa
 from ecosim_common.communication.dask.esp_dask import ESPDask
 from ecosim_common.communication.dask.dask_messages import ReceivedMessage
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 
 def _listen_blocking(
@@ -16,7 +17,7 @@ def _listen_blocking(
                     dask_client: ESPDask,
                     event_name: str,
 ) -> None:
-    dd.get_client()
+    dd_client = dd.get_client()
     # finish_channel = dd.Variable("finished_channel", client=client)
     is_finished = dd.Event(name=event_name)
     is_finished_global = dd.Event(name="global_finish")
@@ -38,6 +39,8 @@ def _listen_blocking(
                 is_finished.set()
                 is_finished_global.set()
                 DaskChannel._logger.debug("Error when processing message.")
+                DaskChannel._logger.debug(str(e))
+                dd_client.run(ShutdownManager().set_dask_shutdown)
                 raise e
 
 
