@@ -128,9 +128,9 @@ class ESPDask(ShutdownListener):
             received_id = None
             data_var = dd.Queue(name=dask_id, client=connection)
             try:
-                raw_message = data_var.get(timeout=60)
+                raw_message = data_var.get(timeout=300)
             except TimeoutError:
-                ESPDask._logger.debug(f"Received no data at {origin_id} after 60 seconds.")
+                ESPDask._logger.debug(f"Received no data at {origin_id} after 300 seconds.")
                 return None
             try:
                 raw_message, received_id = raw_message

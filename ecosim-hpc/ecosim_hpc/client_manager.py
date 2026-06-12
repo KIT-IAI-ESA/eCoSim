@@ -46,6 +46,28 @@ class ClientManager(ShutdownListener):
                 ),
                 "dask_connection": True,
             }
+            for simulator in simulator_path.glob("*.py"):  # Pyro5 Client first to ensure runs on same node as localhost
+                simulator_config = ConfigParser([ini for ini in simulator.parent.glob("*.ini")][0])
+                simulator_name = SimulatorConfig.of_config_parser(simulator_config).model_name
+                args["config_parser"] = simulator_config
+                # Find worker that is on the same node as the scheduler
+                for core in dask_client.ncores().keys():
+                    if dask_client_ip in core:
+                        workers = core  # Ensures Pyro client runs on same node as localhost
+                        break
+                # pyro_client = PyroClient(
+                #     config_parser=simulator_config,
+                #     config_override=ClientConfigOverride(
+                #         server_host=self._server_args._args.host,
+                #         server_port=self._server_args._args.port,
+                #     ),
+                #     dask_connection=True,
+                # )
+                if simulator_name in self.client_dict.keys():
+                    future = dask_client.sync(client_submit, client_function=PyroClient, args=args, workers=workers)
+                    self.client_dict[simulator_name] = future
+                    # dd.fire_and_forget(future)
+
             for simulator in simulator_path.glob("*.fmu"):
                 simulator_config = ConfigParser([ini for ini in simulator.parent.glob("*.ini")][0])
                 simulator_name = SimulatorConfig.of_config_parser(simulator_config).model_name
@@ -101,25 +123,6 @@ class ClientManager(ShutdownListener):
                     self.client_dict[simulator_name] = future
                     # dd.fire_and_forget(future)
 
-            for simulator in simulator_path.glob("*.py"):
-                simulator_config = ConfigParser([ini for ini in simulator.parent.glob("*.ini")][0])
-                simulator_name = SimulatorConfig.of_config_parser(simulator_config).model_name
-                args["config_parser"] = simulator_config
-                workers = dask_client_ip  # Ensures Pyro client runs on same node as localhost
-
-                # pyro_client = PyroClient(
-                #     config_parser=simulator_config,
-                #     config_override=ClientConfigOverride(
-                #         server_host=self._server_args._args.host,
-                #         server_port=self._server_args._args.port,
-                #     ),
-                #     dask_connection=True,
-                # )
-                if simulator_name in self.client_dict.keys():
-                    future = dask_client.sync(client_submit, client_function=PyroClient, args=args, workers=workers)
-                    self.client_dict[simulator_name] = future
-                    # dd.fire_and_forget(future)
-
     @override
     def on_app_shutdown(self) -> None:
         dask_client = dd.get_client()
@@ -135,6 +138,8 @@ async def client_submit(
     dask_client = dd.get_client()
     if workers:
         client_future = dask_client.submit(client_run, client_function, args, workers=workers)
+        # ClientManager.logger.debug(f"{dask_client.scheduler_info()["address"]}")
+        # ClientManager.logger.debug(f"{await dask_client.who_has(client_future)}")
     else:
         client_future = dask_client.submit(client_run, client_function, args)
     dd.fire_and_forget(client_future)
@@ -145,8 +150,8 @@ def client_run(
         args: dict[str, Any],
 ) -> None:
     dd.get_client()
-
+    dd.secede()
     simulator_client = client_function(args["config_parser"], args["config_override"], args["dask_connection"])
     simulator_client.start()
-    dd.secede()
     simulator_client.wait_until_finished()
+    dd.rejoin()

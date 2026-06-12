@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Any, ClassVar
 from uuid import uuid4
 
+import importlib
 import fmpy
 from fmpy.fmi2 import FMU2Slave
 from fmpy.model_description import ModelDescription
@@ -32,12 +33,26 @@ class FMU2SimulatorConfig:
     ) -> FMU2SimulatorConfig:
         try:
             model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
-        except Exception as e:
+        except Exception:
             # For identifying FMUs that throw XMLParseErrors
-            unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir="./failed_fmus/"+simulator_name)
-            FMU2SimulatorConfig._logger.error(str(e))
-            FMU2SimulatorConfig._logger.error(f"HERE IS THE UNZIP_DIR FOR THE FAIL: {unzip_dir}")
-            raise
+            FMU2SimulatorConfig._logger.debug("Model failed to read initially. Reloading model description.")
+            for i in range(2):
+                try:
+                    importlib.reload(fmpy)
+                    model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
+                    break
+                except Exception as ecpt:
+                    unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir="./failed_fmus/"+simulator_name)
+                    # FMU2SimulatorConfig._logger.error(str(ecpt))
+                    FMU2SimulatorConfig._logger.debug(f"HERE IS THE UNZIP_DIR FOR THE FAIL: {unzip_dir}")
+                    FMU2SimulatorConfig._logger.debug("Reading modelDescription.xml directly.")
+                    try:
+                        importlib.reload(fmpy)
+                        model_description = fmpy.read_model_description("./failed_fmus/"+simulator_name+"/modelDescription.xml")
+                    except Exception:
+                        pass
+                    if i == 1:
+                        raise ecpt
 
         input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
         output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
