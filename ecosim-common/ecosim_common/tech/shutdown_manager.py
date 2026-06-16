@@ -36,6 +36,7 @@ class ShutdownManager:
                 if not cls._instance:
                     cls._instance = super(ShutdownManager, cls).__new__(cls, *args, **kwargs)
                     try:  # If dask client present, use dask.distributed.Event
+                        dd.get_client()
                         cls._instance.shutdown_event = dd.Event()
                     except ValueError:  # otherwise normal threading.Event
                         cls._instance.shutdown_event = threading.Event()

@@ -45,6 +45,7 @@ def _listen(
                 ),
                 )
                 current_connections.append(dask_id)
+    print(f"Are things set? {closed.is_set()} {global_finish.is_set()}")
     EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
 
 
@@ -55,6 +56,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _connection_address: ConnectionAddress = field()
     _closed: dd.Event = field(default_factory=dd.Event)
     _listening: dd.Event = field(default_factory=dd.Event)
+    _global_finish: dd.Event = field(default_factory=dd.Event)
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
     _internal_dask_client: dd.Client = field(default_factory=dd.get_client)
 
@@ -62,9 +64,11 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         ShutdownManager().register_listener(self)
         self._closed.name = "server_closed"
         self._listening.name = "server_listen"
+        self._global_finish.name = "global_finish"
         # Ensure Events are cleared. Mostly for testing purposes
         self._closed.clear()
         self._listening.clear()
+        self._global_finish.clear()
 
     @override
     def listen_async(
