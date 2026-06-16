@@ -1,6 +1,7 @@
 ECOSIM_DIR=$HOME/ecosim #eCoSim directory. Change as needed.
 
 module load devel/miniforge/25.3.1-python-3.12
+module load mpi/openmpi/5.0-gnu-14.2
 
 if ! conda info --envs | grep -wq "eCoSim"; then
     echo "No eCoSim conda environment detected."

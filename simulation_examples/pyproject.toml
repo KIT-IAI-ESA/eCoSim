@@ -16,6 +16,7 @@ dependencies = [
     "ecosim-client-fmu-v2>=0.11.0",
     "ecosim-common>=0.11.0",
     "ecosim-server>=0.11.0",
+    "ecosim-hpc",
     "mypy==1.18.2",
     "uv==0.8.22",
     "websockets==15.0.1",
@@ -28,6 +29,7 @@ py-modules=[]
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
+ecosim-hpc = { path = "../ecosim-hpc", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server"]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-hpc"]
