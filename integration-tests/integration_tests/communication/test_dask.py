@@ -1,5 +1,7 @@
 import dask.distributed as dd
 import pytest
+from typing import Generator
+
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
@@ -13,7 +15,7 @@ from integration_tests.communication.message_data_for_test import MessageDataFor
 
 
 @pytest.fixture
-def dask_client(scope="session", autouse=True):
+def dask_client(scope: str = "session", autouse: bool = True) -> Generator[dd.Client]:
     print("Dask client setup")
     client = dd.Client(n_workers=4, threads_per_worker=4)
     client.forward_logging()
@@ -26,7 +28,7 @@ def clear_datasets(client: dd.Client) -> None:
         client.unpublish_dataset(key)
 
 
-def test_happy_path(dask_client) -> None:
+def test_happy_path(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
     server_dask_client = EndpointDask(_connection_address=server_address)
     server_dask_client.listen_async(on_new_channel=_mirror_message)
@@ -60,7 +62,7 @@ def test_happy_path(dask_client) -> None:
     assert received_data.payload(MessageDataForTest) == data
 
 
-def test_big_data(dask_client) -> None:
+def test_big_data(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
     server_dask_client = EndpointDask(_connection_address=server_address)
     server_dask_client.listen_async(on_new_channel=_mirror_message)
