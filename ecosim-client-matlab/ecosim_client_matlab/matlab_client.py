@@ -17,7 +17,7 @@ class MatlabClient(Client):
         self,
         config_parser: ConfigParser,
         config_overrides: ClientConfigOverride,
-        dask_connection: bool = False,
+        dask_connection: bool = False,  # TODO_MERGE: clean up after the merge
     ):
         super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_overrides), dask_connection)
         self._simulator: MatlabSimulator = MatlabSimulator(

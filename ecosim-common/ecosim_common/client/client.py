@@ -51,11 +51,12 @@ class Client(ShutdownListener):
     def __init__(
         self,
         client_config: ClientConfig,
-        dask_connector: bool = False,
+        dask_connector: bool = False,  # TODO_MERGE: clean up after the merge
     ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
+        # TODO_MERGE: clean up after the merge
         self._channel_connector: ESPChannelConnector = DaskConnector() if dask_connector else SocketConnector()
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
@@ -241,7 +242,7 @@ class Client(ShutdownListener):
         Client.logger.debug(
             f"  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}",
         )
-        Client.logger.debug("Attempting to send back")
+        Client.logger.debug("_handle_simulation_setup: Attempting to send back")
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
     def _handle_simulation_start(
