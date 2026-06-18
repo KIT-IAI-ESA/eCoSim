@@ -38,8 +38,7 @@ def _listen_blocking(
             except Exception as e:
                 is_finished.set()
                 is_finished_global.set()
-                DaskChannel._logger.debug("Error when processing message.")
-                DaskChannel._logger.debug(str(e))
+                DaskChannel._logger.error(f"Error when processing message: {e}")
                 dd_client.run(ShutdownManager().set_dask_shutdown)
                 raise e
 
@@ -52,7 +51,8 @@ class DaskChannel(ESPChannel):
         esp_dask: ESPDask,
     ):
         self._internal_dask_client = esp_dask
-        self._is_finished: dd.Event = dd.Event(name="client_finish_"+esp_dask._internal_dask_id)
+        # TODO_AFTER_MERGE: refactor after merge to not violate access to internal data
+        self._is_finished: dd.Event = dd.Event(name=f"client_finish_{esp_dask._internal_dask_id}")
         self._is_finished_global: dd.Event = dd.Event(name="global_finish")
 
     @override
@@ -72,8 +72,11 @@ class DaskChannel(ESPChannel):
 
         async def listen_start() -> None:
             future = dask_client.submit(
-                _listen_blocking, on_rec=on_message,  dask_client=self._internal_dask_client,
-                event_name="client_finish_"+self._internal_dask_client._internal_dask_id,
+                _listen_blocking,
+                on_rec=on_message,
+                dask_client=self._internal_dask_client,
+                # TODO_AFTER_MERGE: refactor after merge to not violate access to internal data
+                event_name=f"client_finish_{self._internal_dask_client._internal_dask_id}",
             )
             dd.fire_and_forget(future)
 

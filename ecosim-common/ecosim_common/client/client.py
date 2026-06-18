@@ -51,12 +51,12 @@ class Client(ShutdownListener):
     def __init__(
         self,
         client_config: ClientConfig,
-        dask_connector: bool = False,  # TODO_MERGE: clean up after the merge
+        dask_connector: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
-        # TODO_MERGE: clean up after the merge
+        # TODO_AFTER_MERGE: clean up after the merge
         self._channel_connector: ESPChannelConnector = DaskConnector() if dask_connector else SocketConnector()
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
