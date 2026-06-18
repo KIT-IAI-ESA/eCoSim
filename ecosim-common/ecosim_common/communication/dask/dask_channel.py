@@ -117,7 +117,7 @@ class DaskChannel(ESPChannel):
             DaskChannel._logger.debug(
                 f"Send messsage to server failed - recreating dask client connection and try again. Error: {e}",
             )
-            self._internal_dask_client.connect(connection_address=self._internal_dask_client.connection_address())
+            self._internal_dask_client.connect()
             self._internal_dask_client.send(
                 SimpleDaskMessage.of_esp_channel_message(message=message),
             )
