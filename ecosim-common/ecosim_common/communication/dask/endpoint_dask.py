@@ -54,17 +54,14 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _logger = ESPLogger("EndpointDask")
 
     _connection_address: ConnectionAddress = field()
-    _closed: dd.Event = field(default_factory=dd.Event)
-    _listening: dd.Event = field(default_factory=dd.Event)
-    _global_finish: dd.Event = field(default_factory=dd.Event)
+    _closed: dd.Event = field(default_factory=lambda: dd.Event(name="server_closed"))
+    _listening: dd.Event = field(default_factory=lambda: dd.Event(name="server_listen"))
+    _global_finish: dd.Event = field(default_factory=lambda: dd.Event(name="global_finish"))
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
     _internal_dask_client: dd.Client = field(default_factory=dd.get_client)
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
-        self._closed.name = "server_closed"
-        self._listening.name = "server_listen"
-        self._global_finish.name = "global_finish"
         # Ensure Events are cleared. Mostly for testing purposes
         self._closed.clear()
         self._listening.clear()
