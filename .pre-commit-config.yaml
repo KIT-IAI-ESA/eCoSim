@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -24,7 +24,7 @@ repos:
         args: [ '--max-line-length=150', '--extend-ignore=E128,E124,E131,E127,E122' ]
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.4.1
+    rev: 3.6.1
     hooks:
       - id: editorconfig-checker
         # disable for python files since flake8 is already checking the linewidth
