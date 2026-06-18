@@ -24,6 +24,7 @@ class InterfaceValueHistory:
         repositories: Repositories,
         simulation_config: SimulationConfig,
     ):
+        # TODO_AFTER_MERGE: find common abstraction
         try:  # use dask.Lock if using dask
             dd.get_client()
             self.__thread_lock: dd.Lock | threading.Lock = dd.Lock()

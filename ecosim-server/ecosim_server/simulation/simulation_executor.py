@@ -31,6 +31,7 @@ from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
+# TODO_AFTER_MERGE: we probably need an abstract SimulationExecutor
 class SimulationExecutor:
     logger = ESPLogger("SimulationExecutor")
 
@@ -38,10 +39,10 @@ class SimulationExecutor:
         self,
         simulation_config: SimulationConfig,
         server_config: ServerConfig,
-        server_state: ServerState | ServerStateDask,
+        server_state: ServerState | ServerStateDask,  # TODO_AFTER_MERGE: find common abstraction
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
-        using_dask: bool = False,
+        using_dask: bool = False,  # TODO_AFTER_MERGE: find better solution
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -63,6 +64,7 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
+        # TODO_AFTER_MERGE: find better solution
         self._using_dask = using_dask
         if using_dask:
             self._state_variable = dd.Queue("server_state")
@@ -73,6 +75,7 @@ class SimulationExecutor:
         rendering_socket: RenderingSocket | None,
     ) -> None:
         self._rendering_socket = rendering_socket
+        # TODO_AFTER_MERGE: find better solution
         if self._using_dask:
             self._server_state = deserialize(*self._state_variable.get())
             self._update_client_communication()
@@ -105,11 +108,13 @@ class SimulationExecutor:
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
     def _stop_simulation(self) -> None:
+        # TODO_AFTER_MERGE: find better solution
         if self._using_dask:
             self._server_state = deserialize(*self._state_variable.get())
             self._update_client_communication()
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
+        # TODO_AFTER_MERGE: find better solution
         if self._using_dask:
             self._state_variable.put(serialize(self._server_state))
             self._sim_repo.update(SimulationState.FINISHED)
@@ -117,6 +122,7 @@ class SimulationExecutor:
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
+            # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
                 self._server_state = deserialize(*self._state_variable.get())
                 self._update_client_communication()
@@ -127,6 +133,7 @@ class SimulationExecutor:
                 self._server_state.client_states.simulation_stopped(
                     client_id=message.client_id,
                 )
+            # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
                 self._state_variable.put(serialize(self._server_state))
             if not self._using_dask:
@@ -140,6 +147,7 @@ class SimulationExecutor:
         SimulationExecutor.logger.info(
             "Starting simulation on all clients and wait for successful start",
         )
+        # TODO_AFTER_MERGE: find better solution
         if self._using_dask:
             self._server_state = deserialize(*self._state_variable.get())
             self._update_client_communication()
@@ -147,12 +155,14 @@ class SimulationExecutor:
         self._client_communication.broadcast(
             ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START),
         )
+        # TODO_AFTER_MERGE: find better solution
         if self._using_dask:
             self._server_state = deserialize(*self._state_variable.get())
             self._update_client_communication()
             self._state_variable.put(serialize(self._server_state))
         while ((not self._server_state.have_all_clients_started_simulation()) and
                self._server_state.are_all_clients_connected_and_ready()):
+            # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
                 self._server_state = deserialize(*self._state_variable.get())
                 self._update_client_communication()
@@ -168,6 +178,7 @@ class SimulationExecutor:
                         client_id=message.client_id,
                         client_sim_step_data=message.payload(ClientSimStepData),
                     )
+            # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
                 self._state_variable.put(serialize(self._server_state))
                 # In case of XMLParseError during initialization, break the loop

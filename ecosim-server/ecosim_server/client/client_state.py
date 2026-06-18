@@ -187,6 +187,7 @@ class ClientStates(ShutdownListener):
         return tuple(client_state.client_id for client_state in self.client_states.values())
 
 
+# TODO_AFTER_MERGE: find common abstraction with CLientStates
 class ClientStatesDask(ShutdownListener):
     _logger = ESPLogger("ClientStatesDask")
     thread_lock = dd.Lock()

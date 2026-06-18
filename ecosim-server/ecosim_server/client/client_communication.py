@@ -21,7 +21,7 @@ class ClientCommunication:
 
     def __init__(
         self,
-        client_states: ClientStates | ClientStatesDask,
+        client_states: ClientStates | ClientStatesDask,  # TODO_AFTER_MERGE: find common abstraction
         client_message_buffer: ClientMessageBuffer,
     ):
         self._client_states = client_states
