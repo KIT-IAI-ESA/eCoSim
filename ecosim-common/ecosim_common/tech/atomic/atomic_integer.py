@@ -40,6 +40,7 @@ class AtomicInteger:
             return self._value
 
 
+# TODO_AFTER_MERGE: common abstraction between both atomic integers
 class AtomicIntegerDask:
     def __init__(
         self,
