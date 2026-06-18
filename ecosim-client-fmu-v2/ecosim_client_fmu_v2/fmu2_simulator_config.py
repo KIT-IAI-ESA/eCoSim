@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, ClassVar
 from uuid import uuid4
@@ -31,28 +33,7 @@ class FMU2SimulatorConfig:
         simulator_name: str,
         fmu_config: FMU2Config,
     ) -> FMU2SimulatorConfig:
-        try:
-            model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
-        except Exception:
-            # For identifying FMUs that throw XMLParseErrors
-            FMU2SimulatorConfig._logger.debug("Model failed to read initially. Reloading model description.")
-            for i in range(2):
-                try:
-                    importlib.reload(fmpy)
-                    model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
-                    break
-                except Exception as ecpt:
-                    unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir="./failed_fmus/"+simulator_name)
-                    # FMU2SimulatorConfig._logger.error(str(ecpt))
-                    FMU2SimulatorConfig._logger.debug(f"HERE IS THE UNZIP_DIR FOR THE FAIL: {unzip_dir}")
-                    FMU2SimulatorConfig._logger.debug("Reading modelDescription.xml directly.")
-                    try:
-                        importlib.reload(fmpy)
-                        model_description = fmpy.read_model_description("./failed_fmus/"+simulator_name+"/modelDescription.xml")
-                    except Exception:
-                        pass
-                    if i == 1:
-                        raise ecpt
+        model_description = cls.read_model_description(fmu_config)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
         output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
@@ -65,6 +46,30 @@ class FMU2SimulatorConfig:
             _unzip_dir=unzip_dir,
             _fmu_file=fmu_config.fmu_file,
         )
+
+    @classmethod
+    def read_model_description(cls, fmu_config: FMU2Config) -> ModelDescription:
+        try:
+            return fmpy.read_model_description(str(fmu_config.fmu_file))
+        except Exception as first_exception:
+            nano_seconds = time.time_ns()
+            today = datetime.now()
+            temp_dir_name = f"{today.strftime('%Y-%m-%d %H:%M:%S')}.{nano_seconds % 1_000_000_000:09d}"
+            # For identifying FMUs that throw XMLParseErrors
+            FMU2SimulatorConfig._logger.warning(f"Model failed to read initially with '{first_exception}'. Trying to reload model description.")
+            for i in range(2):
+                try:
+                    importlib.reload(fmpy)
+                    return fmpy.read_model_description(str(fmu_config.fmu_file))
+                except Exception as inner_exception:
+                    unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir=f"./failed_fmus/{temp_dir_name}")
+                    FMU2SimulatorConfig._logger.debug(f"Reading modelDescription.xml directly from {unzip_dir}")
+                    try:
+                        importlib.reload(fmpy)
+                        return fmpy.read_model_description(f"./failed_fmus/{temp_dir_name}/modelDescription.xml")
+                    except Exception:
+                        FMU2SimulatorConfig._logger.warning(f"Failed to read modelDescription.xml on {i+1}. attempt: {inner_exception}")
+            raise first_exception
 
     def is_fmi_version(
         self,
