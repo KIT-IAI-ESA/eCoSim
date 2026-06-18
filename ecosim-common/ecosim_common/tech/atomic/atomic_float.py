@@ -40,6 +40,7 @@ class AtomicFloat:
             return self._value
 
 
+# TODO_AFTER_MERGE: common abstraction between both atomic floats
 class AtomicFloatDask:
     def __init__(
         self,
