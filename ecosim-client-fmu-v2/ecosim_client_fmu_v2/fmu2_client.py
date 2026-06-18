@@ -22,7 +22,7 @@ class FMU2Client(Client):
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
-        dask_connection: bool = False,
+        dask_connection: bool = False,  # TODO_MERGE: clean up after the merge
     ):
         super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
         self._config_path = config_parser.config_file
@@ -33,7 +33,6 @@ class FMU2Client(Client):
     @override
     def on_app_shutdown(self) -> None:
         super().on_app_shutdown()
-        print(f"Simulator is finished: {self._is_finished}")
         if self._simulator is not None:
             self._simulator.on_app_shutdown()
 
