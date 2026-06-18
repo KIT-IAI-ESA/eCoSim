@@ -51,7 +51,6 @@ class ESPDask(ShutdownListener):
 
     def connect(
         self,
-        connection_address: ConnectionAddress,
     ) -> None:
         dask_client = dd.get_client()
         dd.Queue(name=self._internal_dask_id, client=dask_client)

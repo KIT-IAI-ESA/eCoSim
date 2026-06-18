@@ -18,7 +18,7 @@ class DaskConnector(ESPChannelConnector):
     @override
     def connect(
         self,
-        connection_address: ConnectionAddress,
+        connection_address: ConnectionAddress,  # TODO_AFTER_MERGE: remove connection address since it is not used
         timeout_in_seconds: int = 30,
     ) -> ESPChannel:
         start_time = time.time()
@@ -26,7 +26,7 @@ class DaskConnector(ESPChannelConnector):
         connected: bool = False
         while not connected and (time.time() - start_time) < timeout_in_seconds:
             try:
-                esp_dask.connect(connection_address)
+                esp_dask.connect()
                 connected = True
             except Exception as e:
                 DaskConnector._logger.warning(
