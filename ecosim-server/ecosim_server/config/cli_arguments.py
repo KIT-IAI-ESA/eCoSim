@@ -180,6 +180,7 @@ class CLIArguments(AppConfig):
         )
 
 
+# TODO_AFTER_MERGE: find common abstraction with existing CLIArguments
 class CLIArgumentsHPC(AppConfig):
     def __init__(
         self,

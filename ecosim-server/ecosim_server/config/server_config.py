@@ -20,6 +20,7 @@ class ServerConfig:
     database: DatabaseConfig
 
     @staticmethod
+    # TODO_AFTER_MERGE: find common abstraction with existing CLIArguments
     def of_cli_args(args: CLIArguments | CLIArgumentsHPC) -> ServerConfig:
         config = ConfigParser(args.server_config())
         return ServerConfig(
