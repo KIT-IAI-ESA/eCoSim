@@ -268,6 +268,7 @@ class Server(AbstractServer, ShutdownListener):
 
 
 # TODO_AFTER_MERGE: extract to custom package/file
+# TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
 class Dask_Server(AbstractServer, ShutdownListener):
     _logger = ESPLogger("Server")
 
@@ -311,7 +312,7 @@ class Dask_Server(AbstractServer, ShutdownListener):
         server_state = dd.Queue("server_state")
         server_state.put(serialize(self._server_state))
         self._channel_endpoint.listen_async(
-            on_new_channel=Channel_Handling(simulation_config=self._simulation_config)._handle_new_channel,      #
+            on_new_channel=ChannelHandling(simulation_config=self._simulation_config)._handle_new_channel,      #
         )
         Server._logger.info("Waiting for all clients to connect...")
 
@@ -384,11 +385,11 @@ class Dask_Server(AbstractServer, ShutdownListener):
         self._simulation_executor.force_stop()
 
 
-class Channel_Handling():
+class ChannelHandling():
 
     def __init__(
         self,
-                     simulation_config: SimulationConfig,
+        simulation_config: SimulationConfig,
     ) -> None:
         server_state = dd.Queue("server_state")
         self._server_state: ServerState = deserialize(*server_state.get())
@@ -399,19 +400,19 @@ class Channel_Handling():
         self,
         connection_data: ConnectionData,
     ) -> None:
-        client = dd.get_client()
+        dd_client = dd.get_client()
 
         async def async_handle() -> None:
-            future = client.submit(
+            future = dd_client.submit(
                 self._handle_client,
-                                       ClientConnection(
-                                        address=connection_data.client_address,
-                                        _channel=connection_data.channel,
-                                       ),
-                                       key=uuid.uuid4().hex,
+                ClientConnection(
+                    address=connection_data.client_address,
+                    _channel=connection_data.channel,
+                ),
+                key=uuid.uuid4().hex,
             )
             dd.fire_and_forget(future)
-        client.sync(async_handle)
+        dd_client.sync(async_handle)
 
     def _handle_client(
         self,
@@ -419,7 +420,7 @@ class Channel_Handling():
     ) -> None:
         client_id: ClientID | None = None
         dd.get_client()
-        dd.secede()
+        dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
         with connection:
             server_state = dd.Queue("server_state")
             try:

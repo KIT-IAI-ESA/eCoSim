@@ -150,7 +150,7 @@ def client_run(
         args: dict[str, Any],
 ) -> None:
     dd.get_client()
-    dd.secede()
+    dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
     simulator_client = client_function(args["config_parser"], args["config_override"], args["dask_connection"])
     simulator_client.start()
     simulator_client.wait_until_finished()

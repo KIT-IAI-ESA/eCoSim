@@ -21,7 +21,7 @@ def _listen_blocking(
     # finish_channel = dd.Variable("finished_channel", client=client)
     is_finished = dd.Event(name=event_name)
     is_finished_global = dd.Event(name="global_finish")
-    dd.secede()
+    dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
     while not is_finished.is_set() and not is_finished_global.is_set():
         # is_finished = finish_channel.get()
         message: ReceivedMessage | None = dask_client.receive()
