@@ -18,6 +18,7 @@ class ServerState(ShutdownListener):
     ):
         ShutdownManager().register_listener(self)
         self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
+        # TODO_AFTER_MERGE: search for a better abstraction
         try:
             get_client()
             self.client_states: ClientStates | ClientStatesDask = ClientStatesDask(simulation_config)
@@ -67,6 +68,7 @@ class ServerState(ShutdownListener):
         self._is_finished = True
 
 
+# TODO_AFTER_MERGE: find common abstraction
 class ServerStateDask(ShutdownListener):
 
     def __init__(
