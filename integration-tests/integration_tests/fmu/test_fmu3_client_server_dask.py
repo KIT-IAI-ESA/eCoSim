@@ -20,11 +20,11 @@ from integration_tests.server_client_dask.simple_test_client import SimpleTestCl
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.tech.resource_utils import config_parser_for_resource
-# import dask.distributed as dd
+import dask.distributed as dd
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
-def test_fmu3_client_server() -> None:
+def test_fmu3_client_server(dask_client: dd.Client) -> None:
     mock_client_interface = SimulatorInterfaceId(
         simulator_name="Mock_1",
         model_interface_id=ModelInterfaceId(

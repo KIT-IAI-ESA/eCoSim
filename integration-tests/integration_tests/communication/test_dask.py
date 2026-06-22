@@ -1,6 +1,4 @@
 import dask.distributed as dd
-import pytest
-from typing import Generator
 
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
@@ -12,15 +10,6 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.dask.endpoint_dask import EndpointDask
 from ecosim_common.communication.dask.dask_connector import DaskConnector
 from integration_tests.communication.message_data_for_test import MessageDataForTest
-
-
-@pytest.fixture
-def dask_client(scope: str = "session", autouse: bool = True) -> Generator[dd.Client]:
-    print("Dask client setup")
-    client = dd.Client(n_workers=4, threads_per_worker=4)
-    client.forward_logging()
-    print(client)
-    yield client
 
 
 def clear_datasets(client: dd.Client) -> None:
@@ -56,7 +45,6 @@ def test_happy_path(dask_client: dd.Client) -> None:
     )
 
     received_data = message_queue.get()
-    server_dask_client.close()
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
@@ -100,7 +88,6 @@ def test_big_data(dask_client: dd.Client) -> None:
     )
 
     received_data = message_queue.get()
-    server_dask_client.close()
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data

@@ -60,3 +60,7 @@ addopts = [
     "--strict-markers",
     "--ignore=locally"
 ]
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s %(levelname)s %(message)s"
+log_level = "DEBUG"

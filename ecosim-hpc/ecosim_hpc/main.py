@@ -15,6 +15,7 @@ from ecosim_server.server import Dask_Server
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.data.repositories import Repositories
 from ecosim_hpc.data.repositories_db import RepositoriesDB
+from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
 
 
 def get_mpi_interface() -> str:
@@ -55,6 +56,7 @@ def main() -> None:
     ShutdownManager().init()
     dask_client.run(shutdown_manager_worker)
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
+    dask_client.register_plugin(DaskLoggingPlugin(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO))
     dask_client.run(init_logger_worker, logging.DEBUG if args.debug_enabled() else logging.INFO)
     dask_client.forward_logging()
 

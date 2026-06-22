@@ -45,7 +45,7 @@ def _listen(
                 ),
                 )
                 current_connections.append(dask_id)
-    print(f"Are things set? {closed.is_set()} {global_finish.is_set()}")
+    EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
     EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
 
 
@@ -54,8 +54,8 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _logger = ESPLogger("EndpointDask")
 
     _connection_address: ConnectionAddress = field()
-    _closed: dd.Event = field(default_factory=lambda: dd.Event(name="server_closed"))
-    _listening: dd.Event = field(default_factory=lambda: dd.Event(name="server_listen"))
+    _server_closed: dd.Event = field(default_factory=lambda: dd.Event(name="server_closed"))
+    _server_listening: dd.Event = field(default_factory=lambda: dd.Event(name="server_listen"))
     _global_finish: dd.Event = field(default_factory=lambda: dd.Event(name="global_finish"))
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
     _internal_dask_client: dd.Client = field(default_factory=dd.get_client)
@@ -63,8 +63,8 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
         # Ensure Events are cleared. Mostly for testing purposes
-        self._closed.clear()
-        self._listening.clear()
+        self._server_closed.clear()
+        self._server_listening.clear()
         self._global_finish.clear()
 
     @override
@@ -73,16 +73,16 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         on_new_channel: Callable[[ConnectionData], None],
     ) -> None:
         EndpointDask._logger.debug("Starting to listen")
-        if self._listening.is_set():
+        if self._server_listening.is_set():
             EndpointDask._logger.warning(
                 f"Dask client is already listening to: {self._connection_address}. So nothing is done",
             )
             return
 
-        self._listening.set()
+        self._server_listening.set()
 
         async def listen_start() -> None:
-            future = self._internal_dask_client.submit(_listen, on_new_channel, self._closed)
+            future = self._internal_dask_client.submit(_listen, on_new_channel, self._server_closed)
             dd.fire_and_forget(future)
 
         self._internal_dask_client.sync(listen_start)
@@ -92,22 +92,27 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     @override
     def close(self) -> None:
-        if self._listening.is_set():
-            self._listening.clear()
-            self._closed.set()
-            # closed = dd.Variable("closed")
-            # closed.set(self._closed)
-            # channel_close = dd.Variable("finished_channel")
-            # channel_close.set(self._closed)
-            if self._internal_dask_client.status == "running":
-                try:
-                    for key in self._internal_dask_client.datasets.keys():
-                        self._internal_dask_client.unpublish_dataset(key)
-                except KeyError:
-                    print(self._internal_dask_client.datasets.keys())
+        if not self._internal_dask_client.status == "running":
+            EndpointDask._logger.warning(f"Dask client is not running: {self._connection_address}. So nothing is done")
+            return
+        if not self._server_listening.is_set():
+            EndpointDask._logger.debug(f"Server is not listening: {self._connection_address}. So nothing is done")
+            return
+        self._server_listening.clear()
+        self._server_closed.set()
+        # closed = dd.Variable("closed")
+        # closed.set(self._closed)
+        # channel_close = dd.Variable("finished_channel")
+        # channel_close.set(self._closed)
+        if self._internal_dask_client.status == "running":
+            try:
+                for key in self._internal_dask_client.datasets.keys():
+                    self._internal_dask_client.unpublish_dataset(key)
+            except KeyError:
+                print(self._internal_dask_client.datasets.keys())
 
-                except Exception as e:
-                    EndpointDask._logger.error(f"Something went wrong with closing connection on {self._connection_address}: {e}")
+            except Exception as e:
+                EndpointDask._logger.error(f"Something went wrong with closing connection on {self._connection_address}: {e}")
 
     def on_app_shutdown(self) -> None:
         self.close()
