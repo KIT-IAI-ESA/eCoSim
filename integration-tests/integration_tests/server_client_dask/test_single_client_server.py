@@ -7,9 +7,10 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+import dask.distributed as dd
 
 
-def test_client_server_single() -> None:
+def test_client_server_single(dask_client: dd.Client) -> None:
     server_host = "localhost"
     server_port = 47189
     steps = 100

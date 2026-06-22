@@ -90,10 +90,15 @@ class ShutdownManager:
 
     def __trigger_shutdown(self) -> None:
         self.shutdown_event.set()
-        with self._lock:
+        with (self._lock):
             for listener in self._listener:
                 if listener is not None:
                     listener.on_app_shutdown()
+            self._logger.debug("All listeners notified - resetting ShutdownManager itself.")
+            self._listener.clear()
+            self._instance = None
+            self._shutdown_event = None
+            self._init = False
 
     def register_listener(
         self,

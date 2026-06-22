@@ -16,9 +16,10 @@ from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+import dask.distributed as dd
 
 
-def test_codependent_clients_server() -> None:
+def test_codependent_clients_server(dask_client: dd.Client) -> None:
     server_host = "localhost"
     server_port = 23921
     steps = 100

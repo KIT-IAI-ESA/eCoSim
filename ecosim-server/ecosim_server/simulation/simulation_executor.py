@@ -395,6 +395,7 @@ class SimulationExecutor:
         message_types = (MessageType.SIMULATION_STEP,)
         all_clients_handled_event = threading.Event()
 
+        # TODO_AFTER_MERGE: find a common abstraction
         if self._using_dask:
             # This while loop can take between 0.03 and 0.13 seconds to complete.
             # Might need to look into alternative.
@@ -552,6 +553,7 @@ class SimulationExecutor:
         )
 
 
+# TODO_AFTER_MERGE: extract dask stuff and find a common abstraction
 def _handle_received_sim_step_dask(
         received_message: BufferedClientMessage,
         ready_for_execution_data_by_clients: tuple[dict[str, Any], list[bytes | memoryview[int]]],
@@ -561,7 +563,7 @@ def _handle_received_sim_step_dask(
     dd.get_client()
     client_id = received_message.client_id
     if received_message.message.correlation_id().to_int() != current_step:
-        print(
+        SimulationExecutor.logger.debug(
             f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. " +
                 f"Expected {current_step} but got {received_message.message.correlation_id()}",
         )
@@ -570,7 +572,7 @@ def _handle_received_sim_step_dask(
         ClientSimStepData,
     )
 
-    print(
+    SimulationExecutor.logger.debug(
             f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}",
     )
     interface_values = tuple(client_sim_step_data.interface_values)
@@ -583,7 +585,7 @@ def _handle_received_sim_step_dask(
     current_step_data: CurrentStepData = deserialize(*current_step_data_queue.get())
     current_step_data.add_received_data(client_id, interface_values)
     current_step_data_queue.put(serialize(current_step_data))
-    print(
+    SimulationExecutor.logger.debug(
         f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}: DONE",
     )
 

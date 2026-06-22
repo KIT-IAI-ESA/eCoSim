@@ -90,10 +90,11 @@ def generate_simple_test_server(
         step_size_in_ms=step_size_in_ms,
         restore=restore_simulation_run,
     )
+    repositories: Repositories
     if repository_type == RepositoryType.DB:
-        repositories: Repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
     else:
-        repositories: Repositories = RepositoriesInMemory()
+        repositories = RepositoriesInMemory()
 
     server = Dask_Server(
         server_config=server_config,

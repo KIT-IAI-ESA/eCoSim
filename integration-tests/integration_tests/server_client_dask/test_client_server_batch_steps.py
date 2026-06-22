@@ -1,7 +1,9 @@
-from integration_tests.server_client.pre_sets.pre_set_two_clients import PreSetTwoClientsData
+import dask.distributed as dd
+
+from integration_tests.server_client_dask.pre_sets.pre_set_two_clients import PreSetTwoClientsData
 
 
-def test_client_server_batch_steps(pre_set_two_clients: PreSetTwoClientsData) -> None:
+def test_client_server_batch_steps(dask_client: dd.Client, pre_set_two_clients: PreSetTwoClientsData) -> None:
     for step in range(5):
         pre_set_two_clients.add_client_1_measurement(
             step=step,
@@ -23,7 +25,7 @@ def test_client_server_batch_steps(pre_set_two_clients: PreSetTwoClientsData) ->
     pre_set_two_clients.verify_successful_run()
 
 
-def test_client_server_batch_steps_with_empty_repository(pre_set_two_clients: PreSetTwoClientsData) -> None:
+def test_client_server_batch_steps_with_empty_repository(dask_client: dd.Client, pre_set_two_clients: PreSetTwoClientsData) -> None:
     server_thread = pre_set_two_clients.start_server_async()
 
     pre_set_two_clients.start_client_1_async()
@@ -34,7 +36,7 @@ def test_client_server_batch_steps_with_empty_repository(pre_set_two_clients: Pr
     pre_set_two_clients.verify_successful_run()
 
 
-def test_client_server_batch_steps_different_completed_steps_step4_step5(pre_set_two_clients: PreSetTwoClientsData) -> None:
+def test_client_server_batch_steps_different_completed_steps_step4_step5(dask_client: dd.Client, pre_set_two_clients: PreSetTwoClientsData) -> None:
     for step in range(4):
         pre_set_two_clients.add_client_1_measurement(
             step=step,
@@ -57,7 +59,7 @@ def test_client_server_batch_steps_different_completed_steps_step4_step5(pre_set
     pre_set_two_clients.verify_successful_run()
 
 
-def test_client_server_batch_steps_different_completed_steps_step1_step5(pre_set_two_clients: PreSetTwoClientsData) -> None:
+def test_client_server_batch_steps_different_completed_steps_step1_step5(dask_client: dd.Client, pre_set_two_clients: PreSetTwoClientsData) -> None:
     for step in range(1):
         pre_set_two_clients.add_client_1_measurement(
             step=step,
