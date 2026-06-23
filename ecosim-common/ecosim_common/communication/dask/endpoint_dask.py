@@ -1,27 +1,26 @@
-import dask.distributed as dd
 from dataclasses import dataclass, field
-from typing import override, Callable
+from typing import Callable, override
 
+import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ESPChannelEndpoint, ConnectionData
-from ecosim_common.communication.dask.esp_dask import create_internal_dask_id, ESPDask
+from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.dask.dask_channel import DaskChannel
+from ecosim_common.communication.dask.esp_dask import ESPDask, create_internal_dask_id
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
 def _listen(
-        on_new_channel: Callable[[ConnectionData], None],
-        _closed: dd.Event,
+    on_new_channel: Callable[[ConnectionData], None],
+    _closed: dd.Event,
 ) -> None:
-
     dask_client = dd.get_client()
     EndpointDask._logger.debug("Now listening to Dask Client")
     closed = dd.Event(name="server_closed")
     global_finish = dd.Event(name="global_finish")
     current_connections: list[str] = []
     while not closed.is_set() and not global_finish.is_set():
-        if dask_client.status != 'running':
+        if dask_client.status != "running":
             EndpointDask._logger.error("Cannot listen to Dask client")
             raise Exception
         if len(dask_client.datasets) == len(current_connections):
@@ -37,10 +36,10 @@ def _listen(
 
                 client_address = ConnectionAddress.of_dask_client(dask_client)
                 on_new_channel(
-                ConnectionData(
+                    ConnectionData(
                         channel=DaskChannel(ESPDask(dask_id)),
                         client_address=client_address,
-                ),
+                    ),
                 )
                 current_connections.append(dask_id)
     EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
@@ -60,10 +59,6 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
-        # Ensure Events are cleared. Mostly for testing purposes
-        self._server_closed.clear()
-        self._server_listening.clear()
-        self._global_finish.clear()
 
     @override
     def listen_async(
