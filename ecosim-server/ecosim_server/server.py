@@ -452,8 +452,6 @@ class ChannelHandling():
                     self._server_state.is_running()
                     and self._server_state.client_states.is_connected(client_id)
                 ):
-                    # self._server_state = server_state.get()
-                    # server_state.put(self._server_state)
                     received_message = connection.receive()
 
                     if received_message is None:
@@ -463,11 +461,6 @@ class ChannelHandling():
                         calls += 1
                         if dd.Event(name="global_finish").is_set():
                             connection.close()
-                            # connection.close()
-                            # self._server_state = deserialize(*server_state.get())
-                            # self._server_state.force_stop()
-                            # dd.Event(name="stop_execution").set()
-                            # server_state.put(serialize(self._server_state))
                         continue
                     self._server_state = deserialize(*server_state.get())
                     self._server_state.message_buffer.add(

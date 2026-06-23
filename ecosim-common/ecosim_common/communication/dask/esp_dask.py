@@ -18,16 +18,6 @@ def is_raw_dask_client_connected(raw_dask_id: str) -> bool:
         return True
     else:
         return False
-    # if raw_dask_id in dask_client.datasets.keys():
-    #     return True
-    # else:
-    #     return False
-    # try:
-    #     data_var = dd.Variable(raw_dask_id,dask_client)
-    #     data_var.get(timeout=10)
-    #     return True
-    # except TimeoutError:
-    #     return False
 
 
 class ESPDask(ShutdownListener):
@@ -81,7 +71,6 @@ class ESPDask(ShutdownListener):
                         data_var.get()
                     data_var.put("empty")
                     ESPDask._logger.info("Successfully disconnected from Dask client.")
-                # else:
                 except TimeoutError:
                     ESPDask._logger.info("Already disconnected from Dask Client.")
             else:

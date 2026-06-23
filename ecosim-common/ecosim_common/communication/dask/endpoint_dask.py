@@ -19,10 +19,8 @@ def _listen(
     EndpointDask._logger.debug("Now listening to Dask Client")
     closed = dd.Event(name="server_closed")
     global_finish = dd.Event(name="global_finish")
-    current_connections: list[str] = []  # dd.publish.Datasets | dict[Any, Any] = {}  # dask_client.datasets
+    current_connections: list[str] = []
     while not closed.is_set() and not global_finish.is_set():
-        # closed = dd.Variable("closed")
-        # is_closed = closed.get()
         if dask_client.status != 'running':
             EndpointDask._logger.error("Cannot listen to Dask client")
             raise Exception
@@ -34,7 +32,7 @@ def _listen(
             raise Exception("Server listening ended sooner than anticipated.")
         else:
             for dask_id in dask_client.datasets.keys():
-                if dask_id in current_connections:  # .keys():
+                if dask_id in current_connections:
                     continue
 
                 client_address = ConnectionAddress.of_dask_client(dask_client)
@@ -86,9 +84,6 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
             dd.fire_and_forget(future)
 
         self._internal_dask_client.sync(listen_start)
-        # closed_event = dd.Event()
-        # closed = dd.Variable("closed")
-        # closed.set(closed_event)
 
     @override
     def close(self) -> None:
@@ -100,10 +95,6 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
             return
         self._server_listening.clear()
         self._server_closed.set()
-        # closed = dd.Variable("closed")
-        # closed.set(self._closed)
-        # channel_close = dd.Variable("finished_channel")
-        # channel_close.set(self._closed)
         if self._internal_dask_client.status == "running":
             try:
                 for key in self._internal_dask_client.datasets.keys():
