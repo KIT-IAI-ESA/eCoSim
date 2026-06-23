@@ -190,12 +190,12 @@ class ClientStates(ShutdownListener):
 # TODO_AFTER_MERGE: find common abstraction with CLientStates
 class ClientStatesDask(ShutdownListener):
     _logger = ESPLogger("ClientStatesDask")
-    thread_lock = dd.Lock()
 
     def __init__(
         self,
         simulation_config: SimulationConfig,
     ):
+        self.thread_lock = dd.Lock("client_states")
         ShutdownManager().register_listener(self)
         self.client_states: dict[ClientID, ClientState] = {}
         for client in simulation_config.clients:
@@ -210,7 +210,7 @@ class ClientStatesDask(ShutdownListener):
         client_config: ClientMetaData,
         client_connection: ClientConnection,
     ) -> bool:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             client = self.client_states.get(client_config.client_id(), None)
             if not client:
                 ClientStatesDask._logger.debug(
@@ -232,7 +232,7 @@ class ClientStatesDask(ShutdownListener):
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             ClientStatesDask._logger.debug(f"Resetting client state of {client_id}.")
             self.client_states[client_id].close_connection()
             self.client_states[client_id].connection = None
@@ -246,21 +246,21 @@ class ClientStatesDask(ShutdownListener):
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             self.client_states[client_id].interfaces_validated = True
 
     def step_size_accepted(
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             self.client_states[client_id].step_size_accepted = True
 
     def simulation_started(
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             self.client_states[client_id].simulation_started = True
             if all(state.simulation_started for state in self.client_states.values()):
                 self._all_clients_started_simulation_event.set()
@@ -294,14 +294,14 @@ class ClientStatesDask(ShutdownListener):
         return self.client_states[client_id] is not None and self.client_states[client_id].connected
 
     def are_all_clients_connected_and_ready(self) -> bool:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             return all((state.connected and state.ready_for_simulation) for state in self.client_states.values())
 
     def set_client_ready_for_simulation(
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             self.client_states[client_id].ready_for_simulation = True
             if all(state.ready_for_simulation for state in self.client_states.values()):
                 self._all_clients_ready_for_simulation.set()
@@ -310,7 +310,7 @@ class ClientStatesDask(ShutdownListener):
         self,
         client_id: ClientID,
     ) -> None:
-        with ClientStatesDask.thread_lock:
+        with self.thread_lock:
             self.client_states[client_id].stopped_simulation = True
             if all((state.stopped_simulation or state.connected is False) for state in self.client_states.values()):
                 self._all_clients_stopped_simulation_event.set()
