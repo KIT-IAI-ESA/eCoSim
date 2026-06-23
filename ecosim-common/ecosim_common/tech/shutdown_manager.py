@@ -105,6 +105,9 @@ class ShutdownManager:
         listener: ShutdownListener,
     ) -> None:
         with self._lock:
+            if self.shutdown_event.is_set():
+                listener.on_app_shutdown()
+                return
             self._listener.append(listener)
 
     def is_shutdown(self) -> bool:
