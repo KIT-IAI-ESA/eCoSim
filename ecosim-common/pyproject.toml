@@ -22,7 +22,6 @@ dependencies = [
     "art==6.5",
     "pydantic==2.12.4",
     "websockets==15.0.1",
-    "dask==2025.10.0",
     "dask[distributed]==2025.10.0",
 ]
 
