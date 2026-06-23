@@ -3,11 +3,11 @@ from __future__ import annotations
 import signal
 import sys
 import threading
-import dask.distributed as dd
 from abc import ABC, abstractmethod
 from types import FrameType
-from typing import List, Type, Any
+from typing import Any, List, Type
 
+import dask.distributed as dd
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -90,7 +90,7 @@ class ShutdownManager:
 
     def __trigger_shutdown(self) -> None:
         self.shutdown_event.set()
-        with (self._lock):
+        with self._lock:
             for listener in self._listener:
                 if listener is not None:
                     listener.on_app_shutdown()
@@ -120,6 +120,11 @@ class ShutdownManager:
     def set_dask_shutdown(self) -> None:
         self._logger.debug("Shutting down simulators on Dask Client")
         self.__trigger_shutdown()
+
+    @staticmethod
+    def reset_instance() -> None:
+        ShutdownManager._init = False
+        ShutdownManager._instance = None
 
 
 class ShutdownCommDask:
