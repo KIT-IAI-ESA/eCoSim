@@ -134,7 +134,6 @@ class ShutdownCommDask:
         sig: int,
         frame: FrameType | None,
     ) -> None:
-        print("PROCESS INTERRUPTED!!!!!!!")
         self._dask_client.run(ShutdownManager().set_dask_shutdown, wait=True)
         self._dask_client.shutdown()
         self._dask_client.close()

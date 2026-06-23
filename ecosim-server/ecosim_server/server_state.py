@@ -74,10 +74,8 @@ class ServerStateDask(ShutdownListener):
     def __init__(
         self,
         simulation_config: SimulationConfig,
-        # simulation_state_repository: SimulationStateRepository,
     ):
         ShutdownManager().register_listener(self)
-        # self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
         try:
             get_client()
             self.client_states: ClientStates | ClientStatesDask = ClientStatesDask(simulation_config)
@@ -106,8 +104,6 @@ class ServerStateDask(ShutdownListener):
     # callback of ShutdownManager => if this is called the server is interrupted
     def on_app_shutdown(self) -> None:
         self._is_interrupted = True
-        # if self._simulation_state_repository.current() != SimulationState.FINISHED:
-        # self.set_simulation_state(SimulationState.FAILED)
 
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self.client_states.wait_for_all_clients_connected_and_ready()
@@ -117,10 +113,6 @@ class ServerStateDask(ShutdownListener):
         state: bool,
     ) -> None:
         self._is_finished = state
-        # self.set_simulation_state(SimulationState.FINISHED)
-
-    # def set_simulation_state(self, simulation_state: SimulationState) -> None:
-        # self._simulation_state_repository.update(simulation_state)
 
     def force_stop(self) -> None:
         self.on_app_shutdown()

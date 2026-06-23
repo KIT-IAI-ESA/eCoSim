@@ -11,6 +11,9 @@ from ecosim_common.communication.dask.dask_messages import ReceivedMessage
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
+# Seperated from DaskChannel class due to serialization issues when submitting via dd_client.submit().
+# Class variables need to be explicitly passed to the function, rather than inherited if it was a class method.
+
 
 def _listen_blocking(
                     on_rec: Callable[[ESPChannelMessage], None],
@@ -18,18 +21,15 @@ def _listen_blocking(
                     event_name: str,
 ) -> None:
     dd_client = dd.get_client()
-    # finish_channel = dd.Variable("finished_channel", client=client)
     is_finished = dd.Event(name=event_name)
     is_finished_global = dd.Event(name="global_finish")
     dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
     while not is_finished.is_set() and not is_finished_global.is_set():
-        # is_finished = finish_channel.get()
         message: ReceivedMessage | None = dask_client.receive()
 
         if not message:
             is_finished.set()
             is_finished_global.set()
-            # finish_channel.set(is_finished)
             DaskChannel._logger.info("Received empty message -> closing connection")
 
         if (message is not None) and (message.to_esp_channel_message() is not None):
