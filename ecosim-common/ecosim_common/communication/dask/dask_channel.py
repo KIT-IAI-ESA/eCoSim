@@ -46,6 +46,7 @@ class DaskChannel(ESPChannel):
                 dask_client=self._internal_dask_client,
                 # TODO_AFTER_MERGE: refactor after merge to not violate access to internal data
                 event_name=f"client_finish_{self._internal_dask_client._internal_dask_id}",
+                pure=False,
             )
             dd.fire_and_forget(future)
 
