@@ -95,10 +95,6 @@ class ShutdownManager:
                 if listener is not None:
                     listener.on_app_shutdown()
             self._logger.debug("All listeners notified - resetting ShutdownManager itself.")
-            self._listener.clear()
-            self._instance = None
-            self._shutdown_event = None
-            self._init = False
 
     def register_listener(
         self,
@@ -106,6 +102,7 @@ class ShutdownManager:
     ) -> None:
         with self._lock:
             if self.shutdown_event.is_set():
+                self._logger.warning("Shutdown event already set - notifying listener.")
                 listener.on_app_shutdown()
                 return
             self._listener.append(listener)
@@ -123,43 +120,11 @@ class ShutdownManager:
 
     @staticmethod
     def reset_instance() -> None:
+        ShutdownManager._listener.clear()
         ShutdownManager._init = False
         ShutdownManager._instance = None
-
-
-class ShutdownCommDask:
-    def init(self) -> None:
-        signal.signal(signal.SIGINT, self._interrupt_signal_handler)
-        signal.signal(signal.SIGTERM, self._terminate_signal_handler)
-        # Setup handlers for exception-related signals
-        signal.signal(signal.SIGSEGV, self._other_interrupts_handler)
-        signal.signal(signal.SIGABRT, self._other_interrupts_handler)
-        signal.signal(signal.SIGFPE, self._other_interrupts_handler)
-        self._dask_client = dd.get_client()
-
-    def _interrupt_signal_handler(
-        self,
-        sig: int,
-        frame: FrameType | None,
-    ) -> None:
-        self._dask_client.run(ShutdownManager().set_dask_shutdown, wait=True)
-        self._dask_client.shutdown()
-        self._dask_client.close()
-
-    def _terminate_signal_handler(
-        self,
-        sig: int,
-        frame: FrameType | None,
-    ) -> None:
-        self._dask_client.run(ShutdownManager().set_dask_shutdown, wait=True)
-        self._dask_client.shutdown()
-        self._dask_client.close()
-
-    def _other_interrupts_handler(
-        self,
-        sig: int,
-        frame: FrameType | None,
-    ) -> None:
-        self._dask_client.run(ShutdownManager.set_dask_shutdown, wait=True)
-        self._dask_client.shutdown()
-        self._dask_client.close()
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGSEGV, signal.SIG_DFL)
+        signal.signal(signal.SIGABRT, signal.SIG_DFL)
+        signal.signal(signal.SIGFPE, signal.SIG_DFL)

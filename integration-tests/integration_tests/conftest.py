@@ -37,7 +37,9 @@ def setup_shutdown_manager() -> Generator[None, Any, None]:
 @pytest.fixture(scope="function")
 def dask_client() -> Generator[dd.Client, Any, None]:
     pytest_fixture_logger.info("Creating new distributed dask client")
+    ShutdownManager().reset_instance()
     client = dd.Client(n_workers=4, threads_per_worker=4)
+    ShutdownManager().init()
     client.forward_logging()
     client.register_plugin(DaskLoggingPlugin(log_level=logging.DEBUG))
     yield client
@@ -51,11 +53,26 @@ def pytest_runtest_teardown(item: Item, nextitem: Item | None) -> None:
     'setup_shutdown_manager' fixture. This would result in errors since during shutdown
     a lot of dask stuff is done.
     """
+    # noinspection PyUnusedLocal
+    client: dd.Client | None = None
     try:
         client = dd.get_client()
-        pytest_fixture_logger.info(f"Closing dask client: {client}")
-        client.close()
-        client.cluster.close()
-        dd.client._global_clients.clear()
     except Exception:
-        pass
+        pytest_fixture_logger.debug("Dask teardown: failed to get_client -> nothing to do (this is expected behaviour if no dask client is running)")
+        return
+
+    if client is None:
+        pytest_fixture_logger.debug("Dask teardown: no dask client found -> nothing to do.")
+        return
+
+    try:
+        pytest_fixture_logger.info(f"Closing dask client: {client}")
+        for key in client.datasets.keys():
+            pytest_fixture_logger.debug(f"Dask teardown: key in dataset: {key} = {client.get_dataset(key)}")
+        client.close()
+        if client.cluster is not None:
+            client.cluster.close()
+        if dd.client._global_clients is not None:
+            dd.client._global_clients.clear()
+    except Exception as e:
+        pytest_fixture_logger.error(f"Closing dask client failed: {e}")
