@@ -88,15 +88,19 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         if not self._server_listening.is_set():
             EndpointDask._logger.debug(f"Server is not listening: {self._connection_address}. So nothing is done")
             return
+        # TODO_AFTER_MERGE: find a better place for the dask shutdown routine
+        #       also, there is currently a (very unlikely) race condition between setting '_server_listening' in 'listen_async' and the method
+        #       'close', that checks for _server_listening.is_set()
         self._server_listening.clear()
         self._server_closed.set()
         if self._internal_dask_client.status == "running":
+            current_key: str = ""
             try:
                 for key in self._internal_dask_client.datasets.keys():
+                    current_key = key
                     self._internal_dask_client.unpublish_dataset(key)
-            except KeyError:
-                print(self._internal_dask_client.datasets.keys())
-
+            except KeyError as e:
+                EndpointDask._logger.error(f"Something went wrong unpublishing key '{current_key}': {e}")
             except Exception as e:
                 EndpointDask._logger.error(f"Something went wrong with closing connection on {self._connection_address}: {e}")
 
