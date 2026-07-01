@@ -50,7 +50,7 @@ class FMU2SimulatorConfig:
     @classmethod
     def read_model_description(cls, fmu_config: FMU2Config) -> ModelDescription:
         try:
-            return fmpy.read_model_description(str(fmu_config.fmu_file))
+            return fmpy.read_model_description(str(fmu_config.fmu_file), validate=False)
         except Exception as first_exception:
             nano_seconds = time.time_ns()
             today = datetime.now()
