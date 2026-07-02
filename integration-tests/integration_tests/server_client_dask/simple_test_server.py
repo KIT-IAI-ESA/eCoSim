@@ -6,17 +6,17 @@ from enum import Enum
 from typing import List
 
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.config.server_config import ServerConfig, MainConfig, DatabaseConfig
-from ecosim_server.config.simulation_config import SimulationConfig, ClientSimulatorConfig
+from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
-from ecosim_server.server import AbstractServer, Dask_Server
+from ecosim_server.server import AbstractServer, DaskServer
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
 @dataclasses.dataclass
 class SimpleTestServer(AbstractServer):
-    server: Dask_Server
+    server: DaskServer
     server_config: ServerConfig
     simulation_config: SimulationConfig
     repositories: Repositories
@@ -69,7 +69,8 @@ def generate_simple_test_server(
             host=host,
             port=port,
         ),
-        database=database_config or DatabaseConfig(
+        database=database_config
+        or DatabaseConfig(
             host="",
             port=0,
             name="",
@@ -96,7 +97,7 @@ def generate_simple_test_server(
     else:
         repositories = RepositoriesInMemory()
 
-    server = Dask_Server(
+    server = DaskServer(
         server_config=server_config,
         simulation_config=simulation_config,
         repositories=repositories,

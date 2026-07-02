@@ -269,7 +269,7 @@ class Server(AbstractServer, ShutdownListener):
 
 # TODO_AFTER_MERGE: extract to custom package/file
 # TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
-class Dask_Server(AbstractServer, ShutdownListener):
+class DaskServer(AbstractServer, ShutdownListener):
     _logger = ESPLogger("Server")
 
     def __init__(
