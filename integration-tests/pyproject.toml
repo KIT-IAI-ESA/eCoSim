@@ -23,6 +23,7 @@ dependencies = [
     "distributed",
     "docker==7.1.0",
     "ecosim-client-fmu-v3>=0.13.0",
+    "ecosim-client-fmu-v2>=0.13.0",
     "ecosim-common>=0.13.0",
     "ecosim-server>=0.13.0",
     "mypy==1.18.2",
@@ -37,12 +38,14 @@ dependencies = [
     "pip==25.3",
     "psycopg[binary]==3.2.12",
     "multiprocessing-logging>=0.3.4",
+    "lxml==6.1.1"
 ]
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
+ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 
 [tool.mypy]
 mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v3"]

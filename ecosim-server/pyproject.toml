@@ -80,5 +80,7 @@ module = [
     # Ignore art library (not typed)
     "art",
     "sqlalchemy",
+    "dask.distributed",
+    "distributed.protocol",
 ]
 ignore_missing_imports = true
