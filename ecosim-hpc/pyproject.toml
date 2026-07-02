@@ -60,11 +60,13 @@ module = [
     "matlab",
     "matlab.engine",
     "sqlalchemy",
+    "sqlalchemy.*",
     # Ignore Pyro5 (not typed)
     "Pyro5",
     "Pyro5.*",
     # Ignore dask-mpi (not typed)
     "dask_mpi",
-    "dask_mpi.*"
+    "dask_mpi.*",
+    "dask.distributed",
 ]
 ignore_missing_imports = true
