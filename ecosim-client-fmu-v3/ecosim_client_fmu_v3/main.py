@@ -1,10 +1,8 @@
 import logging
 from time import sleep
 from art import tprint
-
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_common.client.config.cli_arguments import CLIArguments
-
 from ecosim_common.config import config_parser
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import ESPLogger, init_logger
@@ -13,7 +11,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 def main() -> None:
     tprint("eCoSimPy", font="tarty1", chr_ignore=True)
-    print(f"FMUv2 Client - {get_module_version('ecosim_client_fmu_v3')}")
+    print(f"FMUv3 Client - {get_module_version('ecosim_client_fmu_v3')}")
     sleep(0.5)
 
     args = CLIArguments()
@@ -33,5 +31,5 @@ def main() -> None:
     ShutdownManager().set_shutdown_at_application_end()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
