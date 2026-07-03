@@ -77,5 +77,6 @@ module = [
     "fmpy.*",
     # Ignore art library (not typed)
     "art",
+    "lxml",
 ]
 ignore_missing_imports = true
