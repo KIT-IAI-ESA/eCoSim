@@ -19,12 +19,11 @@ class DaskMessageHeader:
         byte_array_received_data = bytearray(raw)
         if len(byte_array_received_data) != DaskMessage.HEADER_BYTES:
             raise Exception(
-                f"Invalid byte array received. "
-                f"Header must be {DaskMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}",
+                f"Invalid byte array received. Header must be {DaskMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}",
             )
         unpacked_values = struct.unpack(
             DaskMessage.BYTE_FORMAT,
-            byte_array_received_data[:DaskMessage.HEADER_BYTES],
+            byte_array_received_data[: DaskMessage.HEADER_BYTES],
         )
         self.correlation_id: CorrelationId = CorrelationId.of_int(unpacked_values[0])
         self.message_type: MessageType = MessageType.of_int(unpacked_values[1])
@@ -37,10 +36,7 @@ class DaskMessageHeader:
         self,
         other: Any,
     ) -> bool:
-        return (
-            isinstance(other, DaskMessageHeader) and
-            self._raw == other._raw
-        )
+        return isinstance(other, DaskMessageHeader) and self._raw == other._raw
 
     def __hash__(self) -> int:
         return hash(self._raw)
@@ -49,8 +45,8 @@ class DaskMessageHeader:
 # TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class DaskMessage(ABC):
     HEADER_BYTES = 9
-    ENCODING = 'utf-8'
-    BYTE_FORMAT = '>LBL'
+    ENCODING = "utf-8"
+    BYTE_FORMAT = ">LBL"
 
     @abstractmethod
     def raw_message(self) -> bytes:
@@ -69,7 +65,6 @@ class DaskMessage(ABC):
 
 
 class ReceivedMessage(DaskMessage):
-
     def __init__(
         self,
         header: DaskMessageHeader,
