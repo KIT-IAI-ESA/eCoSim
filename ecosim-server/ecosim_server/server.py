@@ -419,7 +419,6 @@ class ChannelHandling():
         connection: ClientConnection,
     ) -> None:
         client_id: ClientID | None = None
-        dd.get_client()
         dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
         with connection:
             server_state = dd.Queue("server_state")
