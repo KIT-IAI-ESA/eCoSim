@@ -21,7 +21,7 @@ repos:
     rev: 7.3.0
     hooks:
       - id: flake8
-        args: [ '--max-line-length=150', '--extend-ignore=E128,E124,E131,E127,E122' ]
+        args: [ '--max-line-length=150', '--extend-ignore=E128,E124,E131,E127,E122,E203' ]
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: 3.6.1
@@ -87,9 +87,9 @@ repos:
         files: .*\.py
         pass_filenames: true
 
-# disable ruff until the aggressive collapsing is configurable
+#  # disable ruff until the aggressive collapsing is configurable
 #  - repo: https://github.com/astral-sh/ruff-pre-commit
-#    rev: v0.14.4
+#    rev: v0.15.20
 #    hooks:
 #      - id: ruff
 #        args: [--fix]
