@@ -3,11 +3,11 @@ import struct
 from abc import ABC, abstractmethod
 from typing import Any
 
+from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.channel.connection_address import ConnectionAddress
 
 
 class DaskMessageHeader:
@@ -46,6 +46,7 @@ class DaskMessageHeader:
         return hash(self._raw)
 
 
+# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class DaskMessage(ABC):
     HEADER_BYTES = 9
     ENCODING = 'utf-8'

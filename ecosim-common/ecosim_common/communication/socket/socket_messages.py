@@ -3,15 +3,14 @@ import struct
 from abc import ABC, abstractmethod
 from typing import Any
 
+from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.channel.connection_address import ConnectionAddress
 
 
 class SocketMessageHeader:
-
     def __init__(
         self,
         raw: bytes,
@@ -20,12 +19,11 @@ class SocketMessageHeader:
         byte_array_received_data = bytearray(raw)
         if len(byte_array_received_data) != SocketMessage.HEADER_BYTES:
             raise Exception(
-                f"Invalid byte array received. "
-                f"Header must be {SocketMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}",
+                f"Invalid byte array received. Header must be {SocketMessage.HEADER_BYTES} bytes but was {len(byte_array_received_data)}",
             )
         unpacked_values = struct.unpack(
             SocketMessage.BYTE_FORMAT,
-            byte_array_received_data[:SocketMessage.HEADER_BYTES],
+            byte_array_received_data[: SocketMessage.HEADER_BYTES],
         )
         self.correlation_id: CorrelationId = CorrelationId.of_int(unpacked_values[0])
         self.message_type: MessageType = MessageType.of_int(unpacked_values[1])
@@ -38,18 +36,16 @@ class SocketMessageHeader:
         self,
         other: Any,
     ) -> bool:
-        return (
-            isinstance(other, SocketMessageHeader) and
-            self._raw == other._raw
-        )
+        return isinstance(other, SocketMessageHeader) and self._raw == other._raw
 
     def __hash__(self) -> int:
         return hash(self._raw)
 
 
+# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class SocketMessage(ABC):
     HEADER_BYTES = 9
-    ENCODING = 'utf-8'
+    ENCODING = "utf-8"
     # > = the data should be packed using big-endian byte order (big-endian = most significant byte is stored first)
     # L = unsigned long (4 bytes - 0 to 4.294.967.295)
     # B = unsigned char (1 byte - 0 to 7)
@@ -57,7 +53,7 @@ class SocketMessage(ABC):
     # => in bytes: 4-1-4
     # => the 'header' is 9 bytes
     # the current format is [CORRELATION_ID][MESSAGE_TYPE][LENGTH]
-    BYTE_FORMAT = '>LBL'
+    BYTE_FORMAT = ">LBL"
 
     @abstractmethod
     def raw_message(self) -> bytes:
@@ -76,7 +72,6 @@ class SocketMessage(ABC):
 
 
 class ReceivedMessage(SocketMessage):
-
     def __init__(
         self,
         header: SocketMessageHeader,

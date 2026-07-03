@@ -10,6 +10,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.socket_messages import SocketMessage, SocketMessageHeader
 
 
+# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class SimpleSocketMessage(SocketMessage):
 
     @staticmethod
