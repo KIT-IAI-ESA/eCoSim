@@ -40,6 +40,13 @@ repos:
         pass_filenames: false
         types: [ python ]
       - id: mypy
+        name: mypy (ecosim-common-fmpy)
+        entry: python dev/run_mypy.py ecosim-common-fmpy
+        language: system
+        files: ^ecosim-common-fmpy/
+        pass_filenames: false
+        types: [ python ]
+      - id: mypy
         name: mypy (ecosim-server)
         entry: python dev/run_mypy.py ecosim-server
         language: system
