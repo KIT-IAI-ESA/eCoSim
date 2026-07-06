@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Dict, Any, ClassVar
+from typing import Any, ClassVar, Dict
 from uuid import uuid4
 
 import fmpy
-from fmpy.fmi3 import FMU3Slave
-from fmpy.model_description import ModelDescription, ScalarVariable
-
-from ecosim_client_fmu_v3.fmu3_config import FMU3Config
 from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from fmpy.fmi3 import FMU3Slave
+from fmpy.model_description import ModelDescription, ScalarVariable
 
 
 @dataclasses.dataclass(frozen=True)
@@ -27,11 +26,11 @@ class FMU3SimulatorConfig:
     def of(
         cls,
         simulator_name: str,
-        fmu_config: FMU3Config,
+        fmu_config: FMUBaseConfig,
     ) -> FMU3SimulatorConfig:
         model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
-        input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
-        output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+        input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
+        output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
             simulator_name=simulator_name,
             unzip_dir=fmpy.extract(fmu_config.fmu_file),

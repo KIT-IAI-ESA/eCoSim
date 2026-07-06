@@ -5,16 +5,17 @@ from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 
 
 class CLIArguments(AppConfig):
-
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        additional_parameters: list[AppConfigParameter] | None = None,
+    ) -> None:
         super().__init__(
             cli_description="This is the client of eCoSimPy.",
             parameters=[
                 AppConfigParameter(
                     name="config-file",
                     required=True,
-                    help_text="The path to the config file. This must be relative to the call path or it can "
-                              "be an absolute path.",
+                    help_text="The path to the config file. This must be relative to the call path or it can be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="debug",
@@ -42,7 +43,8 @@ class CLIArguments(AppConfig):
                     transform=lambda x: int(x),
                     help_text="The port for the image renderer socket on the target server. If not set no connection will be opened.",
                 ),
-            ],
+            ]
+            + (additional_parameters or []),
         )
 
     def config_file(self) -> Path:
@@ -66,3 +68,7 @@ class CLIArguments(AppConfig):
             server_port=self._args.server_port,
             image_renderer_port=self._args.image_renderer_port,
         )
+
+    def get_additional_parameter(self, name: str) -> str | bool | None:
+        parameter_name = AppConfigParameter(name=name, help_text="").to_parsed_arg_name()
+        return getattr(self._args, parameter_name, None)
