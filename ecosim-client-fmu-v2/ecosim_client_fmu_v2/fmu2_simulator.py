@@ -2,16 +2,15 @@ import shutil
 from typing import override
 
 import fmpy.fmi2
-
-from ecosim_client_fmu_v2.fmu2_config import FMU2Config
 from ecosim_client_fmu_v2.fmu2_simulator_config import FMU2SimulatorConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 
 
 class FMU2Simulator(ShutdownListener):
@@ -21,7 +20,7 @@ class FMU2Simulator(ShutdownListener):
     def of(
         cls,
         simulator_name: str,
-        fmu_config: FMU2Config,
+        fmu_config: FMUBaseConfig,
         execution_config: ExecutionConfig,
     ) -> "FMU2Simulator":
         simulator_config = FMU2SimulatorConfig.of(
@@ -116,14 +115,16 @@ class FMU2Simulator(ShutdownListener):
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
-        return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(
-                name=interface_name,
-                # we always assume float (like in the Java client)
-                value=self.get_output_float(interface_name),
-            )
-            for interface_name in self._execution_config.server_used_outputs()
-        ])
+        return ClientSimStepData.of_protocol_interface_values(
+            [
+                ProtocolInterfaceValue(
+                    name=interface_name,
+                    # we always assume float (like in the Java client)
+                    value=self.get_output_float(interface_name),
+                )
+                for interface_name in self._execution_config.server_used_outputs()
+            ],
+        )
 
     def get_output_boolean(
         self,

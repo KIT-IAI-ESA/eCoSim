@@ -1,27 +1,36 @@
 import logging
 from time import sleep
+
 from art import tprint
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
-from ecosim_common.client.config.cli_arguments import CLIArguments
 from ecosim_common.config import config_parser
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_common_fmpy.config.fmpy_cli_arguments import FMPyCliArguments
+from ecosim_common_fmpy.config.validate_fmu_file_or_error import validate_fmu_file_or_error
+from ecosim_common_fmpy.tech.fix_lmxl_threading_issues import fix_lmxl_threading_issues
 
 
 def main() -> None:
+    fix_lmxl_threading_issues()
+
     tprint("eCoSimPy", font="tarty1", chr_ignore=True)
     print(f"FMUv3 Client - {get_module_version('ecosim_client_fmu_v3')}")
     sleep(0.5)
 
-    args = CLIArguments()
+    args = FMPyCliArguments()
 
-    ShutdownManager().init()
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
+    ShutdownManager().init()
+
+    config = config_parser.ConfigParser(args.config_file())
+
+    if args.get_additional_parameter("validate-fmu-file-only"):
+        validate_fmu_file_or_error(config)
 
     main_logger = ESPLogger("main")
 
-    config = config_parser.ConfigParser(args.config_file())
     client = FMU3Client(config, args.config_overrides())
     main_logger.debug("Calling client.connect()")
     client.start()

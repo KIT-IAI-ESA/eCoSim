@@ -1,13 +1,13 @@
 import os.path
 
-from ecosim_client_fmu_v3.fmu3_config import FMU3Config
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from tests.tech.resource_utils import config_parser_for_resource
 
 
 # #SPEC
 def test_load() -> None:
-    config_parser = config_parser_for_resource('client_config.ini')
-    config = FMU3Config.of(config_parser)
+    config_parser = config_parser_for_resource("client_config.ini")
+    config = FMUBaseConfig.of_config_parser(config_parser)
 
     # FMU
-    assert str(config.fmu_file).endswith(os.path.join('path', 'to', 'fmu.fmu')), f"It was {config.fmu_file}"
+    assert str(config.fmu_file).endswith(os.path.join("path", "to", "fmu.fmu")), f"It was {config.fmu_file}"
