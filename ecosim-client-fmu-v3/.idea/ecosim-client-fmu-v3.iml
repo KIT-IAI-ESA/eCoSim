@@ -6,10 +6,12 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim_client_fmu_v3.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/dist" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12 virtualenv at ~/dev/ecosim/ecosim-client-fmu-v3/.venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
+    <orderEntry type="module" module-name="ecosim-common-fmpy" />
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="py.test" />

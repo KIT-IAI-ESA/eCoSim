@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "art==6.5",
     "ecosim-common>=0.13.0",
+    "ecosim-common-fmpy>=0.13.0",
     "setuptools==80.8.0",
     "fmpy==0.3.25",
     "pydantic==2.12.4",
@@ -29,6 +30,7 @@ dependencies = [
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
 
 [project.optional-dependencies]
 dev = [
@@ -66,7 +68,7 @@ exclude_lines = []
 #Repository = "https://github.com/yourusername/myapp"
 
 [tool.mypy]
-mypy_path = "../ecosim-common"
+mypy_path = ["../ecosim-common","../ecosim-common-fmpy"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 

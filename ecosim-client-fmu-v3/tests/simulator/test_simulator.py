@@ -1,15 +1,15 @@
-from ecosim_client_fmu_v3.fmu3_config import FMU3Config
 from ecosim_client_fmu_v3.fmu3_simulator import FMU3Simulator
 from ecosim_common.client.config.execution_config import ExecutionConfig
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from tests.tech.resource_utils import resource_path
 
 
 def test_simulator() -> None:
     step_size_in_seconds = 1
     simulator = FMU3Simulator.of(
-        simulator_name='test_simulator',
-        fmu_config=FMU3Config(
-            fmu_file=resource_path() / 'test_fmus/StateSpace.fmu',
+        simulator_name="test_simulator",
+        fmu_config=FMUBaseConfig(
+            fmu_file=resource_path() / "test_fmus/StateSpace.fmu",
         ),
         execution_config=ExecutionConfig(
             step_size_in_ms=step_size_in_seconds * 1000,
@@ -20,7 +20,7 @@ def test_simulator() -> None:
 
     simulator.do_step(
         input_values={
-            'u': [111, 222, 333],
+            "u": [111, 222, 333],
         },
         step_size_in_seconds=step_size_in_seconds,
     )
@@ -34,7 +34,7 @@ def test_simulator() -> None:
 
     simulator.do_step(
         input_values={
-            'u': [222, 444, 666],
+            "u": [222, 444, 666],
         },
         step_size_in_seconds=step_size_in_seconds,
     )
