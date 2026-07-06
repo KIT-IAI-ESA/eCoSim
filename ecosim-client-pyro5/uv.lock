@@ -232,7 +232,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "art", specifier = "==6.5" },
-    { name = "dask", specifier = "==2025.10.0" },
     { name = "dask", extras = ["distributed"], specifier = "==2025.10.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==1.18.2" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==25.3" },

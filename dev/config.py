@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-
 import sys
 from pathlib import Path
 from typing import List
@@ -11,6 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 SUBPROJECTS: List[tuple[Path, List[str]]] = [
     (REPO_ROOT / "ecosim-common", ["dev"]),
+    (REPO_ROOT / "ecosim-common-fmpy", ["dev"]),
     (REPO_ROOT / "ecosim-server", ["dev"]),
     (REPO_ROOT / "integration-tests", []),
     (REPO_ROOT / "ecosim-client-fmu-v2", ["dev"]),
@@ -67,7 +67,5 @@ def get_uv_path() -> str:
             return path
 
     raise FileNotFoundError(
-        "uv executable not found. Please ensure uv is installed and either:\n"
-        "1. Available in PATH, or\n"
-        "2. Installed in a standard location",
+        "uv executable not found. Please ensure uv is installed and either:\n1. Available in PATH, or\n2. Installed in a standard location",
     )

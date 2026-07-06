@@ -45,7 +45,7 @@ dev = [
 
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5",]
+mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5",]
 check_untyped_defs = true
 disallow_untyped_defs = true
 

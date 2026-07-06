@@ -6,12 +6,12 @@ from typing import Any
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.correlation_id import CorrelationId
-from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.dask.dask_messages import DaskMessage, DaskMessageHeader
+from ecosim_common.communication.message_type import MessageType
 
 
+# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class SimpleDaskMessage(DaskMessage):
-
     @staticmethod
     def of_esp_channel_message(message: ESPChannelMessage) -> SimpleDaskMessage:
         return SimpleDaskMessage(
@@ -46,8 +46,8 @@ class SimpleDaskMessage(DaskMessage):
     def bytecode(self) -> bytearray:
         data_length = self.length
         bytecode = bytearray(DaskMessage.HEADER_BYTES + data_length)
-        bytecode[0:DaskMessage.HEADER_BYTES] = self._raw_header()
-        bytecode[DaskMessage.HEADER_BYTES:] = bytearray(self._payload)
+        bytecode[0 : DaskMessage.HEADER_BYTES] = self._raw_header()
+        bytecode[DaskMessage.HEADER_BYTES :] = bytearray(self._payload)
         return bytecode
 
     def _raw_header(self) -> bytes:

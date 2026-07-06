@@ -189,6 +189,7 @@ source = { editable = "." }
 dependencies = [
     { name = "art" },
     { name = "ecosim-common" },
+    { name = "ecosim-common-fmpy" },
     { name = "fmpy" },
     { name = "pydantic" },
     { name = "setuptools" },
@@ -208,6 +209,7 @@ dev = [
 requires-dist = [
     { name = "art", specifier = "==6.5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-common-fmpy", editable = "../ecosim-common-fmpy" },
     { name = "fmpy", specifier = "==0.3.25" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==1.18.2" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==25.3" },
@@ -244,6 +246,30 @@ requires-dist = [
     { name = "setuptools", marker = "extra == 'dev'", specifier = "==80.9.0" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.9.6" },
     { name = "websockets", specifier = "==15.0.1" },
+]
+provides-extras = ["dev"]
+
+[[package]]
+name = "ecosim-common-fmpy"
+version = "0.13.0"
+source = { editable = "../ecosim-common-fmpy" }
+dependencies = [
+    { name = "ecosim-common" },
+    { name = "fmpy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "fmpy", specifier = "==0.3.25" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = "==1.18.2" },
+    { name = "pip", marker = "extra == 'dev'", specifier = "==25.3" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = "==8.4.2" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.0.0" },
+    { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.1.1" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.20" },
+    { name = "setuptools", marker = "extra == 'dev'", specifier = "==80.9.0" },
+    { name = "uv", marker = "extra == 'dev'", specifier = "==0.11.26" },
 ]
 provides-extras = ["dev"]
 

@@ -1,19 +1,19 @@
 from __future__ import annotations
+
 import shutil
-from typing import override, List, Tuple, Any
+from typing import Any, List, Tuple, override
 
 import fmpy.fmi3
-
-from ecosim_client_fmu_v3.fmu3_config import FMU3Config
 from ecosim_client_fmu_v3.fmu3_simulator_config import FMU3SimulatorConfig
 from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 
 
 class FMU3Simulator(ShutdownListener):
@@ -23,7 +23,7 @@ class FMU3Simulator(ShutdownListener):
     def of(
         cls,
         simulator_name: str,
-        fmu_config: FMU3Config,
+        fmu_config: FMUBaseConfig,
         execution_config: ExecutionConfig,
     ) -> FMU3Simulator:
         simulator_config: FMU3SimulatorConfig = FMU3SimulatorConfig.of(
@@ -160,14 +160,14 @@ class FMU3Simulator(ShutdownListener):
         variable_type: str | None,
     ) -> int:
         type_getters = {
-            'Int8': self._fmu_instance.getInt8,
-            'Int16': self._fmu_instance.getInt16,
-            'Int32': self._fmu_instance.getInt32,
-            'Int64': self._fmu_instance.getInt64,
-            'UInt8': self._fmu_instance.getUInt8,
-            'UInt16': self._fmu_instance.getUInt16,
-            'UInt32': self._fmu_instance.getUInt32,
-            'UInt64': self._fmu_instance.getUInt64,
+            "Int8": self._fmu_instance.getInt8,
+            "Int16": self._fmu_instance.getInt16,
+            "Int32": self._fmu_instance.getInt32,
+            "Int64": self._fmu_instance.getInt64,
+            "UInt8": self._fmu_instance.getUInt8,
+            "UInt16": self._fmu_instance.getUInt16,
+            "UInt32": self._fmu_instance.getUInt32,
+            "UInt64": self._fmu_instance.getUInt64,
         }
         if variable_type in type_getters:
             return type_getters[variable_type]([value_reference])[0]  # type: ignore
@@ -183,13 +183,15 @@ class FMU3Simulator(ShutdownListener):
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
-        return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(
-                name=interface_name,
-                value=self.get_output(interface_name),
-            )
-            for interface_name in self._execution_config.server_used_outputs()
-        ])
+        return ClientSimStepData.of_protocol_interface_values(
+            [
+                ProtocolInterfaceValue(
+                    name=interface_name,
+                    value=self.get_output(interface_name),
+                )
+                for interface_name in self._execution_config.server_used_outputs()
+            ],
+        )
 
     def get_output_boolean(
         self,

@@ -96,14 +96,14 @@ class ConfigParser:
 
     @staticmethod
     def extract_extra_sections_from_config_file(path: str | Path) -> List[str]:
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         return ConfigParser._extract_extra_sections_from_text(text)
 
     @staticmethod
     def _extract_extra_sections_from_text(text: str) -> List[str]:
         # Find all section headers like [SectionName]
-        header_pattern = re.compile(r'^\s*\[(.+?)\]\s*$', re.MULTILINE)
+        header_pattern = re.compile(r"^\s*\[(.+?)\]\s*$", re.MULTILINE)
         matches = list(header_pattern.finditer(text))
         if not matches:
             return []
@@ -127,18 +127,14 @@ class ConfigParser:
             return []
         match = re.match(r"\[(.*)\]", string)
         if match:
-            return [
-                item.strip().strip('"').strip("'") for item in match.group(1).split(",")
-            ]
+            return [item.strip().strip('"').strip("'") for item in match.group(1).split(",")]
         raise ConfigParserException(
             f"Input cannot be parsed to a string array: {string}",
         )
 
     @staticmethod
     def config_string_to_int_array(string: str) -> List[int]:
-        return [
-            int(item) for item in ConfigParser.config_string_to_string_array(string)
-        ]
+        return [int(item) for item in ConfigParser.config_string_to_string_array(string)]
 
     @staticmethod
     def config_string_to_bool(string: str) -> bool:

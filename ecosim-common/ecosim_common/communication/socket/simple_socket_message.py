@@ -10,8 +10,8 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.socket_messages import SocketMessage, SocketMessageHeader
 
 
+# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
 class SimpleSocketMessage(SocketMessage):
-
     @staticmethod
     def of_esp_channel_message(message: ESPChannelMessage) -> SimpleSocketMessage:
         return SimpleSocketMessage(
@@ -22,9 +22,9 @@ class SimpleSocketMessage(SocketMessage):
 
     @staticmethod
     def create(
-            type: MessageType,
-            correlation_id: CorrelationId,
-            payload: Any,
+        type: MessageType,
+        correlation_id: CorrelationId,
+        payload: Any,
     ) -> SimpleSocketMessage:
         return SimpleSocketMessage(
             _type=type,
@@ -46,8 +46,8 @@ class SimpleSocketMessage(SocketMessage):
     def bytecode(self) -> bytearray:
         data_length = self.length
         bytecode = bytearray(SocketMessage.HEADER_BYTES + data_length)
-        bytecode[0:SocketMessage.HEADER_BYTES] = self._raw_header()
-        bytecode[SocketMessage.HEADER_BYTES:] = bytearray(self._payload)
+        bytecode[0 : SocketMessage.HEADER_BYTES] = self._raw_header()
+        bytecode[SocketMessage.HEADER_BYTES :] = bytearray(self._payload)
         return bytecode
 
     def _raw_header(self) -> bytes:
