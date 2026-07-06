@@ -49,8 +49,10 @@ disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
-    # both packages are only typed partly
-    "dask", "dask.distributed"
+    # dask is only typed partly
+    "dask",
+    "dask.distributed",
+    "dask.*",
 ]
 ignore_missing_imports = true
 
