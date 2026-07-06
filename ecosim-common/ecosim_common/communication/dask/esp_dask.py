@@ -136,10 +136,5 @@ class ESPDask(ShutdownListener):
                 ESPDask._logger.debug("Received no valid header")
                 return None
             data: bytes = raw_message[DaskMessage.HEADER_BYTES:]
-            while len(data) < message_header.data_length:
-                chunk = raw_message[DaskMessage.HEADER_BYTES:message_header.data_length - len(data)]
-                if not chunk:
-                    raise ConnectionError("Error while receiving junks.")
-                data += chunk
             ESPDask._logger.debug(f"Received message of type {message_header.message_type} at {origin_id} from {received_id}")
             return ReceivedMessage(message_header, data, ConnectionAddress.of_dask_client(connection))
