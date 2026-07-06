@@ -28,6 +28,7 @@ def main() -> None:
 
     if args.get_additional_parameter("validate-fmu-file-only"):
         validate_fmu_file_or_error(config)
+        return
 
     main_logger = ESPLogger("main")
 
