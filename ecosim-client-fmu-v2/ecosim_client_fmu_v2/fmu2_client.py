@@ -1,31 +1,29 @@
 import os
 from typing import Dict
 
-from typing_extensions import override
-
-from ecosim_client_fmu_v2.fmu2_config import FMU2Config
 from ecosim_client_fmu_v2.fmu2_simulator import FMU2Simulator
 from ecosim_common.client.client import Client
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
-from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, \
-    PreRenderedImageServiceConfig
+from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, PreRenderedImageServiceConfig
 from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.simulation.interface_id import InterfaceId
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from typing_extensions import override
 
 
 class FMU2Client(Client):
-
     def __init__(
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
+        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
         self._config_path = config_parser.config_file
-        self._fmu_config = FMU2Config.of_config_parser(config_parser)
+        self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
         self._simulator: FMU2Simulator
         self._is_finished = False
 

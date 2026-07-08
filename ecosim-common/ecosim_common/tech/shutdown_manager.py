@@ -5,8 +5,9 @@ import sys
 import threading
 from abc import ABC, abstractmethod
 from types import FrameType
-from typing import List, Type, Any
+from typing import Any, List, Type
 
+import dask.distributed as dd
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -23,7 +24,7 @@ class ShutdownManager:
     _logger = ESPLogger("ShutdownManager")
     _listener: List[ShutdownListener] = []
     _init: bool = False
-    shutdown_event: threading.Event
+    shutdown_event: threading.Event | dd.Event
 
     def __new__(
         cls: Type[ShutdownManager],
@@ -34,7 +35,11 @@ class ShutdownManager:
             with cls._lock:
                 if not cls._instance:
                     cls._instance = super(ShutdownManager, cls).__new__(cls, *args, **kwargs)
-                    cls._instance.shutdown_event = threading.Event()
+                    try:  # If dask client present, use dask.distributed.Event
+                        dd.get_client()
+                        cls._instance.shutdown_event = dd.Event()
+                    except ValueError:  # otherwise normal threading.Event
+                        cls._instance.shutdown_event = threading.Event()
         return cls._instance
 
     def init(self) -> None:
@@ -89,12 +94,17 @@ class ShutdownManager:
             for listener in self._listener:
                 if listener is not None:
                     listener.on_app_shutdown()
+            self._logger.debug("All listeners notified - resetting ShutdownManager itself.")
 
     def register_listener(
         self,
         listener: ShutdownListener,
     ) -> None:
         with self._lock:
+            if self.shutdown_event.is_set():
+                self._logger.warning("Shutdown event already set - notifying listener.")
+                listener.on_app_shutdown()
+                return
             self._listener.append(listener)
 
     def is_shutdown(self) -> bool:
@@ -103,3 +113,18 @@ class ShutdownManager:
     def set_shutdown_at_application_end(self) -> None:
         self._logger.debug("Shutdown was triggered at the end of the application.")
         self.__trigger_shutdown()
+
+    def set_dask_shutdown(self) -> None:
+        self._logger.debug("Shutting down simulators on Dask Client")
+        self.__trigger_shutdown()
+
+    @staticmethod
+    def reset_instance() -> None:
+        ShutdownManager._listener.clear()
+        ShutdownManager._init = False
+        ShutdownManager._instance = None
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGSEGV, signal.SIG_DFL)
+        signal.signal(signal.SIGABRT, signal.SIG_DFL)
+        signal.signal(signal.SIGFPE, signal.SIG_DFL)

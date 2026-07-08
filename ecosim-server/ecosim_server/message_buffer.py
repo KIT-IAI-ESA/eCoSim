@@ -1,5 +1,6 @@
 from __future__ import annotations
 import threading
+import dask.distributed as dd
 import time
 from dataclasses import dataclass
 from typing import List, Tuple, Set, Callable, Type, Any
@@ -16,9 +17,16 @@ class ClientMessageBuffer:
 
     def __init__(self) -> None:
         self._buffer: List[BufferedClientMessage] = []
-        self._buffer_lock = threading.Lock()
-        self._callbacks_lock = threading.Lock()
-        self._on_message_callbacks: Set[OnMessageCallbackHandler] = set()
+        try:  # use dask.Lock if using dask
+            dd.get_client()
+            self._buffer_lock: threading.Lock | dd.Lock = dd.Lock()
+            self._callbacks_lock: threading.Lock | dd.Lock = dd.Lock()
+        except ValueError:  # otherwise normal threading.Lock
+            self._buffer_lock = threading.Lock()
+            self._callbacks_lock = threading.Lock()
+
+        # TODO_AFTER_REVIEW: find common abstraction
+        self._on_message_callbacks: Set[OnMessageCallbackHandler | OnMessageCallbackHandlerDask] = set()
 
     def add(
         self,
@@ -29,7 +37,6 @@ class ClientMessageBuffer:
             f"Adding new message to buffer. CorrelationID: {message.correlation_id()}  |  Type: {message.type()} | client_id: {client_id}",
         )
         buffered_message = BufferedClientMessage(client_id, message)
-
         with self._callbacks_lock:
             callback = self._find_on_message_callback(buffered_message)
         if callback is not None:
@@ -42,7 +49,8 @@ class ClientMessageBuffer:
     def _find_on_message_callback(
         self,
         message: BufferedClientMessage,
-    ) -> OnMessageCallbackHandler | None:
+        # TODO_AFTER_REVIEW: find common abstraction
+    ) -> OnMessageCallbackHandler | OnMessageCallbackHandlerDask | None:
         for callback in self._on_message_callbacks.copy():
             if message.client_id in callback.client_ids and message.message.type() in callback.message_types:
                 return callback
@@ -54,9 +62,15 @@ class ClientMessageBuffer:
         message_types: Tuple[MessageType, ...],
         callback: Callable[[BufferedClientMessage], None],
     ) -> None:
+        # TODO_AFTER_REVIEW: find common abstraction
+        message_callback: OnMessageCallbackHandler | OnMessageCallbackHandlerDask
         if len(client_ids) == 0 or len(message_types) == 0:
             return
-        message_callback = OnMessageCallbackHandler(client_ids, message_types, callback)
+        # TODO_AFTER_REVIEW: find common abstraction
+        if type(self._buffer_lock) is dd.lock.Lock:
+            message_callback = OnMessageCallbackHandlerDask(client_ids, message_types, callback)
+        else:
+            message_callback = OnMessageCallbackHandler(client_ids, message_types, callback)
         with self._callbacks_lock:
             if message_callback in self._on_message_callbacks:
                 ClientMessageBuffer._logger.warning(
@@ -73,8 +87,16 @@ class ClientMessageBuffer:
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
     ) -> None:
-        with self._callbacks_lock:
-            self._on_message_callbacks.remove(OnMessageCallbackHandler(client_ids, message_types, lambda m: None))
+        # TODO_AFTER_REVIEW: find common abstraction
+        if type(self._callbacks_lock) is dd.lock.Lock:
+            with self._callbacks_lock:
+                self._on_message_callbacks = {
+                    call for call in self._on_message_callbacks.copy()
+                    if call.__hash__() != client_ids.__hash__() + message_types.__hash__()
+                }
+        else:
+            with self._callbacks_lock:
+                self._on_message_callbacks.remove(OnMessageCallbackHandler(client_ids, message_types, lambda m: None))
 
     def get_and_delete_of(
         self,
@@ -147,6 +169,36 @@ class OnMessageCallbackHandler:
         message: BufferedClientMessage,
     ) -> None:
         threading.Thread(target=self.callback, args=[message]).start()
+
+    def __eq__(
+        self,
+        other: Any,
+    ) -> bool:
+        if not isinstance(other, OnMessageCallbackHandler):
+            return False
+        return self.__hash__() == other.__hash__()
+
+    def __hash__(self) -> int:
+        return self.client_ids.__hash__() + self.message_types.__hash__()
+
+
+# TODO_AFTER_REVIEW: find common abstraction
+@dataclass(frozen=True)
+class OnMessageCallbackHandlerDask:
+    client_ids: Tuple[ClientID, ...]
+    message_types: Tuple[MessageType, ...]
+    callback: Callable[[BufferedClientMessage], None]
+
+    def execute_async(
+        self,
+        message: BufferedClientMessage,
+    ) -> None:
+        dask_client = dd.get_client()
+
+        async def f() -> None:
+            future = dask_client.submit(self.callback, message)
+            dd.fire_and_forget(future)
+        dask_client.sync(f)
 
     def __eq__(
         self,

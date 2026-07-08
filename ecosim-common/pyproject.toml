@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-common"
-version = "0.13.0"
+version = "0.14.0"
 description = "Common utilities and abstractions for eCoSim"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -22,6 +22,7 @@ dependencies = [
     "art==6.5",
     "pydantic==2.12.4",
     "websockets==15.0.1",
+    "dask[distributed]==2025.10.0",
 ]
 
 [tool.setuptools.package-data]
@@ -45,6 +46,15 @@ dev = [
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # dask is only typed partly
+    "dask",
+    "dask.distributed",
+    "dask.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
