@@ -184,7 +184,7 @@ wheels = [
 
 [[package]]
 name = "ecosim-client-fmu-v3"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "." }
 dependencies = [
     { name = "art" },
@@ -224,7 +224,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "ecosim-common"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "../ecosim-common" }
 dependencies = [
     { name = "art" },
@@ -251,7 +251,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "ecosim-common-fmpy"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "../ecosim-common-fmpy" }
 dependencies = [
     { name = "ecosim-common" },
