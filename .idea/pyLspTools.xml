@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RuffConfiguration">
+    <option name="enabled" value="true" />
+    <option name="executableDiscoveryMode" value="PATH" />
+    <option name="formatting" value="false" />
+    <option name="pathToExecutable" value="$PROJECT_DIR$/.venv/bin/ruff" />
+    <option name="sdkName" value="Python 3.13 virtualenv at ~/dev/ecosim/.venv" />
+  </component>
+</project>

@@ -14,3 +14,7 @@ def resource_path() -> Path:
 
 def resource_path_file(file: str) -> Path:
     return resource_path() / file
+
+
+def production_source_path() -> Path:
+    return Path(__file__).parent.parent.parent / "ecosim_client_fmu_v2"

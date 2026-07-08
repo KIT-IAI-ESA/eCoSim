@@ -15,4 +15,5 @@ if not target_dir.exists():
     sys.exit(1)
 
 os.chdir(target_dir)
+print(f"INFO: running mypy in {target_dir}", file=sys.stdout)
 sys.exit(subprocess.call(["uv", "run", "mypy", "."]))

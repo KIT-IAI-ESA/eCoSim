@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simulation_example"
+version = "0.0.1"
+description = "For setting python environment for simulation examples"
+authors = [
+    { name = "Alexander Kocher", email = "alexander.kocher@kit.edu"},
+    { name = "Glen Hunter", email = "glen.hunter@kit.edu"}
+]
+requires-python = ">=3.13"
+
+dependencies = [
+    "ecosim-client-fmu-v2>=0.11.0",
+    "ecosim-common>=0.11.0",
+    "ecosim-server>=0.11.0",
+    "ecosim-hpc",
+    "mypy==1.18.2",
+    "uv==0.8.22",
+    "websockets==15.0.1",
+]
+
+[tool.setuptools]
+py-modules=[]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-server = { path = "../ecosim-server", editable = true }
+ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
+ecosim-hpc = { path = "../ecosim-hpc", editable = true }
+
+[tool.mypy]
+mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-hpc"]

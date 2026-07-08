@@ -4,6 +4,10 @@
 - the following commands should be executed in the root directory of the project
 - **either** run the `init_dev.py` script
     - `python init-dev.py`
+      - *troubleshooting*
+        - if you ran into an error like `.venv/bin/python: No module named pip` you have a custom `venv` enabled
+          -> you should run the script with your default python interpreter -> deactivate the custom venv
+          (execute `deactivate` in the terminal)
 - **or** do everything manually
     - install [uv](https://docs.astral.sh/uv/)
         - `pip install uv`

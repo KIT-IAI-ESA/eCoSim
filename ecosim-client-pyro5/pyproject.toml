@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-client-pyro"
-version = "0.13.0"
+version = "0.14.0"
 description = "The pyro client for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
@@ -24,6 +24,7 @@ dependencies = [
     "setuptools==80.8.0",
     "pydantic>=2.11.5",
     "Pyro5==5.15",
+    "pandapower>=3.4.0",
 ]
 
 [tool.uv.sources]

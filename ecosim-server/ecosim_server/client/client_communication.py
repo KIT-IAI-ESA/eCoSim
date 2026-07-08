@@ -12,7 +12,7 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.client.client_state import ClientStates
+from ecosim_server.client.client_state import ClientStates, ClientStatesDask
 from ecosim_server.message_buffer import ClientMessageBuffer, BufferedClientMessage
 
 
@@ -21,7 +21,7 @@ class ClientCommunication:
 
     def __init__(
         self,
-        client_states: ClientStates,
+        client_states: ClientStates | ClientStatesDask,  # TODO_AFTER_MERGE: find common abstraction
         client_message_buffer: ClientMessageBuffer,
     ):
         self._client_states = client_states

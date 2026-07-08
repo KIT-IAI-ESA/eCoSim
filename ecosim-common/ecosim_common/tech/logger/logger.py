@@ -10,14 +10,16 @@ default_handlers = [logging.StreamHandler()]
 
 def init_logger(log_level: int = logging.INFO) -> None:
     # Reset any existing logging configuration - this was implemented due to no logging in unittests
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
+    # logging.root.handlers.clear()
 
     logging.basicConfig(
         level=log_level,
         format=default_log_format,
         handlers=default_handlers,
     )
+
+    root = logging.getLogger()
+    root.setLevel(log_level)
 
     # log levels of python SDK logs
     logging.getLogger('asyncio').setLevel(logging.ERROR)
@@ -26,6 +28,8 @@ def init_logger(log_level: int = logging.INFO) -> None:
     logging.getLogger('websockets.server').setLevel(logging.ERROR)
     logging.getLogger('websockets.client').setLevel(logging.ERROR)
     logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
+    logging.getLogger('distributed').setLevel(logging.ERROR)
+    logging.getLogger('distributed.worker').setLevel(logging.ERROR)
 
 
 class ESPLogger:

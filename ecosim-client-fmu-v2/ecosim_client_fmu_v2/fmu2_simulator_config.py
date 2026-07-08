@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import importlib
+import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, ClassVar
+from typing import Any, ClassVar, Dict
 from uuid import uuid4
 
 import fmpy
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from fmpy.fmi2 import FMU2Slave
 from fmpy.model_description import ModelDescription
-
-from ecosim_client_fmu_v2.fmu2_config import FMU2Config
-from ecosim_common.tech.logger.logger import ESPLogger
 
 
 @dataclass(frozen=True)
@@ -28,11 +30,12 @@ class FMU2SimulatorConfig:
     def of(
         cls,
         simulator_name: str,
-        fmu_config: FMU2Config,
+        fmu_config: FMUBaseConfig,
     ) -> FMU2SimulatorConfig:
-        model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
-        input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
-        output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+        model_description = cls.read_model_description(fmu_config)
+
+        input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
+        output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         unzip_dir = fmpy.extract(fmu_config.fmu_file)
         return FMU2SimulatorConfig(
             _simulator_name=simulator_name,
@@ -42,6 +45,30 @@ class FMU2SimulatorConfig:
             _unzip_dir=unzip_dir,
             _fmu_file=fmu_config.fmu_file,
         )
+
+    @classmethod
+    def read_model_description(cls, fmu_config: FMUBaseConfig) -> ModelDescription:
+        try:
+            return fmpy.read_model_description(str(fmu_config.fmu_file), validate=False)
+        except Exception as first_exception:
+            nano_seconds = time.time_ns()
+            today = datetime.now()
+            temp_dir_name = f"{today.strftime('%Y-%m-%d %H:%M:%S')}.{nano_seconds % 1_000_000_000:09d}"
+            # For identifying FMUs that throw XMLParseErrors
+            FMU2SimulatorConfig._logger.warning(f"Model failed to read initially with '{first_exception}'. Trying to reload model description.")
+            for i in range(2):
+                try:
+                    importlib.reload(fmpy)
+                    return fmpy.read_model_description(str(fmu_config.fmu_file))
+                except Exception as inner_exception:
+                    unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir=f"./failed_fmus/{temp_dir_name}")
+                    FMU2SimulatorConfig._logger.debug(f"Reading modelDescription.xml directly from {unzip_dir}")
+                    try:
+                        importlib.reload(fmpy)
+                        return fmpy.read_model_description(f"./failed_fmus/{temp_dir_name}/modelDescription.xml")
+                    except Exception:
+                        FMU2SimulatorConfig._logger.warning(f"Failed to read modelDescription.xml on {i + 1}. attempt: {inner_exception}")
+            raise first_exception
 
     def is_fmi_version(
         self,
