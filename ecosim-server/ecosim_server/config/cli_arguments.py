@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Any
+from typing import Any, List
 
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 from ecosim_common.config.config_parser import ConfigParser
@@ -22,14 +22,12 @@ class CLIArguments(AppConfig):
                 AppConfigParameter(
                     name="server-config",
                     required=True,
-                    help_text="The path to the config file. This must be relative to the call path or it can be an "
-                    "absolute path.",
+                    help_text="The path to the config file. This must be relative to the call path or it can be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="simulation-config",
                     required=True,
-                    help_text="The path to the simulation config file. This must be relative to the call path or it can"
-                    " be an absolute path.",
+                    help_text="The path to the simulation config file. This must be relative to the call path or it can be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="host",
@@ -56,7 +54,7 @@ class CLIArguments(AppConfig):
                     required=False,
                     default_value="1.0",
                     transform=lambda x: float(x),
-                    help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%, 0.7 means 70%",
+                    help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%%, 0.7 means 70%%",
                 ),
                 AppConfigParameter(
                     name="debug",
@@ -193,14 +191,12 @@ class CLIArgumentsHPC(AppConfig):
                 AppConfigParameter(
                     name="server-config",
                     required=True,
-                    help_text="The path to the config file. This must be relative to the call path or it can be an "
-                    "absolute path.",
+                    help_text="The path to the config file. This must be relative to the call path or it can be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="simulation-config",
                     required=True,
-                    help_text="The path to the simulation config file. This must be relative to the call path or it can"
-                    " be an absolute path.",
+                    help_text="The path to the simulation config file. This must be relative to the call path or it can be an absolute path.",
                 ),
                 AppConfigParameter(
                     name="simulator-dir",
@@ -233,7 +229,7 @@ class CLIArgumentsHPC(AppConfig):
                     required=False,
                     default_value="1.0",
                     transform=lambda x: float(x),
-                    help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%, 0.7 means 70%",
+                    help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%%, 0.7 means 70%%",
                 ),
                 AppConfigParameter(
                     name="debug",

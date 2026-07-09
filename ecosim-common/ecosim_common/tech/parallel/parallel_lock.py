@@ -1,7 +1,8 @@
 from __future__ import annotations
+
+import threading
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
-import threading
 from types import TracebackType
 from typing import override
 
@@ -23,9 +24,9 @@ class ParallelLock(AbstractContextManager):
         )
 
     @staticmethod
-    def dask(name: str | None = None, client: dask.distributed.Client | None = None) -> ParallelLock:
+    def dask(name: str | None = None) -> ParallelLock:
         return ParallelLock(
-            _lock=dask.distributed.Lock(name=name, client=client),
+            _lock=dask.distributed.Lock(name=name),
             _none_timeout=None,
         )
 

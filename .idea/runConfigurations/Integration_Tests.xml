@@ -1,19 +1,20 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="integration tests" type="tests" factoryName="Autodetect">
+  <configuration default="false" name="Integration Tests" type="tests" factoryName="py.test">
     <module name="integration_tests" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <option name="SDK_HOME" value="" />
-    <option name="SDK_NAME" value="Python 3.13 (integration-tests)" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/integration-tests" />
-    <option name="IS_MODULE_SDK" value="false" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/integration-tests/integration_tests" />
+    <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <option name="DEBUG_JUST_MY_CODE" value="true" />
+    <option name="DEBUG_JUST_MY_CODE" value="false" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="RUN_TOOL" value="" />
-    <option name="_new_additionalArguments" value="&quot;--ignore\u003dintegration_tests/locally&quot;" />
+    <option name="_new_keywords" value="&quot;&quot;" />
+    <option name="_new_parameters" value="&quot;&quot;" />
+    <option name="_new_additionalArguments" value="&quot;--ignore\u003dlocally&quot;" />
     <option name="_new_target" value="&quot;$PROJECT_DIR$/integration-tests/integration_tests&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />

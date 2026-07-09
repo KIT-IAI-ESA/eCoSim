@@ -22,12 +22,12 @@ class SimpleSocketMessage(SocketMessage):
 
     @staticmethod
     def create(
-        type: MessageType,
+        message_type: MessageType,
         correlation_id: CorrelationId,
         payload: Any,
     ) -> SimpleSocketMessage:
         return SimpleSocketMessage(
-            _type=type,
+            _type=message_type,
             _correlation_id=correlation_id,
             _payload=json.dumps(payload).encode("utf-8"),
         )
@@ -43,12 +43,12 @@ class SimpleSocketMessage(SocketMessage):
         self._payload = _payload
         self.length = len(_payload)
 
-    def bytecode(self) -> bytearray:
+    def bytecode(self) -> bytes:
         data_length = self.length
         bytecode = bytearray(SocketMessage.HEADER_BYTES + data_length)
         bytecode[0 : SocketMessage.HEADER_BYTES] = self._raw_header()
         bytecode[SocketMessage.HEADER_BYTES :] = bytearray(self._payload)
-        return bytecode
+        return bytes(bytecode)
 
     def _raw_header(self) -> bytes:
         return struct.pack(
