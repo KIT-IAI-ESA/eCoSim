@@ -10,7 +10,7 @@ authors = [
     { name = "Alexander Kocher", email = "alexander.kocher@kit.edu"},
     { name = "Glen Hunter", email = "glen.hunter@kit.edu"}
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 
 dependencies = [
     "ecosim-client-fmu-v2==0.14.0",
