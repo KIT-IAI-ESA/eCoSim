@@ -41,7 +41,7 @@
       [project]
       name = "ecosim-test"
       version = "0.123"
-      requires-python = ">=3.12"
+      requires-python = ">=3.14"
 
       dependencies = [
           "ecosim-common>=1", # if you need a specific version, set it here

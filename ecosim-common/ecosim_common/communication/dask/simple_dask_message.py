@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import struct
 from typing import Any
@@ -22,12 +20,12 @@ class SimpleDaskMessage(DaskMessage):
 
     @staticmethod
     def create(
-        type: MessageType,
+        message_type: MessageType,
         correlation_id: CorrelationId,
         payload: Any,
     ) -> SimpleDaskMessage:
         return SimpleDaskMessage(
-            _type=type,
+            _type=message_type,
             _correlation_id=correlation_id,
             _payload=json.dumps(payload).encode("utf-8"),
         )
@@ -43,12 +41,12 @@ class SimpleDaskMessage(DaskMessage):
         self._payload = _payload
         self.length = len(_payload)
 
-    def bytecode(self) -> bytearray:
+    def bytecode(self) -> bytes:
         data_length = self.length
         bytecode = bytearray(DaskMessage.HEADER_BYTES + data_length)
         bytecode[0 : DaskMessage.HEADER_BYTES] = self._raw_header()
         bytecode[DaskMessage.HEADER_BYTES :] = bytearray(self._payload)
-        return bytecode
+        return bytes(bytecode)
 
     def _raw_header(self) -> bytes:
         return struct.pack(

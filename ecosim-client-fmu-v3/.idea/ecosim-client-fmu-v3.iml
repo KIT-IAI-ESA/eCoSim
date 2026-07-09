@@ -7,6 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim_client_fmu_v3.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12 virtualenv at ~/dev/ecosim/ecosim-client-fmu-v3/.venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

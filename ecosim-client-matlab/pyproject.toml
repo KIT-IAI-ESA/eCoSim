@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==80.9.0"]
+requires = ["setuptools==83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -20,8 +20,8 @@ classifiers = [
 ]
 dependencies = [
     "art==6.5",
-    "ecosim-common>=0.13.0",
-    "pydantic==2.12.4",
+    "ecosim-common==0.14.0",
+    "pydantic==2.13.4",
 ]
 
 [tool.uv.sources]
@@ -29,12 +29,12 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.3.5",
-    "pytest-cov==6.1.1",
-    "pytest-html==4.1.1",
-    "mypy==1.18.2",
-    "uv==0.9.6",
-    "pip==25.3",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-html==4.2.0",
+    "mypy==2.2.0",
+    "uv==0.11.28",
+    "pip==26.1.2",
 ]
 R2024b = ["matlabengine==24.2.1"]
 

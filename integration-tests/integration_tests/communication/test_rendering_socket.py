@@ -3,20 +3,22 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import websockets
-
 from ecosim_common.client.config.client_config import ClientConfig
-from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, \
-    PreRenderedImageServiceConfig
+from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, PreRenderedImageServiceConfig
 from ecosim_common.client.renderer.rendering_socket_client import RenderingSocketClient
 from ecosim_common.config.client_id import ClientID
-from ecosim_common.simulation.renderer.rendering_messages import RenderingImageMessage, RawRenderingMessageHandler, \
-    RenderingMessageType, ImagesAtTimeStep
+from ecosim_common.simulation.renderer.rendering_messages import (
+    ImagesAtTimeStep,
+    RawRenderingMessageHandler,
+    RenderingImageMessage,
+    RenderingMessageType,
+)
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 
 
-def test_local_test():
+def test_local_test() -> None:
     server_socket = RenderingSocket(
-        host='localhost',
+        host="localhost",
         port=3336,
     )
     server_socket.start().wait()
@@ -39,11 +41,16 @@ def test_local_test():
     )
     client.start().wait()
 
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+
     image_receiver_connection = loop.run_until_complete(
         websockets.connect(
-            "ws://localhost:3336", additional_headers={
-                'client_id': 'sim_control',
+            "ws://localhost:3336",
+            additional_headers={
+                "client_id": "sim_control",
             },
         ),
     )

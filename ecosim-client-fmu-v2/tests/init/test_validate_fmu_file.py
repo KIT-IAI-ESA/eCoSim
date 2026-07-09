@@ -16,6 +16,7 @@ def test_validate_fmu_file_happy_path() -> None:
         stderr=subprocess.PIPE,
         stdin=subprocess.DEVNULL,
         text=True,
+        encoding="utf-8",
     )
     try:
         out, err = proc.communicate(timeout=50)
@@ -41,6 +42,7 @@ def test_validate_fmu_file_with_error() -> None:
         stderr=subprocess.PIPE,
         stdin=subprocess.DEVNULL,
         text=True,
+        encoding="utf-8",
     )
     try:
         out, err = proc.communicate(timeout=50)

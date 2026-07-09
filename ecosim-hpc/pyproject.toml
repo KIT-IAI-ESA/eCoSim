@@ -1,28 +1,26 @@
 [project]
 name = "ecosim-hpc"
-version = "0.1.0"
+version = "0.14.0"
 description = "HPC interface for the eCoSim Project"
 readme = "README.md"
 authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
-    "dask>=2025.10.0",
-    "distributed>=2025.10.0",
-    "ecosim-client-fmu-v2",
-    "ecosim-client-fmu-v3",
-    "ecosim-client-matlab",
-    "ecosim-common",
-    "ecosim-server",
-    "ecosim-client-pyro",
-    "fmpy>=0.3.25",
-    "dask-mpi>=2025.10.0",
-    "bokeh[dev]>=3.8.2",
+    "dask[distributed]==2026.7.0",
+    "dask-mpi==2026.3.0",
+    "ecosim-client-fmu-v2==0.14.0",
+    "ecosim-client-fmu-v3==0.14.0",
+    "ecosim-client-matlab==0.14.0",
+    "ecosim-common==0.14.0",
+    "ecosim-server==0.14.0",
+    "ecosim-client-pyro==0.14.0",
+    "fmpy==0.3.30",
 ]
 
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools==83.0.0", "build"]
 build-backend = "setuptools.build_meta"
 
 [tool.uv.sources]
@@ -35,12 +33,12 @@ ecosim-client-pyro = { path = "../ecosim-client-pyro5", editable = true }
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.3.5",
-    "pytest-cov==6.1.1",
-    "pytest-html==4.1.1",
-    "mypy==1.18.2",
-    "uv==0.9.6",
-    "dask-pyspy",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-html==4.2.0",
+    "mypy==2.2.0",
+    "uv==0.11.28",
+    "dask-pyspy==0.4.0",
 ]
 
 

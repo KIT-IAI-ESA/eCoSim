@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==80.9.0"]
+requires = ["setuptools==83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,22 +10,22 @@ authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: FMU client",
     #    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "art==6.5",
-    "ecosim-common>=0.13.0",
-    "ecosim-common-fmpy>=0.13.0",
-    "setuptools==80.8.0",
-    "fmpy==0.3.25",
-    "pydantic==2.12.4",
-    "pip==25.3",
+    "ecosim-common==0.14.0",
+    "ecosim-common-fmpy==0.14.0",
+    "setuptools==83.0.0",
+    "fmpy==0.3.30",
+    "pydantic==2.13.4",
+    "pip==26.1.2",
 ]
 
 [tool.uv.sources]
@@ -34,11 +34,11 @@ ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.3.5",
-    "pytest-cov==6.1.1",
-    "pytest-html==4.1.1",
-    "mypy==1.18.2",
-    "uv==0.9.6",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-html==4.2.0",
+    "mypy==2.2.0",
+    "uv==0.11.28",
 ]
 
 [tool.pytest.ini_options]
