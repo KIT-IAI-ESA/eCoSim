@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosim-server"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 version = "0.14.0"
 description = "The server to handle the eCoSim clients"
 authors = [
@@ -16,7 +16,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: eCoSim :: Server",
     #    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "ecosim-common==0.14.0",

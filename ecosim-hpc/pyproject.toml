@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "dask[distributed]==2026.7.0",
     "dask-mpi==2026.3.0",
