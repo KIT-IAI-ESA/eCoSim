@@ -5,13 +5,14 @@ from typing import Generator, Any, Tuple
 
 import pytest
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
-from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import SimpleTestServer, generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.test_client_data import TestClientData
@@ -35,10 +36,10 @@ class PreSetTwoClientsData:
         return self.server.repositories.measurement_repository(client_id=self.client_2.client_id)
 
     def client_2_output_value_at_step(self, step: int) -> float:
-        return -(step+1) * self.step_size_in_seconds * 10_000
+        return -(step + 1) * self.step_size_in_seconds * 10_000
 
     def client_1_output_value_at_step(self, step: int) -> float:
-        return (step+1) * self.step_size_in_seconds + self.client_2_output_value_at_step(step)
+        return (step + 1) * self.step_size_in_seconds + self.client_2_output_value_at_step(step)
 
     def add_client_1_measurement(
         self,
@@ -118,18 +119,12 @@ class PreSetTwoClientsData:
                     output_value = value.value
                 elif value.name == "Interface_Input_1":
                     input_value = value.value
-            assert output_value is not None, (
-                f"Missing output interface value for step {current_step}"
-            )
-            assert input_value is not None, (
-                f"Missing input interface value for step {current_step}"
-            )
+            assert output_value is not None, f"Missing output interface value for step {current_step}"
+            assert input_value is not None, f"Missing input interface value for step {current_step}"
 
             expected_output = self.client_1_output_value_at_step(int(current_step))
             expected_input = self.client_2_output_value_at_step(int(current_step))
-            assert input_value == expected_input, (
-                f"failed at step {current_step} for input value: actual: {input_value} | expected {expected_input}"
-            )
+            assert input_value == expected_input, f"failed at step {current_step} for input value: actual: {input_value} | expected {expected_input}"
             assert output_value == expected_output, (
                 f"failed at step {current_step} for output value: actual: {output_value} | expected {expected_output}"
             )
@@ -222,21 +217,21 @@ def pre_set_two_clients() -> Generator[PreSetTwoClientsData, Any, None]:
         server_port=server_port,
         test_client_data=client_data_1,
         on_simulation_step_return=client_1_on_simulation_step,
+        communication_protocol=CommunicationProtocol.DASK,
     )
     client_2 = SimpleTestClient.of_test_data(
         server_host=server_host,
         server_port=server_port,
         test_client_data=client_data_2,
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         step_size_in_seconds: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, step_size_in_seconds: ClientSimStepData(
             interface_values=[
                 client_data_2.interface_protocol_value_of(
                     "Interface_Output_2",
                     -_self.accumulated_step_sizes_in_seconds.value * 10_000,
                 ),
             ],
-                                         ),
+        ),
+        communication_protocol=CommunicationProtocol.DASK,
     )
 
     yield PreSetTwoClientsData(

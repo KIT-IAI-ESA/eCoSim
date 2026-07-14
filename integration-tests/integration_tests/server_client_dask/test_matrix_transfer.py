@@ -3,22 +3,23 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Tuple
 
+import dask.distributed as dd
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
-from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-import dask.distributed as dd
 
 logger = ESPLogger("TEST_MATRIX_TRANSFER")
 
@@ -29,7 +30,12 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
     steps = 100
     step_size_in_ms = 2_000
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
         microsecond=0,
     )
     server = generate_simple_test_server(
@@ -91,7 +97,8 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
                                 delay_path=[],
                             ),
                         ],
-                    ), ModelInterfaceServer(
+                    ),
+                    ModelInterfaceServer(
                         SimulatorInterfaceId(
                             simulator_name="TestSimulator_2",
                             model_interface_id=ModelInterfaceId(
@@ -113,6 +120,7 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
     repositories = server.repositories
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -132,18 +140,17 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_1",
                     value=generate_matrix(_self.accumulated_step_sizes_in_seconds.value),
                 ),
             ],
-                                         ),
+        ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -201,11 +208,7 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
-    (
-        client_1_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(client_1_asserts)
-    )
+    (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(client_1_asserts))
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
@@ -221,11 +224,7 @@ def test_matrix_transfer(dask_client: dd.Client) -> None:
         assert actual == expected, f"Expected: {expected}, Actual: {actual}"
         return actual == expected
 
-    (
-        client_2_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(client_2_asserts)
-    )
+    (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(client_2_asserts))
 
 
 def get_decimal_part(value: float) -> float:
@@ -251,7 +250,7 @@ def handle_client_2_sim_step(
 ) -> ClientSimStepData:
     logger.debug(f"Received values: {received_values}")
     assert len(received_values.keys()) == 1
-    received_value: InterfaceValueType = received_values['TestInterface_2']
+    received_value: InterfaceValueType = received_values["TestInterface_2"]
     assert isinstance(received_value, list)
     return_value = square_each_element(received_value)
     logger.debug(f"Return value: {return_value}")
@@ -267,5 +266,6 @@ def handle_client_2_sim_step(
 
 def square_each_element(matrix: InterfaceValueType) -> InterfaceValueType:
     return [
-        [value * value for value in inner_list] for inner_list in matrix  # type: ignore
+        [value * value for value in inner_list]
+        for inner_list in matrix  # type: ignore
     ]

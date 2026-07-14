@@ -1,25 +1,22 @@
-from typing_extensions import override
-
 from ecosim_client_matlab.matlab_config import MatlabConfig
 from ecosim_client_matlab.matlab_simulator import MatlabSimulator
-from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
-from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.client.client import Client
+from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.simulation.interface_id import InterfaceId
+from typing_extensions import override
 
 
 class MatlabClient(Client):
-
     def __init__(
         self,
         config_parser: ConfigParser,
         config_overrides: ClientConfigOverride,
-        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_overrides), dask_connection)
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_overrides))
         self._simulator: MatlabSimulator = MatlabSimulator(
             execution_config=self._execution_config,
             client_config=self._client_config,

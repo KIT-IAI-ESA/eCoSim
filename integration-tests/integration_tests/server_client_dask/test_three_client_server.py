@@ -2,14 +2,15 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
+import dask.distributed as dd
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-import dask.distributed as dd
 
 
 def test_three_clients_server(dask_client: dd.Client) -> None:
@@ -50,6 +51,7 @@ def test_three_clients_server(dask_client: dd.Client) -> None:
     )
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -66,6 +68,7 @@ def test_three_clients_server(dask_client: dd.Client) -> None:
                                          ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -82,6 +85,7 @@ def test_three_clients_server(dask_client: dd.Client) -> None:
                                          ),
     )
     client_3 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_3",

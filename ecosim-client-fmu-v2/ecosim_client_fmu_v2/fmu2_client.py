@@ -19,9 +19,8 @@ class FMU2Client(Client):
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
-        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
         self._simulator: FMU2Simulator

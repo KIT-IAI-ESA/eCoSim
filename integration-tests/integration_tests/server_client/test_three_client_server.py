@@ -2,6 +2,7 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
@@ -17,7 +18,12 @@ def test_three_clients_server() -> None:
     steps = 10
     step_size_in_ms = 2_500
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
         microsecond=0,
     )
     server = generate_simple_test_server(
@@ -49,52 +55,49 @@ def test_three_clients_server() -> None:
     )
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
         simulator_name="TestSimulator_1",
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.11,
                 ),
             ],
-                                         ),
+        ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
         simulator_name="TestSimulator_2",
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.22,
                 ),
             ],
-                                         ),
+        ),
     )
     client_3 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_3",
         simulator_name="TestSimulator_3",
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value + 0.33,
                 ),
             ],
-                                         ),
+        ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -117,11 +120,7 @@ def test_three_clients_server() -> None:
         assert (timestamp - simulation_start_date).total_seconds() + 0.11 == values[0].value
         return (timestamp - simulation_start_date).total_seconds() + 0.11 == values[0].value
 
-    (
-        client_1_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_1_records)
-    )
+    (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_1_records))
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
@@ -131,11 +130,7 @@ def test_three_clients_server() -> None:
         assert (timestamp - simulation_start_date).total_seconds() + 0.22 == values[0].value
         return (timestamp - simulation_start_date).total_seconds() + 0.22 == values[0].value
 
-    (
-        client_2_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_2_records)
-    )
+    (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_2_records))
 
     client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
@@ -145,8 +140,4 @@ def test_three_clients_server() -> None:
         assert (timestamp - simulation_start_date).total_seconds() + 0.33 == values[0].value
         return (timestamp - simulation_start_date).total_seconds() + 0.33 == values[0].value
 
-    (
-        client_3_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_3_records)
-    )
+    (client_3_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_3_records))

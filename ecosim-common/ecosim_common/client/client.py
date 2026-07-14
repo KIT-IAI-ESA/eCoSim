@@ -11,33 +11,32 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import (
     ESPChannelConnector,
 )
+from ecosim_common.communication.channel.esp_channel_connector_factory import ESPChannelConnectorFactory
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import (
     ESPChannelMessageJson,
 )
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.protocol_interface_value import (
     InterfaceValueType,
     ProtocolInterfaceValue,
 )
-from ecosim_common.communication.data.simulation_step_batch_request import (
-    SimulationStepBatchRequest,
-)
-from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.data.simulation_step_request import (
-    SimulationStepRequest,
-)
-from ecosim_common.communication.socket.socket_connector import SocketConnector
-from ecosim_common.communication.dask.dask_connector import DaskConnector
-from ecosim_common.config.client_id import ClientID
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.server_interface_settings import (
     ServerInterfaceSettings,
 )
 from ecosim_common.communication.data.simulation_setup_message import (
     SimulationSetupMessage,
 )
+from ecosim_common.communication.data.simulation_step_batch_request import (
+    SimulationStepBatchRequest,
+)
+from ecosim_common.communication.data.simulation_step_request import (
+    SimulationStepRequest,
+)
+from ecosim_common.communication.message_type import MessageType
+from ecosim_common.config.client_id import ClientID
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.datetime.date_time_to_millis import (
     date_time_to_millis_since_unix_epoch,
 )
@@ -51,13 +50,11 @@ class Client(ShutdownListener):
     def __init__(
         self,
         client_config: ClientConfig,
-        dask_connector: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
-        # TODO_AFTER_MERGE: clean up after the merge
-        self._channel_connector: ESPChannelConnector = DaskConnector() if dask_connector else SocketConnector()
+        self._channel_connector: ESPChannelConnector = ESPChannelConnectorFactory.of_client_config(client_config)
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
         self._is_finished = False
@@ -215,10 +212,8 @@ class Client(ShutdownListener):
         )
 
         # check if config matches actual interfaces
-        config_validated = (
-            self._client_config.interfaces_config().validate_config_with_server(
-                server_interface_settings,
-            )
+        config_validated = self._client_config.interfaces_config().validate_config_with_server(
+            server_interface_settings,
         )
         self._execution_config.set_server_interface_settings(server_interface_settings)
 
@@ -301,22 +296,16 @@ class Client(ShutdownListener):
         last_timestamp = date_time_to_millis_since_unix_epoch(
             simulation_step_batch_request.start_datetime,
         )
-        input_interfaces = (
-            self._client_config.interfaces_config().input_interface_names()
-        )
-        required_input_interfaces = (
-            self._client_config.interfaces_config().input_interface_names(
-                only_required=True,
-            )
+        input_interfaces = self._client_config.interfaces_config().input_interface_names()
+        required_input_interfaces = self._client_config.interfaces_config().input_interface_names(
+            only_required=True,
         )
         last_simulation_step_data: ClientSimStepData | None = None
         for step_datetime, inputs in sorted(
             simulation_step_batch_request.inputs.items(),
         ):
             Client.logger.debug(f"Executing batch step {step_datetime}")
-            filtered_inputs = [
-                input for input in inputs if input.name in input_interfaces
-            ]
+            filtered_inputs = [input for input in inputs if input.name in input_interfaces]
             filtered_interface_names = [interface.name for interface in filtered_inputs]
             for required_input in required_input_interfaces:
                 if required_input not in filtered_interface_names:
@@ -332,11 +321,7 @@ class Client(ShutdownListener):
             last_timestamp = current_timestamp
             for new_interface_value in last_simulation_step_data.interface_values:
                 matching_interface = next(
-                    (
-                        interface
-                        for interface in inputs
-                        if interface.name == new_interface_value.name
-                    ),
+                    (interface for interface in inputs if interface.name == new_interface_value.name),
                     None,
                 )
                 if matching_interface is None:

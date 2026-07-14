@@ -1,36 +1,34 @@
 from __future__ import annotations
 
+# Disable Testcontainers Ryuk reaper to avoid connection issues in restricted CI/Docker environments.
+# This must be set BEFORE importing testcontainers.
+import os
 import threading
-from contextlib import contextmanager, AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Callable, Generator, Iterator, Tuple
 
-# Disable Testcontainers Ryuk reaper to avoid connection issues in restricted CI/Docker environments.
-# This must be set BEFORE importing testcontainers.
-import os
-
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.server_config import DatabaseConfig
-
+import psycopg
+import pytest
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
-
-import pytest
+from integration_tests.server_client.simple_test_server import RepositoryType, generate_simple_test_server
 from psycopg import Connection
-import psycopg
 from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
@@ -188,6 +186,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     repositories = server.repositories
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -221,6 +220,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
