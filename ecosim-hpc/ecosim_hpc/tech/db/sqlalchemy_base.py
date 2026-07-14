@@ -1,8 +1,9 @@
 import os
 import sys
 
+from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_hpc.tech.db.db_types import DTOMeta
-from ecosim_server.config.cli_arguments import CLIArguments, CLIArgumentsHPC
+from ecosim_server.config.cli_arguments import CLIArguments
 from sqlalchemy import MetaData
 from sqlalchemy.orm import declarative_base
 
@@ -20,7 +21,7 @@ def _resolve_hpc_schema() -> str:
     if "PYTEST_CURRENT_TEST" in os.environ or any("pytest" in arg for arg in sys.argv):
         return "postgres"
     try:
-        return CLIArgumentsHPC().db_config_overwrite().schema(default="ERROR_NO_SCHEMA")
+        return HPCServerCliArguments().db_config_overwrite().schema(default="ERROR_NO_SCHEMA")
     except (SystemExit, ValueError, TypeError):
         return "postgres"
 

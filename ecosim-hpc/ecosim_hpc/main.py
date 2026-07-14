@@ -9,8 +9,8 @@ from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc.client_manager import ClientManager
+from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_hpc.data.repositories_db import RepositoriesDB
-from ecosim_server.config.cli_arguments import CLIArgumentsHPC
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -40,7 +40,7 @@ def shutdown_manager_worker() -> None:
 
 
 def main() -> None:
-    args = CLIArgumentsHPC()
+    args = HPCServerCliArguments()
     if args.interactive():
         dask_client = dd.Client(scheduler_file="scheduler.json")
         tprint("eCoSimHPC", font="tarty1", chr_ignore=True)
