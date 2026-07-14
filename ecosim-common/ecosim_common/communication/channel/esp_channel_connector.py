@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -7,7 +9,6 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 
 @dataclass(frozen=True)
 class ESPChannelConnector(ABC):
-
     @abstractmethod
     def connect(
         self,

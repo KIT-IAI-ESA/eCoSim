@@ -3,8 +3,8 @@ import threading
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.socket.socket_messages import (
-    SocketMessage,
     ReceivedMessage,
+    SocketMessage,
     SocketMessageHeader,
 )
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
@@ -37,7 +37,7 @@ class ESPSocket(ShutdownListener):
         internal_socket: socket.socket,
     ):
         ShutdownManager().register_listener(self)
-        self._closing_calls = AtomicInteger(0)
+        self._closing_calls = AtomicInteger.thread(0)
         self._closed: threading.Event = threading.Event()
         self._internal_socket = internal_socket
         self._connected: bool = is_raw_socket_connected(internal_socket)
@@ -80,10 +80,7 @@ class ESPSocket(ShutdownListener):
             try:
                 self._internal_socket.shutdown(socket.SHUT_RDWR)
             except Exception as e:
-                if (
-                    not ShutdownManager().shutdown_event.is_set()
-                    or self._closing_calls.value == 1
-                ):
+                if not ShutdownManager().shutdown_event.is_set() or self._closing_calls.value == 1:
                     # if it is during shutdown AND 'close' is called more than once,
                     # no error is printed since this is most likely due to race conditions
                     ESPSocket._logger.error(

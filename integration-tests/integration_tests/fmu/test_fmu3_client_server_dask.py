@@ -1,26 +1,27 @@
-import pytest
 import sys
 import threading
 from datetime import datetime
 from typing import Tuple
 
+import dask.distributed as dd
+import pytest
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_common.client.config.client_config import ClientConfigOverride, ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
-from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.tech.resource_utils import config_parser_for_resource
-import dask.distributed as dd
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
@@ -113,6 +114,7 @@ def test_fmu3_client_server(dask_client: dd.Client) -> None:
     repositories = server.repositories
 
     mock_client = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         simulator_name=mock_client_interface.simulator_name,
         model_name=mock_client_interface.model_interface_id.model_name,
         server_host=server_host,
@@ -129,9 +131,7 @@ def test_fmu3_client_server(dask_client: dd.Client) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         steps: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name=mock_client_interface.model_interface_id.interface,
@@ -142,7 +142,7 @@ def test_fmu3_client_server(dask_client: dd.Client) -> None:
                     ],
                 ),
             ],
-                                         ),
+        ),
     )
 
     fmu3_client = FMU3Client(
@@ -150,8 +150,8 @@ def test_fmu3_client_server(dask_client: dd.Client) -> None:
         config_override=ClientConfigOverride(
             server_host=server_host,
             server_port=server_port,
+            communication_protocol=CommunicationProtocol.DASK,
         ),
-        dask_connection=True,
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -171,15 +171,15 @@ def test_fmu3_client_server(dask_client: dd.Client) -> None:
         values: Tuple[ProtocolInterfaceValue, ...],
     ) -> bool:
         passed_seconds = (date - start_date).total_seconds()
-        u = [v for v in values if v.name == 'u'][0]
-        y = [v for v in values if v.name == 'y'][0]
+        u = [v for v in values if v.name == "u"][0]
+        y = [v for v in values if v.name == "y"][0]
 
         assert u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
         assert y.value == fmu3_state_space_results[int(passed_seconds - 1)]
 
         return (
-            u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds] and
-            y.value == fmu3_state_space_results[int(passed_seconds - 1)]
+            u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
+            and y.value == fmu3_state_space_results[int(passed_seconds - 1)]
         )
 
     fmu3_measurement_repo.assert_for_each_record(assertion=assert_for_each_record)

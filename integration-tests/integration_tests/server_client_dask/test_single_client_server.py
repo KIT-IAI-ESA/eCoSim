@@ -2,12 +2,13 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
+import dask.distributed as dd
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
+from integration_tests.server_client.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-import dask.distributed as dd
 
 
 def test_client_server_single(dask_client: dd.Client) -> None:
@@ -27,6 +28,7 @@ def test_client_server_single(dask_client: dd.Client) -> None:
         simulation_start_date=simulation_start_date,
     )
     client = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.DASK,
         server_host=server_host,
         server_port=server_port,
         on_simulation_step_return=lambda _self,

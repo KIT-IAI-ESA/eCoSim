@@ -20,13 +20,12 @@ def main() -> None:
     sleep(0.5)
 
     args = FMPyCliArguments()
-
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
     ShutdownManager().init()
 
     config = config_parser.ConfigParser(args.config_file())
 
-    if args.get_additional_parameter("validate-fmu-file-only"):
+    if args.validate_fmu_file_only():
         validate_fmu_file_or_error(config)
         return
 

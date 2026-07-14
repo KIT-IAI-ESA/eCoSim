@@ -1,10 +1,11 @@
-import dask.distributed as dd
 import uuid
+
+import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.dask.dask_messages import DaskMessage, ReceivedMessage, DaskMessageHeader
-from ecosim_common.tech.atomic.atomic_integer import AtomicIntegerDask
+from ecosim_common.communication.dask.dask_messages import DaskMessage, DaskMessageHeader, ReceivedMessage
+from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.shutdown_manager import ShutdownManager, ShutdownListener
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
 def create_internal_dask_id() -> str:
@@ -24,11 +25,11 @@ class ESPDask(ShutdownListener):
     _logger = ESPLogger("ESPDask")
 
     def __init__(
-            self,
-            internal_dask_id: str,
+        self,
+        internal_dask_id: str,
     ) -> None:
         ShutdownManager().register_listener(self)
-        self._closing_calls = AtomicIntegerDask(0)
+        self._closing_calls = AtomicInteger.dask(0)
         self._closed: dd.Event = dd.Event()
         self._internal_dask_id = internal_dask_id
         self._connected: bool = is_raw_dask_client_connected(internal_dask_id)
@@ -130,11 +131,11 @@ class ESPDask(ShutdownListener):
             if raw_message == "empty" or dask_id not in connection.datasets.keys():
                 ESPDask._logger.debug(f"Received no data at {origin_id}")
                 return None
-            raw_header = raw_message[0:DaskMessage.HEADER_BYTES]
+            raw_header = raw_message[0 : DaskMessage.HEADER_BYTES]
             message_header = DaskMessageHeader(raw_header)
             if not message_header:
                 ESPDask._logger.debug("Received no valid header")
                 return None
-            data: bytes = raw_message[DaskMessage.HEADER_BYTES:]
+            data: bytes = raw_message[DaskMessage.HEADER_BYTES :]
             ESPDask._logger.debug(f"Received message of type {message_header.message_type} at {origin_id} from {received_id}")
             return ReceivedMessage(message_header, data, ConnectionAddress.of_dask_client(connection))
