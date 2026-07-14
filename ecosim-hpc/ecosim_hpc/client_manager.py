@@ -1,19 +1,19 @@
+from pathlib import Path
+from typing import Any, Callable, override
+
+import dask.distributed as dd
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_client_matlab.matlab_client import MatlabClient
 from ecosim_client_pyro5.pyro_client import PyroClient
 from ecosim_common.client.client import Client
-from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimulatorConfig
-from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.cli_arguments import CLIArgumentsHPC
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_server.config.simulation_config import SimulationConfig
-
-from pathlib import Path
 from fmpy import read_model_description
-import dask.distributed as dd
-from typing import Any, override, Callable
 
 
 class ClientManager(ShutdownListener):
@@ -21,7 +21,7 @@ class ClientManager(ShutdownListener):
 
     def __init__(
         self,
-        server_args: CLIArgumentsHPC,
+        server_args: HPCServerCliArguments,
     ):
         ShutdownManager().register_listener(self)
         self._server_args = server_args
@@ -32,7 +32,6 @@ class ClientManager(ShutdownListener):
         self,
         simulation_config: SimulationConfig,
     ) -> None:
-
         dask_client: dd.Client = dd.get_client()
         dask_client_ip = dask_client.scheduler_info()["address"].split(":")[1].strip("//")  # gets IP for dask scheduler
         for simulation in simulation_config.clients:
@@ -131,9 +130,9 @@ class ClientManager(ShutdownListener):
 
 
 async def client_submit(
-        client_function: Callable[[ConfigParser, ClientConfigOverride, bool], Client],
-        args: dict[str, Any],
-        workers: str | None = None,
+    client_function: Callable[[ConfigParser, ClientConfigOverride, bool], Client],
+    args: dict[str, Any],
+    workers: str | None = None,
 ) -> None:
     dask_client = dd.get_client()
     if workers:
@@ -146,8 +145,8 @@ async def client_submit(
 
 
 def client_run(
-        client_function: Callable[[ConfigParser, ClientConfigOverride, bool], Client],
-        args: dict[str, Any],
+    client_function: Callable[[ConfigParser, ClientConfigOverride, bool], Client],
+    args: dict[str, Any],
 ) -> None:
     dd.get_client()
     dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks

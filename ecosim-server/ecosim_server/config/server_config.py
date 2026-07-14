@@ -8,7 +8,7 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.cli_arguments import CLIArguments, CLIArgumentsHPC, ServerConfigOverride
+from ecosim_server.config.cli_arguments import CLIArguments, ServerConfigOverride
 
 
 @dataclass(frozen=True)
@@ -20,8 +20,7 @@ class ServerConfig:
     database: DatabaseConfig
 
     @staticmethod
-    # TODO_AFTER_MERGE: find common abstraction with existing CLIArguments
-    def of_cli_args(args: CLIArguments | CLIArgumentsHPC) -> ServerConfig:
+    def of_cli_args(args: CLIArguments) -> ServerConfig:
         config = ConfigParser(args.server_config())
         return ServerConfig(
             server=MainConfig.of_config_parser(
@@ -66,8 +65,7 @@ class MainConfig:
     ) -> MainConfig:
         return MainConfig(
             port=MainConfig._get_port(config_parser, config_override),
-            host=config_override.server_host
-            or config_parser.get_string("server", "host", default="localhost"),
+            host=config_override.server_host or config_parser.get_string("server", "host", default="localhost"),
             image_renderer_port=image_renderer_port,
             image_renderer_interval=image_renderer_interval,
         )
@@ -78,10 +76,7 @@ class MainConfig:
         config_override: ServerConfigOverride,
     ) -> int:
         # This method is mainly responsible for getting a meaningful info log if the port is overridden
-        if (
-            config.contains("server", "port")
-            and config_override.server_port is not None
-        ):
+        if config.contains("server", "port") and config_override.server_port is not None:
             config_port = config.get_int("server", "port")
             ServerConfig.logger.info(
                 f"Port was passed as an CLI argument. The port in the config file ({config_port}) is therefor "
