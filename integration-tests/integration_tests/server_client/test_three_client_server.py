@@ -8,11 +8,11 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
+from integration_tests.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 
 
-def test_three_clients_server() -> None:
+def test_three_clients_server(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
     server_port = 39310
     steps = 10
@@ -27,35 +27,38 @@ def test_three_clients_server() -> None:
         microsecond=0,
     )
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        simulation_start_date=simulation_start_date,
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_1",
-                model_name="TestModel_1",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_2",
-                model_name="TestModel_2",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_3",
-                model_name="TestModel_3",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
-            ),
-        ],
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            step_size_in_ms=step_size_in_ms,
+            simulation_start_date=simulation_start_date,
+            clients=[
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_1",
+                    model_name="TestModel_1",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_2",
+                    model_name="TestModel_2",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_3",
+                    model_name="TestModel_3",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
+                ),
+            ],
+        ),
     )
 
     client_1 = SimpleTestClient.generate(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -70,7 +73,7 @@ def test_three_clients_server() -> None:
         ),
     )
     client_2 = SimpleTestClient.generate(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -85,7 +88,7 @@ def test_three_clients_server() -> None:
         ),
     )
     client_3 = SimpleTestClient.generate(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_3",

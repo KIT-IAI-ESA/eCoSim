@@ -6,11 +6,11 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
+from integration_tests.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 
 
-def test_client_server_single() -> None:
+def test_client_server_single(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
     server_port = 47189
     steps = 100
@@ -25,14 +25,17 @@ def test_client_server_single() -> None:
         microsecond=0,
     )
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        simulation_start_date=simulation_start_date,
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            step_size_in_ms=step_size_in_ms,
+            simulation_start_date=simulation_start_date,
+        ),
     )
     client = SimpleTestClient.generate(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(

@@ -1,10 +1,11 @@
 import logging
-from typing import Any, Generator
+from typing import Any, Generator, cast
 
 import dask.distributed as dd
 import pytest
 from _pytest.logging import _LiveLoggingStreamHandler, logging_StreamHandler
 from _pytest.nodes import Item
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -43,6 +44,22 @@ def dask_client() -> Generator[dd.Client, Any, None]:
     client.forward_logging()
     client.register_plugin(DaskLoggingPlugin(log_level=logging.DEBUG))
     yield client
+
+
+@pytest.fixture(
+    scope="function",
+    params=[CommunicationProtocol.TCP_SOCKET, CommunicationProtocol.DASK],
+)
+def communication_protocol(request: pytest.FixtureRequest) -> Generator[CommunicationProtocol, Any, None]:
+    communication_protocol: CommunicationProtocol = cast(CommunicationProtocol, request.param)
+    if communication_protocol == CommunicationProtocol.DASK:
+        request.getfixturevalue("dask_client")
+    elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
+        pass  # nothing to do for TCP backend
+    else:
+        raise ValueError(f"Unknown communication protocol: {communication_protocol}")
+
+    yield communication_protocol
 
 
 @pytest.hookimpl(trylast=True)
