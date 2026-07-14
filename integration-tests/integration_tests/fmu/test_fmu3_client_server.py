@@ -18,13 +18,13 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
 from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
+from integration_tests.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.tech.resource_utils import config_parser_for_resource
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
-def test_fmu3_client_server() -> None:
+def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> None:
     mock_client_interface = SimulatorInterfaceId(
         simulator_name="Mock_1",
         model_interface_id=ModelInterfaceId(
@@ -37,83 +37,86 @@ def test_fmu3_client_server() -> None:
     steps = 100
     start_date = datetime(2020, 1, 1)
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        simulation_start_date=start_date,
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name=mock_client_interface.simulator_name,
-                model_name=mock_client_interface.model_interface_id.model_name,
-                client_id=ClientID(
-                    model_name=mock_client_interface.model_interface_id.model_name,
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            simulation_start_date=start_date,
+            clients=[
+                ClientSimulatorConfig(
                     simulator_name=mock_client_interface.simulator_name,
+                    model_name=mock_client_interface.model_interface_id.model_name,
+                    client_id=ClientID(
+                        model_name=mock_client_interface.model_interface_id.model_name,
+                        simulator_name=mock_client_interface.simulator_name,
+                    ),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            simulator_interface_id=mock_client_interface,
+                            name=mock_client_interface.model_interface_id.interface,
+                            unit="float64_matrix",
+                            description="",
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
+                        ),
+                    ],
                 ),
-                interfaces=[
-                    ModelInterfaceServer(
-                        simulator_interface_id=mock_client_interface,
-                        name=mock_client_interface.model_interface_id.interface,
-                        unit="float64_matrix",
-                        description="",
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
-            ),
-            ClientSimulatorConfig(
-                simulator_name="fmu3",
-                model_name="state_space",
-                client_id=ClientID(model_name="state_space", simulator_name="fmu3"),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="fmu3",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="state_space",
-                                interface="u",
+                ClientSimulatorConfig(
+                    simulator_name="fmu3",
+                    model_name="state_space",
+                    client_id=ClientID(model_name="state_space", simulator_name="fmu3"),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="fmu3",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="state_space",
+                                    interface="u",
+                                ),
                             ),
+                            name="u",
+                            unit="float64_matrix",
+                            description="",
+                            interface_type=InterfaceType.INPUT,
+                            required=True,
+                            connected_to=[
+                                ConnectedToData(
+                                    simulator_interface_id=mock_client_interface,
+                                    delay_path=[],
+                                ),
+                            ],
                         ),
-                        name="u",
-                        unit="float64_matrix",
-                        description="",
-                        interface_type=InterfaceType.INPUT,
-                        required=True,
-                        connected_to=[
-                            ConnectedToData(
-                                simulator_interface_id=mock_client_interface,
-                                delay_path=[],
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="fmu3",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="state_space",
+                                    interface="y",
+                                ),
                             ),
-                        ],
-                    ),
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="fmu3",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="state_space",
-                                interface="y",
-                            ),
+                            name="y",
+                            description="",
+                            unit="",
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[
+                                ConnectedToData(
+                                    simulator_interface_id=mock_client_interface,
+                                    delay_path=[],
+                                ),
+                            ],
                         ),
-                        name="y",
-                        description="",
-                        unit="",
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[
-                            ConnectedToData(
-                                simulator_interface_id=mock_client_interface,
-                                delay_path=[],
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-        ],
+                    ],
+                ),
+            ],
+        ),
     )
     repositories = server.repositories
 
     mock_client = SimpleTestClient.generate(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         simulator_name=mock_client_interface.simulator_name,
         model_name=mock_client_interface.model_interface_id.model_name,
         server_host=server_host,
@@ -149,6 +152,7 @@ def test_fmu3_client_server() -> None:
         config_override=ClientConfigOverride(
             server_host=server_host,
             server_port=server_port,
+            communication_protocol=communication_protocol,
         ),
     )
 

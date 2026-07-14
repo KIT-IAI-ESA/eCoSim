@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-import dataclasses
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import List
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.config.server_config import ServerConfig, MainConfig, DatabaseConfig
-from ecosim_server.config.simulation_config import SimulationConfig, ClientSimulatorConfig
+from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
-from ecosim_server.server import Server, AbstractServer
+from ecosim_server.server import AbstractServer, DaskServer, Server
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
-@dataclasses.dataclass
+@dataclass
 class SimpleTestServer(AbstractServer):
-    server: Server
+    server: Server | DaskServer
     server_config: ServerConfig
     simulation_config: SimulationConfig
     repositories: Repositories
@@ -36,27 +37,42 @@ class RepositoryType(Enum):
     DB = "DB"
 
 
-def generate_simple_test_server(
-    host: str,
-    port: int,
-    pace: float = 1.0,
-    steps: int = 100,
-    step_size_in_ms: int = 1_000,
-    simulation_start_date: datetime = datetime(
-        year=2025,
-        month=1,
-        day=1,
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0,
-    ),
-    repository_type: RepositoryType = RepositoryType.IN_MEMORY,
-    clients: List[ClientSimulatorConfig] | None = None,
-    database_config: DatabaseConfig | None = None,
-    restore_simulation_run: bool = False,
-) -> SimpleTestServer:
-    clients = clients or [
+@dataclass
+class SimpleTestServerParameters:
+    communication_protocol: CommunicationProtocol
+    host: str
+    port: int
+    pace: float = field(default=1.0)
+    steps: int = field(default=100)
+    step_size_in_ms: int = field(default=1_000)
+    simulation_start_date: datetime = field(
+        default_factory=lambda: datetime(
+            year=2025,
+            month=1,
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        ),
+    )
+    repository_type: RepositoryType = field(default=RepositoryType.IN_MEMORY)
+    clients: List[ClientSimulatorConfig] | None = field(default=None)
+    database_config: DatabaseConfig | None = field(default=None)
+    restore_simulation_run: bool = field(default=False)
+
+
+def generate_simple_test_server(parameters: SimpleTestServerParameters) -> SimpleTestServer:
+    if parameters.communication_protocol == CommunicationProtocol.TCP_SOCKET:
+        return generate_simple_test_server_socket(parameters)
+    elif parameters.communication_protocol == CommunicationProtocol.DASK:
+        return generate_simple_test_server_dask(parameters)
+    else:
+        raise ValueError(f"Unknown communication protocol: {parameters.communication_protocol}")
+
+
+def generate_simple_test_server_socket(parameters: SimpleTestServerParameters) -> SimpleTestServer:
+    clients = parameters.clients or [
         ClientSimulatorConfig(
             simulator_name="TestSimulator",
             model_name="TestModel",
@@ -66,10 +82,11 @@ def generate_simple_test_server(
     ]
     server_config = ServerConfig(
         server=MainConfig(
-            host=host,
-            port=port,
+            host=parameters.host,
+            port=parameters.port,
         ),
-        database=database_config or DatabaseConfig(
+        database=parameters.database_config
+        or DatabaseConfig(
             host="",
             port=0,
             name="",
@@ -83,19 +100,75 @@ def generate_simple_test_server(
     )
     simulation_config = SimulationConfig(
         clients=clients,
-        start_date=simulation_start_date,
+        start_date=parameters.simulation_start_date,
         logical_delays=[],
-        pace=pace,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        restore=restore_simulation_run,
+        pace=parameters.pace,
+        steps=parameters.steps,
+        step_size_in_ms=parameters.step_size_in_ms,
+        restore=parameters.restore_simulation_run,
     )
-    if repository_type == RepositoryType.DB:
-        repositories: Repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+    repositories: Repositories
+    if parameters.repository_type == RepositoryType.DB:
+        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
     else:
-        repositories: Repositories = RepositoriesInMemory()
+        repositories = RepositoriesInMemory()
 
     server = Server(
+        server_config=server_config,
+        simulation_config=simulation_config,
+        repositories=repositories,
+    )
+    return SimpleTestServer(
+        server=server,
+        server_config=server_config,
+        simulation_config=simulation_config,
+        repositories=repositories,
+    )
+
+
+def generate_simple_test_server_dask(parameters: SimpleTestServerParameters) -> SimpleTestServer:
+    clients = parameters.clients or [
+        ClientSimulatorConfig(
+            simulator_name="TestSimulator",
+            model_name="TestModel",
+            interfaces=[],
+            client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
+        ),
+    ]
+    server_config = ServerConfig(
+        server=MainConfig(
+            host=parameters.host,
+            port=parameters.port,
+        ),
+        database=parameters.database_config
+        or DatabaseConfig(
+            host="",
+            port=0,
+            name="",
+            schema="",
+            username="",
+            password="",
+            ssl=False,
+            type="",
+            drop_existing_schema=False,
+        ),
+    )
+    simulation_config = SimulationConfig(
+        clients=clients,
+        start_date=parameters.simulation_start_date,
+        logical_delays=[],
+        pace=parameters.pace,
+        steps=parameters.steps,
+        step_size_in_ms=parameters.step_size_in_ms,
+        restore=parameters.restore_simulation_run,
+    )
+    repositories: Repositories
+    if parameters.repository_type == RepositoryType.DB:
+        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+    else:
+        repositories = RepositoriesInMemory()
+
+    server = DaskServer(
         server_config=server_config,
         simulation_config=simulation_config,
         repositories=repositories,

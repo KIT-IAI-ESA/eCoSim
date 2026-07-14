@@ -58,7 +58,7 @@ class SimpleTestClient(Client):
             ClientSimStepData,
         ],
         test_client_data: TestClientData,
-        communication_protocol: CommunicationProtocol = CommunicationProtocol.TCP_SOCKET,
+        communication_protocol: CommunicationProtocol,
     ) -> SimpleTestClient:
         return SimpleTestClient(
             client_config=TestClientConfig(

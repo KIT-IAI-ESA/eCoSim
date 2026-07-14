@@ -93,6 +93,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
 
     simulator_name = "TestSimulator_PostgresIntegration"
     server = generate_simple_test_server(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         host=server_host,
         port=server_port,
         repository_type=RepositoryType.DB,
@@ -206,9 +207,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-        received_inputs,
-        current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_1",
@@ -341,5 +340,6 @@ def handle_client_2_sim_step(
 
 def square_each_element(matrix: InterfaceValueType) -> InterfaceValueType:
     return [
-        [value * value for value in inner_list] for inner_list in matrix  # type: ignore
+        [value * value for value in inner_list]
+        for inner_list in matrix  # type: ignore
     ]
