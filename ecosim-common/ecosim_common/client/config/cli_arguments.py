@@ -47,8 +47,7 @@ class CLIArguments(AppConfig):
                 AppConfigParameter(
                     name="communication-protocol",
                     required=False,
-                    default_value=CommunicationProtocol.TCP_SOCKET,
-                    transform=lambda x: int(x),
+                    default_value=CommunicationProtocol.TCP_SOCKET.name,
                     help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
                     + f"Possible: {[p.name for p in CommunicationProtocol]}",
                 ),
