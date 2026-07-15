@@ -7,6 +7,7 @@ from types import TracebackType
 from typing import override
 
 import dask.distributed
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 
 @dataclass
@@ -15,6 +16,17 @@ class ParallelLock(AbstractContextManager):
 
     _lock: threading.Lock | dask.distributed.Lock = field()
     _none_timeout: float | None = field()
+
+    @staticmethod
+    def for_protocol(
+        communication_protocol: CommunicationProtocol,
+    ) -> "ParallelLock":
+        if communication_protocol == CommunicationProtocol.DASK:
+            return ParallelLock.dask()
+        elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
+            return ParallelLock.thread()
+        else:
+            raise ValueError(f"Unsupported communication protocol: {communication_protocol}")
 
     @staticmethod
     def thread() -> "ParallelLock":

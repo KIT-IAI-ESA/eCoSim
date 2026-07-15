@@ -10,10 +10,10 @@ from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
-from ecosim_hpc.data.repositories_db import RepositoriesDB
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
+from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.server import DaskServer
 

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import threading
 from typing import Any
 
-from sqlalchemy import Engine, create_engine, func, inspect, Executable
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.config.server_config import DatabaseConfig
+from ecosim_server.tech.db.db_types import DTO, GenericEntity, GenericId
+from sqlalchemy import Engine, Executable, create_engine, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from ecosim_server.config.server_config import DatabaseConfig
-from ecosim_server.tech.db.db_types import GenericEntity, GenericId, DTO
-from ecosim_common.tech.logger.logger import ESPLogger
 
-
+# TODO_OSR: refactor to dataclass
 class DBConnection:
     _logger = ESPLogger("DBConnection")
 
@@ -26,7 +25,6 @@ class DBConnection:
         self.default_schema: str = db_config.schema
         self._db_engine = self._db_engine.execution_options(schema_translate_map={"": self.default_schema})
         self._base_model.metadata.create_all(self._db_engine)
-        self._thread_lock = threading.Lock()
 
     def create_measurement_table(
         self,

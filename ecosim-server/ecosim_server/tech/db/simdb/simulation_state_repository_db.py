@@ -1,26 +1,29 @@
 from __future__ import annotations
 
-import threading
+from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import Column, Integer, Text
-
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_server.simulation.state.simulation_state import SimulationState
+from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_types import DTO
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from ecosim_server.simulation.state.simulation_state import SimulationState
-from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
+from sqlalchemy import Column, Integer, Text
 
 
+# TODO_OSR: move to different package ('simdb' is not used anymore)
+@dataclass
 class SimulationStateRepositoryDB(SimulationStateRepository):
-    _thread_lock = threading.Lock()
-    _logger = ESPLogger("SimulationStateRepositoryDB")
+    _db_connection: DBConnection = field()
+    _write_lock: ParallelLock = field()
+    _state_id: Any = field(default=None, init=False)
+    _logger: ESPLogger = field(default_factory=lambda: ESPLogger("SimulationStateRepositoryDB"))
 
-    def __init__(self, db_connection: DBConnection):
-        self._db_connection = db_connection
+    def __post_init__(self) -> None:
         state = SimulationStateDTO(
-            variation_id=0,
+            variation_id=0,  # TODO_OSR: remove
             state=SimulationState.NOT_READY.value,
         )
         self._state_id = self._db_connection.insert_into(state)
@@ -29,7 +32,7 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
         self,
         state: SimulationState,
     ) -> None:
-        with self._thread_lock:
+        with self._write_lock:
             self._db_connection.update(
                 SimulationStateDTO(
                     state_id=self._state_id,
@@ -47,7 +50,7 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
 
 
 class SimulationStateDTO(SimControlDB_Base, DTO[int]):
-    __tablename__ = 'simulation_state'
+    __tablename__ = "simulation_state"
 
     state_id = Column(Integer, primary_key=True, autoincrement=True)
     variation_id = Column(Integer)

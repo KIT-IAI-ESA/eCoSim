@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.optional_access import if_exists
 from ecosim_server.config.cli_arguments import CLIArguments, ServerConfigOverride
 
 
@@ -50,6 +52,7 @@ class ServerConfig:
 class MainConfig:
     host: str
     port: int
+    communication_protocol: CommunicationProtocol
     image_renderer_port: int | None = None
     image_renderer_interval: int | None = None
 
@@ -59,6 +62,7 @@ class MainConfig:
         config_override: ServerConfigOverride = ServerConfigOverride(
             server_host=None,
             server_port=None,
+            communication_protocol=None,
         ),
         image_renderer_port: int | None = None,
         image_renderer_interval: int | None = None,
@@ -66,6 +70,10 @@ class MainConfig:
         return MainConfig(
             port=MainConfig._get_port(config_parser, config_override),
             host=config_override.server_host or config_parser.get_string("server", "host", default="localhost"),
+            communication_protocol=(
+                if_exists(config_override).communication_protocol
+                or config_parser.get_enum(CommunicationProtocol, "server", "communication_protocol", CommunicationProtocol.TCP_SOCKET)
+            ),
             image_renderer_port=image_renderer_port,
             image_renderer_interval=image_renderer_interval,
         )
