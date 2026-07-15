@@ -14,7 +14,7 @@ from integration_tests.communication.message_data_for_test import MessageDataFor
 
 def test_happy_path() -> None:
     server_address = ConnectionAddress(
-        ip='localhost',
+        ip="localhost",
         port=1234,
     )
     server_socket = EndpointSocket(_connection_address=server_address)
@@ -50,7 +50,7 @@ def test_happy_path() -> None:
 
 def test_big_data() -> None:
     server_address = ConnectionAddress(
-        ip='localhost',
+        ip="localhost",
         port=34567,
     )
     server_socket = EndpointSocket(_connection_address=server_address)
@@ -68,11 +68,11 @@ def test_big_data() -> None:
     correlation_id = CorrelationId.of_int(7777)
 
     base_string = "hello world! "
-    encoded_base_size = len(base_string.encode('utf-8'))
+    encoded_base_size = len(base_string.encode("utf-8"))
     mb_15 = 15 * 1024 * 1024  # 15MB = 15 * 1024 * 1024 bytes
     repetitions = mb_15 // encoded_base_size + 1
     final_string = base_string * repetitions
-    final_size = len(final_string.encode('utf-8'))
+    final_size = len(final_string.encode("utf-8"))
 
     assert final_size > mb_15
 

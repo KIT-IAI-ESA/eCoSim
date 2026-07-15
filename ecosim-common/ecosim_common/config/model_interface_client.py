@@ -18,23 +18,23 @@ class ModelInterfaceClient:
 
     @staticmethod
     def of_json_client_config(
-            model_interface_id: ModelInterfaceId,
-            interface: dict[str, str],
-            interface_type: InterfaceType,
-    ) -> 'ModelInterfaceClient':
-        interface_name = interface.get('name')
+        model_interface_id: ModelInterfaceId,
+        interface: dict[str, str],
+        interface_type: InterfaceType,
+    ) -> "ModelInterfaceClient":
+        interface_name = interface.get("name")
         if not interface_name:
-            raise RuntimeError(f'Interface name not found: {interface}')
+            raise RuntimeError(f"Interface name not found: {interface}")
         return ModelInterfaceClient(
             model_interface_id=model_interface_id,
             name=interface_name,
-            unit=interface.get('unit'),
-            description=interface.get('description') or '',
+            unit=interface.get("unit"),
+            description=interface.get("description") or "",
             type=interface_type,
             required=config_parser.ConfigParser.config_string_to_bool(
                 interface.setdefault(
-                    'required',
-                    'false',
+                    "required",
+                    "false",
                 ),
             ),
         )

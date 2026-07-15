@@ -13,7 +13,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 def main() -> None:
     tprint("eCoSimPy", font="tarty1", chr_ignore=True)
-    print(f"Matlab Client - {get_module_version("ecosim_client_matlab)}")}")
+    print(f"Matlab Client - {get_module_version('ecosim_client_matlab)}')}")
     sleep(0.5)
 
     args = CLIArguments()
@@ -33,5 +33,5 @@ def main() -> None:
     ShutdownManager().set_shutdown_at_application_end()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

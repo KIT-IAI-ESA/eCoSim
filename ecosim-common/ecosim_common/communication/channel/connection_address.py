@@ -28,7 +28,7 @@ class ConnectionAddress:
         else:
             assert connection_type == "inproc"
             split_address = address.split("/")
-            return ConnectionAddress(split_address[0], split_address[1]+"/"+split_address[2])
+            return ConnectionAddress(split_address[0], split_address[1] + "/" + split_address[2])
 
     @staticmethod
     def of_dask_client(raw_dask_client: dd.Client) -> "ConnectionAddress":

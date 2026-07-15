@@ -51,11 +51,11 @@ class PostgresTech(DbTechAbstract):
             if result.scalar():
                 if not self.server_config.database.drop_existing_schema:
                     raise RuntimeError(
-                        f"Schema '{schema}' already exists. This means there was already an execution for this run. " +
-                        "This is most likely an error in your local setup and should not occur on live.",
+                        f"Schema '{schema}' already exists. This means there was already an execution for this run. "
+                        + "This is most likely an error in your local setup and should not occur on live.",
                     )
                 else:
-                    connection.execute(text(f"DROP SCHEMA \"{schema}\" CASCADE"))
-            connection.execute(text(f"CREATE SCHEMA \"{schema}\""))
+                    connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+            connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             connection.commit()
             PostgresTech._logger.debug(f"Schema '{schema}' created")

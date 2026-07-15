@@ -2,7 +2,6 @@ from ecosim_common.tech.singleton import Singleton
 
 
 class TestSingleton(metaclass=Singleton):
-
     def __init__(self) -> None:
         self.my_string: str = "First init"
 

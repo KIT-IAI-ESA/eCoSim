@@ -7,7 +7,6 @@ from ecosim_common.communication.channel.esp_channel_message import ESPChannelMe
 
 @dataclass
 class ESPChannel(ABC):
-
     @abstractmethod
     def close(self) -> None:
         pass

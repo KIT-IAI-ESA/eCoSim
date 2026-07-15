@@ -4,7 +4,6 @@ from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurem
 
 
 class ServerTimeMeasurementRepository(ABC):
-
     @abstractmethod
     def put(
         self,

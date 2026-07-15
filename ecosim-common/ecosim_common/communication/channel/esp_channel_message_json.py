@@ -16,7 +16,7 @@ class ESPChannelMessageJson(ESPChannelMessage):
 
     @staticmethod
     def empty_answer(
-            request_message: ESPChannelMessage,
+        request_message: ESPChannelMessage,
     ) -> ESPChannelMessageJson:
         return ESPChannelMessageJson(
             _type=request_message.type(),
@@ -26,8 +26,8 @@ class ESPChannelMessageJson(ESPChannelMessage):
 
     @staticmethod
     def answer_with_payload(
-            request_message: ESPChannelMessage,
-            payload: MessageData,
+        request_message: ESPChannelMessage,
+        payload: MessageData,
     ) -> ESPChannelMessageJson:
         return ESPChannelMessageJson(
             _type=request_message.type(),
@@ -37,9 +37,9 @@ class ESPChannelMessageJson(ESPChannelMessage):
 
     @staticmethod
     def create(
-            type: MessageType,
-            payload: MessageData,
-            correlation_id: CorrelationId | None = None,
+        type: MessageType,
+        payload: MessageData,
+        correlation_id: CorrelationId | None = None,
     ) -> ESPChannelMessageJson:
         return ESPChannelMessageJson(
             _type=type,
@@ -49,8 +49,8 @@ class ESPChannelMessageJson(ESPChannelMessage):
 
     @staticmethod
     def empty(
-            type: MessageType,
-            correlation_id: CorrelationId | None = None,
+        type: MessageType,
+        correlation_id: CorrelationId | None = None,
     ) -> ESPChannelMessageJson:
         return ESPChannelMessageJson(
             _type=type,

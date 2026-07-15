@@ -16,8 +16,7 @@ def main() -> None:
             continue
         if not SNAKE_CASE_REGEX.match(filename):
             print(
-                f"FAIL: Invalid Python filename '{filepath}'. "
-                "Must be snake_case (e.g., 'my_module.py').",
+                f"FAIL: Invalid Python filename '{filepath}'. Must be snake_case (e.g., 'my_module.py').",
                 file=sys.stderr,
             )
             has_error = True

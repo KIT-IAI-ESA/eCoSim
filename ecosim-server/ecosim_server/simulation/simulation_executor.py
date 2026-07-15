@@ -1,27 +1,27 @@
 from __future__ import annotations
-import threading
-import dask.distributed as dd
-from distributed.protocol import serialize, deserialize
 
-import time
 import sys
-from time import sleep
+import threading
+import time
 from datetime import datetime
 from functools import partial
-from typing import List, Any
+from time import sleep
+from typing import Any, List
 
+import dask.distributed as dd
+from distributed.protocol import deserialize, serialize
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
-from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
-from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from ecosim_server.config.server_config import ServerConfig
-from ecosim_server.data.repositories import Repositories
+from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
+from ecosim_common.communication.message_type import MessageType
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.client.client_communication import ClientCommunication
-from ecosim_common.config.client_id import ClientID
+from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.message_buffer import BufferedClientMessage
 from ecosim_server.server_state import ServerState, ServerStateDask
@@ -160,8 +160,7 @@ class SimulationExecutor:
             self._server_state = deserialize(*self._state_variable.get())
             self._update_client_communication()
             self._state_variable.put(serialize(self._server_state))
-        while ((not self._server_state.have_all_clients_started_simulation()) and
-               self._server_state.are_all_clients_connected_and_ready()):
+        while (not self._server_state.have_all_clients_started_simulation()) and self._server_state.are_all_clients_connected_and_ready():
             # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
                 self._server_state = deserialize(*self._state_variable.get())
@@ -236,8 +235,7 @@ class SimulationExecutor:
             self._current_step_data.reset_for_new_step(step=self._current_step)
             if self._using_dask:
                 responses: dict[Any, dd.Event | threading.Event] = {
-                    client_id: dd.Event(name=client_id)
-                    for client_id in self.simulation_config.client_ids()
+                    client_id: dd.Event(name=client_id) for client_id in self.simulation_config.client_ids()
                 }
 
             else:
@@ -345,8 +343,8 @@ class SimulationExecutor:
             self.logger.info(f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'")
             for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                 self.logger.debug(
-                    f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': " +
-                    f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
+                    f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': "
+                    + f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
                 )
                 self._current_step_data.set_value(
                     logical_delay_connection.output_interface,
@@ -367,8 +365,8 @@ class SimulationExecutor:
         if self._using_dask:
             current_step_data_queue.put(serialize(self._current_step_data))
         self.logger.info(
-            f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:" +
-            f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
+            f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:"
+            + f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
         )
         for client_id in ready_for_execution_data_by_clients:
             self.logger.debug(
@@ -412,8 +410,8 @@ class SimulationExecutor:
                 message_types=message_types,
                 callback=partial(
                     _handle_received_sim_step_dask,
-                        ready_for_execution_data_by_clients=serialize(ready_for_execution_data_by_clients),
-                        current_step=self._current_step,
+                    ready_for_execution_data_by_clients=serialize(ready_for_execution_data_by_clients),
+                    current_step=self._current_step,
                 ),
             )
             self._state_variable.put(serialize(self._server_state))
@@ -474,8 +472,8 @@ class SimulationExecutor:
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             self.logger.error(
-                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. " +
-                f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
+                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
+                + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
             )
             return
         client_sim_step_data: ClientSimStepData = received_message.payload(
@@ -555,17 +553,17 @@ class SimulationExecutor:
 
 # TODO_AFTER_MERGE: extract dask stuff and find a common abstraction
 def _handle_received_sim_step_dask(
-        received_message: BufferedClientMessage,
-        ready_for_execution_data_by_clients: tuple[dict[str, Any], list[bytes | memoryview[int]]],
-        current_step: int,
+    received_message: BufferedClientMessage,
+    ready_for_execution_data_by_clients: tuple[dict[str, Any], list[bytes | memoryview[int]]],
+    current_step: int,
 ) -> None:
     ready_for_execution_data_by_clients_deserial: dict[ClientID, List[ProtocolInterfaceValue]] = deserialize(*ready_for_execution_data_by_clients)
     dd.get_client()
     client_id = received_message.client_id
     if received_message.message.correlation_id().to_int() != current_step:
         SimulationExecutor.logger.debug(
-            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. " +
-                f"Expected {current_step} but got {received_message.message.correlation_id()}",
+            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
+            + f"Expected {current_step} but got {received_message.message.correlation_id()}",
         )
         return
     client_sim_step_data: ClientSimStepData = received_message.payload(
@@ -573,7 +571,7 @@ def _handle_received_sim_step_dask(
     )
 
     SimulationExecutor.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}",
+        f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}",
     )
     interface_values = tuple(client_sim_step_data.interface_values)
     value_queue = dd.Queue(name="values_for_history")
@@ -607,6 +605,7 @@ def _handle_batch_response_dask(message: BufferedClientMessage, start_date: date
         )
         return
     dd.Event(name=client_id).set()
+
 
 # def _lambda_dask(
 #         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],

@@ -15,7 +15,7 @@ class PreRenderedImageService(SimulationRendererService):
         config: PreRenderedImageServiceConfig,
     ) -> None:
         self._config: PreRenderedImageServiceConfig = config
-        self._file_pattern = re.compile(r'^(\d+)_')
+        self._file_pattern = re.compile(r"^(\d+)_")
 
     def render_step(
         self,
@@ -34,7 +34,7 @@ class PreRenderedImageService(SimulationRendererService):
                     PreRenderedImageService._logger.debug(
                         f"Found pre-rendered image in '{self._config.image_dir}' for time step {time_step}",
                     )
-                    with open(file_path, 'rb') as file:
+                    with open(file_path, "rb") as file:
                         return file.read()
         except Exception as e:
             PreRenderedImageService._logger.error("Failed to render image {}".format(e))
@@ -46,7 +46,6 @@ class PreRenderedImageService(SimulationRendererService):
 
 
 class PreRenderedImageServiceConfig:
-
     def __init__(
         self,
         image_dir: str,

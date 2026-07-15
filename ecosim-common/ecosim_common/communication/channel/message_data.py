@@ -7,7 +7,6 @@ from typing import TypeVar, Type, Dict, Any
 
 @dataclass(frozen=True)
 class MessageData(ABC):
-
     @classmethod
     def of_json(
         cls: Type[MESSAGE_DATA],
@@ -20,4 +19,4 @@ class MessageData(ABC):
         return asdict(self)
 
 
-MESSAGE_DATA = TypeVar('MESSAGE_DATA', bound=MessageData)
+MESSAGE_DATA = TypeVar("MESSAGE_DATA", bound=MessageData)

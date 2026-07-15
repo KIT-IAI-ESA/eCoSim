@@ -124,12 +124,9 @@ class InterfaceValueHistory:
             )
 
     def contains_all_default_values(self) -> bool:
-        return (
-            InterfaceValueHistory._default_values_marker in self._entries.keys() and
-            self._entries[InterfaceValueHistory._default_values_marker].keys() == {
-                client.client_id for client in self._simulation_config.clients
-            }
-        )
+        return InterfaceValueHistory._default_values_marker in self._entries.keys() and self._entries[
+            InterfaceValueHistory._default_values_marker
+        ].keys() == {client.client_id for client in self._simulation_config.clients}
 
     def calculate_current_execution_step_or_exception(self) -> RestoreData:
         InterfaceValueHistory._logger.debug("Calculating current execution step...")

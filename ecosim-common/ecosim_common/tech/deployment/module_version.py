@@ -5,8 +5,8 @@ from pathlib import Path
 
 
 def get_module_version(
-        name: str,
-        pyproject_file: Path | None = None,
+    name: str,
+    pyproject_file: Path | None = None,
 ) -> str:
     # noinspection PyBroadException
     try:

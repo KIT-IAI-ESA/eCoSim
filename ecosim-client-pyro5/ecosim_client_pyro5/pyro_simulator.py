@@ -67,14 +67,16 @@ class PyroSimulator(ShutdownListener):
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
-        return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(
-                name=interface_name,
-                # we always assume float (like in the Java client)
-                value=self.get_output_float(interface_name),
-            )
-            for interface_name in self._execution_config.server_used_outputs()
-        ])
+        return ClientSimStepData.of_protocol_interface_values(
+            [
+                ProtocolInterfaceValue(
+                    name=interface_name,
+                    # we always assume float (like in the Java client)
+                    value=self.get_output_float(interface_name),
+                )
+                for interface_name in self._execution_config.server_used_outputs()
+            ],
+        )
 
     def do_step(
         self,

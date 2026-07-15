@@ -3,7 +3,6 @@ from ecosim_common.tech.logger.logger import init_logger
 
 
 class DaskLoggingPlugin(WorkerPlugin):
-
     def __init__(self, log_level: int) -> None:
         self._log_level = log_level
 

@@ -82,7 +82,7 @@ class DBConnection:
         with Session(self._db_engine) as session:
             current = session.query(table).filter_by(**{table.id_column().name: param.id()}).first()
             for key, value in param.__dict__.items():
-                if key != table.id_column().name and not key.startswith('_sa_'):
+                if key != table.id_column().name and not key.startswith("_sa_"):
                     setattr(current, key, value)
             session.commit()
 

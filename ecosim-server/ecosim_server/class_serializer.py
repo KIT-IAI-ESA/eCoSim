@@ -7,7 +7,7 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.server_state import ServerStateDask
 
-'''
+"""
 # TODO SECURITY
 
 The official pickle docs state (https://docs.python.org/3/library/pickle.html):
@@ -25,7 +25,7 @@ Safer serialization formats such as json may be more appropriate if you are proc
 
 
 -> so we need to clarify if we want to do it like this. Especially in co-simulations with different partners this might be a show stopper.
-'''
+"""
 
 
 def serialize_clientid(client_id: ClientID) -> Tuple[dict, List[bytes]]:

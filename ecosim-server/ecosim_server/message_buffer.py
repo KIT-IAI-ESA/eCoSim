@@ -91,8 +91,7 @@ class ClientMessageBuffer:
         if type(self._callbacks_lock) is dd.lock.Lock:
             with self._callbacks_lock:
                 self._on_message_callbacks = {
-                    call for call in self._on_message_callbacks.copy()
-                    if call.__hash__() != client_ids.__hash__() + message_types.__hash__()
+                    call for call in self._on_message_callbacks.copy() if call.__hash__() != client_ids.__hash__() + message_types.__hash__()
                 }
         else:
             with self._callbacks_lock:
@@ -112,9 +111,9 @@ class ClientMessageBuffer:
         message_types: Tuple[MessageType, ...] = (),
     ) -> List[BufferedClientMessage]:
         matching_messages = [
-            message for message in self._buffer if
-            (client_ids and message.client_id in client_ids) and
-            (message_types and message.message.type() in message_types)
+            message
+            for message in self._buffer
+            if (client_ids and message.client_id in client_ids) and (message_types and message.message.type() in message_types)
         ]
         for message in matching_messages:
             self._buffer.remove(message)
@@ -122,7 +121,6 @@ class ClientMessageBuffer:
 
 
 class BufferedClientMessage:
-
     def __init__(
         self,
         client_id: ClientID,
@@ -137,19 +135,24 @@ class BufferedClientMessage:
         other: Any,
     ) -> bool:
         return (
-            isinstance(other, BufferedClientMessage) and
-            self.time_stamp_ns == other.time_stamp_ns and
-            self.client_id == other.client_id and
-            self.message.type() == other.message.type() and
-            self.message.correlation_id() == other.message.correlation_id() and
-            self.message.payload() == other.message.payload()
+            isinstance(other, BufferedClientMessage)
+            and self.time_stamp_ns == other.time_stamp_ns
+            and self.client_id == other.client_id
+            and self.message.type() == other.message.type()
+            and self.message.correlation_id() == other.message.correlation_id()
+            and self.message.payload() == other.message.payload()
         )
 
     def __hash__(self) -> int:
-        return hash((
-            self.time_stamp_ns, self.client_id, self.message.type(), self.message.correlation_id(),
-            self.message.payload(),
-        ))
+        return hash(
+            (
+                self.time_stamp_ns,
+                self.client_id,
+                self.message.type(),
+                self.message.correlation_id(),
+                self.message.payload(),
+            ),
+        )
 
     def payload(
         self,
@@ -198,6 +201,7 @@ class OnMessageCallbackHandlerDask:
         async def f() -> None:
             future = dask_client.submit(self.callback, message)
             dd.fire_and_forget(future)
+
         dask_client.sync(f)
 
     def __eq__(

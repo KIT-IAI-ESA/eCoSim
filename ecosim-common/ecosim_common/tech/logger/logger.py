@@ -4,7 +4,7 @@ import traceback
 from logging import StreamHandler
 from typing import Any
 
-default_log_format = '%(asctime)s - %(levelname)s - %(message)s'
+default_log_format = "%(asctime)s - %(levelname)s - %(message)s"
 default_handlers = [logging.StreamHandler()]
 
 
@@ -22,14 +22,14 @@ def init_logger(log_level: int = logging.INFO) -> None:
     root.setLevel(log_level)
 
     # log levels of python SDK logs
-    logging.getLogger('asyncio').setLevel(logging.ERROR)
-    logging.getLogger('asyncio.coroutines').setLevel(logging.ERROR)
+    logging.getLogger("asyncio").setLevel(logging.ERROR)
+    logging.getLogger("asyncio.coroutines").setLevel(logging.ERROR)
     # log levels of logger from 3rd party libraries
-    logging.getLogger('websockets.server').setLevel(logging.ERROR)
-    logging.getLogger('websockets.client').setLevel(logging.ERROR)
-    logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
-    logging.getLogger('distributed').setLevel(logging.ERROR)
-    logging.getLogger('distributed.worker').setLevel(logging.ERROR)
+    logging.getLogger("websockets.server").setLevel(logging.ERROR)
+    logging.getLogger("websockets.client").setLevel(logging.ERROR)
+    logging.getLogger("websockets.protocol").setLevel(logging.ERROR)
+    logging.getLogger("distributed").setLevel(logging.ERROR)
+    logging.getLogger("distributed.worker").setLevel(logging.ERROR)
 
 
 class ESPLogger:
@@ -39,10 +39,11 @@ class ESPLogger:
     ):
         self.__name = name
         self.__logger = logging.getLogger(name)
-        self.__overwrite_logger = logging.getLogger(name + '_overwrite')
+        self.__overwrite_logger = logging.getLogger(name + "_overwrite")
         self.__overwrite_logger.handlers = [
-            handler for handler in default_handlers if  # type: ignore
-            not isinstance(handler, StreamHandler)
+            handler
+            for handler in default_handlers
+            if not isinstance(handler, StreamHandler)  # type: ignore
         ] + [OverwriteStreamHandler(logging.Formatter(default_log_format))]
         self.__overwrite_logger.propagate = False
 
@@ -50,7 +51,7 @@ class ESPLogger:
         self,
         message: str,
     ) -> None:
-        stack_trace = ''.join(traceback.format_stack())
+        stack_trace = "".join(traceback.format_stack())
         self.__logger.error(f"{self.__name}: {message}\n           Stack trace: {stack_trace}")
 
     def warning(
@@ -83,7 +84,6 @@ class ESPLogger:
 
 
 class OverwriteStreamHandler(logging.StreamHandler[Any]):
-
     def __init__(
         self,
         formatter: logging.Formatter,
@@ -96,5 +96,5 @@ class OverwriteStreamHandler(logging.StreamHandler[Any]):
         record: logging.LogRecord,
     ) -> None:
         msg = self.format(record)
-        sys.stderr.write('\r' + msg)  # Use carriage return to overwrite the line
+        sys.stderr.write("\r" + msg)  # Use carriage return to overwrite the line
         sys.stderr.flush()
