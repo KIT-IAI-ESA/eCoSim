@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Callable, override
 
 import dask.distributed as dd
+from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
+from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
-from ecosim_common.communication.dask.dask_messages import ReceivedMessage
 from ecosim_common.communication.dask.esp_dask import ESPDask
-from ecosim_common.communication.dask.simple_dask_message import SimpleDaskMessage
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
@@ -63,7 +63,7 @@ class DaskChannel(ESPChannel):
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
         dd.get_client()
-        message: ReceivedMessage | None = self._internal_dask_client.receive()
+        message: ReceivedBinaryMessage | None = self._internal_dask_client.receive()
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
             self._is_finished.set()
@@ -79,7 +79,7 @@ class DaskChannel(ESPChannel):
             raise Exception("Dask client already closed")
         try:
             self._internal_dask_client.send(
-                SimpleDaskMessage.of_esp_channel_message(message=message),
+                SimpleBinaryMessage.of_esp_channel_message(message=message),
             )
         except Exception as e:
             DaskChannel._logger.debug(
@@ -87,7 +87,7 @@ class DaskChannel(ESPChannel):
             )
             self._internal_dask_client.connect()
             self._internal_dask_client.send(
-                SimpleDaskMessage.of_esp_channel_message(message=message),
+                SimpleBinaryMessage.of_esp_channel_message(message=message),
             )
 
     # Needs to be a static method due to serialization issues when submitting via dd_client.submit().
@@ -105,7 +105,7 @@ class DaskChannel(ESPChannel):
         is_finished_global = dd.Event(name="global_finish")
         dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
         while not is_finished.is_set() and not is_finished_global.is_set():
-            message: ReceivedMessage | None = dask_client.receive()
+            message: ReceivedBinaryMessage | None = dask_client.receive()
 
             if not message:
                 is_finished.set()
