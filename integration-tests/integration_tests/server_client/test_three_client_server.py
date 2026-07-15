@@ -115,7 +115,7 @@ def test_three_clients_server(communication_protocol: CommunicationProtocol) -> 
 
     repositories = server.repositories
 
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -125,7 +125,7 @@ def test_three_clients_server(communication_protocol: CommunicationProtocol) -> 
 
     (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_1_records))
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2.client_id)
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -135,7 +135,7 @@ def test_three_clients_server(communication_protocol: CommunicationProtocol) -> 
 
     (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_2_records))
 
-    client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
+    client_3_measurement_repository = repositories.measurement_repository(client_id=client_3.client_id)
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 

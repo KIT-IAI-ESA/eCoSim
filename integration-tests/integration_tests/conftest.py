@@ -89,7 +89,7 @@ def pytest_runtest_teardown(item: Item, nextitem: Item | None) -> None:
         client.close()
         if client.cluster is not None:
             client.cluster.close()
-        if dd.client._global_clients is not None:
-            dd.client._global_clients.clear()
+        if dd.client._global_clients is not None:  # noqa: SLF001
+            dd.client._global_clients.clear()  # noqa: SLF001
     except Exception as e:
         pytest_fixture_logger.error(f"Closing dask client failed: {e}")

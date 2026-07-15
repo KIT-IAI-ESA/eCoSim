@@ -22,3 +22,6 @@ class HPCServerCliArguments(CLIArguments):
 
     def interactive(self) -> bool:
         return self._args.interactive
+
+    def simulator_dir(self) -> str:
+        return self._args.simulator_dir

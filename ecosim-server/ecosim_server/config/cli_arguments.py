@@ -184,8 +184,8 @@ class CLIArguments(AppConfig):
 
     def config_overrides(self) -> ServerConfigOverride:
         return ServerConfigOverride(
-            server_host=self._args.host,
-            server_port=self._args.port,
+            server_host=self.host(),
+            server_port=self.port,
             communication_protocol=self.communication_protocol(),
         )
 
@@ -193,6 +193,9 @@ class CLIArguments(AppConfig):
         if self._args.communication_protocol is None:
             return None
         return CommunicationProtocol.of(self._args.communication_protocol)
+
+    def host(self) -> str | None:
+        return self._args.host
 
 
 @dataclass(frozen=True)

@@ -2,5 +2,8 @@ line-length = 150
 
 [lint]
 # Enable pycodestyle (E) and Pyflakes (F) rules (flake8's default rule sets), and warnings (W)
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "SLF"]
 ignore = []
+
+[lint.per-file-ignores]
+"**/ecosim-client-pyro5/ecosim_client_pyro5/pyro_*.py" = ["SLF001"]

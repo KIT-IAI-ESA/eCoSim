@@ -21,6 +21,7 @@ def is_raw_dask_client_connected(raw_dask_id: str) -> bool:
         return False
 
 
+# TODO_OSR: refactor to dataclass
 class ESPDask(ShutdownListener):
     _logger = ESPLogger("ESPDask")
 
@@ -34,6 +35,9 @@ class ESPDask(ShutdownListener):
         self._internal_dask_id = internal_dask_id
         self._connected: bool = is_raw_dask_client_connected(internal_dask_id)
         self._origin_id: int = uuid.uuid4().int & (1 << 64) - 1
+
+    def dask_id(self) -> str:
+        return self._internal_dask_id
 
     def on_app_shutdown(self) -> None:
         if not self._closed.is_set():

@@ -20,8 +20,7 @@ class DaskChannel(ESPChannel):
         esp_dask: ESPDask,
     ):
         self._internal_dask_client = esp_dask
-        # TODO_AFTER_MERGE: refactor after merge to not violate access to internal data
-        self._is_finished: dd.Event = dd.Event(name=f"client_finish_{esp_dask._internal_dask_id}")
+        self._is_finished: dd.Event = dd.Event(name=f"client_finish_{esp_dask.dask_id()}")
         self._is_finished_global: dd.Event = dd.Event(name="global_finish")
 
     @override
@@ -44,8 +43,7 @@ class DaskChannel(ESPChannel):
                 DaskChannel._listen_blocking,
                 on_rec=on_message,
                 dask_client=self._internal_dask_client,
-                # TODO_AFTER_MERGE: refactor after merge to not violate access to internal data
-                event_name=f"client_finish_{self._internal_dask_client._internal_dask_id}",
+                event_name=f"client_finish_{self._internal_dask_client.dask_id()}",
                 pure=False,
             )
             dd.fire_and_forget(future)

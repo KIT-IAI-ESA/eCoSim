@@ -25,7 +25,7 @@ class ClientManager(ShutdownListener):
     ):
         ShutdownManager().register_listener(self)
         self._server_args = server_args
-        self._modules_path = Path(server_args._args.simulator_dir)
+        self._modules_path = Path(server_args.simulator_dir())
         self.client_dict: dict[str, Any] = {}
 
     def clients_start(
@@ -40,8 +40,8 @@ class ClientManager(ShutdownListener):
             simulator_path = path
             args = {
                 "config_override": ClientConfigOverride(
-                    server_host=self._server_args._args.host,
-                    server_port=self._server_args._args.port,
+                    server_host=self._server_args.host(),
+                    server_port=self._server_args.port,
                 ),
                 "dask_connection": True,
             }

@@ -1,32 +1,31 @@
 import threading
-import dask.distributed as dd
-from distributed.protocol import serialize, deserialize
 import uuid
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import override
 
-from ecosim_common.communication.data.client_meta_data import ClientMetaData
-from ecosim_common.communication.channel.esp_channel_endpoint import ESPChannelEndpoint, ConnectionData
+import dask.distributed as dd
+from distributed.protocol import deserialize, serialize
+from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
-
-from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.communication.dask.endpoint_dask import EndpointDask
+from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
-from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_server.client_connection import ClientConnection
-from ecosim_server.data.repositories import Repositories
-from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.communication.message_type import MessageType
+from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_server.class_serializer import serialize_classes
+from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.server_state import ServerState, ServerStateDask
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
-from ecosim_server.class_serializer import serialize_classes
 
 
 class AbstractServer(ABC):
@@ -44,7 +43,7 @@ class AbstractServer(ABC):
 
 
 class Server(AbstractServer, ShutdownListener):
-    _logger = ESPLogger("Server")
+    logger = ESPLogger("Server")
 
     def __init__(
         self,
@@ -75,7 +74,7 @@ class Server(AbstractServer, ShutdownListener):
 
     @override
     def start(self) -> None:
-        self._logger.info("Starting server")
+        self.logger.info("Starting server")
         self._start_image_renderer_socket()
         self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
         self._simulation_config.print_for_start_up()
@@ -83,9 +82,9 @@ class Server(AbstractServer, ShutdownListener):
         self._channel_endpoint.listen_async(
             on_new_channel=self._handle_new_channel,
         )
-        Server._logger.info("Waiting for all clients to connect...")
+        Server.logger.info("Waiting for all clients to connect...")
         self._server_state.wait_for_all_clients_connected_and_ready()
-        Server._logger.info("All clients connected - starting simulation")
+        Server.logger.info("All clients connected - starting simulation")
         self._server_state.set_simulation_state(SimulationState.READY)
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
@@ -113,7 +112,7 @@ class Server(AbstractServer, ShutdownListener):
         client_id: ClientID | None = None
         with connection:
             try:
-                Server._logger.debug("Handling new client connection")
+                Server.logger.debug("Handling new client connection")
 
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
 
@@ -122,7 +121,7 @@ class Server(AbstractServer, ShutdownListener):
                     raise Exception(f"No message received from client {client_id}")
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 if not self._server_state.client_states.add_if_needed(client_config, connection):
-                    Server._logger.warning(
+                    Server.logger.warning(
                         f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
                     )
                     connection.close()
@@ -140,7 +139,7 @@ class Server(AbstractServer, ShutdownListener):
                 while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
                     if received_message is None:
-                        Server._logger.warning(
+                        Server.logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
                         continue
@@ -168,7 +167,7 @@ class Server(AbstractServer, ShutdownListener):
                 ),
             ),
         )
-        Server._logger.debug(f"Client {connection.address} accepted step size")
+        Server.logger.debug(f"Client {connection.address} accepted step size")
         self._server_state.client_states.step_size_accepted(client_id)
 
     def _handle_interface_settings(
@@ -190,7 +189,7 @@ class Server(AbstractServer, ShutdownListener):
             ),
         )
         connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server._logger.debug(f"Client {connection.address} accepted interface settings")
+        Server.logger.debug(f"Client {connection.address} accepted interface settings")
 
     def _handle_interface_request(
         self,
@@ -209,7 +208,7 @@ class Server(AbstractServer, ShutdownListener):
             raise Exception(
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
-        Server._logger.debug(
+        Server.logger.debug(
             f"Successfully validated interfaces for client {connection.address}",
         )
         self._server_state.client_states.interfaces_validated(client_id)
@@ -309,15 +308,15 @@ class DaskServer(AbstractServer, ShutdownListener):
         server_state = dd.Queue("server_state")
         server_state.put(serialize(self._server_state))
         self._channel_endpoint.listen_async(
-            on_new_channel=ChannelHandling(simulation_config=self._simulation_config)._handle_new_channel,  #
+            on_new_channel=ChannelHandling(simulation_config=self._simulation_config).handle_new_channel,  #
         )
-        Server._logger.info("Waiting for all clients to connect...")
+        Server.logger.info("Waiting for all clients to connect...")
 
         while not self._server_state.are_all_clients_connected_and_ready():
             self._server_state = deserialize(*server_state.get())
             server_state.put(serialize(self._server_state))
 
-        Server._logger.info("All clients connected - starting simulation")
+        Server.logger.info("All clients connected - starting simulation")
         self._server_state = deserialize(*server_state.get())
         self._set_simulation_state(SimulationState.READY)
         server_state.put(serialize(self._server_state))
@@ -382,6 +381,7 @@ class DaskServer(AbstractServer, ShutdownListener):
         self._simulation_executor.force_stop()
 
 
+# TODO_AFTER_MERGE: check for alternative -> there is only a single call in DaskServer
 class ChannelHandling:
     def __init__(
         self,
@@ -392,7 +392,7 @@ class ChannelHandling:
         server_state.put(serialize(self._server_state))
         self._simulation_config = simulation_config
 
-    def _handle_new_channel(
+    def handle_new_channel(
         self,
         connection_data: ConnectionData,
     ) -> None:
@@ -420,7 +420,7 @@ class ChannelHandling:
         with connection:
             server_state = dd.Queue("server_state")
             try:
-                Server._logger.debug("Handling new client connection")
+                Server.logger.debug("Handling new client connection")
                 self._server_state = deserialize(*server_state.get())
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
@@ -428,7 +428,7 @@ class ChannelHandling:
                     raise Exception(f"No message received from client {client_id}")
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 if not self._server_state.client_states.add_if_needed(client_config, connection):
-                    Server._logger.warning(
+                    Server.logger.warning(
                         f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
                     )
                     connection.close()
@@ -448,7 +448,7 @@ class ChannelHandling:
                     received_message = connection.receive()
 
                     if received_message is None:
-                        Server._logger.warning(
+                        Server.logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
                         calls += 1
@@ -484,7 +484,7 @@ class ChannelHandling:
             ),
         )
         connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        Server._logger.debug(f"Client {connection.address} accepted step size")
+        Server.logger.debug(f"Client {connection.address} accepted step size")
         self._server_state.client_states.step_size_accepted(client_id)
 
     def _handle_interface_settings(
@@ -506,7 +506,7 @@ class ChannelHandling:
             ),
         )
         connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server._logger.debug(f"Client {connection.address} accepted interface settings")
+        Server.logger.debug(f"Client {connection.address} accepted interface settings")
 
     def _handle_interface_request(
         self,
@@ -525,7 +525,7 @@ class ChannelHandling:
             raise Exception(
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
-        Server._logger.debug(
+        Server.logger.debug(
             f"Successfully validated interfaces for client {connection.address}",
         )
         self._server_state.client_states.interfaces_validated(client_id)
