@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import dataclasses
-import threading
+from dataclasses import dataclass, field
 from typing import List, Tuple
 
-import dask.distributed as dd
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
@@ -12,28 +10,34 @@ from ecosim_common.communication.data.protocol_interface_value import (
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequestInputs
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 
 
+@dataclass
 class InterfaceValueHistory:
     logger = ESPLogger("InterfaceValueHistory")
     _default_values_marker = -1
 
-    def __init__(
-        self,
+    _parallel_lock: ParallelLock = field()
+    _repositories: Repositories = field()
+    _simulation_config: SimulationConfig = field()
+    _entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = field(default_factory=dict)
+
+    @staticmethod
+    def for_config(
         repositories: Repositories,
+        server_config: ServerConfig,
         simulation_config: SimulationConfig,
-    ):
-        # TODO_AFTER_MERGE: find common abstraction
-        try:  # use dask.Lock if using dask
-            dd.get_client()
-            self.__thread_lock: dd.Lock | threading.Lock = dd.Lock()
-        except ValueError:  # otherwise normal threading.Lock
-            self.__thread_lock = threading.Lock()
-        self._entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
-        self._repositories = repositories
-        self._simulation_config = simulation_config
+    ) -> InterfaceValueHistory:
+        parallel_lock = ParallelLock.for_protocol(server_config.server.communication_protocol)
+        return InterfaceValueHistory(
+            _parallel_lock=parallel_lock,
+            _repositories=repositories,
+            _simulation_config=simulation_config,
+        )
 
     def add_default_values(
         self,
@@ -55,7 +59,7 @@ class InterfaceValueHistory:
         InterfaceValueHistory.logger.debug(
             f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values}",
         )
-        with self.__thread_lock:
+        with self._parallel_lock:
             self._add_to_entries_internal(
                 time_step=time_step,
                 client_id=client_id,
@@ -184,7 +188,7 @@ class InterfaceValueHistoryEntry:
         self.interface_values = interface_values
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class RestoreData:
     current_step: int
     client_restore_data: dict[ClientID, SimulationStepBatchRequestInputs]

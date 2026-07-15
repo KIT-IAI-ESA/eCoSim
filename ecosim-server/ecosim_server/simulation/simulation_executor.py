@@ -48,7 +48,11 @@ class SimulationExecutor:
         self._server_config = server_config
         self._server_state = server_state
         self._current_step: int = 0
-        self._value_history = InterfaceValueHistory(repositories, simulation_config)
+        self._value_history = InterfaceValueHistory.for_config(
+            repositories=repositories,
+            server_config=server_config,
+            simulation_config=simulation_config,
+        )
         self._client_communication: ClientCommunication = ClientCommunication(
             client_states=server_state.client_states,
             client_message_buffer=server_state.message_buffer,
