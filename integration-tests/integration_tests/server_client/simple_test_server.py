@@ -63,116 +63,64 @@ class SimpleTestServerParameters:
 
 
 def generate_simple_test_server(parameters: SimpleTestServerParameters) -> SimpleTestServer:
+    clients = parameters.clients or [
+        ClientSimulatorConfig(
+            simulator_name="TestSimulator",
+            model_name="TestModel",
+            interfaces=[],
+            client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
+        ),
+    ]
+    server_config = ServerConfig(
+        server=MainConfig(
+            host=parameters.host,
+            port=parameters.port,
+            communication_protocol=parameters.communication_protocol,
+        ),
+        database=parameters.database_config
+        or DatabaseConfig(
+            host="",
+            port=0,
+            name="",
+            schema="",
+            username="",
+            password="",
+            ssl=False,
+            type="",
+            drop_existing_schema=False,
+        ),
+    )
+    simulation_config = SimulationConfig(
+        clients=clients,
+        start_date=parameters.simulation_start_date,
+        logical_delays=[],
+        pace=parameters.pace,
+        steps=parameters.steps,
+        step_size_in_ms=parameters.step_size_in_ms,
+        restore=parameters.restore_simulation_run,
+    )
+    repositories: Repositories
+    if parameters.repository_type == RepositoryType.DB:
+        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+    else:
+        repositories = RepositoriesInMemory()
+
+    server: Server | DaskServer
     if parameters.communication_protocol == CommunicationProtocol.TCP_SOCKET:
-        return generate_simple_test_server_socket(parameters)
+        server = Server(
+            server_config=server_config,
+            simulation_config=simulation_config,
+            repositories=repositories,
+        )
     elif parameters.communication_protocol == CommunicationProtocol.DASK:
-        return generate_simple_test_server_dask(parameters)
+        server = DaskServer(
+            server_config=server_config,
+            simulation_config=simulation_config,
+            repositories=repositories,
+        )
     else:
         raise ValueError(f"Unknown communication protocol: {parameters.communication_protocol}")
 
-
-def generate_simple_test_server_socket(parameters: SimpleTestServerParameters) -> SimpleTestServer:
-    clients = parameters.clients or [
-        ClientSimulatorConfig(
-            simulator_name="TestSimulator",
-            model_name="TestModel",
-            interfaces=[],
-            client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
-        ),
-    ]
-    server_config = ServerConfig(
-        server=MainConfig(
-            host=parameters.host,
-            port=parameters.port,
-        ),
-        database=parameters.database_config
-        or DatabaseConfig(
-            host="",
-            port=0,
-            name="",
-            schema="",
-            username="",
-            password="",
-            ssl=False,
-            type="",
-            drop_existing_schema=False,
-        ),
-    )
-    simulation_config = SimulationConfig(
-        clients=clients,
-        start_date=parameters.simulation_start_date,
-        logical_delays=[],
-        pace=parameters.pace,
-        steps=parameters.steps,
-        step_size_in_ms=parameters.step_size_in_ms,
-        restore=parameters.restore_simulation_run,
-    )
-    repositories: Repositories
-    if parameters.repository_type == RepositoryType.DB:
-        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
-    else:
-        repositories = RepositoriesInMemory()
-
-    server = Server(
-        server_config=server_config,
-        simulation_config=simulation_config,
-        repositories=repositories,
-    )
-    return SimpleTestServer(
-        server=server,
-        server_config=server_config,
-        simulation_config=simulation_config,
-        repositories=repositories,
-    )
-
-
-def generate_simple_test_server_dask(parameters: SimpleTestServerParameters) -> SimpleTestServer:
-    clients = parameters.clients or [
-        ClientSimulatorConfig(
-            simulator_name="TestSimulator",
-            model_name="TestModel",
-            interfaces=[],
-            client_id=ClientID(model_name="TestModel", simulator_name="TestSimulator"),
-        ),
-    ]
-    server_config = ServerConfig(
-        server=MainConfig(
-            host=parameters.host,
-            port=parameters.port,
-        ),
-        database=parameters.database_config
-        or DatabaseConfig(
-            host="",
-            port=0,
-            name="",
-            schema="",
-            username="",
-            password="",
-            ssl=False,
-            type="",
-            drop_existing_schema=False,
-        ),
-    )
-    simulation_config = SimulationConfig(
-        clients=clients,
-        start_date=parameters.simulation_start_date,
-        logical_delays=[],
-        pace=parameters.pace,
-        steps=parameters.steps,
-        step_size_in_ms=parameters.step_size_in_ms,
-        restore=parameters.restore_simulation_run,
-    )
-    repositories: Repositories
-    if parameters.repository_type == RepositoryType.DB:
-        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
-    else:
-        repositories = RepositoriesInMemory()
-
-    server = DaskServer(
-        server_config=server_config,
-        simulation_config=simulation_config,
-        repositories=repositories,
-    )
     return SimpleTestServer(
         server=server,
         server_config=server_config,

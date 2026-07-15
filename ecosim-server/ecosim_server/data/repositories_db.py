@@ -1,13 +1,14 @@
 from __future__ import annotations
-import threading
+
 from dataclasses import dataclass, field
 from typing import override
 
+from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_server.config.server_config import ServerConfig
+from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
-from ecosim_common.config.client_id import ClientID
-from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_tech_abstract import DbTechAbstract
 from ecosim_server.tech.db.postgres_tech import PostgresTech
@@ -20,7 +21,7 @@ from ecosim_server.tech.db.simdb.simulation_state_repository_db import Simulatio
 class RepositoriesDB(Repositories):
     _simulation_config: SimulationConfig = field()
     _db_connection: DBConnection = field()
-    _thread_lock: threading.Lock = field(default_factory=threading.Lock)
+    _measurement_repository_creation_lock: ParallelLock = field()
     _client_id_to_measurement_repository: dict[ClientID, MeasurementRepository] = field(default_factory=dict)
 
     @staticmethod
@@ -31,7 +32,13 @@ class RepositoriesDB(Repositories):
         return RepositoriesDB(
             _simulation_config=simulation_config,
             _db_connection=db_connection,
-            simulation_state_repository=SimulationStateRepositoryDB(db_connection=db_connection),
+            _measurement_repository_creation_lock=ParallelLock.for_protocol(server_config.server.communication_protocol),
+            simulation_state_repository=SimulationStateRepositoryDB(
+                _db_connection=db_connection,
+                _write_lock=ParallelLock.for_protocol(
+                    server_config.server.communication_protocol,
+                ),
+            ),
             server_time_measurement_repository=ServerTimeMeasurementRepositoryDB(db_connection=db_connection),
         )
 
@@ -40,14 +47,16 @@ class RepositoriesDB(Repositories):
         self,
         client_id: ClientID,
     ) -> MeasurementRepository:
-        with self._thread_lock:
+        if client_id in self._client_id_to_measurement_repository:
+            return self._client_id_to_measurement_repository[client_id]
+        with self._measurement_repository_creation_lock:
             if client_id not in self._client_id_to_measurement_repository:
                 self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryDB(
                     simulation_config=self._simulation_config,
                     client_id=client_id,
                     db_connection=self._db_connection,
                 )
-            return self._client_id_to_measurement_repository[client_id]
+        return self._client_id_to_measurement_repository[client_id]
 
     @staticmethod
     def _get_db_tech(

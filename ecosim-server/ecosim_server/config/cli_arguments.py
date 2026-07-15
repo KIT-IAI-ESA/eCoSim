@@ -5,11 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 
 
+# TODO_OSR: refactor to dataclass
 class CLIArguments(AppConfig):
     def __init__(
         self,
@@ -120,6 +122,13 @@ class CLIArguments(AppConfig):
                     help_text="If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous "
                     + "simulation run, the simulation is executed normally.",
                 ),
+                AppConfigParameter(
+                    name="communication-protocol",
+                    required=False,
+                    default_value=None,  # NOTE: the actual default value is specified in ServerConfig
+                    help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
+                    + f"Possible: {[p.name for p in CommunicationProtocol]}",
+                ),
             ]
             + (additional_parameters or []),
         )
@@ -177,10 +186,17 @@ class CLIArguments(AppConfig):
         return ServerConfigOverride(
             server_host=self._args.host,
             server_port=self._args.port,
+            communication_protocol=self.communication_protocol(),
         )
+
+    def communication_protocol(self) -> CommunicationProtocol | None:
+        if self._args.communication_protocol is None:
+            return None
+        return CommunicationProtocol.of(self._args.communication_protocol)
 
 
 @dataclass(frozen=True)
 class ServerConfigOverride:
     server_host: str | None
     server_port: int | None
+    communication_protocol: CommunicationProtocol | None

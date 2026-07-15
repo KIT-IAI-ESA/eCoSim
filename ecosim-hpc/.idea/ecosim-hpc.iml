@@ -9,5 +9,9 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
     <orderEntry type="module" module-name="ecosim-server" />
+    <orderEntry type="module" module-name="ecosim-client-pyro5" />
+    <orderEntry type="module" module-name="ecosim-client-matlab" />
+    <orderEntry type="module" module-name="ecosim-client-fmu-v3" />
+    <orderEntry type="module" module-name="ecosim-client-fmu-v2" />
   </component>
 </module>

@@ -1,21 +1,22 @@
 import datetime
 from collections.abc import Sequence
-from typing import Tuple, override, List, Any
-
-from sqlalchemy import Column, DateTime, Float, JSON
+from typing import Any, List, Tuple, override
 
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
+from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.config.client_id import ClientID
-from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.measurement_repository import MeasurementRepository
+from sqlalchemy import JSON, Column, DateTime, Float
 
 
+# TODO_OSR: move to different package ('simdb' is not used anymore)
+# TODO_OSR: rewrite to dataclass
 class MeasurementRepositoryDB(MeasurementRepository):
     _logger = ESPLogger("MeasurementRepositoryDB")
 
@@ -42,9 +43,9 @@ class MeasurementRepositoryDB(MeasurementRepository):
         table_name = f"module_{client_config.simulator_name.lower()}"
 
         attributes = {
-            '__tablename__': table_name,
-            '__table_args__': {'schema': self._db_connection.default_schema},
-            'timestamp': Column(DateTime(timezone=True), primary_key=True),
+            "__tablename__": table_name,
+            "__table_args__": {"schema": self._db_connection.default_schema},
+            "timestamp": Column(DateTime(timezone=True), primary_key=True),
         }
         for interface in client_config.interfaces:
             column_name = MeasurementRepositoryDB._column_name_of_server_interface(interface)
@@ -95,7 +96,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
     def all(self) -> List[MeasurementEntry]:
         result: List[MeasurementEntry] = []
         with self._db_connection.session() as session:
-            ts_col = getattr(self._DynamicTable, 'timestamp')
+            ts_col = getattr(self._DynamicTable, "timestamp")
             rows: List[Any] = session.query(self._DynamicTable).order_by(ts_col.asc()).all()
             for row in rows:
                 values_list: List[ProtocolInterfaceValue] = []

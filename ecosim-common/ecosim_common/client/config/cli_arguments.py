@@ -47,7 +47,7 @@ class CLIArguments(AppConfig):
                 AppConfigParameter(
                     name="communication-protocol",
                     required=False,
-                    default_value=CommunicationProtocol.TCP_SOCKET.name,
+                    default_value=None,  # NOTE: the actual default value is specified in ClientConfig
                     help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
                     + f"Possible: {[p.name for p in CommunicationProtocol]}",
                 ),
@@ -70,7 +70,9 @@ class CLIArguments(AppConfig):
     def image_renderer_port(self) -> int | None:
         return self._args.image_renderer_port  # type: ignore
 
-    def communication_protocol(self) -> CommunicationProtocol:
+    def communication_protocol(self) -> CommunicationProtocol | None:
+        if self._args.communication_protocol is None:
+            return None
         return CommunicationProtocol.of(self._args.communication_protocol)
 
     def config_overrides(self) -> ClientConfigOverride:
@@ -78,6 +80,7 @@ class CLIArguments(AppConfig):
             server_host=self._args.server_host,
             server_port=self._args.server_port,
             image_renderer_port=self._args.image_renderer_port,
+            communication_protocol=self.communication_protocol(),
         )
 
     def get_additional_parameter(self, name: str) -> str | bool | None:
