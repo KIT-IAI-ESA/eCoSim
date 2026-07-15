@@ -5,6 +5,9 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim_common_fmpy.egg-info" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
     </content>
     <orderEntry type="jdk" jdkName="uv (ecosim-common-fmpy)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

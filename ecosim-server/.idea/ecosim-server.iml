@@ -8,6 +8,9 @@
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-server)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
