@@ -20,9 +20,10 @@ class ParallelLock(AbstractContextManager):
     @staticmethod
     def for_protocol(
         communication_protocol: CommunicationProtocol,
+        dask_lock_name: str | None = None,
     ) -> "ParallelLock":
         if communication_protocol == CommunicationProtocol.DASK:
-            return ParallelLock.dask()
+            return ParallelLock.dask(name=dask_lock_name)
         elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
             return ParallelLock.thread()
         else:

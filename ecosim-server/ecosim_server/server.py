@@ -22,7 +22,7 @@ from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
-from ecosim_server.server_state import ServerState, ServerStateDask
+from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
@@ -55,6 +55,7 @@ class Server(AbstractServer, ShutdownListener):
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
         self._server_state: ServerState = ServerState(
+            server_config=server_config,
             simulation_config=simulation_config,
             simulation_state_repository=repositories.simulation_state_repository,
         )
@@ -277,8 +278,10 @@ class DaskServer(AbstractServer, ShutdownListener):
         self.server_measurements = ServerTimeMeasurement()
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
-        self._server_state: ServerStateDask = ServerStateDask(
+        self._server_state: ServerState = ServerState(
+            server_config=server_config,
             simulation_config=simulation_config,
+            simulation_state_repository=repositories.simulation_state_repository,
         )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,

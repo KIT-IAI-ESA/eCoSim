@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import threading
-from typing import List, Tuple, Callable
+from typing import Callable, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
-from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
-from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
-from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.client.client_state import ClientStates, ClientStatesDask
-from ecosim_server.message_buffer import ClientMessageBuffer, BufferedClientMessage
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.client.client_state import ClientStates
+from ecosim_server.message_buffer import BufferedClientMessage, ClientMessageBuffer
 
 
 class ClientCommunication:
@@ -21,7 +21,7 @@ class ClientCommunication:
 
     def __init__(
         self,
-        client_states: ClientStates | ClientStatesDask,  # TODO_AFTER_MERGE: find common abstraction
+        client_states: ClientStates,
         client_message_buffer: ClientMessageBuffer,
     ):
         self._client_states = client_states

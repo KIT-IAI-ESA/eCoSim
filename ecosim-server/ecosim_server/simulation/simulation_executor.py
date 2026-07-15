@@ -24,7 +24,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.message_buffer import BufferedClientMessage
-from ecosim_server.server_state import ServerState, ServerStateDask
+from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
@@ -39,7 +39,7 @@ class SimulationExecutor:
         self,
         simulation_config: SimulationConfig,
         server_config: ServerConfig,
-        server_state: ServerState | ServerStateDask,  # TODO_AFTER_MERGE: find common abstraction
+        server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
         using_dask: bool = False,  # TODO_AFTER_MERGE: find better solution
