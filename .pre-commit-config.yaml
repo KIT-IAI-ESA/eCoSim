@@ -94,10 +94,9 @@ repos:
         files: .*\.py
         pass_filenames: true
 
-#  # disable ruff until the aggressive collapsing is configurable
-#  - repo: https://github.com/astral-sh/ruff-pre-commit
-#    rev: v0.15.20
-#    hooks:
-#      - id: ruff
-#        args: [--fix]
-#      - id: ruff-format
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.20
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
