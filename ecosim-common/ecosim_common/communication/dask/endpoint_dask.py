@@ -10,42 +10,6 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
-def _listen(
-    on_new_channel: Callable[[ConnectionData], None],
-    _closed: dd.Event,
-) -> None:
-    dask_client = dd.get_client()
-    EndpointDask._logger.debug("Now listening to Dask Client")
-    closed = dd.Event(name="server_closed")
-    global_finish = dd.Event(name="global_finish")
-    current_connections: list[str] = []
-    while not closed.is_set() and not global_finish.is_set():
-        if dask_client.status != "running":
-            EndpointDask._logger.error("Cannot listen to Dask client")
-            raise Exception
-        if len(dask_client.datasets) == len(current_connections):
-            continue
-        elif len(dask_client.datasets) < len(current_connections):
-            if closed.is_set():
-                return
-            raise Exception("Server listening ended sooner than anticipated.")
-        else:
-            for dask_id in dask_client.datasets.keys():
-                if dask_id in current_connections:
-                    continue
-
-                client_address = ConnectionAddress.of_dask_client(dask_client)
-                on_new_channel(
-                    ConnectionData(
-                        channel=DaskChannel(ESPDask(dask_id)),
-                        client_address=client_address,
-                    ),
-                )
-                current_connections.append(dask_id)
-    EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
-    EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
-
-
 @dataclass(frozen=True)
 class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _logger = ESPLogger("EndpointDask")
@@ -75,7 +39,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         self._server_listening.set()
 
         async def listen_start() -> None:
-            future = self._internal_dask_client.submit(_listen, on_new_channel, self._server_closed)
+            future = self._internal_dask_client.submit(EndpointDask._listen, on_new_channel, self._server_closed)
             dd.fire_and_forget(future)
 
         self._internal_dask_client.sync(listen_start)
@@ -106,3 +70,39 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     def on_app_shutdown(self) -> None:
         self.close()
+
+    @staticmethod
+    def _listen(
+        on_new_channel: Callable[[ConnectionData], None],
+        _closed: dd.Event,
+    ) -> None:
+        dask_client = dd.get_client()
+        EndpointDask._logger.debug("Now listening to Dask Client")
+        closed = dd.Event(name="server_closed")
+        global_finish = dd.Event(name="global_finish")
+        current_connections: list[str] = []
+        while not closed.is_set() and not global_finish.is_set():
+            if dask_client.status != "running":
+                EndpointDask._logger.error("Cannot listen to Dask client")
+                raise Exception
+            if len(dask_client.datasets) == len(current_connections):
+                continue
+            elif len(dask_client.datasets) < len(current_connections):
+                if closed.is_set():
+                    return
+                raise Exception("Server listening ended sooner than anticipated.")
+            else:
+                for dask_id in dask_client.datasets.keys():
+                    if dask_id in current_connections:
+                        continue
+
+                    client_address = ConnectionAddress.of_dask_client(dask_client)
+                    on_new_channel(
+                        ConnectionData(
+                            channel=DaskChannel(ESPDask(dask_id)),
+                            client_address=client_address,
+                        ),
+                    )
+                    current_connections.append(dask_id)
+        EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
+        EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")

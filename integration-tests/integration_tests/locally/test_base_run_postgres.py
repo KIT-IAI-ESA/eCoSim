@@ -262,7 +262,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
 
     server_thread.join()
 
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
 
     def client_1_asserts(
         timestamp: datetime,
@@ -281,7 +281,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     for repo in repos:
         assert client_1_asserts(repo.timestamp, repo.values)
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2.client_id)
 
     def client_2_asserts(
         timestamp: datetime,

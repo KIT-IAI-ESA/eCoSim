@@ -195,7 +195,7 @@ def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
 
     server_thread.join()
 
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
 
     def client_1_asserts(
         timestamp: datetime,
@@ -212,7 +212,7 @@ def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
 
     (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(client_1_asserts))
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2.client_id)
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
