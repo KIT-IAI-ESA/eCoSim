@@ -4,10 +4,12 @@ from time import sleep
 
 import dask.distributed as dd
 from art import tprint
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_common.tech.system_arguments import overwrite_system_argument
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -40,6 +42,10 @@ def shutdown_manager_worker() -> None:
 
 
 def main() -> None:
+    # TODO: find a better solution
+    # TODO_OSR: check the todo above
+    overwrite_system_argument("--communication_protocol", CommunicationProtocol.DASK.name)
+
     args = HPCServerCliArguments()
     if args.interactive():
         dask_client = dd.Client(scheduler_file="scheduler.json")
