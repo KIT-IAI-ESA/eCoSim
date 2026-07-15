@@ -13,6 +13,17 @@ class ParallelEvent:
     _event: dask.distributed.Event | threading.Event = field()
 
     @staticmethod
+    def for_communication_protocol(
+        communication_protocol: str,
+    ) -> ParallelEvent:
+        if communication_protocol == "dask":
+            return ParallelEvent.dask()
+        elif communication_protocol == "tcp_socket":
+            return ParallelEvent.thread()
+        else:
+            raise ValueError(f"Unknown communication protocol: {communication_protocol}")
+
+    @staticmethod
     def thread() -> ParallelEvent:
         return ParallelEvent(
             _event=threading.Event(),
