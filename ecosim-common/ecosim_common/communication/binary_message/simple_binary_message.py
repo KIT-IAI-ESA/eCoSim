@@ -4,17 +4,16 @@ import json
 import struct
 from typing import Any
 
+from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.correlation_id import CorrelationId
-from ecosim_common.communication.dask.dask_messages import DaskMessage, DaskMessageHeader
 from ecosim_common.communication.message_type import MessageType
 
 
-# TODO_AFTER_MERGE: common abstraction between SocketMessage and DaskMessage (something like BinaryMessage)
-class SimpleDaskMessage(DaskMessage):
+class SimpleBinaryMessage(BinaryMessage):
     @staticmethod
-    def of_esp_channel_message(message: ESPChannelMessage) -> SimpleDaskMessage:
-        return SimpleDaskMessage(
+    def of_esp_channel_message(message: ESPChannelMessage) -> SimpleBinaryMessage:
+        return SimpleBinaryMessage(
             _type=message.type(),
             _correlation_id=message.correlation_id(),
             _payload=json.dumps(message.payload()).encode("utf-8"),
@@ -25,8 +24,8 @@ class SimpleDaskMessage(DaskMessage):
         message_type: MessageType,
         correlation_id: CorrelationId,
         payload: Any,
-    ) -> SimpleDaskMessage:
-        return SimpleDaskMessage(
+    ) -> SimpleBinaryMessage:
+        return SimpleBinaryMessage(
             _type=message_type,
             _correlation_id=correlation_id,
             _payload=json.dumps(payload).encode("utf-8"),
@@ -45,14 +44,14 @@ class SimpleDaskMessage(DaskMessage):
 
     def bytecode(self) -> bytes:
         data_length = self.length
-        bytecode = bytearray(DaskMessage.HEADER_BYTES + data_length)
-        bytecode[0 : DaskMessage.HEADER_BYTES] = self._raw_header()
-        bytecode[DaskMessage.HEADER_BYTES :] = bytearray(self._payload)
+        bytecode = bytearray(BinaryMessage.HEADER_BYTES + data_length)
+        bytecode[0 : BinaryMessage.HEADER_BYTES] = self._raw_header()
+        bytecode[BinaryMessage.HEADER_BYTES :] = bytearray(self._payload)
         return bytes(bytecode)
 
     def _raw_header(self) -> bytes:
         return struct.pack(
-            DaskMessage.BYTE_FORMAT,
+            BinaryMessage.BYTE_FORMAT,
             self._correlation_id.to_int(),
             self._type.to_int(),
             self.length,
@@ -61,8 +60,8 @@ class SimpleDaskMessage(DaskMessage):
     def raw_message(self) -> bytes:
         return self.bytecode()
 
-    def header(self) -> DaskMessageHeader:
-        return DaskMessageHeader(self._raw_header())
+    def header(self) -> BinaryMessageHeader:
+        return BinaryMessageHeader(self._raw_header())
 
     def raw_data(self) -> bytes:
         return self._payload

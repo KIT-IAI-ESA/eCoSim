@@ -1,8 +1,9 @@
 import uuid
 
 import dask.distributed as dd
+from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
+from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.dask.dask_messages import DaskMessage, DaskMessageHeader, ReceivedMessage
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -85,7 +86,7 @@ class ESPDask(ShutdownListener):
 
     def send(
         self,
-        message: DaskMessage,
+        message: BinaryMessage,
     ) -> None:
         if self._closed.is_set():
             raise Exception("Dask client has already or in the process of being disconnected.")
@@ -95,7 +96,7 @@ class ESPDask(ShutdownListener):
 
     def receive(
         self,
-    ) -> ReceivedMessage | None:
+    ) -> ReceivedBinaryMessage | None:
         if self._closed.is_set():
             raise Exception("Dask client has already or in the process of being disconnected.")
         dask_client = dd.get_client()
@@ -104,7 +105,7 @@ class ESPDask(ShutdownListener):
     @staticmethod
     def send_to_dask_client(
         connection: dd.Client,
-        message: DaskMessage,
+        message: BinaryMessage,
         dask_id: str,
         origin_id: int,
     ) -> None:
@@ -116,7 +117,7 @@ class ESPDask(ShutdownListener):
         connection: dd.Client,
         dask_id: str,
         origin_id: int,
-    ) -> ReceivedMessage | None:
+    ) -> ReceivedBinaryMessage | None:
         while True:
             received_id = None
             data_var = dd.Queue(name=dask_id, client=connection)
@@ -135,11 +136,11 @@ class ESPDask(ShutdownListener):
             if raw_message == "empty" or dask_id not in connection.datasets.keys():
                 ESPDask._logger.debug(f"Received no data at {origin_id}")
                 return None
-            raw_header = raw_message[0 : DaskMessage.HEADER_BYTES]
-            message_header = DaskMessageHeader(raw_header)
+            raw_header = raw_message[0 : BinaryMessage.HEADER_BYTES]
+            message_header = BinaryMessageHeader(raw_header)
             if not message_header:
                 ESPDask._logger.debug("Received no valid header")
                 return None
-            data: bytes = raw_message[DaskMessage.HEADER_BYTES :]
+            data: bytes = raw_message[BinaryMessage.HEADER_BYTES :]
             ESPDask._logger.debug(f"Received message of type {message_header.message_type} at {origin_id} from {received_id}")
-            return ReceivedMessage(message_header, data, ConnectionAddress.of_dask_client(connection))
+            return ReceivedBinaryMessage(message_header, data, ConnectionAddress.of_dask_client(connection))

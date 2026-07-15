@@ -1,12 +1,12 @@
 import socket
 import threading
 
-from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.socket.socket_messages import (
-    ReceivedMessage,
-    SocketMessage,
-    SocketMessageHeader,
+from ecosim_common.communication.binary_message.binary_message import (
+    BinaryMessage,
+    BinaryMessageHeader,
 )
+from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
+from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -104,14 +104,14 @@ class ESPSocket(ShutdownListener):
 
     def send(
         self,
-        message: SocketMessage,
+        message: BinaryMessage,
     ) -> None:
         if self._closed.is_set():
             raise Exception("Socket is in the progress of closing or already closed.")
         ESPSocket._logger.debug(f"Sending message {message.header().message_type}")
         ESPSocket.send_to_socket(self._internal_socket, message)
 
-    def receive(self) -> ReceivedMessage | None:
+    def receive(self) -> ReceivedBinaryMessage | None:
         if self._closed.is_set():
             raise Exception("Socket is in the progress of closing or already closed.")
         return ESPSocket.receive_from_socket(self._internal_socket)
@@ -119,17 +119,17 @@ class ESPSocket(ShutdownListener):
     @staticmethod
     def send_to_socket(
         connection: socket.socket,
-        message: SocketMessage,
+        message: BinaryMessage,
     ) -> None:
         connection.send(message.raw_message())
 
     @staticmethod
-    def receive_from_socket(connection: socket.socket) -> ReceivedMessage | None:
-        raw_header = connection.recv(SocketMessage.HEADER_BYTES)
+    def receive_from_socket(connection: socket.socket) -> ReceivedBinaryMessage | None:
+        raw_header = connection.recv(BinaryMessage.HEADER_BYTES)
         if not raw_header:
             ESPSocket._logger.debug("Received no data")
             return None
-        message_header = SocketMessageHeader(raw_header)
+        message_header = BinaryMessageHeader(raw_header)
         if not message_header:
             ESPSocket._logger.debug("Received no valid header")
             return None
@@ -143,7 +143,7 @@ class ESPSocket(ShutdownListener):
         ESPSocket._logger.debug(
             f"Received message of type {message_header.message_type}",
         )
-        return ReceivedMessage(
+        return ReceivedBinaryMessage(
             message_header,
             data,
             ConnectionAddress.of_socket(connection),

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import threading
-from typing import override, Callable
+from typing import Callable, override
 
+from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
+from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
-from ecosim_common.communication.socket.simple_socket_message import SimpleSocketMessage
 from ecosim_common.communication.socket.esp_socket import ESPSocket
-from ecosim_common.communication.socket.socket_messages import ReceivedMessage
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -60,7 +60,7 @@ class SocketChannel(ESPChannel):
         self,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
-        message: ReceivedMessage | None = self._internal_socket.receive()
+        message: ReceivedBinaryMessage | None = self._internal_socket.receive()
         if not message:
             SocketChannel._logger.info("Received empty message -> closing connection")
             self._is_finished.set()
@@ -76,7 +76,7 @@ class SocketChannel(ESPChannel):
             raise Exception("Socket already closed")
         try:
             self._internal_socket.send(
-                SimpleSocketMessage.of_esp_channel_message(message=message),
+                SimpleBinaryMessage.of_esp_channel_message(message=message),
             )
         except Exception as e:
             SocketChannel._logger.debug(
@@ -84,5 +84,5 @@ class SocketChannel(ESPChannel):
             )
             self._internal_socket.connect(connection_address=self._internal_socket.connection_address())
             self._internal_socket.send(
-                SimpleSocketMessage.of_esp_channel_message(message=message),
+                SimpleBinaryMessage.of_esp_channel_message(message=message),
             )
