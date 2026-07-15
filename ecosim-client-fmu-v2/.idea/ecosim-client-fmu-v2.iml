@@ -8,6 +8,9 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim_client_fmu_v2.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/tests/htmlcov" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-client-fmu-v2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

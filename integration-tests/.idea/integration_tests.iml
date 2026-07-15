@@ -8,6 +8,8 @@
       <excludeFolder url="file://$MODULE_DIR$/integration_tests.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.14 virtualenv at ~/dev/ecosim/integration-tests/.venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
