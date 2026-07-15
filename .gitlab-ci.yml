@@ -47,7 +47,7 @@ precommit_hooks:
     - python sync_projects.py
     - cd ${SRC_DIR}
     - uv sync --extra dev
-    - uv run pre-commit run --all-files
+    - uv run pre-commit run --all-files --show-diff-on-failure --verbose
 
 my_py:
   needs: [ ]
