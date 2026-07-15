@@ -9,7 +9,7 @@ from ecosim_common.communication.message_type import MessageType
 
 
 @dataclass(frozen=True)
-class ClientConnection(AbstractContextManager['ClientConnection']):
+class ClientConnection(AbstractContextManager["ClientConnection"]):
     _channel: ESPChannel = field()
     address: ConnectionAddress = field()
 

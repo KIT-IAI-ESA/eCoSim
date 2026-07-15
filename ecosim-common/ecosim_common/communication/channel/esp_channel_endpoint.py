@@ -10,7 +10,6 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 
 @dataclass(frozen=True)
 class ESPChannelEndpoint(ABC):
-
     @abstractmethod
     def listen_async(
         self,

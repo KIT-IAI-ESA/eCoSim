@@ -7,7 +7,6 @@ from ecosim_common.communication.correlation_id import CorrelationId
 
 
 class ESPChannelMessage(ABC):
-
     @abstractmethod
     def type(self) -> MessageType:
         pass

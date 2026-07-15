@@ -248,7 +248,7 @@ def test_load() -> None:
 
 
 def test_without_start_date() -> None:
-    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_without_start_date.json'), 1221)
+    config = SimulationConfig.of_config_file_and_params(resource_path_file("simulation_without_start_date.json"), 1221)
 
     assert config.step_size_in_ms == 60000
     assert config.steps == 1221
@@ -256,7 +256,7 @@ def test_without_start_date() -> None:
 
 
 def test_date_time_for_step() -> None:
-    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
+    config = SimulationConfig.of_config_file_and_params(resource_path_file("simulation.json"), 1221)
     assert config.step_size_in_ms == 60000
     assert config.start_date == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=7, microsecond=123000, tzinfo=timezone.utc)
 
@@ -270,7 +270,7 @@ def test_date_time_for_step() -> None:
 
 
 def test_date_time_to_step() -> None:
-    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation.json'), 1221)
+    config = SimulationConfig.of_config_file_and_params(resource_path_file("simulation.json"), 1221)
     assert config.step_size_in_ms == 60000
     assert config.start_date == datetime(year=2024, month=3, day=17, hour=13, minute=59, second=7, microsecond=123000, tzinfo=timezone.utc)
 
@@ -285,7 +285,7 @@ def test_date_time_to_step() -> None:
 
 def test_step_size_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
-        simulation_config_file=resource_path_file('simulation.json'),
+        simulation_config_file=resource_path_file("simulation.json"),
         steps=1221,
         step_size_override=None,
     )
@@ -294,7 +294,7 @@ def test_step_size_default() -> None:
 
 def test_step_size_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
-        simulation_config_file=resource_path_file('simulation.json'),
+        simulation_config_file=resource_path_file("simulation.json"),
         steps=1221,
         step_size_override=833,
     )
@@ -303,7 +303,7 @@ def test_step_size_override() -> None:
 
 def test_pace_default() -> None:
     config = SimulationConfig.of_config_file_and_params(
-        simulation_config_file=resource_path_file('simulation.json'),
+        simulation_config_file=resource_path_file("simulation.json"),
         steps=1221,
     )
     assert config.pace == 1.0
@@ -311,7 +311,7 @@ def test_pace_default() -> None:
 
 def test_pace_override() -> None:
     config = SimulationConfig.of_config_file_and_params(
-        simulation_config_file=resource_path_file('simulation.json'),
+        simulation_config_file=resource_path_file("simulation.json"),
         steps=1221,
         pace=0.3,
     )

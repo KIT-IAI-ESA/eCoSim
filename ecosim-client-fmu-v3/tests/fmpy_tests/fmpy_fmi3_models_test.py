@@ -16,12 +16,12 @@ def test_feedthrough() -> None:
 
     unzipdir = extract(fmu_file)
 
-    if model_description.fmiVersion == '3.0':
+    if model_description.fmiVersion == "3.0":
         fmu_instance = FMU3Slave(
             guid=model_description.guid,
             unzipDirectory=unzipdir,
             modelIdentifier=model_description.coSimulation.modelIdentifier,
-            instanceName='instance1',
+            instanceName="instance1",
         )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
@@ -34,11 +34,11 @@ def test_feedthrough() -> None:
     print("")
     print(f"{model_description}")
 
-    input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
-    float64_continuous_input_name = 'Float64_continuous_input'
-    float64_discrete_input_name = 'Float64_discrete_input'
-    boolean_input_name = 'Boolean_input'
-    string_input_name = 'String_input'
+    input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
+    float64_continuous_input_name = "Float64_continuous_input"
+    float64_discrete_input_name = "Float64_discrete_input"
+    boolean_input_name = "Boolean_input"
+    string_input_name = "String_input"
 
     input_refs = {var.name: var.valueReference for var in input_variables}
     print("")
@@ -48,20 +48,20 @@ def test_feedthrough() -> None:
     fmu_instance.setFloat64([input_refs[float64_continuous_input_name]], [222.211])
     fmu_instance.setFloat64([input_refs[float64_discrete_input_name]], [333.345])
     fmu_instance.setBoolean([input_refs[boolean_input_name]], [True])
-    fmu_instance.setString([input_refs[string_input_name]], ['eCoSim rocks!'])
+    fmu_instance.setString([input_refs[string_input_name]], ["eCoSim rocks!"])
 
     input_values = {
-        'float_discrete': fmu_instance.getFloat64([input_refs[float64_discrete_input_name]]),
-        'float_continuous': fmu_instance.getFloat64([input_refs[float64_continuous_input_name]]),
-        'boolean': fmu_instance.getBoolean([input_refs[boolean_input_name]]),
-        'string': fmu_instance.getString([input_refs[string_input_name]]),
+        "float_discrete": fmu_instance.getFloat64([input_refs[float64_discrete_input_name]]),
+        "float_continuous": fmu_instance.getFloat64([input_refs[float64_continuous_input_name]]),
+        "boolean": fmu_instance.getBoolean([input_refs[boolean_input_name]]),
+        "string": fmu_instance.getString([input_refs[string_input_name]]),
     }
     print(f"After set (input): {input_values}")
     output_values = {
-        'float_discrete': fmu_instance.getFloat64([10]),
-        'float_continuous': fmu_instance.getFloat64([8]),
-        'boolean': fmu_instance.getBoolean([28]),
-        'string': fmu_instance.getString([30]),
+        "float_discrete": fmu_instance.getFloat64([10]),
+        "float_continuous": fmu_instance.getFloat64([8]),
+        "boolean": fmu_instance.getBoolean([28]),
+        "string": fmu_instance.getString([30]),
     }
     print(f"After set (output): {output_values}")
 
@@ -75,12 +75,12 @@ def test_feedthrough() -> None:
     time = start_time + step_size
 
     output_values = {
-        'float_discrete': fmu_instance.getFloat64([10]),
-        'float_continuous': fmu_instance.getFloat64([8]),
-        'boolean': fmu_instance.getBoolean([28]),
-        'string': fmu_instance.getString([30]),
+        "float_discrete": fmu_instance.getFloat64([10]),
+        "float_continuous": fmu_instance.getFloat64([8]),
+        "boolean": fmu_instance.getBoolean([28]),
+        "string": fmu_instance.getString([30]),
     }
-    print(f'Time: {time}, Outputs: {output_values}')
+    print(f"Time: {time}, Outputs: {output_values}")
 
     # Cleanup
     fmu_instance.terminate()
@@ -95,12 +95,12 @@ def test_state_space() -> None:
 
     unzipdir = extract(fmu_file)
 
-    if model_description.fmiVersion == '3.0':
+    if model_description.fmiVersion == "3.0":
         fmu_instance = FMU3Slave(
             guid=model_description.guid,
             unzipDirectory=unzipdir,
             modelIdentifier=model_description.coSimulation.modelIdentifier,
-            instanceName='instance1',
+            instanceName="instance1",
         )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
@@ -146,15 +146,17 @@ def test_state_space() -> None:
         times.append(time)
 
         outputs = []
-        outputs.append({
-            'y': y_values.copy(),
-            'x': x_values.copy(),
-            'u': u_values.copy(),
-        })
+        outputs.append(
+            {
+                "y": y_values.copy(),
+                "x": x_values.copy(),
+                "u": u_values.copy(),
+            },
+        )
 
         # Advance time
         time += step_size
-        print(f'Time: {time}, Outputs: {outputs}')
+        print(f"Time: {time}, Outputs: {outputs}")
 
     # Cleanup
     fmu_instance.terminate()

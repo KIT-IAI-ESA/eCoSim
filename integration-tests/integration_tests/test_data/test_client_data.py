@@ -48,16 +48,12 @@ class TestClientData:
                 model_name=self.model_name,
                 simulator_name=self.simulator_name,
             ),
-            interfaces=[
-                interface.to_model_interface_server() for interface in self.interfaces
-            ],
+            interfaces=[interface.to_model_interface_server() for interface in self.interfaces],
         )
 
     def to_client_interface_config(self) -> ClientInterfaceConfig:
         return ClientInterfaceConfig(
-            interfaces=[
-                interface.to_model_interface_client() for interface in self.interfaces
-            ],
+            interfaces=[interface.to_model_interface_client() for interface in self.interfaces],
         )
 
     def interface_protocol_value_of(

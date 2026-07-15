@@ -33,7 +33,7 @@ class MessageType(Enum):
     def of_int(value: int) -> MessageType:
         if value < 0 or value > 255:
             _message_type_logger.error(
-                f'Message type deserialization failed. Expected a value between 0 and 255 but was {value}.',
+                f"Message type deserialization failed. Expected a value between 0 and 255 but was {value}.",
             )
             return MessageType.UNKNOWN
         if value == 0:
@@ -54,6 +54,6 @@ class MessageType(Enum):
             return MessageType.SIMULATION_STEP_BATCH
         else:
             _message_type_logger.error(
-                f'Message type deserialization failed. Value was in range (0-255) but is unknown: {value}.',
+                f"Message type deserialization failed. Value was in range (0-255) but is unknown: {value}.",
             )
             return MessageType.UNKNOWN

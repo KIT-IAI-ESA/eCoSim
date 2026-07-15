@@ -6,87 +6,87 @@ from tests.tech.resource_utils import config_parser_for_resource
 
 
 def test_config_parser() -> None:
-    config = config_parser_for_resource('config.ini')
+    config = config_parser_for_resource("config.ini")
     # SECTION 1
-    assert config.get_string('Section1', 'string') == 'section1-string'
-    assert config.get_string_array('Section1', 'string_array') == ['section1-string-array-1', 'section1-string-array-2']
-    assert config.get_bool('Section1', 'boolean_true') is True
-    assert config.get_bool('Section1', 'boolean_yes') is True
-    assert config.get_bool('Section1', 'boolean_false') is False
-    assert config.get_bool('Section1', 'boolean_no') is False
-    assert config.get_int('Section1', 'int') == 1111
+    assert config.get_string("Section1", "string") == "section1-string"
+    assert config.get_string_array("Section1", "string_array") == ["section1-string-array-1", "section1-string-array-2"]
+    assert config.get_bool("Section1", "boolean_true") is True
+    assert config.get_bool("Section1", "boolean_yes") is True
+    assert config.get_bool("Section1", "boolean_false") is False
+    assert config.get_bool("Section1", "boolean_no") is False
+    assert config.get_int("Section1", "int") == 1111
     # SECTION 2
-    assert config.get_string('Section2', 'string') == 'section2-string'
-    assert config.get_string_array('Section2', 'string_array') == ['section2-string-array-1', 'section2-string-array-2']
-    assert config.get_bool('Section2', 'boolean_true') is True
-    assert config.get_bool('Section2', 'boolean_yes') is True
-    assert config.get_bool('Section2', 'boolean_false') is False
-    assert config.get_bool('Section2', 'boolean_no') is False
-    assert config.get_int('Section2', 'int') == 2222
+    assert config.get_string("Section2", "string") == "section2-string"
+    assert config.get_string_array("Section2", "string_array") == ["section2-string-array-1", "section2-string-array-2"]
+    assert config.get_bool("Section2", "boolean_true") is True
+    assert config.get_bool("Section2", "boolean_yes") is True
+    assert config.get_bool("Section2", "boolean_false") is False
+    assert config.get_bool("Section2", "boolean_no") is False
+    assert config.get_int("Section2", "int") == 2222
 
 
 def test_empty_string() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
-    assert config.get_string('Section1', 'string_empty') == ''
+    config = config_parser_for_resource("edge_cases.ini")
+    assert config.get_string("Section1", "string_empty") == ""
 
 
 def test_empty_string_array() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
-    assert config.get_string_array('Section1', 'string_array_empty') == []
+    config = config_parser_for_resource("edge_cases.ini")
+    assert config.get_string_array("Section1", "string_array_empty") == []
 
 
 def test_empty_bool() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_bool('Section1', 'bool_empty')
+        config.get_bool("Section1", "bool_empty")
 
 
 def test_invalid_bool() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_bool('Section1', 'bool_invalid')
+        config.get_bool("Section1", "bool_invalid")
 
 
 def test_non_existing_string() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_string('Section1', 'non_existing')
+        config.get_string("Section1", "non_existing")
 
 
 def test_non_existing_bool() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_bool('Section1', 'non_existing')
+        config.get_bool("Section1", "non_existing")
 
 
 def test_non_existing_int() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_int('Section1', 'non_existing')
+        config.get_int("Section1", "non_existing")
 
 
 def test_invalid_int() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_int('Section1', 'int_invalid')
+        config.get_int("Section1", "int_invalid")
 
 
 def test_non_existing_string_array() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_string_array('Section1', 'non_existing')
+        config.get_string_array("Section1", "non_existing")
 
 
 def test_invalid_string_array() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_string_array('Section1', 'string_array_invalid')
+        config.get_string_array("Section1", "string_array_invalid")
 
 
 def test_non_existing_section() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
+    config = config_parser_for_resource("edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException):
-        config.get_string_array('NON_EXISTING', 'string_empty')
+        config.get_string_array("NON_EXISTING", "string_empty")
 
 
 def test_string_to_bool() -> None:
@@ -105,9 +105,9 @@ def test_string_to_bool() -> None:
 
 
 def test_non_existing_string_with_default_value() -> None:
-    config = config_parser_for_resource('edge_cases.ini')
-    default_value = 'my_default_value'
-    assert config.get_string('Section1', 'non_existing', default_value) == default_value
+    config = config_parser_for_resource("edge_cases.ini")
+    default_value = "my_default_value"
+    assert config.get_string("Section1", "non_existing", default_value) == default_value
 
 
 def test_parse_string_array() -> None:
@@ -129,7 +129,7 @@ def test_parse_string_array_empty_string() -> None:
 
 def test_parse_string_array_without_quotes() -> None:
     actual = ConfigParser.config_string_to_string_array("[10, False, hello, 1.11]")
-    assert actual == ['10', 'False', 'hello', '1.11']
+    assert actual == ["10", "False", "hello", "1.11"]
 
 
 def test_parse_string_array_invalid_string() -> None:
@@ -138,29 +138,35 @@ def test_parse_string_array_invalid_string() -> None:
 
 
 def test_parse_int_array() -> None:
-    string_array = '[888, 222]'
+    string_array = "[888, 222]"
     actual = ConfigParser.config_string_to_int_array(string_array)
     assert actual[0] == 888
     assert actual[1] == 222
 
 
 def test_extract_extra_sections() -> None:
-    config = config_parser_for_resource('client_config.ini')
+    config = config_parser_for_resource("client_config.ini")
     assert len(config.extract_extra_sections()) == 1
     assert config.extract_extra_sections()[0] == """[fmu]\nfmu_file=[/path/to/fmu.fmu]"""
 
 
 def test_extract_multiple_sections() -> None:
-    config = config_parser_for_resource('config_multiple_sections.ini')
+    config = config_parser_for_resource("config_multiple_sections.ini")
     assert len(config.extract_extra_sections()) == 2
-    assert config.extract_extra_sections()[0] == """[Section1]
+    assert (
+        config.extract_extra_sections()[0]
+        == """[Section1]
 string = string1234
 int = 12"""
-    assert config.extract_extra_sections()[1] == """[Section2]
+    )
+    assert (
+        config.extract_extra_sections()[1]
+        == """[Section2]
 string = string5678
 int = 23"""
+    )
 
 
 def test_no_extra_sections() -> None:
-    config = config_parser_for_resource('config_no_extra_section.ini')
+    config = config_parser_for_resource("config_no_extra_section.ini")
     assert config.extract_extra_sections() == []

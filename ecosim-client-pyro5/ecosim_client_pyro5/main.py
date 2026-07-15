@@ -50,5 +50,5 @@ def main() -> None:
     ShutdownManager().set_shutdown_at_application_end()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

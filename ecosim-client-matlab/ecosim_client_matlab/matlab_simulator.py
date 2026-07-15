@@ -71,14 +71,16 @@ class MatlabSimulator(ShutdownListener):
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
-        return ClientSimStepData.of_protocol_interface_values([
-            ProtocolInterfaceValue(
-                name=interface_name,
-                # we always assume float (like in the Java client)
-                value=self.get_output_float(interface_name),
-            )
-            for interface_name in self._execution_config.server_used_outputs()
-        ])
+        return ClientSimStepData.of_protocol_interface_values(
+            [
+                ProtocolInterfaceValue(
+                    name=interface_name,
+                    # we always assume float (like in the Java client)
+                    value=self.get_output_float(interface_name),
+                )
+                for interface_name in self._execution_config.server_used_outputs()
+            ],
+        )
 
     def do_step(
         self,
@@ -87,14 +89,14 @@ class MatlabSimulator(ShutdownListener):
     ) -> None:
         for interface_id, value in input_values.items():
             # TODO Alexander: implement to your needs (see the following example)
-            '''
+            """
             if isinstance(value, float):
                 self.set_input_float(interface_id, value)
             elif isinstance(value, list): # 'list' can contain lists
                 pass
             elif value is None:
                 pass
-            '''
+            """
             self.set_input_float(interface_id, value)  # type: ignore  # TODO, s. comment above
         MatlabSimulator._logger.info(
             f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",

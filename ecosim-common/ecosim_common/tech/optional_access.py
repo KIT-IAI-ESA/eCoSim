@@ -9,9 +9,10 @@ instead of
 my_object.its_property if my_object else my_alternative
 
 """
+
 from typing import TypeVar, Generic, Any
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class OptionalAccess(Generic[T]):

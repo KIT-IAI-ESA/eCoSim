@@ -137,10 +137,7 @@ class Server(AbstractServer, ShutdownListener):
                     client_id,
                 )
 
-                while (
-                    self._server_state.is_running()
-                    and self._server_state.client_states.is_connected(client_id)
-                ):
+                while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
                     if received_message is None:
                         Server._logger.warning(
@@ -312,7 +309,7 @@ class DaskServer(AbstractServer, ShutdownListener):
         server_state = dd.Queue("server_state")
         server_state.put(serialize(self._server_state))
         self._channel_endpoint.listen_async(
-            on_new_channel=ChannelHandling(simulation_config=self._simulation_config)._handle_new_channel,      #
+            on_new_channel=ChannelHandling(simulation_config=self._simulation_config)._handle_new_channel,  #
         )
         Server._logger.info("Waiting for all clients to connect...")
 
@@ -385,8 +382,7 @@ class DaskServer(AbstractServer, ShutdownListener):
         self._simulation_executor.force_stop()
 
 
-class ChannelHandling():
-
+class ChannelHandling:
     def __init__(
         self,
         simulation_config: SimulationConfig,
@@ -412,6 +408,7 @@ class ChannelHandling():
                 key=uuid.uuid4().hex,
             )
             dd.fire_and_forget(future)
+
         dd_client.sync(async_handle)
 
     def _handle_client(
@@ -447,10 +444,7 @@ class ChannelHandling():
                 )
                 server_state.put(serialize(self._server_state))
                 calls = 0  # Terminate server if no clients are connected after queue timeout
-                while (
-                    self._server_state.is_running()
-                    and self._server_state.client_states.is_connected(client_id)
-                ):
+                while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
 
                     if received_message is None:

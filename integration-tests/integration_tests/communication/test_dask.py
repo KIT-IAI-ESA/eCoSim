@@ -67,11 +67,11 @@ def test_big_data(dask_client: dd.Client) -> None:
     correlation_id = CorrelationId.of_int(7777)
 
     base_string = "hello world! "
-    encoded_base_size = len(base_string.encode('utf-8'))
+    encoded_base_size = len(base_string.encode("utf-8"))
     mb_15 = 15 * 1024 * 1024
     repetitions = mb_15 // encoded_base_size + 1
-    final_string = base_string*repetitions
-    final_size = len(final_string.encode('utf-8'))
+    final_string = base_string * repetitions
+    final_size = len(final_string.encode("utf-8"))
 
     assert final_size > mb_15
 

@@ -37,8 +37,9 @@ class CurrentStepData:
         for logical_delay in self._simulation_config.logical_delays:
             delayed_time_steps = logical_delay.delayed_time_steps
             if delayed_time_steps not in self._logical_delays:
-                self._logical_delays[delayed_time_steps] = (
-                    CurrentStepLogicalDelay(delayed_time_steps=delayed_time_steps, connections=[])
+                self._logical_delays[delayed_time_steps] = CurrentStepLogicalDelay(
+                    delayed_time_steps=delayed_time_steps,
+                    connections=[],
                 )
             for logical_delay_connection in logical_delay.logical_delay_connections:
                 self._logical_delays[delayed_time_steps].connections.append(
@@ -79,8 +80,8 @@ class CurrentStepData:
             if interface_data.interface_value.name == interface.model_interface_id.interface:
                 if interface_data.interface_value.value is not None:
                     CurrentStepData._logger.warning(
-                        f"(CurrentStep: {self._step})Setting value for execution for interface {interface} but it is already set => " +
-                        f"overwriting old value of {interface_data.interface_value.value} with {value}",
+                        f"(CurrentStep: {self._step})Setting value for execution for interface {interface} but it is already set => "
+                        + f"overwriting old value of {interface_data.interface_value.value} with {value}",
                     )
                     return
                 interface_data.interface_value.value = value
@@ -93,15 +94,9 @@ class CurrentStepData:
         result: dict[ClientID, List[ProtocolInterfaceValue]] = {}
         for client_id in self._data_by_client:
             client_data: CurrentStepClientData = self._data_by_client[client_id]
-            if client_data.executed or any(
-                    interface_data_entry.interface_value.value is None for interface_data_entry in
-                    client_data.interface_data
-            ):
+            if client_data.executed or any(interface_data_entry.interface_value.value is None for interface_data_entry in client_data.interface_data):
                 continue
-            result[client_id] = [
-                interface_data_entry.interface_value.to_immutable() for interface_data_entry in
-                client_data.interface_data
-            ]
+            result[client_id] = [interface_data_entry.interface_value.to_immutable() for interface_data_entry in client_data.interface_data]
         return result
 
     def add_received_data(
@@ -140,7 +135,8 @@ class CurrentStepData:
                                     model_name=client_config_receiver.model_name,
                                     interface=interface_data_entry.interface_value.name,
                                 ),
-                            ), new_value,
+                            ),
+                            new_value,
                         )
 
             for logical_delay in self._logical_delays.values():
@@ -148,9 +144,9 @@ class CurrentStepData:
                     if logical_delay_connection.settable_by(simulator_interface_id_sender):
                         if self._step in logical_delay_connection.set_in_step:
                             CurrentStepData._logger.warning(
-                                f"Connection {logical_delay_connection.input_interface} in logical delay {logical_delay.delayed_time_steps} was " +
-                                f"already set in time step {self._step}. This should not happen. The current value " +
-                                f"{logical_delay_connection.current_value} will be overwritten with {new_value}.",
+                                f"Connection {logical_delay_connection.input_interface} in logical delay {logical_delay.delayed_time_steps} was "
+                                + f"already set in time step {self._step}. This should not happen. The current value "
+                                + f"{logical_delay_connection.current_value} will be overwritten with {new_value}.",
                             )
                         logical_delay_connection.current_value = new_value
 
@@ -183,10 +179,8 @@ class CurrentStepClientDataInterface:
         simulator_interface_id: SimulatorInterfaceId,
     ) -> bool:
         return any(
-            (
-                matched_interface.simulator_interface_id == simulator_interface_id and
-                len(matched_interface.delay_path) == 0
-            ) for matched_interface in self.connected_to
+            (matched_interface.simulator_interface_id == simulator_interface_id and len(matched_interface.delay_path) == 0)
+            for matched_interface in self.connected_to
         )
 
 

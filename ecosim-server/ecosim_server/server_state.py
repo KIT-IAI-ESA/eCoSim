@@ -10,7 +10,6 @@ from ecosim_server.simulation.state.simulation_state_repository import Simulatio
 
 
 class ServerState(ShutdownListener):
-
     def __init__(
         self,
         simulation_config: SimulationConfig,
@@ -70,7 +69,6 @@ class ServerState(ShutdownListener):
 
 # TODO_AFTER_MERGE: find common abstraction
 class ServerStateDask(ShutdownListener):
-
     def __init__(
         self,
         simulation_config: SimulationConfig,

@@ -8,8 +8,7 @@ from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.server_statistics_repository import ServerTimeMeasurementRepository
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from integration_tests.tech.db.server_time_measurement_repository_in_memory import \
-    ServerTimeMeasurementRepositoryInMemory
+from integration_tests.tech.db.server_time_measurement_repository_in_memory import ServerTimeMeasurementRepositoryInMemory
 from integration_tests.tech.db.simulation_state_repository_in_memory import SimulationStateRepositoryInMemory
 
 

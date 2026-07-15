@@ -27,7 +27,8 @@ class MeasurementRepositoryInMemory(MeasurementRepository):
             MeasurementEntry(
                 timestamp=timestamp,
                 values=values,
-            ) for timestamp, values in self._records.items()
+            )
+            for timestamp, values in self._records.items()
         ]
 
     def assert_entry_count(

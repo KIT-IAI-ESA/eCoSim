@@ -7,7 +7,7 @@ from tests.tech.resource_utils import resource_path_file
 
 
 def test_load() -> None:
-    config = SimulationConfig.of_config_file_and_params(resource_path_file('simulation_bergwald.json'), 1221)
+    config = SimulationConfig.of_config_file_and_params(resource_path_file("simulation_bergwald.json"), 1221)
     # CLIENTS
     assert len(config.clients) == 5
 

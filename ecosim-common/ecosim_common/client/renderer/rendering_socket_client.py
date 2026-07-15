@@ -8,8 +8,12 @@ from websockets.asyncio.client import ClientConnection
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
-from ecosim_common.simulation.renderer.rendering_messages import RawRenderingMessageHandler, RenderingMessageType, \
-    RenderingImageMessage, RenderingImageReplyMessage
+from ecosim_common.simulation.renderer.rendering_messages import (
+    RawRenderingMessageHandler,
+    RenderingMessageType,
+    RenderingImageMessage,
+    RenderingImageReplyMessage,
+)
 from ecosim_common.simulation.renderer.rendering_request_headers import RenderingMessageClientHeader
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -62,9 +66,11 @@ class RenderingSocketClient(ShutdownListener):
         try:
             RenderingSocketClient._logger.debug(f"Connecting to {url}...")
             self._websocket = await websockets.connect(
-                url, additional_headers=RenderingMessageClientHeader.create_raw(
+                url,
+                additional_headers=RenderingMessageClientHeader.create_raw(
                     client_id=self._client_config.client_id(),
-                ), max_size=None,
+                ),
+                max_size=None,
             )
             RenderingSocketClient._logger.debug(f"Connecting to {url}... success.")
             if self._started_event:
@@ -89,7 +95,7 @@ class RenderingSocketClient(ShutdownListener):
                                 f"Received {RenderingMessageType.RENDERING_IMAGE.value} message for time step {rendering_image_message.time_step}...",
                             )
                             image = self._renderer_service.render_step(rendering_image_message.time_step)
-                            content = base64.b64encode(image).decode('utf-8') if image else None
+                            content = base64.b64encode(image).decode("utf-8") if image else None
                             await self._websocket.send(
                                 RenderingImageReplyMessage(
                                     time_step=rendering_image_message.time_step,
@@ -97,13 +103,13 @@ class RenderingSocketClient(ShutdownListener):
                                 ).model_dump_json(),
                             )
                             RenderingSocketClient._logger.debug(
-                                f"Handled {RenderingMessageType.RENDERING_IMAGE.value} message for time step " +
-                                f"{rendering_image_message.time_step}... success.",
+                                f"Handled {RenderingMessageType.RENDERING_IMAGE.value} message for time step "
+                                + f"{rendering_image_message.time_step}... success.",
                             )
                         except Exception as e:
                             RenderingSocketClient._logger.error(
-                                "Something went wrong sending images of time step " +
-                                f"{rendering_image_message.time_step if rendering_image_message else "N/A"}: {e}",
+                                "Something went wrong sending images of time step "
+                                + f"{rendering_image_message.time_step if rendering_image_message else 'N/A'}: {e}",
                             )
                         finally:
                             self._no_sending_in_progress.set()
@@ -130,7 +136,7 @@ class RenderingSocketClient(ShutdownListener):
             RenderingSocketClient._logger.debug(f"Sending is currently in progress. Waiting for {timeout} seconds...")
             success = self._no_sending_in_progress.wait(timeout)
             RenderingSocketClient._logger.debug(
-                f"Sending is currently in progress. Waited for {timeout} seconds... {"success" if success else "failed."}",
+                f"Sending is currently in progress. Waited for {timeout} seconds... {'success' if success else 'failed.'}",
             )
         if self._thread:
             self._thread.join()

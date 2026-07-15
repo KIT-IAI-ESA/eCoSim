@@ -8,7 +8,6 @@ from typing import Any, Callable, List
 
 
 class AppConfig(object):
-
     def __init__(
         self,
         cli_description: str,
@@ -31,7 +30,8 @@ class AppConfig(object):
             if not parameter.transform or getattr(self._args, parameter.to_parsed_arg_name()) is None:
                 continue
             setattr(
-                self._args, parameter.to_parsed_arg_name(),
+                self._args,
+                parameter.to_parsed_arg_name(),
                 parameter.transform(getattr(self._args, parameter.to_parsed_arg_name())),
             )
 

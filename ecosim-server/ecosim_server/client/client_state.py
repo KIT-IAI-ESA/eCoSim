@@ -1,19 +1,18 @@
 import threading
-import dask.distributed as dd
 from time import sleep
 from typing import Tuple, override
 
+import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_common.config.client_id import ClientID
 from ecosim_server.client_connection import ClientConnection
-from ecosim_server.config.simulation_config import SimulationConfig, ClientSimulatorConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 
 
 class ClientState:
-
     def __init__(
         self,
         client_config: ClientSimulatorConfig,
@@ -71,8 +70,8 @@ class ClientStates(ShutdownListener):
                 return False
             if client.connected:
                 ClientStates._logger.debug(
-                    f"Client {client_config.client_id()} ({client_connection.address}) connected but " +
-                    f"another client ({client.connection_address}) already fulfills this required.",
+                    f"Client {client_config.client_id()} ({client_connection.address}) connected but "
+                    + f"another client ({client.connection_address}) already fulfills this required.",
                 )
                 return False
             ClientStates._logger.info(f"Client {client_config.client_id()} ({client_connection.address}) connected.")
@@ -121,8 +120,8 @@ class ClientStates(ShutdownListener):
         while not self.have_all_clients_started_simulation():
             sleep(2)
             ClientStates._logger.debug(
-                "Waiting for all clients starting simulation: " +
-                f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
+                "Waiting for all clients starting simulation: "
+                + f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
             )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
@@ -171,14 +170,12 @@ class ClientStates(ShutdownListener):
     def wait_for_all_clients_connected_and_ready(self) -> None:
         while not self.are_all_clients_connected_and_ready():
             sleep(2)
+            # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
             ClientStates._logger.info(
-                message="Waiting for all clients to connect: " +
-                        f"{
-                            sum(
-                                1 for state in self.client_states.values()
-                                if (state.connected and state.ready_for_simulation)
-                            )
-                        }/{len(self.client_states.values())}",
+                message="Waiting for all clients to connect: "
+                + f"{sum(1 for state in self.client_states.values() if (state.connected and state.ready_for_simulation))}/{
+                    len(self.client_states.values())
+                }",
             )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
@@ -219,8 +216,8 @@ class ClientStatesDask(ShutdownListener):
                 return False
             if client.connected:
                 ClientStatesDask._logger.debug(
-                    f"Client {client_config.client_id()} ({client_connection.address}) connected but " +
-                    f"another client ({client.connection_address}) already fulfills this required.",
+                    f"Client {client_config.client_id()} ({client_connection.address}) connected but "
+                    + f"another client ({client.connection_address}) already fulfills this required.",
                 )
                 return False
             ClientStatesDask._logger.info(f"Client {client_config.client_id()} ({client_connection.address}) connected.")
@@ -267,9 +264,10 @@ class ClientStatesDask(ShutdownListener):
 
     def wait_for_all_clients_starting_simulation(self) -> None:
         while not self.have_all_clients_started_simulation():
+            # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
             ClientStatesDask._logger.debug(
-                "Waiting for all clients starting simulation: " +
-                f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
+                "Waiting for all clients starting simulation: "
+                + f"{sum(1 for state in self.client_states.values() if state.simulation_started)}/{len(self.client_states.values())}",
             )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
@@ -317,14 +315,12 @@ class ClientStatesDask(ShutdownListener):
 
     def wait_for_all_clients_connected_and_ready(self) -> None:
         while not self.are_all_clients_connected_and_ready():
+            # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
             ClientStatesDask._logger.info(
-                message="Waiting for all clients to connect: " +
-                        f"{
-                            sum(
-                                1 for state in self.client_states.values()
-                                if (state.connected and state.ready_for_simulation)
-                            )
-                        }/{len(self.client_states.values())}",
+                message="Waiting for all clients to connect: "
+                + f"{sum(1 for state in self.client_states.values() if (state.connected and state.ready_for_simulation))}/{
+                    len(self.client_states.values())
+                }",
             )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")

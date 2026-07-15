@@ -10,10 +10,10 @@ class ModelInterfaceId:
     interface: InterfaceId
 
     @classmethod
-    def of_json(cls, value: dict[str, Any]) -> 'ModelInterfaceId':
+    def of_json(cls, value: dict[str, Any]) -> "ModelInterfaceId":
         return ModelInterfaceId(
-            model_name=value['model_name'],
-            interface=value['interface'],
+            model_name=value["model_name"],
+            interface=value["interface"],
         )
 
     def __str__(self) -> str:
