@@ -54,3 +54,6 @@ class ParallelEvent:
 
     def wait(self, timeout: float | None = None) -> bool:
         return self._event.wait(timeout=timeout)
+
+    def set_state(self, state: bool) -> None:
+        self._event.set() if state else self._event.clear()
