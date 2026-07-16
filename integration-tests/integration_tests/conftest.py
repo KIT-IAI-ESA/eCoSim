@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Generator, cast
+from typing import Any, Generator, assert_never, cast
 
 import dask.distributed as dd
 import pytest
@@ -52,12 +52,13 @@ def dask_client() -> Generator[dd.Client, Any, None]:
 )
 def communication_protocol(request: pytest.FixtureRequest) -> Generator[CommunicationProtocol, Any, None]:
     communication_protocol: CommunicationProtocol = cast(CommunicationProtocol, request.param)
-    if communication_protocol == CommunicationProtocol.DASK:
-        request.getfixturevalue("dask_client")
-    elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
-        pass  # nothing to do for TCP backend
-    else:
-        raise ValueError(f"Unknown communication protocol: {communication_protocol}")
+    match communication_protocol:
+        case CommunicationProtocol.DASK:
+            request.getfixturevalue("dask_client")
+        case CommunicationProtocol.TCP_SOCKET:
+            pass
+        case _:
+            assert_never(communication_protocol)
 
     yield communication_protocol
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, assert_never
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
@@ -106,20 +106,21 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         repositories = RepositoriesInMemory()
 
     server: Server | DaskServer
-    if parameters.communication_protocol == CommunicationProtocol.TCP_SOCKET:
-        server = Server(
-            server_config=server_config,
-            simulation_config=simulation_config,
-            repositories=repositories,
-        )
-    elif parameters.communication_protocol == CommunicationProtocol.DASK:
-        server = DaskServer(
-            server_config=server_config,
-            simulation_config=simulation_config,
-            repositories=repositories,
-        )
-    else:
-        raise ValueError(f"Unknown communication protocol: {parameters.communication_protocol}")
+    match parameters.communication_protocol:
+        case CommunicationProtocol.TCP_SOCKET:
+            server = Server(
+                server_config=server_config,
+                simulation_config=simulation_config,
+                repositories=repositories,
+            )
+        case CommunicationProtocol.DASK:
+            server = DaskServer(
+                server_config=server_config,
+                simulation_config=simulation_config,
+                repositories=repositories,
+            )
+        case _:
+            assert_never(parameters.communication_protocol)
 
     return SimpleTestServer(
         server=server,

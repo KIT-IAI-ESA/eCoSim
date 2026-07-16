@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
+from typing import assert_never
 
 import dask.distributed
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 
 @dataclass
@@ -14,14 +16,15 @@ class ParallelEvent:
 
     @staticmethod
     def for_communication_protocol(
-        communication_protocol: str,
+        communication_protocol: CommunicationProtocol,
     ) -> ParallelEvent:
-        if communication_protocol == "dask":
-            return ParallelEvent.dask()
-        elif communication_protocol == "tcp_socket":
-            return ParallelEvent.thread()
-        else:
-            raise ValueError(f"Unknown communication protocol: {communication_protocol}")
+        match communication_protocol:
+            case CommunicationProtocol.DASK:
+                return ParallelEvent.dask()
+            case CommunicationProtocol.TCP_SOCKET:
+                return ParallelEvent.thread()
+            case _:
+                assert_never(communication_protocol)
 
     @staticmethod
     def thread() -> ParallelEvent:
