@@ -1,5 +1,5 @@
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_server.client.client_state import ClientStates
+from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement

@@ -1,6 +1,7 @@
 import threading
 import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import override
 
 import dask.distributed as dd
@@ -28,6 +29,7 @@ from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
+@dataclass
 class AbstractServer(ABC):
     @abstractmethod
     def start(self) -> None:

@@ -12,7 +12,7 @@ from ecosim_common.communication.data.simulation_step_request import SimulationS
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.client.client_state import ClientStates
+from ecosim_server.client.client_states import ClientStates
 from ecosim_server.message_buffer import BufferedClientMessage, ClientMessageBuffer
 
 
