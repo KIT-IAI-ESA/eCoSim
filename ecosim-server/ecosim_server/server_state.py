@@ -1,3 +1,4 @@
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import ServerConfig
@@ -21,8 +22,8 @@ class ServerState(ShutdownListener):
             server_config=server_config,
             simulation_config=simulation_config,
         )
-        self._is_finished = False
-        self._is_interrupted = False
+        self._is_finished = ParallelEvent.for_communication_protocol(server_config.server.communication_protocol)
+        self._is_interrupted = ParallelEvent.for_communication_protocol(server_config.server.communication_protocol)
         self.message_buffer: ClientMessageBuffer = ClientMessageBuffer.for_communication_protocol(server_config.server.communication_protocol)
         self.server_measurement = ServerTimeMeasurement()
 
@@ -39,11 +40,11 @@ class ServerState(ShutdownListener):
         return self.client_states.are_all_clients_connected_and_ready()
 
     def is_running(self) -> bool:
-        return not self._is_finished and not self._is_interrupted
+        return not self._is_finished.is_set() and not self._is_interrupted.is_set()
 
     # callback of ShutdownManager => if this is called the server is interrupted
     def on_app_shutdown(self) -> None:
-        self._is_interrupted = True
+        self._is_interrupted.set()
         if self._simulation_state_repository.current() != SimulationState.FINISHED:
             self.set_simulation_state(SimulationState.FAILED)
 
@@ -54,7 +55,7 @@ class ServerState(ShutdownListener):
         self,
         state: bool,
     ) -> None:
-        self._is_finished = state
+        self._is_finished.set_state(state)
         self.set_simulation_state(SimulationState.FINISHED)
 
     def set_simulation_state(self, simulation_state: SimulationState) -> None:
@@ -62,4 +63,4 @@ class ServerState(ShutdownListener):
 
     def force_stop(self) -> None:
         self.on_app_shutdown()
-        self._is_finished = True
+        self._is_finished.set()
