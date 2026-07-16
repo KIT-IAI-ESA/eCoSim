@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
 from time import sleep
-from typing import Tuple, override
+from typing import Tuple, assert_never, override
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.dask_dictionary_for_simple_objects import DaskDictionaryForSimpleObjects
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -23,7 +25,7 @@ class ClientStates(ShutdownListener):
     _all_clients_ready_for_simulation: ParallelEvent = field()
     _all_clients_stopped_simulation_event: ParallelEvent = field()
     # TODO_OSR: make this field private
-    client_states: dict[ClientID, ClientState] = field(default_factory=dict)
+    client_states: dict[ClientID, ClientState] | DaskDictionaryForSimpleObjects[ClientID, ClientState] = field()
     _shutdown_triggered: bool = field(default=False)
 
     @staticmethod
@@ -31,9 +33,18 @@ class ClientStates(ShutdownListener):
         server_config: ServerConfig,
         simulation_config: SimulationConfig,
     ) -> "ClientStates":
-        client_states: dict[ClientID, ClientState] = {}
-        for client in simulation_config.clients:
-            client_states[client.client_id] = ClientState(client)
+        client_states: dict[ClientID, ClientState] | DaskDictionaryForSimpleObjects[ClientID, ClientState] = {
+            client.client_id: ClientState(client) for client in simulation_config.clients
+        }
+
+        match server_config.server.communication_protocol:
+            case CommunicationProtocol.DASK:
+                client_states = DaskDictionaryForSimpleObjects(name="client_states", default=client_states)
+            case CommunicationProtocol.TCP_SOCKET:
+                pass
+            case _:
+                assert_never(server_config.server.communication_protocol)
+
         return ClientStates(
             _parallel_lock=ParallelLock.for_protocol(
                 communication_protocol=server_config.server.communication_protocol,

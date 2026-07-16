@@ -23,7 +23,7 @@ class ServerState(ShutdownListener):
         )
         self._is_finished = False
         self._is_interrupted = False
-        self.message_buffer: ClientMessageBuffer = ClientMessageBuffer()
+        self.message_buffer: ClientMessageBuffer = ClientMessageBuffer.for_communication_protocol(server_config.server.communication_protocol)
         self.server_measurement = ServerTimeMeasurement()
 
     def wait_for_all_clients_starting_simulation(self) -> None:

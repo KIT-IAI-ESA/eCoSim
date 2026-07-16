@@ -45,7 +45,7 @@ class ClientCommunication:
     ) -> None:
         self._client_message_buffer.on_message(client_ids, message_types, callback)
 
-    # TODO this method is error prone since you must need to remember to call it
+    # TODO_OSR: this method is error-prone since you must need to remember calling it
     #      refactor it, so 'on_messages' somehow integrates this functionality
     #      e.g. it could return a handle that you can call 'remove' on to remove the callback
     def remove_on_message_callback(

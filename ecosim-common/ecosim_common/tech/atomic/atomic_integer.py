@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import final
+from typing import assert_never, final
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
@@ -20,12 +20,13 @@ class AtomicInteger:
         init_value: int,
     ) -> AtomicInteger:
         lock: ParallelLock
-        if communication_protocol == CommunicationProtocol.DASK:
-            lock = ParallelLock.dask()
-        elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
-            lock = ParallelLock.thread()
-        else:
-            raise ValueError(f"Unsupported communication protocol: {communication_protocol}")
+        match communication_protocol:
+            case CommunicationProtocol.DASK:
+                lock = ParallelLock.dask()
+            case CommunicationProtocol.TCP_SOCKET:
+                lock = ParallelLock.thread()
+            case _:
+                assert_never(communication_protocol)
 
         return cls(
             _lock=lock,

@@ -4,7 +4,7 @@ import threading
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from types import TracebackType
-from typing import override
+from typing import assert_never, override
 
 import dask.distributed
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -22,12 +22,13 @@ class ParallelLock(AbstractContextManager):
         communication_protocol: CommunicationProtocol,
         dask_lock_name: str | None = None,
     ) -> "ParallelLock":
-        if communication_protocol == CommunicationProtocol.DASK:
-            return ParallelLock.dask(name=dask_lock_name)
-        elif communication_protocol == CommunicationProtocol.TCP_SOCKET:
-            return ParallelLock.thread()
-        else:
-            raise ValueError(f"Unsupported communication protocol: {communication_protocol}")
+        match communication_protocol:
+            case CommunicationProtocol.DASK:
+                return ParallelLock.dask(name=dask_lock_name)
+            case CommunicationProtocol.TCP_SOCKET:
+                return ParallelLock.thread()
+            case _:
+                assert_never(communication_protocol)
 
     @staticmethod
     def thread() -> "ParallelLock":
