@@ -111,7 +111,7 @@ def test_three_clients_server(communication_protocol: CommunicationProtocol) -> 
     client_2.start()
     client_3.start()
 
-    server_thread.join()
+    server_thread.join(120)
 
     repositories = server.repositories
 
