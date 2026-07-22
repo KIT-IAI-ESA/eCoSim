@@ -7,12 +7,12 @@ from _pytest.logging import _LiveLoggingStreamHandler, logging_StreamHandler
 from _pytest.nodes import Item
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
-from ecosim_common.tech.logger.logger import init_logger
+from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 # INIT LOGGER
 init_logger(log_level=logging.DEBUG)
-pytest_fixture_logger = logging.getLogger("PytestFixtures")
+pytest_fixture_logger = ESPLogger("PyTestFixture")
 
 
 @pytest.fixture(scope="session", autouse=True)

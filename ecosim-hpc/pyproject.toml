@@ -66,5 +66,7 @@ module = [
     "dask_mpi",
     "dask_mpi.*",
     "dask.distributed",
+    "cloudpickle",
+    "cloudpickle.*",
 ]
 ignore_missing_imports = true

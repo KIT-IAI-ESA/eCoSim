@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
@@ -11,6 +12,8 @@ from ecosim_common.communication.data.simulation_step_batch_request import Simul
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -24,7 +27,7 @@ class InterfaceValueHistory:
     _parallel_lock: ParallelLock = field()
     _repositories: Repositories = field()
     _simulation_config: SimulationConfig = field()
-    _entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = field(default_factory=dict)
+    _entries: ESPMap[int, dict[ClientID, List[ProtocolInterfaceValue]]] = field()
 
     @staticmethod
     def for_config(
@@ -37,6 +40,11 @@ class InterfaceValueHistory:
             _parallel_lock=parallel_lock,
             _repositories=repositories,
             _simulation_config=simulation_config,
+            _entries=ESPMap.of_type(
+                map_type=ESPStructureType.DASK
+                if server_config.server.communication_protocol == CommunicationProtocol.DASK
+                else ESPStructureType.THREAD,
+            ),
         )
 
     def add_default_values(
@@ -56,6 +64,7 @@ class InterfaceValueHistory:
         client_id: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
+        # TODO_OSR: let adding code run in own thread
         InterfaceValueHistory.logger.debug(
             f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values}",
         )
@@ -87,11 +96,12 @@ class InterfaceValueHistory:
         time_step: int,
         client_id: ClientID,
     ) -> List[ProtocolInterfaceValue]:
-        if time_step not in self._entries:
-            self._entries[time_step] = {}
-        if client_id not in self._entries[time_step]:
-            self._entries[time_step][client_id] = []
-        return self._entries[time_step][client_id]
+        with self._entries.transaction() as entries:
+            if time_step not in entries:
+                entries[time_step] = {}
+            if client_id not in entries[time_step]:
+                entries[time_step][client_id] = []
+            return entries[time_step][client_id]
 
     def _add_to_repository_internal(
         self,

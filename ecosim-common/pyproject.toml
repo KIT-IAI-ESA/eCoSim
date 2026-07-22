@@ -55,6 +55,8 @@ module = [
     "dask.distributed",
     "dask.distributed.*",
     "dask.*",
+    "cloudpickle",
+    "cloudpickle.*",
 ]
 ignore_missing_imports = true
 

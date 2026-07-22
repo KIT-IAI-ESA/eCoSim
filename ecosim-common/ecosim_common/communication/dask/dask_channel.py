@@ -21,7 +21,6 @@ class DaskChannel(ESPChannel):
     ):
         self._internal_dask_client = esp_dask
         self._is_finished: dd.Event = dd.Event(name=f"client_finish_{esp_dask.dask_id()}")
-        self._is_finished_global: dd.Event = dd.Event(name="global_finish")
 
     @override
     def close(self) -> None:
@@ -108,16 +107,16 @@ class DaskChannel(ESPChannel):
             message: ReceivedBinaryMessage | None = dask_client.receive()
 
             if not message:
+                DaskChannel._logger.info("Received empty message -> closing connection")
                 is_finished.set()
                 is_finished_global.set()
-                DaskChannel._logger.info("Received empty message -> closing connection")
 
             if (message is not None) and (message.to_esp_channel_message() is not None):
                 try:
                     on_rec(message.to_esp_channel_message())
                 except Exception as e:
+                    DaskChannel._logger.error(f"Error when processing message: {e}")
                     is_finished.set()
                     is_finished_global.set()
-                    DaskChannel._logger.error(f"Error when processing message: {e}")
                     dd_client.run(ShutdownManager().set_dask_shutdown)
                     raise e
