@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import TypeVar, cast
 
 from dask.distributed import Client, Lock, Variable
+from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
@@ -42,7 +43,9 @@ class DaskDictionaryForSimpleTypes(MutableMapping[KT, VT]):
         )
         with self._dask_lock:
             try:
-                self._dask_variable.get(timeout="1s")
+                # in case that the variable is already initialized, check if it can be got
+                with silenced_logger("distributed.core"):
+                    self._dask_variable.get(timeout="1s")
             except TimeoutError:
                 self._dask_variable.set(dict(self.default or {}))
 

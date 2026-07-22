@@ -103,7 +103,7 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
     if parameters.repository_type == RepositoryType.DB:
         repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
     else:
-        repositories = RepositoriesInMemory()
+        repositories = RepositoriesInMemory.for_communication_protocol(server_config.server.communication_protocol)
 
     server: Server | DaskServer
     match parameters.communication_protocol:

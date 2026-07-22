@@ -187,7 +187,7 @@ def pre_set_two_clients(communication_protocol: CommunicationProtocol) -> Genera
             steps=steps,
             step_size_in_ms=step_size_in_ms,
             simulation_start_date=simulation_start_date,
-            restore_simulation_run=True,
+            restore_simulation_run=False,
             clients=[
                 client_data_1.to_client_simulator_config(),
                 client_data_2.to_client_simulator_config(),

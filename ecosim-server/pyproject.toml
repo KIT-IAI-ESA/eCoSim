@@ -82,5 +82,7 @@ module = [
     "sqlalchemy",
     "dask.distributed",
     "distributed.protocol",
+    "cloudpickle",
+    "cloudpickle.*",
 ]
 ignore_missing_imports = true

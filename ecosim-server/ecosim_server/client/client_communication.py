@@ -31,7 +31,7 @@ class ClientCommunication:
         self,
         message: ESPChannelMessage,
     ) -> None:
-        for client_state in self._client_states.client_states.values():
+        for client_state in self._client_states.all_states():
             if not client_state.connection:
                 ClientCommunication._logger.warning(f"Cannot broadcast to {client_state.client_id} because connection is not set.")
                 continue
@@ -69,7 +69,7 @@ class ClientCommunication:
         values: List[ProtocolInterfaceValue],
     ) -> None:
         def thread_task() -> None:
-            connection = self._client_states.client_states[client_id].connection
+            connection = self._client_states.get_connection_for(client_id)
             if connection is None:
                 ClientCommunication._logger.warning(f"Cannot send simulation step to {client_id} because connection is not set.")
                 return
@@ -93,7 +93,7 @@ class ClientCommunication:
         data: SimulationStepBatchRequest,
     ) -> None:
         def thread_task() -> None:
-            connection = self._client_states.client_states[client_id].connection
+            connection = self._client_states.get_connection_for(client_id)
             if connection is None:
                 ClientCommunication._logger.warning(f"Cannot send simulation step to {client_id} because connection is not set.")
                 return

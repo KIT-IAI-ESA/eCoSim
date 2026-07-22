@@ -18,6 +18,7 @@ class ServerState(ShutdownListener):
     ):
         ShutdownManager().register_listener(self)
         self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
+        # TODO_OSR: make field private
         self.client_states = ClientStates.for_config(
             server_config=server_config,
             simulation_config=simulation_config,

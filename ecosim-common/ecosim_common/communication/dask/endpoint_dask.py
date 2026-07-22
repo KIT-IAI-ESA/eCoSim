@@ -17,7 +17,6 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _connection_address: ConnectionAddress = field()
     _server_closed: dd.Event = field(default_factory=lambda: dd.Event(name="server_closed"))
     _server_listening: dd.Event = field(default_factory=lambda: dd.Event(name="server_listen"))
-    _global_finish: dd.Event = field(default_factory=lambda: dd.Event(name="global_finish"))
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
     _internal_dask_client: dd.Client = field(default_factory=dd.get_client)
 
