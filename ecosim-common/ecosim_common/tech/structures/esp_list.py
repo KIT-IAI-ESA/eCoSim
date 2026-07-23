@@ -42,6 +42,7 @@ class ESPList(ABC, MutableSequence[T], Generic[T]):
         data: list[T] | None = None,
         dask_name: str | None = None,
         dask_client: Client | None = None,
+        dask_use_pickle: bool = True,
         ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose: bool = False,
     ) -> ESPList[T]:
         match list_type:
@@ -57,6 +58,7 @@ class ESPList(ABC, MutableSequence[T], Generic[T]):
                     data=data,
                     dask_name=dask_name,
                     dask_client=dask_client,
+                    use_pickle=dask_use_pickle,
                 )
             case ESPStructureType.THREAD:
                 return ThreadESPList(
@@ -172,25 +174,37 @@ class DaskESPList(ESPList[T]):
         data: list[T] | None = None,
         dask_name: str | None = None,
         dask_client: Client | None = None,
+        use_pickle: bool = False,
     ) -> None:
         init_data = list(data or [])
         self._dask_variable = Variable(
             client=dask_client,
             name=dask_name or f"esp_list_{uuid.uuid4()}",
         )
-        self._lock = ParallelLock.dask()
+        self._use_pickle = use_pickle
+        self._lock = ParallelLock.dask(f"lock_{self._dask_variable.name}")
         try:
             # for the case that the variable is already initialized, check if it can be got
             with silenced_logger("distributed.core"):
                 self._dask_variable.get(timeout=0.3)
         except Exception:
             # if it does not exist, initialize it
-            self._dask_variable.set(cloudpickle.dumps(init_data))
+            self._dask_variable.set(self._serialize(init_data))
+
+    def _serialize(self, data: list[T]) -> Any:
+        if self._use_pickle:
+            return cloudpickle.dumps(data)
+        return data
+
+    def _deserialize(self, data: Any) -> list[T]:
+        if self._use_pickle:
+            return cloudpickle.loads(data)
+        return list(data)
 
     @override
     def get_snapshot(self) -> list[T]:
         raw = self._dask_variable.get()
-        return cloudpickle.loads(raw)
+        return self._deserialize(raw)
 
     @contextmanager
     @override
@@ -198,7 +212,7 @@ class DaskESPList(ESPList[T]):
         with self._lock:
             current_list = self.get_snapshot()
             yield current_list
-            self._dask_variable.set(cloudpickle.dumps(current_list))
+            self._dask_variable.set(self._serialize(current_list))
 
 
 class ThreadESPList(ESPList[T]):
