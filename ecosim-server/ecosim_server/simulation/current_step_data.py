@@ -133,6 +133,7 @@ class CurrentStepData:
         client_id_sender: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
+        CurrentStepData._logger.debug(f"CurrentStepData#add_received_data: entry for {client_id_sender}")
         client_config_sender = self._simulation_config.client_simulator_config_for(client_id_sender)
 
         if client_config_sender is None:
@@ -179,6 +180,7 @@ class CurrentStepData:
                                     + f"{logical_delay_connection.current_value} will be overwritten with {new_value}.",
                                 )
                             logical_delay_connection.current_value = new_value
+        CurrentStepData._logger.debug(f"CurrentStepData#add_received_data: exit for {client_id_sender}")
 
     def all_clients_executed(self) -> bool:
         return all([self._data_by_client[client_id].executed for client_id in self._data_by_client.keys()])

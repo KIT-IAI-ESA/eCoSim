@@ -66,7 +66,7 @@ class InterfaceValueHistory:
     ) -> None:
         # TODO_OSR: let adding code run in own thread
         InterfaceValueHistory.logger.debug(
-            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values}",
+            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ...",
         )
         with self._parallel_lock:
             self._add_to_entries_internal(
@@ -79,6 +79,9 @@ class InterfaceValueHistory:
                 client_id=client_id,
                 values=interface_values,
             )
+        InterfaceValueHistory.logger.debug(
+            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ... done.",
+        )
 
     def _add_to_entries_internal(
         self,
@@ -86,22 +89,12 @@ class InterfaceValueHistory:
         client_id: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
-        self._get_mutable_entry(
-            time_step=time_step,
-            client_id=client_id,
-        ).extend(interface_values)
-
-    def _get_mutable_entry(
-        self,
-        time_step: int,
-        client_id: ClientID,
-    ) -> List[ProtocolInterfaceValue]:
         with self._entries.transaction() as entries:
             if time_step not in entries:
                 entries[time_step] = {}
             if client_id not in entries[time_step]:
                 entries[time_step][client_id] = []
-            return entries[time_step][client_id]
+            entries[time_step][client_id].extend(interface_values)
 
     def _add_to_repository_internal(
         self,

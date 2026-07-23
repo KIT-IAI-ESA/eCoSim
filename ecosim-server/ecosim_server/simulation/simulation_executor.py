@@ -3,13 +3,12 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from datetime import datetime
 from time import sleep
-from typing import Any, List
+from typing import List
 
 import dask.distributed as dd
-from distributed.protocol import deserialize, serialize
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
@@ -18,6 +17,8 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
+from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -83,12 +84,6 @@ class SimulationExecutor:
         rendering_socket: RenderingSocket | None,
     ) -> None:
         self._rendering_socket = rendering_socket
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        #     self._state_variable.put(serialize(self._server_state))
-        # OLD CODE END
         if not self._server_state.are_all_clients_connected_and_ready():
             raise RuntimeError(
                 "Tried to start simulation executor but not all clients are connected and ready",
@@ -117,28 +112,15 @@ class SimulationExecutor:
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
     def _stop_simulation(self) -> None:
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        # OLD CODE START
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
         if self._using_dask:
-            # OLD CODE START
-            # self._state_variable.put(serialize(self._server_state))
-            # OLD CODE END
             # TODO_AFTER_MERGE: check _sim_repo
             self._sim_repo.update(SimulationState.FINISHED)
         self._handle_image_renderer(wait_for_finish_timeout=9)
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
-            # OLD CODE START
-            # if self._using_dask:
-            # self._server_state = deserialize(*self._state_variable.get())
-            # self._update_client_communication()
-            # OLD CODE END
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_STOP,),
@@ -146,10 +128,6 @@ class SimulationExecutor:
                 self._server_state.client_states.simulation_stopped(
                     client_id=message.client_id,
                 )
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._state_variable.put(serialize(self._server_state))
-            # OLD CODE END
             # TODO_AFTER_MERGE: remove _using_dask
             if not self._using_dask:
                 sleep(2)
@@ -162,27 +140,10 @@ class SimulationExecutor:
         SimulationExecutor.logger.info(
             "Starting simulation on all clients and wait for successful start",
         )
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        #     self._state_variable.put(serialize(self._server_state))
-        # OLD CODE END
         self._client_communication.broadcast(
             ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START),
         )
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        #     self._state_variable.put(serialize(self._server_state))
-        # OLD CODE END
         while (not self._server_state.have_all_clients_started_simulation()) and self._server_state.are_all_clients_connected_and_ready():
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._server_state = deserialize(*self._state_variable.get())
-            #     self._update_client_communication()
-            # OLD CODE END
             for message in self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_START,),
@@ -197,10 +158,6 @@ class SimulationExecutor:
                     )
             # TODO_AFTER_MERGE: find better solution
             if self._using_dask:
-                # OLD CODE START
-                # self._state_variable.put(serialize(self._server_state))
-                # OLD CODE END
-                # In case of XMLParseError during initialization, break the loop
                 if dd.Event(name="global_finish").is_set():
                     SimulationExecutor.logger.error("Error occured when starting simulators. Exitting...")
                     self.force_stop()
@@ -232,12 +189,6 @@ class SimulationExecutor:
         start_date = self.simulation_config.start_date
         handled_client_ids: List[ClientID] = []
 
-        # OLD CODE START
-        # if self._using_dask:
-        # self._server_state = deserialize(*self._state_variable.get())
-        # self._update_client_communication()
-        # self._state_variable.put(serialize(self._server_state))
-        # OLD CODE END
         for client_id in self._server_state.client_states.all_client_ids():
             data_for_restoration = restore_data.client_restore_data[client_id]
             if not data_for_restoration or len(data_for_restoration) == 0:
@@ -255,13 +206,13 @@ class SimulationExecutor:
         if len(handled_client_ids) > 0:
             SimulationExecutor.logger.debug("[Restore simulation] waiting for step batch responses")
             self._current_step_data.reset_for_new_step(step=self._current_step)
-            if self._using_dask:
-                responses: dict[Any, dd.Event | threading.Event] = {
-                    client_id: dd.Event(name=client_id) for client_id in self.simulation_config.client_ids()
-                }
-
-            else:
-                responses = {client_id: threading.Event() for client_id in self.simulation_config.client_ids()}
+            responses = {
+                client_id: ParallelEvent.for_communication_protocol(
+                    communication_protocol=self._server_config.server.communication_protocol,
+                    dask_name=client_id.to_str(),
+                )
+                for client_id in self.simulation_config.client_ids()
+            }
 
             def handle_batch_response(message: BufferedClientMessage) -> None:
                 client_id = message.client_id
@@ -310,45 +261,20 @@ class SimulationExecutor:
                 if not event.wait(timeout=60 * 60):
                     raise RuntimeError(f"Timeout while waiting for restore response from client {client_id}")
 
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._server_state = deserialize(*self._state_variable.get())
-            #     self._update_client_communication()
-            # OLD CODE END
             self._client_communication.remove_on_message_callback(
                 client_ids=self.simulation_config.client_ids(),
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
             )
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._state_variable.put(serialize(self._server_state))
-            # OLD CODE END
         SimulationExecutor.logger.info(
             f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
-        # OLD CODE START
-        # if self._using_dask:
-        #     current_step_data_queue = dd.Queue(name="step_data")
-        #     if current_step_data_queue.qsize() > 0:
-        #         # empty queue when executed in test framework
-        #         _ = current_step_data_queue.get()
-        #     current_step_data_queue.put(serialize(self._current_step_data))
-        # OLD CODE END
         while self._current_step < self.simulation_config.steps:
             self.logger.info(f"Step {self._current_step}: Executing step {self._current_step}")
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._current_step_data = deserialize(*current_step_data_queue.get())
-            # OLD CODE END
             self._current_step_data.reset_for_new_step(step=self._current_step)
             self._execute_logical_delays()
-            # OLD CODE START
-            # if self._using_dask:
-            #     current_step_data_queue.put(serialize(self._current_step_data))
-            # OLD CODE END
 
             # TODO: change to a waiting mechanism
             while not self._current_step_data.all_clients_executed():
@@ -396,19 +322,10 @@ class SimulationExecutor:
         self,
         part_description: str,
     ) -> None:
-        # OLD CODE START
-        # if self._using_dask:
-        #     current_step_data_queue = dd.Queue(name="step_data")
-        #     self._current_step_data = deserialize(*current_step_data_queue.get())
-        # OLD CODE END
         ready_for_execution_data_by_clients: dict[
             ClientID,
             List[ProtocolInterfaceValue],
         ] = self._current_step_data.get_ready_for_execution()
-        # OLD CODE START
-        # if self._using_dask:
-        #     current_step_data_queue.put(serialize(self._current_step_data))
-        # OLD CODE END
         self.logger.info(
             f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:"
             + f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
@@ -423,12 +340,12 @@ class SimulationExecutor:
                 client_id=client_id,
                 values=ready_for_execution_data_by_clients[client_id],
             )
-        handled_clients: dict[ClientID, bool] = {client_id: False for client_id in ready_for_execution_data_by_clients}
-        # OLD CODE START
-        # if self._using_dask:
-        # handled_clients_queue = dd.Queue(name="handled_clients", maxsize=1)
-        # handled_clients_queue.put(serialize(handled_clients))
-        # OLD CODE END
+        handled_clients: ESPMap[ClientID, bool] = ESPMap.of_type(
+            map_type=(
+                ESPStructureType.DASK if self._server_config.server.communication_protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD
+            ),
+            data={client_id: False for client_id in ready_for_execution_data_by_clients},
+        )
 
         client_ids = tuple(handled_clients.keys())
         if len(handled_clients) == 0:
@@ -436,9 +353,6 @@ class SimulationExecutor:
                 f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.",
             )
             return
-
-        message_types = (MessageType.SIMULATION_STEP,)
-        all_clients_handled_event = ParallelEvent.for_communication_protocol(self._server_config.server.communication_protocol)
 
         # TODO_AFTER_MERGE: find a common abstraction
         # if self._using_dask:
@@ -477,6 +391,9 @@ class SimulationExecutor:
         #         ),
         #     )
 
+        message_types = (MessageType.SIMULATION_STEP,)
+        all_clients_handled_event = ParallelEvent.for_communication_protocol(self._server_config.server.communication_protocol)
+
         # NEW CODE START
         current_step_data = self._current_step_data
         current_step = self._current_step
@@ -498,47 +415,12 @@ class SimulationExecutor:
         self.logger.debug(
             f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
         )
-
-        # if self._using_dask:
-        #     all_clients_handled_dask = dd.Event(name="clients_handled")
-        #     all_clients_handled_dask.wait()
-        #     all_clients_handled_dask.clear()
-        #     value_queue = dd.Queue("values_for_history")
-        #     thread_list = []
-        #
-        #     while value_queue.qsize() > 0:
-        #         value = value_queue.get()
-        #         thread = threading.Thread(target=self._value_history.add, args=[self._current_step, deserialize(*value[0]), deserialize(*value[1])])
-        #         thread_list.append(thread)
-        #     for thread in thread_list:
-        #         thread.start()
-        #
-        # else:
-        #     all_clients_handled_event.wait()
         all_clients_handled_event.wait()
 
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        # OLD CODE END
         self._client_communication.remove_on_message_callback(client_ids, message_types)
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._state_variable.put(serialize(self._server_state))
-        # OLD CODE END
 
-        # TODO_AFTER_MERGE: remove _using_dask
-        # OLD CODE START
-        # if self._using_dask:
-        #    self._current_step_data = deserialize(*current_step_data_queue.get())
-        # OLD CODE START
         for client in handled_clients:
             self._current_step_data.set_is_executed(client)
-        # OLD CODE START
-        # if self._using_dask:
-        #     current_step_data_queue.put(serialize(self._current_step_data))
-        # OLD CODE END
 
         self.logger.debug(f"Finished executing possible parts: {part_description}")
 
@@ -550,23 +432,23 @@ class SimulationExecutor:
         current_step_data: CurrentStepData,
         received_message: BufferedClientMessage,
         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
-        handled_clients: dict[ClientID, bool],
+        handled_clients: ESPMap[ClientID, bool],
         all_clients_handled_event: ParallelEvent,
         value_history: InterfaceValueHistory,
     ) -> None:
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != current_step:
-            # self.logger.error(
-            #     f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-            #     + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
-            # )
+            SimulationExecutor.logger.error(
+                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
+                + f"Expected {current_step} but got {received_message.message.correlation_id()}",
+            )
             return
         sim_step_data: ClientSimStepData = received_message.payload(
             ClientSimStepData,
         )
-        # self.logger.debug(
-        #     f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}",
-        # )
+        SimulationExecutor.logger.debug(
+            f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}",
+        )
         interface_values = tuple(sim_step_data.interface_values)
         value_history.add(
             time_step=current_step,
@@ -574,9 +456,9 @@ class SimulationExecutor:
             interface_values=interface_values + tuple(ready_for_execution_data_by_clients[client_id]),
         )
         current_step_data.add_received_data(client_id, interface_values)
-        # self.logger.debug(
-        #     f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}: DONE",
-        # )
+        SimulationExecutor.logger.debug(
+            f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}: DONE",
+        )
         handled_clients[client_id] = True
 
         if all(handled_clients.values()):
@@ -655,88 +537,6 @@ class SimulationExecutor:
             end_event.wait(wait_for_finish_timeout)
 
     def force_stop(self) -> None:
-        # OLD CODE START
-        # if self._using_dask:
-        #     self._server_state = deserialize(*self._state_variable.get())
-        #     self._update_client_communication()
-        # OLD CODE END
         if self._server_state.is_running():
             SimulationExecutor.logger.debug("Executing force shutdown")
             self._server_state.force_stop()
-            # OLD CODE START
-            # if self._using_dask:
-            #     self._state_variable.put(serialize(self._server_state))
-            # OLD CODE END
-
-    # OLD CODE
-    # def _update_client_communication(self) -> None:
-    #     self._client_communication = ClientCommunication(
-    #         client_states=self._server_state.client_states,
-    #         client_message_buffer=self._server_state.message_buffer,
-    #     )
-    # OLD CODE END
-
-
-# TODO_AFTER_MERGE: extract dask stuff and find a common abstraction
-def _handle_received_sim_step_dask(
-    current_step_data: CurrentStepData,
-    received_message: BufferedClientMessage,
-    ready_for_execution_data_by_clients: tuple[dict[str, Any], list[bytes | memoryview[int]]],
-    current_step: int,
-) -> None:
-    ready_for_execution_data_by_clients_deserial: dict[ClientID, List[ProtocolInterfaceValue]] = deserialize(*ready_for_execution_data_by_clients)
-    dd.get_client()
-    client_id = received_message.client_id
-    if received_message.message.correlation_id().to_int() != current_step:
-        SimulationExecutor.logger.debug(
-            f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-            + f"Expected {current_step} but got {received_message.message.correlation_id()}",
-        )
-        return
-    client_sim_step_data: ClientSimStepData = received_message.payload(
-        ClientSimStepData,
-    )
-
-    SimulationExecutor.logger.debug(
-        f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}",
-    )
-    interface_values = tuple(client_sim_step_data.interface_values)
-    value_queue = dd.Queue(name="values_for_history")
-    # OLD CODE START
-    # current_step_data_queue = dd.Queue(name="step_data")
-    # OLD CODE END
-    handled_clients_queue = dd.Queue(name="handled_clients")
-
-    value_queue.put((serialize(client_id), serialize(interface_values + tuple(ready_for_execution_data_by_clients_deserial[client_id]))))
-
-    # OLD CODE START
-    # current_step_data: CurrentStepData = deserialize(*current_step_data_queue.get())
-    # current_step_data.add_received_data(client_id, interface_values)
-    # current_step_data_queue.put(serialize(current_step_data))
-    # OLD CODE END
-    # NEW CODE START
-    current_step_data.add_received_data(client_id, interface_values)
-    # NEW CODE END
-    SimulationExecutor.logger.debug(
-        f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {client_sim_step_data}: DONE",
-    )
-
-    handled_clients = deserialize(*handled_clients_queue.get())
-    handled_clients[client_id] = True
-    handled_clients_queue.put(serialize(handled_clients))
-
-    if all(handled_clients.values()):
-        all_clients_handled = dd.Event(name="clients_handled")
-        all_clients_handled.set()
-
-
-# TODO_AFTER_MERGE: extract dask stuff and find a common abstraction
-def _handle_batch_response_dask(message: BufferedClientMessage, start_date: datetime) -> None:
-    client_id = message.client_id
-    if message.message.correlation_id() != CorrelationId.of_date_time(start_date):
-        SimulationExecutor.logger.error(
-            f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id} with a wrong correlation_id. "
-            + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
-        )
-        return
-    dd.Event(name=client_id).set()

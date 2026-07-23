@@ -109,8 +109,12 @@ class ESPDask(ShutdownListener):
         dask_id: str,
         origin_id: int,
     ) -> None:
+        ESPDask._logger.debug(f"Sending to dask_id {dask_id} and origin_id {origin_id} binary message of type {message.header().message_type}...")
         data_var = dd.Queue(name=dask_id, client=connection)
         data_var.put((message.raw_message(), origin_id))
+        ESPDask._logger.debug(
+            f"Sending to dask_id {dask_id} and origin_id {origin_id} binary message of type {message.header().message_type}...done.",
+        )
 
     @staticmethod
     def receive_from_dask_client(
@@ -120,12 +124,17 @@ class ESPDask(ShutdownListener):
     ) -> ReceivedBinaryMessage | None:
         while True:
             received_id = None
-            data_var = dd.Queue(name=dask_id, client=connection)
+            ESPDask._logger.debug(f"Trying to receive for dask_id {dask_id} and origin_id {origin_id}...")
             try:
+                data_var = dd.Queue(name=dask_id, client=connection)
                 raw_message = data_var.get(timeout=300)
             except TimeoutError:
                 ESPDask._logger.debug(f"Received no data at {origin_id} after 300 seconds.")
                 return None
+            except Exception as e:
+                ESPDask._logger.error(f"Received error non-timeout error while waiting at origin_id {origin_id}: {e}")
+                raise e
+            ESPDask._logger.debug(f"Trying to receive for dask_id {dask_id} and origin_id {origin_id}...done.")
             try:
                 raw_message, received_id = raw_message
             except (ValueError, TypeError):
