@@ -29,7 +29,6 @@ from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
-from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
 # TODO_AFTER_MERGE: we probably need an abstract SimulationExecutor
@@ -74,10 +73,6 @@ class SimulationExecutor:
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
         # TODO_AFTER_MERGE: find better solution
         self._using_dask = using_dask
-        if using_dask:
-            #     # TODO_AFTER_MERGE: remove 'server_state' and replace with parallel-safe structure (note other calls to this queue in other files)
-            #     self._state_variable = dd.Queue("server_state")
-            self._sim_repo = repositories.simulation_state_repository
 
     def execute(
         self,
@@ -114,9 +109,6 @@ class SimulationExecutor:
     def _stop_simulation(self) -> None:
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
-        if self._using_dask:
-            # TODO_AFTER_MERGE: check _sim_repo
-            self._sim_repo.update(SimulationState.FINISHED)
         self._handle_image_renderer(wait_for_finish_timeout=9)
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
@@ -128,9 +120,8 @@ class SimulationExecutor:
                 self._server_state.client_states.simulation_stopped(
                     client_id=message.client_id,
                 )
-            # TODO_AFTER_MERGE: remove _using_dask
-            if not self._using_dask:
-                sleep(2)
+            # TODO_OSR: refactor to waiting mechanism
+            sleep(2)
         SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
     def _start_simulation_of_all_clients(
@@ -162,8 +153,8 @@ class SimulationExecutor:
                     SimulationExecutor.logger.error("Error occured when starting simulators. Exitting...")
                     self.force_stop()
                     sys.exit(1)
-            if not self._using_dask:
-                sleep(2)
+            # TODO_OSR: refactor to waiting mechanism
+            sleep(2)
         SimulationExecutor.logger.debug(
             "Starting of simulations of all clients successful",
         )
@@ -224,38 +215,11 @@ class SimulationExecutor:
                     return
                 responses[client_id].set()
 
-            # TODO_AFTER_MERGE: remove _using_dask
-            # if self._using_dask:
-            #     # OLD CODE START
-            #     # self._server_state = deserialize(*self._state_variable.get())
-            #     # self._update_client_communication()
-            #     # OLD CODE END
-            #     self._client_communication.on_messages(
-            #         client_ids=tuple(handled_client_ids),
-            #         message_types=(MessageType.SIMULATION_STEP_BATCH,),
-            #         callback=partial(
-            #             _handle_batch_response_dask,
-            #             start_date=start_date,
-            #         ),
-            #     )
-            #     # OLD CODE START
-            #     # self._state_variable.put(serialize(self._server_state))
-            #     # OLD CODE END
-            #
-            # else:
-            #     self._client_communication.on_messages(
-            #         client_ids=tuple(handled_client_ids),
-            #         message_types=(MessageType.SIMULATION_STEP_BATCH,),
-            #         callback=handle_batch_response,
-            #     )
-
-            # NEW CODE START
             self._client_communication.on_messages(
                 client_ids=tuple(handled_client_ids),
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
                 callback=handle_batch_response,
             )
-            # NEW CODE end
 
             for client_id, event in responses.items():
                 if not event.wait(timeout=60 * 60):
@@ -279,11 +243,6 @@ class SimulationExecutor:
             # TODO: change to a waiting mechanism
             while not self._current_step_data.all_clients_executed():
                 self._execute_possible_parts("Periodic possible parts execution")
-                if self._using_dask:
-                    handled_clients_queue = dd.Queue(name="handled_clients", maxsize=1)
-                    # Clear queue from previous iteration
-                    if handled_clients_queue.qsize() == 1:
-                        handled_clients_queue.get()
                 if not self._current_step_data.all_clients_executed():
                     self.logger.debug(
                         f"Step {self._current_step}: Waiting for all clients to be executed in a 'possible parts' execution",
@@ -291,17 +250,12 @@ class SimulationExecutor:
 
                 if self._using_dask:
                     if dd.Event(name="global_finish").is_set():
-                        SimulationExecutor.logger.error("Error occured while running simulators. Exitting...")
+                        SimulationExecutor.logger.error("Error occurred while running simulators. Exiting...")
                         self.force_stop()
                         sys.exit(1)
 
             self._handle_image_renderer()
             self._current_step += 1
-            if self._using_dask:
-                handled_clients_queue = dd.Queue(name="handled_clients", maxsize=1)
-                # Clear queue from previous iteration
-                if handled_clients_queue.qsize() == 1:
-                    handled_clients_queue.get()
 
     def _execute_logical_delays(self) -> None:
         self.logger.debug(f"Step {self._current_step}: Execute logical delays")
@@ -354,47 +308,9 @@ class SimulationExecutor:
             )
             return
 
-        # TODO_AFTER_MERGE: find a common abstraction
-        # if self._using_dask:
-        #     # OLD CODE START
-        #     # self._server_state = deserialize(*self._state_variable.get())
-        #     # self._update_client_communication()
-        #     # all_clients_handled_dask = dd.Event(name="clients_handled")
-        #     # OLD CODE END
-        #
-        #     self._client_communication.on_messages(
-        #         client_ids=client_ids,
-        #         message_types=message_types,
-        #         # callback=lambda message: self._handle_received_sim_step(
-        #         #     message,
-        #         #     handled_clients=handled_clients,
-        #         #     ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
-        #         #     all_clients_handled_event=all_clients_handled_event,
-        #         # ),
-        #         callback=partial(
-        #             _handle_received_sim_step_dask,
-        #             current_step_data=self._current_step_data,
-        #             ready_for_execution_data_by_clients=serialize(ready_for_execution_data_by_clients),
-        #             current_step=self._current_step,
-        #         ),
-        #     )
-        #     # self._state_variable.put(serialize(self._server_state))
-        # else:
-        #     self._client_communication.on_messages(
-        #         client_ids=client_ids,
-        #         message_types=message_types,
-        #         callback=lambda message: self._handle_received_sim_step(
-        #             message,
-        #             handled_clients=handled_clients,
-        #             ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
-        #             all_clients_handled_event=all_clients_handled_event,
-        #         ),
-        #     )
-
         message_types = (MessageType.SIMULATION_STEP,)
         all_clients_handled_event = ParallelEvent.for_communication_protocol(self._server_config.server.communication_protocol)
 
-        # NEW CODE START
         current_step_data = self._current_step_data
         current_step = self._current_step
         value_history = self._value_history
@@ -411,7 +327,6 @@ class SimulationExecutor:
                 value_history=value_history,
             ),
         )
-        # NEW CODE END
         self.logger.debug(
             f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
         )
