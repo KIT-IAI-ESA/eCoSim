@@ -40,6 +40,8 @@ class ESPMap(ABC, MutableMapping[K, V], Generic[K, V]):
                that all implementations will behave the same. Therefore, it is strictly not recommended to manipulate nested types directly.
     """
 
+    logger = ESPLogger("ESPMap")
+
     @staticmethod
     def of_type(
         map_type: ESPStructureType,
@@ -166,14 +168,18 @@ class DaskESPMap(ESPMap[K, V]):
             client=dask_client,
             name=dask_name or f"esp_map_{uuid.uuid4()}",
         )
-        self._lock = ParallelLock.dask()
-        try:
-            # for the case that the variable is already initialized, check if it can be got
-            with silenced_logger("distributed.core"):
-                self._dask_variable.get(timeout=0.3)
-        except Exception:
-            # if it does not exist, initialize it
-            self._dask_variable.set(pickle.dumps(init_data))
+        self._lock = ParallelLock.dask(f"espmap_lock_{self._dask_variable.name}")
+        with self._lock:
+            try:
+                # for the case that the variable is already initialized, check if it can be got
+                with silenced_logger("distributed.core"):
+                    self._dask_variable.get(timeout=0.3)
+            except TimeoutError:
+                # if it does not exist, initialize it
+                self._dask_variable.set(pickle.dumps(init_data))
+            except Exception as e:
+                ESPMap.logger.warning(f"Failed to initialize Dask variable, with other than TimeoutError: {e}")
+                self._dask_variable.set(pickle.dumps(init_data))
 
     @override
     def get_snapshot(self) -> dict[K, V]:
