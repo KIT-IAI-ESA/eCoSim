@@ -11,7 +11,8 @@ from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 # INIT LOGGER
-init_logger(log_level=logging.DEBUG)
+log_level_during_tests = logging.DEBUG
+init_logger(log_level=log_level_during_tests)
 pytest_fixture_logger = ESPLogger("PyTestFixture")
 
 
@@ -42,7 +43,7 @@ def dask_client() -> Generator[dd.Client, Any, None]:
     client = dd.Client(n_workers=4, threads_per_worker=4)
     ShutdownManager().init()
     client.forward_logging()
-    client.register_plugin(DaskLoggingPlugin(log_level=logging.DEBUG))
+    client.register_plugin(DaskLoggingPlugin(log_level=log_level_during_tests))
     yield client
 
 
