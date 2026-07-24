@@ -78,7 +78,7 @@ class DaskESPInt(ESPInt):
         try:
             # in case that the variable is already initialized, check if it can be got
             with silenced_logger("distributed.core"):
-                self._dask_variable.get(timeout=0.3)
+                self._dask_variable.get(timeout=0.1)
         except Exception:
             # if it does not exist, initialize it
             self._dask_variable.set(value)

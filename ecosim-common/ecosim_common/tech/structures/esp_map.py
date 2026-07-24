@@ -173,7 +173,7 @@ class DaskESPMap(ESPMap[K, V]):
             try:
                 # for the case that the variable is already initialized, check if it can be got
                 with silenced_logger("distributed.core"):
-                    self._dask_variable.get(timeout=0.3)
+                    self._dask_variable.get(timeout=0.1)
             except TimeoutError:
                 # if it does not exist, initialize it
                 self._dask_variable.set(pickle.dumps(init_data))
