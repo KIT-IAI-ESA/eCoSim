@@ -39,3 +39,17 @@ def test_increment_value(esp_structure_type: ESPStructureType) -> None:
     )
     esp_int.increment(222)
     assert esp_int.get() == 333
+
+
+def test_temporary_capacity(esp_structure_type: ESPStructureType) -> None:
+    esp_int = ESPInt.of_type(structure_type=esp_structure_type)
+    esp_int.set(333)
+    temporary_int = esp_int.get_temporary_cache()
+
+    esp_int.set(444)
+    current_cache_content = temporary_int()
+    assert current_cache_content == 444
+
+    esp_int.set(555)
+    current_cache_content = temporary_int()
+    assert current_cache_content == 444

@@ -13,7 +13,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.parallel.parallel_list import ParallelList
+from ecosim_common.tech.structures.esp_list import ESPList
 from ecosim_common.tech.structures.esp_set import ESPSet
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
@@ -22,14 +22,16 @@ _message_buffer_logger = ESPLogger("MessageBuffer")
 
 @dataclass
 class ClientMessageBuffer:
-    _buffer: ParallelList[BufferedClientMessage] = field()
+    _buffer: ESPList[BufferedClientMessage] = field()
     _on_message_callbacks: ESPSet[OnMessageCallbackHandler] = field()
     _communication_protocol: CommunicationProtocol = field()  # TODO_OSR: low prio: search for alternatives to the 'protocol' field
 
     @staticmethod
     def for_communication_protocol(protocol: CommunicationProtocol) -> ClientMessageBuffer:
         return ClientMessageBuffer(
-            _buffer=ParallelList.for_communication_protocol(protocol),
+            _buffer=ESPList.of_type(
+                list_type=ESPStructureType.DASK if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
+            ),
             _on_message_callbacks=ESPSet.of_type(
                 set_type=ESPStructureType.DASK if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
                 dask_name="message_buffer_on_message_callbacks",
@@ -63,10 +65,10 @@ class ClientMessageBuffer:
         self,
         message: BufferedClientMessage,
     ) -> OnMessageCallbackHandler | None:
-        with self._on_message_callbacks.transaction() as callbacks:
-            for callback in callbacks:
-                if message.client_id in callback.client_ids and message.message.type() in callback.message_types:
-                    return callback
+        callbacks = self._on_message_callbacks.get_snapshot()
+        for callback in callbacks:
+            if message.client_id in callback.client_ids and message.message.type() in callback.message_types:
+                return callback
         return None
 
     def on_message(
@@ -95,7 +97,7 @@ class ClientMessageBuffer:
                 )
                 return
             callbacks.add(message_callback)
-            matching_messages = self.get_and_delete_of(client_ids, message_types)
+        matching_messages = self.get_and_delete_of(client_ids, message_types)
         for message in matching_messages:
             _message_buffer_logger.debug(
                 f"Message found for newly registered callback on message types {message_types} for client ids {client_ids}:"
