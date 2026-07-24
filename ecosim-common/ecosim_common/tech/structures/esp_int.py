@@ -4,7 +4,8 @@ import threading
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import assert_never, override
+from functools import cache
+from typing import Callable, assert_never, override
 
 from distributed import Lock, Variable
 from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
@@ -39,6 +40,13 @@ class ESPInt(ABC):
     @abstractmethod
     def increment(self, by: int = 1) -> int:
         pass
+
+    def get_temporary_cache(self) -> Callable[[], int]:
+        @cache
+        def cached_int() -> int:
+            return self.get()
+
+        return cached_int
 
 
 @dataclass

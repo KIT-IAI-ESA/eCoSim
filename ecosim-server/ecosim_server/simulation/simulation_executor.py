@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import threading
 import time
 from time import sleep
 from typing import List
@@ -259,7 +258,7 @@ class SimulationExecutor:
 
     def _execute_logical_delays(self) -> None:
         self.logger.debug(f"Step {self._current_step}: Execute logical delays")
-        delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step()
+        delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step().get_snapshot()
         for delayed_time_steps in sorted(delays_by_delay_step.keys()):
             self.logger.info(f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'")
             for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
@@ -378,56 +377,6 @@ class SimulationExecutor:
 
         if all(handled_clients.values()):
             all_clients_handled_event.set()
-
-    def _handle_received_sim_step_BACKUP(
-        self,
-        received_message: BufferedClientMessage,
-        ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
-        handled_clients: dict[ClientID, bool],
-        all_clients_handled_event: threading.Event,
-    ) -> None:
-        client_id = received_message.client_id
-        if received_message.message.correlation_id().to_int() != self._current_step:
-            self.logger.error(
-                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-                + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
-            )
-            return
-        client_sim_step_data: ClientSimStepData = received_message.payload(
-            ClientSimStepData,
-        )
-        self._process_sim_step_message(
-            client_id=client_id,
-            sim_step_data=client_sim_step_data,
-            ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
-        )
-        handled_clients[client_id] = True
-
-        if all(handled_clients.values()):
-            all_clients_handled_event.set()
-
-    def _process_sim_step_message(
-        self,
-        client_id: ClientID,
-        sim_step_data: ClientSimStepData,
-        ready_for_execution_data_by_clients: dict[
-            ClientID,
-            List[ProtocolInterfaceValue],
-        ],
-    ) -> None:
-        self.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}",
-        )
-        interface_values = tuple(sim_step_data.interface_values)
-        self._value_history.add(
-            time_step=self._current_step,
-            client_id=client_id,
-            interface_values=interface_values + tuple(ready_for_execution_data_by_clients[client_id]),
-        )
-        self._current_step_data.add_received_data(client_id, interface_values)
-        self.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}: DONE",
-        )
 
     def _pace_throttle(self) -> None:
         if self._pace_sleep == 0:
