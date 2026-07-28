@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, MutableMapping, Tuple, assert_never
+from typing import List, MutableMapping, Tuple
 
-from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue, ProtocolInterfaceValueMutable
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
@@ -31,32 +30,32 @@ class CurrentStepData:
         self._simulation_config: SimulationConfig = simulation_config
         self._data_by_client: ESPMap[ClientID, CurrentStepClientData]
         self._logical_delays: ESPMap[int, CurrentStepLogicalDelay]
-        match server_config.server.communication_protocol:
-            case CommunicationProtocol.DASK:
-                self._step = ESPInt.of_type(ESPStructureType.DASK_VARIABLE, value=0)
-                self._data_by_client = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
-                self._logical_delays = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
-            case CommunicationProtocol.TCP_SOCKET:
-                self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
-                self._data_by_client = ESPMap.of_type(
-                    ESPStructureType.SIMPLE,
-                    ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-                )
-                self._logical_delays = ESPMap.of_type(
-                    ESPStructureType.SIMPLE,
-                    ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-                )
-            case _:
-                assert_never(server_config.server.communication_protocol)
-        # self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
-        # self._data_by_client = ESPMap.of_type(
-        #     ESPStructureType.SIMPLE,
-        #     ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-        # )
-        # self._logical_delays = ESPMap.of_type(
-        #     ESPStructureType.SIMPLE,
-        #     ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-        # )
+        # match server_config.server.communication_protocol:
+        #     case CommunicationProtocol.DASK:
+        #         self._step = ESPInt.of_type(ESPStructureType.DASK_VARIABLE, value=0)
+        #         self._data_by_client = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
+        #         self._logical_delays = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
+        #     case CommunicationProtocol.TCP_SOCKET:
+        #         self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
+        #         self._data_by_client = ESPMap.of_type(
+        #             ESPStructureType.SIMPLE,
+        #             ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        #         )
+        #         self._logical_delays = ESPMap.of_type(
+        #             ESPStructureType.SIMPLE,
+        #             ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        #         )
+        #     case _:
+        #         assert_never(server_config.server.communication_protocol)
+        self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
+        self._data_by_client = ESPMap.of_type(
+            ESPStructureType.SIMPLE,
+            ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        )
+        self._logical_delays = ESPMap.of_type(
+            ESPStructureType.SIMPLE,
+            ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        )
 
         self._init_logical_delays()
 
