@@ -22,7 +22,7 @@ class ESPInt(ABC):
         match structure_type:
             case ESPStructureType.SIMPLE:
                 return SimpleESPInt(_value=value)
-            case ESPStructureType.DASK:
+            case ESPStructureType.DASK_VARIABLE:
                 return DaskESPInt(value=value, dask_name=dask_name)
             case ESPStructureType.THREAD:
                 return ThreadESPInt(value=value)

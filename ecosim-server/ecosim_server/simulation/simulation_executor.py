@@ -16,7 +16,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
-from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_queue import ESPQueue
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.config.server_config import ServerConfig
@@ -293,12 +293,7 @@ class SimulationExecutor:
                 client_id=client_id,
                 values=ready_for_execution_data_by_clients[client_id],
             )
-        handled_clients: ESPMap[ClientID, bool] = ESPMap.of_type(
-            map_type=(
-                ESPStructureType.DASK if self._server_config.server.communication_protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD
-            ),
-            data={client_id: False for client_id in ready_for_execution_data_by_clients},
-        )
+        handled_clients: dict[ClientID, bool] = {client_id: False for client_id in ready_for_execution_data_by_clients}
 
         client_ids = tuple(handled_clients.keys())
         if len(handled_clients) == 0:
@@ -308,28 +303,29 @@ class SimulationExecutor:
             return
 
         message_types = (MessageType.SIMULATION_STEP,)
-        all_clients_handled_event = ParallelEvent.for_communication_protocol(self._server_config.server.communication_protocol)
+        message_queue = ESPQueue[BufferedClientMessage].of_type(
+            queue_type=ESPStructureType.DASK_VARIABLE
+            if self._server_config.server.communication_protocol == CommunicationProtocol.DASK
+            else ESPStructureType.THREAD,
+            dask_name="simulator_message_queue_possible_parts",
+        )
 
-        current_step_data = self._current_step_data
-        current_step = self._current_step
-        value_history = self._value_history
         self._client_communication.on_messages(
             client_ids=client_ids,
             message_types=message_types,
-            callback=lambda message: SimulationExecutor._handle_received_sim_step(
-                current_step,
-                current_step_data,
-                message,
-                handled_clients=handled_clients,
-                ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
-                all_clients_handled_event=all_clients_handled_event,
-                value_history=value_history,
-            ),
+            callback=lambda message: message_queue.push(message),
         )
         self.logger.debug(
             f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
         )
-        all_clients_handled_event.wait()
+
+        while not all(handled_clients.values()):
+            received_message = message_queue.pop()
+            self._handle_received_sim_step(
+                received_message=received_message,
+                ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
+                handled_clients=handled_clients,
+            )
 
         self._client_communication.remove_on_message_callback(client_ids, message_types)
 
@@ -338,45 +334,36 @@ class SimulationExecutor:
 
         self.logger.debug(f"Finished executing possible parts: {part_description}")
 
-    # this method must be static since it is used as a callback possibly in an dask environment
-    # so this method must be picklable
-    @staticmethod
     def _handle_received_sim_step(
-        current_step: int,
-        current_step_data: CurrentStepData,
+        self,
         received_message: BufferedClientMessage,
         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
-        handled_clients: ESPMap[ClientID, bool],
-        all_clients_handled_event: ParallelEvent,
-        value_history: InterfaceValueHistory,
+        handled_clients: dict[ClientID, bool],
     ) -> None:
         client_id = received_message.client_id
-        if received_message.message.correlation_id().to_int() != current_step:
+        if received_message.message.correlation_id().to_int() != self._current_step:
             SimulationExecutor.logger.error(
                 f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-                + f"Expected {current_step} but got {received_message.message.correlation_id()}",
+                + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
             )
             return
         sim_step_data: ClientSimStepData = received_message.payload(
             ClientSimStepData,
         )
         SimulationExecutor.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}",
+            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}",
         )
         interface_values = tuple(sim_step_data.interface_values)
-        value_history.add(
-            time_step=current_step,
+        self._value_history.add(
+            time_step=self._current_step,
             client_id=client_id,
             interface_values=interface_values + tuple(ready_for_execution_data_by_clients[client_id]),
         )
-        current_step_data.add_received_data(client_id, interface_values)
+        self._current_step_data.add_received_data(client_id, interface_values)
         SimulationExecutor.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {current_step}: {sim_step_data}: DONE",
+            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}: DONE",
         )
         handled_clients[client_id] = True
-
-        if all(handled_clients.values()):
-            all_clients_handled_event.set()
 
     def _pace_throttle(self) -> None:
         if self._pace_sleep == 0:

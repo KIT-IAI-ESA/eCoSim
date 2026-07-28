@@ -36,7 +36,7 @@ class ClientStates(ShutdownListener):
         match server_config.server.communication_protocol:
             case CommunicationProtocol.DASK:
                 client_states = ESPMap.of_type(
-                    ESPStructureType.DASK,
+                    ESPStructureType.DASK_VARIABLE,
                     dask_name="client_states",
                     data=init_values,
                 )

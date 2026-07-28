@@ -17,14 +17,14 @@ def test_init_simple() -> None:
 
 
 def test_init_dask(dask_client: Client) -> None:
-    empty_map = ESPMap[str, str].of_type(ESPStructureType.DASK)
+    empty_map = ESPMap[str, str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_map) == 0
 
-    initialized = ESPMap[str, str].of_type(map_type=ESPStructureType.DASK, data={"hello": "world"})
+    initialized = ESPMap[str, str].of_type(map_type=ESPStructureType.DASK_VARIABLE, data={"hello": "world"})
     assert len(initialized) == 1
 
     with_name = ESPMap[str, str].of_type(
-        map_type=ESPStructureType.DASK,
+        map_type=ESPStructureType.DASK_VARIABLE,
         data={"hello": "world"},
         dask_name="test_map",
     )
@@ -32,18 +32,18 @@ def test_init_dask(dask_client: Client) -> None:
 
 
 def test_init_dask_same_twice(dask_client: Client) -> None:
-    empty_map = ESPMap[str, str].of_type(ESPStructureType.DASK)
+    empty_map = ESPMap[str, str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_map) == 0
 
     with_name = ESPMap[str, str].of_type(
-        map_type=ESPStructureType.DASK,
+        map_type=ESPStructureType.DASK_VARIABLE,
         data={"hello": "world"},
         dask_name="test_map",
     )
     assert with_name["hello"] == "world"
 
     with_name = ESPMap[str, str].of_type(
-        map_type=ESPStructureType.DASK,
+        map_type=ESPStructureType.DASK_VARIABLE,
         data={"hello": "eCoSim"},
         dask_name="test_map",
     )
@@ -261,7 +261,7 @@ def test_map_to_object_with_list_with_transaction(esp_structure_type: ESPStructu
 
 
 def test_keys_values_items_after_pickle(dask_client: distributed.Client) -> None:
-    esp_map = ESPMap[str, int].of_type(map_type=ESPStructureType.DASK, data={"a": 1, "b": 2})
+    esp_map = ESPMap[str, int].of_type(map_type=ESPStructureType.DASK_VARIABLE, data={"a": 1, "b": 2})
     esp_map["c"] = 3
     restored = pickle.loads(pickle.dumps(esp_map))
     assert isinstance(restored.keys(), KeysView)
@@ -281,7 +281,7 @@ def test_keys_values_items_after_pickle(dask_client: distributed.Client) -> None
 
 
 def test_pickle_nested_map(dask_client: distributed.Client) -> None:
-    esp_map = ESPMap[str, dict[str, int]].of_type(map_type=ESPStructureType.DASK, data={"a": {"a.1": 1}, "b": {"b.1": 2}})
+    esp_map = ESPMap[str, dict[str, int]].of_type(map_type=ESPStructureType.DASK_VARIABLE, data={"a": {"a.1": 1}, "b": {"b.1": 2}})
     esp_map["c"] = {"c.1": 1}
     restored = pickle.loads(pickle.dumps(esp_map))
 

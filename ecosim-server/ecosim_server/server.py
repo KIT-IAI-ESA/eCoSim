@@ -53,7 +53,7 @@ class Server(AbstractServer, ShutdownListener):
         simulation_config: SimulationConfig,
         repositories: Repositories,
     ):
-        self.server_measurements = ServerTimeMeasurement()
+        self.server_measurements = ServerTimeMeasurement(protocol=server_config.server.communication_protocol)
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
         self._server_state: ServerState = ServerState(
@@ -277,7 +277,7 @@ class DaskServer(AbstractServer, ShutdownListener):
         simulation_config: SimulationConfig,
         repositories: Repositories,
     ):
-        self.server_measurements = ServerTimeMeasurement()
+        self.server_measurements = ServerTimeMeasurement(protocol=server_config.server.communication_protocol)
         self._simulation_config: SimulationConfig = simulation_config
         self._server_config: ServerConfig = server_config
         self._server_state: ServerState = ServerState(

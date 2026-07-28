@@ -30,10 +30,10 @@ class ClientMessageBuffer:
     def for_communication_protocol(protocol: CommunicationProtocol) -> ClientMessageBuffer:
         return ClientMessageBuffer(
             _buffer=ESPList.of_type(
-                list_type=ESPStructureType.DASK if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
+                list_type=ESPStructureType.DASK_VARIABLE if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
             ),
             _on_message_callbacks=ESPSet.of_type(
-                set_type=ESPStructureType.DASK if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
+                set_type=ESPStructureType.DASK_VARIABLE if protocol == CommunicationProtocol.DASK else ESPStructureType.THREAD,
                 dask_name="message_buffer_on_message_callbacks",
             ),
             _communication_protocol=protocol,

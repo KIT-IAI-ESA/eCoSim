@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -11,6 +12,7 @@ from ecosim_server.config.server_config import DatabaseConfig, MainConfig, Serve
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.server import AbstractServer, DaskServer, Server
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
@@ -30,6 +32,27 @@ class SimpleTestServer(AbstractServer):
 
     def force_stop(self) -> None:
         self.server.force_stop()
+
+    def server_measurements(self) -> ServerTimeMeasurement:
+        return self.server.server_measurements
+
+    def print_measurements(self) -> None:
+        logging.info("#########################################")
+        logging.info("##         TEST PERFORMANCE            ##")
+        logging.info("#########################################")
+        logging.info(
+            "TEST SIMULATION START TIME: "
+            + str(self.server_measurements().get(ServerTimeMeasurementType.SIMULATION_START).run_time_in_seconds)
+            + "s",
+        )
+        logging.info(
+            "TEST SIMULATION EXECUTION TIME: "
+            + str(self.server_measurements().get(ServerTimeMeasurementType.SIMULATION_EXECUTION).run_time_in_seconds)
+            + "s",
+        )
+        logging.info(
+            "TEST SIMULATION STOP TIME: " + str(self.server_measurements().get(ServerTimeMeasurementType.SIMULATION_STOP).run_time_in_seconds) + "s",
+        )
 
 
 class RepositoryType(Enum):
