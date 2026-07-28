@@ -19,6 +19,7 @@ def test_client_server_batch_steps(pre_set_two_clients: PreSetTwoClientsData) ->
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -30,6 +31,7 @@ def test_client_server_batch_steps_with_empty_repository(pre_set_two_clients: Pr
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -53,6 +55,7 @@ def test_client_server_batch_steps_different_completed_steps_step4_step5(pre_set
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -76,5 +79,6 @@ def test_client_server_batch_steps_different_completed_steps_step1_step5(pre_set
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()

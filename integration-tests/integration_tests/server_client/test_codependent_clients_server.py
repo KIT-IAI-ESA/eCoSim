@@ -298,7 +298,6 @@ def test_codependent_clients_server(communication_protocol: CommunicationProtoco
     client_3.start()
 
     server_thread.join()
-
     server.print_measurements()
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)

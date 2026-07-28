@@ -112,6 +112,7 @@ def test_three_clients_server(communication_protocol: CommunicationProtocol) -> 
     client_3.start()
 
     server_thread.join(120)
+    server.print_measurement_statistics()
 
     repositories = server.repositories
 
