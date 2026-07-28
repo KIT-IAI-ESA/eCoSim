@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from time import sleep
 from typing import Callable, override
 
 import dask.distributed as dd
@@ -85,6 +86,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
                 EndpointDask._logger.error("Cannot listen to Dask client")
                 raise Exception
             if len(dask_client.datasets) == len(current_connections):
+                sleep(3)  # if all clients are connected, we need to free the loop from the massive event checks
                 continue
             elif len(dask_client.datasets) < len(current_connections):
                 if closed.is_set():
