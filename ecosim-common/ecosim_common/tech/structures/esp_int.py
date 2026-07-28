@@ -7,8 +7,9 @@ from dataclasses import dataclass, field
 from functools import cache
 from typing import Callable, assert_never, override
 
-from distributed import Lock, Variable
+from distributed import Variable
 from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
+from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 
@@ -74,7 +75,7 @@ class DaskESPInt(ESPInt):
         dask_name: str | None = None,
     ) -> None:
         self._dask_variable: Variable = Variable(name=dask_name)
-        self._lock = Lock(f"int_lock_{dask_name or uuid.uuid4()}")
+        self._lock = ParallelLock.dask(f"int_lock_{dask_name or uuid.uuid4()}")
         try:
             # in case that the variable is already initialized, check if it can be got
             with silenced_logger("distributed.core"):
