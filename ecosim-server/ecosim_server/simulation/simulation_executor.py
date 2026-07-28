@@ -130,7 +130,8 @@ class SimulationExecutor:
                     client_id=message.client_id,
                 )
             # TODO_OSR: refactor to waiting mechanism
-            sleep(2)
+            if self._server_config.server.communication_protocol == CommunicationProtocol.TCP_SOCKET:
+                sleep(1)
         SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
 
     def _start_simulation_of_all_clients(
@@ -159,7 +160,8 @@ class SimulationExecutor:
             # TODO_AFTER_MERGE: find better solution
             self._abort_if_globally_finished("when starting simulators")
             # TODO_OSR: refactor to waiting mechanism
-            sleep(2)
+            if self._server_config.server.communication_protocol == CommunicationProtocol.TCP_SOCKET:
+                sleep(1)
         SimulationExecutor.logger.debug(
             "Starting of simulations of all clients successful",
         )
