@@ -3,7 +3,6 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
 from ecosim_server.message_buffer import ClientMessageBuffer
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
@@ -26,7 +25,6 @@ class ServerState(ShutdownListener):
         self._is_finished = ParallelEvent.for_communication_protocol(server_config.server.communication_protocol)
         self._is_interrupted = ParallelEvent.for_communication_protocol(server_config.server.communication_protocol)
         self.message_buffer: ClientMessageBuffer = ClientMessageBuffer.for_communication_protocol(server_config.server.communication_protocol)
-        self.server_measurement = ServerTimeMeasurement()
 
     def wait_for_all_clients_starting_simulation(self) -> None:
         self.client_states.wait_for_all_clients_starting_simulation()

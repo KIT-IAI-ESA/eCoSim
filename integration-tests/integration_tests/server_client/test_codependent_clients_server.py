@@ -299,6 +299,8 @@ def test_codependent_clients_server(communication_protocol: CommunicationProtoco
 
     server_thread.join()
 
+    server.print_measurements()
+
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")

@@ -68,7 +68,7 @@ def test_on_message_executes_callback_on_matching_message(
     client_id = _make_client_id()
     message = _make_message()
     received: ESPSet[BufferedClientMessage] = ESPSet.of_type(
-        set_type=(ESPStructureType.THREAD if communication_protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK),
+        set_type=(ESPStructureType.THREAD if communication_protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE),
     )
     done = ParallelEvent.for_communication_protocol(communication_protocol)
 

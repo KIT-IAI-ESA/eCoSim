@@ -14,7 +14,9 @@ class SimulationStateRepositoryInMemory(SimulationStateRepository):
     @staticmethod
     def for_communication_protocol(protocol: CommunicationProtocol) -> "SimulationStateRepositoryInMemory":
         return SimulationStateRepositoryInMemory(
-            _states=ESPList.of_type(list_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK),
+            _states=ESPList.of_type(
+                list_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+            ),
         )
 
     def update(

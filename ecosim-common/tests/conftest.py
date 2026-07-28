@@ -39,12 +39,15 @@ def dask_client() -> Generator[dd.Client, Any, None]:
 
 @pytest.fixture(
     scope="function",
-    params=[ESPStructureType.SIMPLE, ESPStructureType.DASK, ESPStructureType.THREAD],
+    # params=[ESPStructureType.SIMPLE, ESPStructureType.DASK_VARIABLE, ESPStructureType.DASK_ACTOR, ESPStructureType.THREAD],
+    params=[ESPStructureType.SIMPLE, ESPStructureType.DASK_VARIABLE, ESPStructureType.THREAD],
 )
 def esp_structure_type(request: pytest.FixtureRequest) -> Generator[ESPStructureType, Any, None]:
     esp_map_type: ESPStructureType = cast(ESPStructureType, request.param)
     match esp_map_type:
-        case ESPStructureType.DASK:
+        # case ESPStructureType.DASK_ACTOR | ESPStructureType.DASK_VARIABLE:
+        #     request.getfixturevalue("dask_client")
+        case ESPStructureType.DASK_VARIABLE:
             request.getfixturevalue("dask_client")
         case ESPStructureType.SIMPLE:
             pass

@@ -52,7 +52,7 @@ class ESPSet(ABC, Set[T], Generic[T]):
                         ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose
                     ),
                 )
-            case ESPStructureType.DASK:
+            case ESPStructureType.DASK_VARIABLE:
                 return DaskESPSet(
                     data=data,
                     dask_name=dask_name,

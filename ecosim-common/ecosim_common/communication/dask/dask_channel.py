@@ -40,7 +40,7 @@ class DaskChannel(ESPChannel):
         async def listen_start() -> None:
             future = dask_client.submit(
                 DaskChannel._listen_blocking,
-                on_rec=on_message,
+                on_message=on_message,
                 dask_client=self._internal_dask_client,
                 event_name=f"client_finish_{self._internal_dask_client.dask_id()}",
                 pure=False,
@@ -95,7 +95,7 @@ class DaskChannel(ESPChannel):
     # sense to make it static in any case.
     @staticmethod
     def _listen_blocking(
-        on_rec: Callable[[ESPChannelMessage], None],
+        on_message: Callable[[ESPChannelMessage], None],
         dask_client: ESPDask,
         event_name: str,
     ) -> None:
@@ -113,7 +113,7 @@ class DaskChannel(ESPChannel):
 
             if (message is not None) and (message.to_esp_channel_message() is not None):
                 try:
-                    on_rec(message.to_esp_channel_message())
+                    on_message(message.to_esp_channel_message())
                 except Exception as e:
                     DaskChannel._logger.error(f"Error when processing message: {e}")
                     is_finished.set()

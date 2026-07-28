@@ -4,16 +4,28 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.global_logger import GlobalLogger
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 
 class ServerTimeMeasurement:
     _logger = ESPLogger("ServerMeasurement")
 
-    def __init__(self) -> None:
-        self._start_times: dict[ServerTimeMeasurementType, datetime] = {}
-        self._end_times: dict[ServerTimeMeasurementType, datetime] = {}
+    def __init__(
+        self,
+        protocol: CommunicationProtocol,
+    ) -> None:
+        self._start_times: ESPMap[ServerTimeMeasurementType, datetime] = ESPMap.of_type(
+            map_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+            dask_name="server_measurements_start_time",
+        )
+        self._end_times: ESPMap[ServerTimeMeasurementType, datetime] = ESPMap.of_type(
+            map_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+            dask_name="server_measurements_end_time",
+        )
 
     def set_start(
         self,

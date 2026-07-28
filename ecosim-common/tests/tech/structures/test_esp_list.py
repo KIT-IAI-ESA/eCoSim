@@ -17,14 +17,14 @@ def test_init_simple() -> None:
 
 
 def test_init_dask(dask_client: Client) -> None:
-    empty_list = ESPList[str].of_type(ESPStructureType.DASK)
+    empty_list = ESPList[str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_list) == 0
 
-    initialized = ESPList[str].of_type(list_type=ESPStructureType.DASK, data=["hello"])
+    initialized = ESPList[str].of_type(list_type=ESPStructureType.DASK_VARIABLE, data=["hello"])
     assert len(initialized) == 1
 
     with_name = ESPList[str].of_type(
-        list_type=ESPStructureType.DASK,
+        list_type=ESPStructureType.DASK_VARIABLE,
         data=["hello"],
         dask_name="test_list",
     )
@@ -33,18 +33,18 @@ def test_init_dask(dask_client: Client) -> None:
 
 
 def test_init_dask_same_twice(dask_client: Client) -> None:
-    empty_list = ESPList[str].of_type(ESPStructureType.DASK)
+    empty_list = ESPList[str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_list) == 0
 
     with_name = ESPList[str].of_type(
-        list_type=ESPStructureType.DASK,
+        list_type=ESPStructureType.DASK_VARIABLE,
         data=["hello"],
         dask_name="test_list",
     )
     assert "hello" in with_name
 
     with_name = ESPList[str].of_type(
-        list_type=ESPStructureType.DASK,
+        list_type=ESPStructureType.DASK_VARIABLE,
         data=["eCoSim"],
         dask_name="test_list",
     )
@@ -299,7 +299,7 @@ def test_snapshot_is_copy(esp_structure_type: ESPStructureType) -> None:
 
 
 def test_pickle(dask_client: dask.distributed.Client) -> None:
-    esp_list = ESPList[str].of_type(list_type=ESPStructureType.DASK, data=["a", "b"])
+    esp_list = ESPList[str].of_type(list_type=ESPStructureType.DASK_VARIABLE, data=["a", "b"])
     esp_list.append("c")
 
     restored = pickle.loads(pickle.dumps(esp_list))

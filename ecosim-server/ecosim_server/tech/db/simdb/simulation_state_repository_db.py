@@ -14,6 +14,7 @@ from sqlalchemy import Column, Integer, Text
 
 
 # TODO_OSR: move to different package ('simdb' is not used anymore)
+# TODO_OSR: remove variant stuff
 @dataclass
 class SimulationStateRepositoryDB(SimulationStateRepository):
     _db_connection: DBConnection = field()

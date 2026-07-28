@@ -33,9 +33,9 @@ class CurrentStepData:
         self._logical_delays: ESPMap[int, CurrentStepLogicalDelay]
         match server_config.server.communication_protocol:
             case CommunicationProtocol.DASK:
-                self._step = ESPInt.of_type(ESPStructureType.DASK, value=0)
-                self._data_by_client = ESPMap.of_type(ESPStructureType.DASK)
-                self._logical_delays = ESPMap.of_type(ESPStructureType.DASK)
+                self._step = ESPInt.of_type(ESPStructureType.DASK_VARIABLE, value=0)
+                self._data_by_client = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
+                self._logical_delays = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
             case CommunicationProtocol.TCP_SOCKET:
                 self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
                 self._data_by_client = ESPMap.of_type(
@@ -48,6 +48,16 @@ class CurrentStepData:
                 )
             case _:
                 assert_never(server_config.server.communication_protocol)
+        # self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
+        # self._data_by_client = ESPMap.of_type(
+        #     ESPStructureType.SIMPLE,
+        #     ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        # )
+        # self._logical_delays = ESPMap.of_type(
+        #     ESPStructureType.SIMPLE,
+        #     ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
+        # )
+
         self._init_logical_delays()
 
     def reset_for_new_step(
@@ -81,15 +91,15 @@ class CurrentStepData:
             data_by_client.clear()
             for client in self._simulation_config.clients:
                 data_by_client[client.client_id] = CurrentStepClientData(executed=False, interface_data=[])
-            for interface in client.interfaces:
-                if interface.type == InterfaceType.OUTPUT:
-                    continue
-                data_by_client[client.client_id].interface_data.append(
-                    CurrentStepClientDataInterface(
-                        interface_value=ProtocolInterfaceValueMutable(name=interface.name, value=None),
-                        connected_to=tuple(interface.connected_to),
-                    ),
-                )
+                for interface in client.interfaces:
+                    if interface.type == InterfaceType.OUTPUT:
+                        continue
+                    data_by_client[client.client_id].interface_data.append(
+                        CurrentStepClientDataInterface(
+                            interface_value=ProtocolInterfaceValueMutable(name=interface.name, value=None),
+                            connected_to=tuple(interface.connected_to),
+                        ),
+                    )
 
     def set_value(
         self,

@@ -17,14 +17,14 @@ def test_init_simple() -> None:
 
 
 def test_init_dask(dask_client: Client) -> None:
-    empty_set = ESPSet[str].of_type(ESPStructureType.DASK)
+    empty_set = ESPSet[str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_set) == 0
 
-    initialized = ESPSet[str].of_type(set_type=ESPStructureType.DASK, data={"hello"})
+    initialized = ESPSet[str].of_type(set_type=ESPStructureType.DASK_VARIABLE, data={"hello"})
     assert len(initialized) == 1
 
     with_name = ESPSet[str].of_type(
-        set_type=ESPStructureType.DASK,
+        set_type=ESPStructureType.DASK_VARIABLE,
         data={"hello"},
         dask_name="test_set",
     )
@@ -32,18 +32,18 @@ def test_init_dask(dask_client: Client) -> None:
 
 
 def test_init_dask_same_twice(dask_client: Client) -> None:
-    empty_set = ESPSet[str].of_type(ESPStructureType.DASK)
+    empty_set = ESPSet[str].of_type(ESPStructureType.DASK_VARIABLE)
     assert len(empty_set) == 0
 
     with_name = ESPSet[str].of_type(
-        set_type=ESPStructureType.DASK,
+        set_type=ESPStructureType.DASK_VARIABLE,
         data={"hello"},
         dask_name="test_set",
     )
     assert "hello" in with_name
 
     with_name = ESPSet[str].of_type(
-        set_type=ESPStructureType.DASK,
+        set_type=ESPStructureType.DASK_VARIABLE,
         data={"eCoSim"},
         dask_name="test_set",
     )
@@ -276,7 +276,7 @@ def test_transaction_multiple_ops(esp_structure_type: ESPStructureType) -> None:
 
 
 def test_pickle(dask_client: dask.distributed.Client) -> None:
-    esp_set = ESPSet[str].of_type(set_type=ESPStructureType.DASK, data={"a", "b"})
+    esp_set = ESPSet[str].of_type(set_type=ESPStructureType.DASK_VARIABLE, data={"a", "b"})
     esp_set.add("c")
     restored = pickle.loads(pickle.dumps(esp_set))
     assert isinstance(restored, ESPSet)

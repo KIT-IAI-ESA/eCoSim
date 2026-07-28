@@ -11,7 +11,6 @@ from ecosim_common.communication.data.protocol_interface_value import (
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequestInputs
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.config.server_config import ServerConfig
@@ -24,7 +23,6 @@ class InterfaceValueHistory:
     logger = ESPLogger("InterfaceValueHistory")
     _default_values_marker = -1
 
-    _parallel_lock: ParallelLock = field()
     _repositories: Repositories = field()
     _simulation_config: SimulationConfig = field()
     _entries: ESPMap[int, dict[ClientID, List[ProtocolInterfaceValue]]] = field()
@@ -35,13 +33,11 @@ class InterfaceValueHistory:
         server_config: ServerConfig,
         simulation_config: SimulationConfig,
     ) -> InterfaceValueHistory:
-        parallel_lock = ParallelLock.for_protocol(server_config.server.communication_protocol)
         return InterfaceValueHistory(
-            _parallel_lock=parallel_lock,
             _repositories=repositories,
             _simulation_config=simulation_config,
             _entries=ESPMap.of_type(
-                map_type=ESPStructureType.DASK
+                map_type=ESPStructureType.DASK_VARIABLE
                 if server_config.server.communication_protocol == CommunicationProtocol.DASK
                 else ESPStructureType.THREAD,
             ),
@@ -68,17 +64,16 @@ class InterfaceValueHistory:
         InterfaceValueHistory.logger.debug(
             f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ...",
         )
-        with self._parallel_lock:
-            self._add_to_entries_internal(
-                time_step=time_step,
-                client_id=client_id,
-                interface_values=interface_values,
-            )
-            self._add_to_repository_internal(
-                step=time_step,
-                client_id=client_id,
-                values=interface_values,
-            )
+        self._add_to_entries_internal(
+            time_step=time_step,
+            client_id=client_id,
+            interface_values=interface_values,
+        )
+        self._add_to_repository_internal(
+            step=time_step,
+            client_id=client_id,
+            values=interface_values,
+        )
         InterfaceValueHistory.logger.debug(
             f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ... done.",
         )
