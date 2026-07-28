@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
-from typing import Generic, Iterable, TypeVar, assert_never, cast, override
+from typing import Any, Generic, Iterable, TypeVar, assert_never, cast, override
 
 import distributed
 from distributed import Client
@@ -90,6 +90,15 @@ class ESPQueue(ABC, Generic[T]):
 
 
 class DaskESPQueue(ESPQueue[T]):
+    """
+    ATTENTION: the underlying 'distributed.Queue' is created lazily.
+
+    'distributed.Queue.__init__' issues a blocking 'queue_create' call to the scheduler, and its '__reduce__'
+    re-runs '__init__' - so every unpickling of an object holding a queue used to cost a scheduler round-trip.
+    Since these queues travel inside pickled callbacks, only the name is carried and the handle is created on
+    first use.
+    """
+
     def __init__(
         self,
         data: Iterable[T] | None = None,
@@ -97,13 +106,32 @@ class DaskESPQueue(ESPQueue[T]):
         dask_client: Client | None = None,
         maxsize: int = 0,
     ) -> None:
-        self._dask_queue = distributed.Queue(
-            name=dask_name or f"esp_queue_{uuid.uuid4()}",
-            client=dask_client,
-            maxsize=maxsize,
-        )
+        self._name = dask_name or f"esp_queue_{uuid.uuid4()}"
+        self._maxsize = maxsize
+        self._client = dask_client
+        self._queue: distributed.Queue | None = None
         for value in data or []:
-            self._dask_queue.put(value)
+            self.push(value)
+
+    @property
+    def _dask_queue(self) -> distributed.Queue:
+        if self._queue is None:
+            self._queue = distributed.Queue(
+                name=self._name,
+                client=self._client,
+                maxsize=self._maxsize,
+            )
+        return self._queue
+
+    def __getstate__(self) -> dict[str, Any]:
+        # deliberately without '_queue' and '_client': both are rebuilt lazily in the receiving process
+        return {"_name": self._name, "_maxsize": self._maxsize}
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self._name = state["_name"]
+        self._maxsize = state["_maxsize"]
+        self._client = None
+        self._queue = None
 
     @override
     def push(self, value: T) -> None:
