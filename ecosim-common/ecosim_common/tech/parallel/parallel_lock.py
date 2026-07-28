@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import threading
+import uuid
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from types import TracebackType
-from typing import assert_never, override
+from typing import Any, assert_never, override
 
 import dask.distributed
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -39,10 +40,7 @@ class ParallelLock(AbstractContextManager, ABC):
 
     @staticmethod
     def dask(name: str | None = None) -> ParallelLock:
-        return ParallelLockImpl(
-            _lock=dask.distributed.Lock(name=name),
-            _none_timeout=None,
-        )
+        return DaskParallelLock(name=name or f"lock-{uuid.uuid4().hex}")
 
     @abstractmethod
     def acquire(
@@ -116,6 +114,58 @@ class ParallelLockImpl(ParallelLock):
             exc_value,
             traceback,
         )
+
+
+class DaskParallelLock(ParallelLock):
+    def __init__(
+        self,
+        name: str,
+    ) -> None:
+        self._name = name
+        self._dask_lock: dask.distributed.Lock | None = None
+
+    def _lock_handle(self) -> dask.distributed.Lock:
+        if self._dask_lock is None:
+            self._dask_lock = dask.distributed.Lock(name=self._name)
+        return self._dask_lock
+
+    @override
+    def acquire(
+        self,
+        blocking: bool = True,
+        timeout: float | None = None,
+    ) -> bool:
+        return self._lock_handle().acquire(blocking=blocking, timeout=timeout or None)
+
+    @override
+    def release(self) -> None:
+        # actually, the dask implementation returns a boolean
+        self._lock_handle().release()
+
+    @override
+    def locked(self) -> bool:
+        return self._lock_handle().locked()
+
+    @override
+    def _enter(self) -> ParallelLock:
+        self._lock_handle().__enter__()
+        return self
+
+    @override
+    def _exit(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
+        self._lock_handle().__exit__(
+            exc_type,
+            exc_value,
+            traceback,
+        )
+
+    def __getstate__(self) -> dict[str, Any]:
+        # deliberately without '_dask_lock': it is rebuilt lazily from the name in the receiving process
+        return {"_name": self._name}
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self._name = state["_name"]
+        self._dask_lock = None
 
 
 class NullLock(ParallelLock):
