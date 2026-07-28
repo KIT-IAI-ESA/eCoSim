@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import time
 from time import sleep
-from typing import List
+from typing import List, Tuple
 
 import dask.distributed as dd
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
@@ -33,6 +33,9 @@ from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 # TODO_AFTER_MERGE: we probably need an abstract SimulationExecutor
 class SimulationExecutor:
     logger = ESPLogger("SimulationExecutor")
+
+    # How long to wait for a single simulation step response before re-checking whether the run was aborted.
+    _STEP_RESPONSE_TIMEOUT_IN_SECONDS = 30
 
     def __init__(
         self,
@@ -70,8 +73,15 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
-        # TODO_AFTER_MERGE: find better solution
-        self._using_dask = using_dask
+        # Built once: constructing them per loop iteration costs a scheduler round-trip each time in dask mode.
+        self._global_finish: dd.Event | None = dd.Event(name="global_finish") if using_dask else None
+        self._step_message_client_ids: Tuple[ClientID, ...] = simulation_config.client_ids()
+        self._step_message_queue: ESPQueue[BufferedClientMessage] = ESPQueue[BufferedClientMessage].of_type(
+            queue_type=ESPStructureType.DASK_VARIABLE
+            if server_config.server.communication_protocol == CommunicationProtocol.DASK
+            else ESPStructureType.THREAD,
+            dask_name="simulator_message_queue_possible_parts",
+        )
 
     def execute(
         self,
@@ -147,11 +157,7 @@ class SimulationExecutor:
                         client_sim_step_data=message.payload(ClientSimStepData),
                     )
             # TODO_AFTER_MERGE: find better solution
-            if self._using_dask:
-                if dd.Event(name="global_finish").is_set():
-                    SimulationExecutor.logger.error("Error occured when starting simulators. Exitting...")
-                    self.force_stop()
-                    sys.exit(1)
+            self._abort_if_globally_finished("when starting simulators")
             # TODO_OSR: refactor to waiting mechanism
             sleep(2)
         SimulationExecutor.logger.debug(
@@ -232,29 +238,47 @@ class SimulationExecutor:
             f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
+    def _abort_if_globally_finished(
+        self,
+        context: str,
+    ) -> None:
+        if self._global_finish is None:
+            return
+        if not self._global_finish.is_set():
+            return
+        SimulationExecutor.logger.error(f"Error occurred {context}. Exiting...")
+        self.force_stop()
+        sys.exit(1)
+
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
-        while self._current_step < self.simulation_config.steps:
-            self.logger.info(f"Step {self._current_step}: Executing step {self._current_step}")
-            self._current_step_data.reset_for_new_step(step=self._current_step)
-            self._execute_logical_delays()
+        self._client_communication.on_messages(
+            client_ids=self._step_message_client_ids,
+            message_types=(MessageType.SIMULATION_STEP,),
+            callback=self._step_message_queue.push,
+        )
+        try:
+            while self._current_step < self.simulation_config.steps:
+                self.logger.info(f"Step {self._current_step}: Executing step")
+                self._current_step_data.reset_for_new_step(step=self._current_step)
+                self._execute_logical_delays()
 
-            # TODO: change to a waiting mechanism
-            while not self._current_step_data.all_clients_executed():
-                self._execute_possible_parts("Periodic possible parts execution")
-                if not self._current_step_data.all_clients_executed():
-                    self.logger.debug(
-                        f"Step {self._current_step}: Waiting for all clients to be executed in a 'possible parts' execution",
-                    )
+                # TODO: change to a waiting mechanism
+                while not self._current_step_data.all_clients_executed():
+                    if not self._execute_possible_parts("Periodic possible parts execution"):
+                        raise RuntimeError(
+                            f"Step {self._current_step}: no client is ready for execution but the step is not complete. "
+                            + "This means the clients wait for each other - check the interface connections for a cycle.",
+                        )
+                    self._abort_if_globally_finished("while running simulators")
 
-                if self._using_dask:
-                    if dd.Event(name="global_finish").is_set():
-                        SimulationExecutor.logger.error("Error occurred while running simulators. Exiting...")
-                        self.force_stop()
-                        sys.exit(1)
-
-            self._handle_image_renderer()
-            self._current_step += 1
+                self._handle_image_renderer()
+                self._current_step += 1
+        finally:
+            self._client_communication.remove_on_message_callback(
+                self._step_message_client_ids,
+                (MessageType.SIMULATION_STEP,),
+            )
 
     def _execute_logical_delays(self) -> None:
         self.logger.debug(f"Step {self._current_step}: Execute logical delays")
@@ -274,11 +298,17 @@ class SimulationExecutor:
     def _execute_possible_parts(
         self,
         part_description: str,
-    ) -> None:
+    ) -> bool:
+        """Executes every client whose inputs are complete. Returns False if no client was ready, so no progress was made."""
         ready_for_execution_data_by_clients: dict[
             ClientID,
             List[ProtocolInterfaceValue],
         ] = self._current_step_data.get_ready_for_execution()
+        if len(ready_for_execution_data_by_clients) == 0:
+            self.logger.debug(
+                f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.",
+            )
+            return False
         self.logger.info(
             f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:"
             + f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
@@ -295,58 +325,47 @@ class SimulationExecutor:
             )
         handled_clients: dict[ClientID, bool] = {client_id: False for client_id in ready_for_execution_data_by_clients}
 
-        client_ids = tuple(handled_clients.keys())
-        if len(handled_clients) == 0:
-            self.logger.debug(
-                f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.",
-            )
-            return
-
-        message_types = (MessageType.SIMULATION_STEP,)
-        message_queue = ESPQueue[BufferedClientMessage].of_type(
-            queue_type=ESPStructureType.DASK_VARIABLE
-            if self._server_config.server.communication_protocol == CommunicationProtocol.DASK
-            else ESPStructureType.THREAD,
-            dask_name="simulator_message_queue_possible_parts",
-        )
-
-        self._client_communication.on_messages(
-            client_ids=client_ids,
-            message_types=message_types,
-            callback=lambda message: message_queue.push(message),
-        )
         self.logger.debug(
             f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
         )
 
         while not all(handled_clients.values()):
-            received_message = message_queue.pop()
+            received_message = self._step_message_queue.pop_or_none(
+                timeout=SimulationExecutor._STEP_RESPONSE_TIMEOUT_IN_SECONDS,
+            )
+            if received_message is None:
+                self._abort_if_globally_finished("while waiting for a simulation step response")
+                self.logger.warning(
+                    f"Step {self._current_step}: still waiting for a response from "
+                    + f"{', '.join(str(client_id) for client_id, handled in handled_clients.items() if not handled)}",
+                )
+                continue
             self._handle_received_sim_step(
                 received_message=received_message,
                 ready_for_execution_data_by_clients=ready_for_execution_data_by_clients,
                 handled_clients=handled_clients,
             )
 
-        self._client_communication.remove_on_message_callback(client_ids, message_types)
-
         for client in handled_clients:
             self._current_step_data.set_is_executed(client)
 
         self.logger.debug(f"Finished executing possible parts: {part_description}")
+        return True
 
     def _handle_received_sim_step(
         self,
         received_message: BufferedClientMessage,
         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
         handled_clients: dict[ClientID, bool],
-    ) -> None:
+    ) -> bool:
+        """Returns False if the message did not belong to the clients this round is waiting for."""
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             SimulationExecutor.logger.error(
                 f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
                 + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
             )
-            return
+            return False
         sim_step_data: ClientSimStepData = received_message.payload(
             ClientSimStepData,
         )
@@ -364,6 +383,7 @@ class SimulationExecutor:
             f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}: DONE",
         )
         handled_clients[client_id] = True
+        return True
 
     def _pace_throttle(self) -> None:
         if self._pace_sleep == 0:
