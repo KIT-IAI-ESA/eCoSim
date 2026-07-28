@@ -298,7 +298,7 @@ def test_codependent_clients_server(communication_protocol: CommunicationProtoco
     client_3.start()
 
     server_thread.join()
-    server.print_measurements()
+    server.print_measurement_statistics()
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):

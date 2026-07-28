@@ -55,7 +55,7 @@ def test_client_server_single(communication_protocol: CommunicationProtocol) -> 
     client.start()
 
     server_thread.join()
-    server.print_measurements()
+    server.print_measurement_statistics()
 
     client_measurement_repository = server.repositories.measurement_repository(client_id=client.client_id)
 

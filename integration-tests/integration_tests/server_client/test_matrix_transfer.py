@@ -194,7 +194,7 @@ def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
     client_2.start()
 
     server_thread.join()
-    server.print_measurements()
+    server.print_measurement_statistics()
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
 
