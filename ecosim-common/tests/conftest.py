@@ -1,4 +1,5 @@
 import logging
+from _pytest.nodes import Item
 from typing import Any, Generator, assert_never, cast
 
 import dask.distributed as dd
@@ -74,3 +75,36 @@ def communication_protocol(request: pytest.FixtureRequest) -> Generator[Communic
             assert_never(communication_protocol)
 
     yield communication_protocol
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_teardown(item: Item, nextitem: Item | None) -> None:
+    """
+    This method tries to close a dask client if it is still open. This cannot be done inside
+    the 'dask_client' fixture, because the fixture will be called _before_ the auto used
+    'setup_shutdown_manager' fixture. This would result in errors since during shutdown
+    a lot of dask stuff is done.
+    """
+    # noinspection PyUnusedLocal
+    client: dd.Client | None = None
+    try:
+        client = dd.get_client()
+    except Exception:
+        pytest_fixture_logger.debug("Dask teardown: failed to get_client -> nothing to do (this is expected behaviour if no dask client is running)")
+        return
+
+    if client is None:
+        pytest_fixture_logger.debug("Dask teardown: no dask client found -> nothing to do.")
+        return
+
+    try:
+        pytest_fixture_logger.info(f"Closing dask client: {client}")
+        for key in client.datasets.keys():
+            pytest_fixture_logger.debug(f"Dask teardown: key in dataset: {key} = {client.get_dataset(key)}")
+        client.close()
+        if client.cluster is not None:
+            client.cluster.close()
+        if dd.client._global_clients is not None:  # noqa: SLF001
+            dd.client._global_clients.clear()  # noqa: SLF001
+    except Exception as e:
+        pytest_fixture_logger.error(f"Closing dask client failed: {e}")
