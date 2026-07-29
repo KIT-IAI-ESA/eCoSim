@@ -1,5 +1,4 @@
 import dask.distributed as dd
-
 from integration_tests.server_client_dask.pre_sets.pre_set_two_clients import PreSetTwoClientsData
 
 
@@ -21,6 +20,7 @@ def test_client_server_batch_steps(dask_client: dd.Client, pre_set_two_clients: 
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -32,6 +32,7 @@ def test_client_server_batch_steps_with_empty_repository(dask_client: dd.Client,
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join(15)
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -55,6 +56,7 @@ def test_client_server_batch_steps_different_completed_steps_step4_step5(dask_cl
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
 
@@ -78,5 +80,6 @@ def test_client_server_batch_steps_different_completed_steps_step1_step5(dask_cl
     pre_set_two_clients.start_client_2_async()
 
     server_thread.join()
+    pre_set_two_clients.server.print_measurement_statistics()
 
     pre_set_two_clients.verify_successful_run()
