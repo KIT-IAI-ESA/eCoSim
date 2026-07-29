@@ -13,7 +13,14 @@ def test_pickle_parallel_event_dask(dask_client: distributed.Client) -> None:
         ),
     )
     unpickled = cloudpickle.loads(raw)
-    assert unpickled._lock.name == "test_111"  # noqa: SLF001
+    # after unpickling, the lock should be None
+    assert unpickled._dask_lock is None  # noqa: SLF001
+    assert unpickled._name == "test_111"  # noqa: SLF001
+    # after acquiring it the first time after unpickling, the lock should be available
+    with unpickled:
+        assert unpickled._dask_lock is not None  # noqa: SLF001
+        assert unpickled._dask_lock.name == "test_111"  # noqa: SLF001
+        assert unpickled._name == "test_111"  # noqa: SLF001
 
 
 def test_pickle_parallel_event_thread() -> None:
