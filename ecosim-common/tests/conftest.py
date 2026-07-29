@@ -1,9 +1,9 @@
 import logging
-from _pytest.nodes import Item
 from typing import Any, Generator, assert_never, cast
 
 import dask.distributed as dd
 import pytest
+from _pytest.nodes import Item
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
 from ecosim_common.tech.logger.logger import init_logger
@@ -20,11 +20,14 @@ def setup_logging() -> None:
     init_logger(log_level=logging.DEBUG)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def teardown_shutdown_manager() -> Generator[None, None, None]:
-    """runs once after all tests"""
-    yield
+@pytest.fixture(scope="function", autouse=True)
+def setup_shutdown_manager() -> Generator[None, Any, None]:
+    pytest_fixture_logger.debug("Initializing shutdown manager")
+    ShutdownManager().init()
+    yield None
     ShutdownManager().set_shutdown_at_application_end()
+    pytest_fixture_logger.debug("Called shutdown manager at application end")
+    ShutdownManager.reset_instance()
 
 
 @pytest.fixture(scope="function")
