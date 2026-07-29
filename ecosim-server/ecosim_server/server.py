@@ -2,13 +2,11 @@ import threading
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from time import sleep
 from typing import override
 
 from dask import distributed
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
-from ecosim_common.communication.dask.endpoint_dask import EndpointDask
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
@@ -257,6 +255,8 @@ class Server(AbstractServer, ShutdownListener):
 
     @override
     def on_app_shutdown(self) -> None:
+        if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
+            self._server_state.set_simulation_state(SimulationState.FAILED)
         self._channel_endpoint.close()
         self._stop_image_renderer_socket()
 
@@ -292,8 +292,9 @@ class DaskServer(AbstractServer, ShutdownListener):
             repositories=repositories,
             server_measurement=self.server_measurements,
         )
-        self._channel_endpoint: ESPChannelEndpoint = EndpointDask(
-            _connection_address=self._server_config.server.connection_address(),
+        self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
+            communication_protocol=server_config.server.communication_protocol,
+            connection_address=self._server_config.server.connection_address(),
         )
         self._rendering_socket: RenderingSocket | None = None
         self._repositories = repositories
@@ -310,12 +311,9 @@ class DaskServer(AbstractServer, ShutdownListener):
             on_new_channel=ChannelHandling(simulation_config=self._simulation_config, server_state=self._server_state).handle_new_channel,  #
         )
         Server.logger.info("Waiting for all clients to connect...")
-
-        while not self._server_state.are_all_clients_connected_and_ready():
-            sleep(0.1)  # TODO_OSR: find better solution
-
+        self._server_state.wait_for_all_clients_connected_and_ready()
         Server.logger.info("All clients connected - starting simulation")
-        self._set_simulation_state(SimulationState.READY)
+        self._server_state.set_simulation_state(SimulationState.READY)
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
@@ -359,13 +357,10 @@ class DaskServer(AbstractServer, ShutdownListener):
         SimulationExecutor.logger.info("Stopping image renderer socket.")
         self._rendering_socket.close()
 
-    def _set_simulation_state(self, simulation_state: SimulationState) -> None:
-        self._repositories.simulation_state_repository.update(simulation_state)
-
     @override
     def on_app_shutdown(self) -> None:
         if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
-            self._set_simulation_state(SimulationState.FAILED)
+            self._server_state.set_simulation_state(SimulationState.FAILED)
         self._channel_endpoint.close()
         self._stop_image_renderer_socket()
 
