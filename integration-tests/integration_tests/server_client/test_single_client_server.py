@@ -15,7 +15,12 @@ def test_client_server_single() -> None:
     steps = 100
     step_size_in_ms = 2_500
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
         microsecond=0,
     )
     server = generate_simple_test_server(
@@ -28,16 +33,14 @@ def test_client_server_single() -> None:
     client = SimpleTestClient.generate(
         server_host=server_host,
         server_port=server_port,
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         steps: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface",
                     value=_self.accumulated_step_sizes_in_seconds.value,
                 ),
             ],
-                                         ),
+        ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -47,6 +50,7 @@ def test_client_server_single() -> None:
     client.start()
 
     server_thread.join()
+    server.print_measurement_statistics()
 
     client_measurement_repository = server.repositories.measurement_repository(client_id=client._client_config.client_id())
 
@@ -57,8 +61,4 @@ def test_client_server_single() -> None:
         assert (timestamp - simulation_start_date).total_seconds() == values[0].value
         return (timestamp - simulation_start_date).total_seconds() == values[0].value
 
-    (
-        client_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_records)
-    )
+    (client_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_records))

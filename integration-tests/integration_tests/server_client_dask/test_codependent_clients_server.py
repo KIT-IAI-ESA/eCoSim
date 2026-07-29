@@ -3,20 +3,20 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Tuple
 
+import dask.distributed as dd
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.server_client_dask.simple_test_client import SimpleTestClient
 from integration_tests.server_client_dask.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-import dask.distributed as dd
 
 
 def test_codependent_clients_server(dask_client: dd.Client) -> None:
@@ -25,7 +25,12 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
     steps = 100
     step_size_in_ms = 2_000
     simulation_start_date: datetime = datetime(
-        year=2025, month=1, day=1, hour=0, minute=0, second=0,
+        year=2025,
+        month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
         microsecond=0,
     )
     server = generate_simple_test_server(
@@ -87,7 +92,8 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
                                 delay_path=[],
                             ),
                         ],
-                    ), ModelInterfaceServer(
+                    ),
+                    ModelInterfaceServer(
                         SimulatorInterfaceId(
                             simulator_name="TestSimulator_2",
                             model_interface_id=ModelInterfaceId(
@@ -134,7 +140,8 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
                                 delay_path=[],
                             ),
                         ],
-                    ), ModelInterfaceServer(
+                    ),
+                    ModelInterfaceServer(
                         SimulatorInterfaceId(
                             simulator_name="TestSimulator_3",
                             model_interface_id=ModelInterfaceId(
@@ -175,16 +182,14 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_1",
                     value=add_floats(_self.accumulated_step_sizes_in_seconds.value, 0.11),
                 ),
             ],
-                                         ),
+        ),
     )
     client_2 = SimpleTestClient.generate(
         server_host=server_host,
@@ -217,19 +222,18 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_2_2",
                     value=add_floats(
-                        _self.accumulated_step_sizes_in_seconds.value, 0.22,
+                        _self.accumulated_step_sizes_in_seconds.value,
+                        0.22,
                         get_decimal_part(list(received_inputs.values())[0]),
                     ),
                 ),
             ],
-                                         ),
+        ),
     )
     client_3 = SimpleTestClient.generate(
         server_host=server_host,
@@ -262,20 +266,21 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_3_2",
                     value=add_floats(
-                        _self.accumulated_step_sizes_in_seconds.value, 0.33, get_decimal_part(
-                        list(received_inputs.values())[0],
-                        ) % 1,
+                        _self.accumulated_step_sizes_in_seconds.value,
+                        0.33,
+                        get_decimal_part(
+                            list(received_inputs.values())[0],
+                        )
+                        % 1,
                     ),
                 ),
             ],
-                                         ),
+        ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -287,6 +292,7 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
     client_3.start()
 
     server_thread.join()
+    server.print_measurement_statistics()
 
     client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
@@ -297,11 +303,7 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
         assert add_floats(((timestamp - simulation_start_date).total_seconds()), 0.11) == values[0].value
         return add_floats(((timestamp - simulation_start_date).total_seconds()), 0.11) == values[0].value
 
-    (
-        client_1_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_1_records)
-    )
+    (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_1_records))
 
     client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
@@ -312,11 +314,7 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
         assert add_floats((timestamp - simulation_start_date).total_seconds(), 0.22, 0.11) == values[0].value
         return add_floats((timestamp - simulation_start_date).total_seconds(), 0.22, 0.11) == values[0].value
 
-    (
-        client_2_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_2_records)
-    )
+    (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_2_records))
 
     client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
@@ -327,11 +325,7 @@ def test_codependent_clients_server(dask_client: dd.Client) -> None:
         assert add_floats((timestamp - simulation_start_date).total_seconds(), 0.33, 0.33) == values[0].value
         return add_floats((timestamp - simulation_start_date).total_seconds(), 0.33, 0.33) == values[0].value
 
-    (
-        client_3_measurement_repository
-        .assert_entry_count(steps)
-        .assert_for_each_record(assert_client_3_records)
-    )
+    (client_3_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_3_records))
 
 
 def get_decimal_part(value: float) -> float:
