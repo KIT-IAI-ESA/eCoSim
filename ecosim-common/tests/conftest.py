@@ -13,6 +13,7 @@ from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 pytest_fixture_logger = logging.getLogger("PytestFixtures")
 
 
+# TODO_OSR: extract common fixtures (some of them are copied from 'integration_tests')
 @pytest.fixture(scope="session", autouse=True)
 def setup_logging() -> None:
     """runs once before all tests"""
