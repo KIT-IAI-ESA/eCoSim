@@ -2,10 +2,10 @@ import logging
 import threading
 from time import sleep
 
-import dask.distributed as dd
 from art import tprint
+from dask import distributed
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.communication.dask.dask_logging_plugin import DaskLoggingPlugin
+from ecosim_common.tech.dask.init_dask import init_dask
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -33,14 +33,6 @@ def get_mpi_interface() -> str:
     raise ValueError("Defined connection required")
 
 
-def init_logger_worker(log_level: int) -> None:
-    init_logger(log_level)
-
-
-def shutdown_manager_worker() -> None:
-    ShutdownManager().init()
-
-
 def main() -> None:
     # TODO: find a better solution
     # TODO_OSR: check the todo above
@@ -48,7 +40,7 @@ def main() -> None:
 
     args = HPCServerCliArguments()
     if args.interactive():
-        dask_client = dd.Client(scheduler_file="scheduler.json")
+        dask_client = distributed.Client(scheduler_file="scheduler.json")
         tprint("eCoSimHPC", font="tarty1", chr_ignore=True)
         print(f"Server - {get_module_version(name='ecosim-server')}")
 
@@ -57,16 +49,17 @@ def main() -> None:
 
         interface = get_mpi_interface()
         initialize(interface=interface, nthreads=2)
-        dask_client = dd.Client()
+        dask_client = distributed.Client()
         tprint("eCoSimHPC", font="tarty1", chr_ignore=True)
         print(f"Server - {get_module_version(name='ecosim-server')}")
 
     ShutdownManager().init()
-    dask_client.run(shutdown_manager_worker)
-    init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
-    dask_client.register_plugin(DaskLoggingPlugin(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO))
-    dask_client.run(init_logger_worker, logging.DEBUG if args.debug_enabled() else logging.INFO)
-    dask_client.forward_logging()
+    log_level = logging.DEBUG if args.debug_enabled() else logging.INFO
+    init_logger(log_level=log_level)
+    init_dask(
+        log_level=log_level,
+        client=dask_client,
+    )
 
     server_config = ServerConfig.of_cli_args(args)
     simulation_config = SimulationConfig.of_config_file_and_params(

@@ -4,8 +4,6 @@ from typing import List, Tuple
 from distributed.protocol import register_serialization
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.server_state import ServerState
-from ecosim_server.simulation.current_step_data import CurrentStepData
 
 """
 # TODO SECURITY
@@ -44,24 +42,6 @@ def deserialize_protocolinterfacevalue(header: dict, frames: List[bytes]) -> Pro
     return ProtocolInterfaceValue(frames[0].decode(), pickle.loads(frames[1]))
 
 
-def serialize_serverstate(server_state: ServerState) -> Tuple[dict, List[bytes]]:
-    return {}, [pickle.dumps(server_state)]
-
-
-def deserialize_serverstate(header: dict, frames: List[bytes]) -> ServerState:
-    return pickle.loads(frames[0])
-
-
-def serialize_currentstepdata(current_step_data: CurrentStepData) -> Tuple[dict, List[bytes]]:
-    return {}, [pickle.dumps(current_step_data)]
-
-
-def deserialize_currentstepdata(header: dict, frames: List[bytes]) -> CurrentStepData:
-    return pickle.loads(frames[0])
-
-
 def serialize_classes() -> None:
     register_serialization(ClientID, serialize_clientid, deserialize_clientid)
     register_serialization(ProtocolInterfaceValue, serialize_protocolinterfacevalue, deserialize_protocolinterfacevalue)
-    register_serialization(ServerState, serialize_serverstate, deserialize_serverstate)
-    register_serialization(CurrentStepData, serialize_currentstepdata, deserialize_currentstepdata)
