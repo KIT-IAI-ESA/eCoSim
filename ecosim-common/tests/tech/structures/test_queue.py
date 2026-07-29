@@ -88,6 +88,6 @@ def test_clear(esp_structure_type: ESPStructureType) -> None:
     assert len(esp_queue) == 0
 
 
-def test_bool(esp_structure_type: ESPStructureType) -> None:
+def test_using_as_bool_evaluation(esp_structure_type: ESPStructureType) -> None:
     assert not ESPQueue[str].of_type(queue_type=esp_structure_type, data=[])
     assert ESPQueue[str].of_type(queue_type=esp_structure_type, data=["a"])
