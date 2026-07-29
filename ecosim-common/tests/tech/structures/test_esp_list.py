@@ -315,3 +315,17 @@ def test_pickle(dask_client: dask.distributed.Client) -> None:
     assert "d" in restored
     assert "e" in esp_list
     assert "e" in restored
+
+
+def test_esp_list_dask_different_name_on_default(dask_client: Client) -> None:
+    esp_list_1 = ESPList[str].of_type(list_type=ESPStructureType.DASK_VARIABLE, data=["a", "b"])
+    esp_list_2 = ESPList[str].of_type(list_type=ESPStructureType.DASK_VARIABLE, data=["a", "b"])
+    esp_list_3 = ESPList[str].of_type(list_type=ESPStructureType.DASK_VARIABLE, data=["a", "b"])
+
+    assert esp_list_1._dask_variable.name is not None  # type: ignore[attr-defined]  # noqa: SLF001
+    assert esp_list_2._dask_variable.name is not None  # type: ignore[attr-defined]  # noqa: SLF001
+    assert esp_list_3._dask_variable.name is not None  # type: ignore[attr-defined]  # noqa: SLF001
+
+    assert esp_list_1._dask_variable.name != esp_list_2._dask_variable.name  # type: ignore[attr-defined]  # noqa: SLF001
+    assert esp_list_1._dask_variable.name != esp_list_3._dask_variable.name  # type: ignore[attr-defined]  # noqa: SLF001
+    assert esp_list_2._dask_variable.name != esp_list_3._dask_variable.name  # type: ignore[attr-defined]  # noqa: SLF001
