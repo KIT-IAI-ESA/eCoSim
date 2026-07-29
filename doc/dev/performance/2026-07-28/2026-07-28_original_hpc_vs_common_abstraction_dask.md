@@ -11,10 +11,23 @@
 </tr>
 <tr>
 <td>
+Total time: 651ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: None
+## Simulation execution time: 0h 0m 0.344s (= 0.344s total)
+## Simulation stop time: 0h 0m 0.024s (= 0.024s total)
+## Server uptime: 0h 0m 0.267s (= 0.267s total)
+####################################
+```
 </td>
 <td>
 Total test time: 925ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -23,6 +36,7 @@ Total test time: 925ms
 ## Simulation stop time: 0h 0m 0.026s (= 0.026s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -35,10 +49,23 @@ Total test time: 925ms
 </tr>
 <tr>
 <td>
+Total time: 955ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: None
+## Simulation execution time: 0h 0m 0.692s (= 0.692s total)
+## Simulation stop time: 0h 0m 0.023s (= 0.023s total)
+## Server uptime: 0h 0m 0.224s (= 0.224s total)
+####################################
+```
 </td>
 <td>
 Total test time: 867ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -47,6 +74,7 @@ Total test time: 867ms
 ## Simulation stop time: 0h 0m 0.024s (= 0.024s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -59,10 +87,23 @@ Total test time: 867ms
 </tr>
 <tr>
 <td>
+Total time: 730ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: None
+## Simulation execution time: 0h 0m 0.419s (= 0.419s total)
+## Simulation stop time: 0h 0m 0.022s (= 0.022s total)
+## Server uptime: 0h 0m 0.274s (= 0.274s total)
+####################################
+```
 </td>
 <td>
 Total test time: 897ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -71,6 +112,7 @@ Total test time: 897ms
 ## Simulation stop time: 0h 0m 0.022s (= 0.022s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -83,10 +125,23 @@ Total test time: 897ms
 </tr>
 <tr>
 <td>
+Total time: 967ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: None
+## Simulation execution time: 0h 0m 0.672s (= 0.672s total)
+## Simulation stop time: 0h 0m 0.025s (= 0.025s total)
+## Server uptime: 0h 0m 0.255s (= 0.255s total)
+####################################
+```
 </td>
 <td>
 Total test time: 903ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -95,6 +150,7 @@ Total test time: 903ms
 ## Simulation stop time: 0h 0m 0.023s (= 0.023s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -109,10 +165,23 @@ Total test time: 903ms
 </tr>
 <tr>
 <td>
+Total time: 9s 975ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: 0h 0m 0.038s (= 0.038s total)
+## Simulation execution time: 0h 0m 9.505s (= 9.505s total)
+## Simulation stop time: 0h 0m 0.035s (= 0.035s total)
+## Server uptime: None
+####################################
+```
 </td>
 <td>
 Total test time: 9s 472ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -121,6 +190,7 @@ Total test time: 9s 472ms
 ## Simulation stop time: 0h 0m 0.032s (= 0.032s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -135,10 +205,23 @@ Total test time: 9s 472ms
 </tr>
 <tr>
 <td>
+Total time: 6s 873ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: 0h 0m 0.023s (= 0.023s total)
+## Simulation execution time: 0h 0m 6.484s (= 6.484s total)
+## Simulation stop time: 0h 0m 0.026s (= 0.026s total)
+## Server uptime: None
+####################################
+```
 </td>
 <td>
 Total test time: 6s 785ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -147,6 +230,7 @@ Total test time: 6s 785ms
 ## Simulation stop time: 0h 0m 0.029s (= 0.029s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -161,10 +245,23 @@ Total test time: 6s 785ms
 </tr>
 <tr>
 <td>
+Total time: 3s 871ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: 0h 0m 0.018s (= 0.018s total)
+## Simulation execution time: 0h 0m 3.603s (= 3.603s total)
+## Simulation stop time: 0h 0m 0.019s (= 0.019s total)
+## Server uptime: None
+####################################
+```
 </td>
 <td>
 Total test time: 4s 86ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -173,6 +270,7 @@ Total test time: 4s 86ms
 ## Simulation stop time: 0h 0m 0.019s (= 0.019s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
@@ -186,10 +284,23 @@ Total test time: 4s 86ms
 </tr>
 <tr>
 <td>
+Total time: 770ms
+
+```
+####################################
+##       SERVER MEASUREMENT       ##
+####################################
+## Simulation start time: 0h 0m 0.033s (= 0.033s total)
+## Simulation execution time: 0h 0m 0.467s (= 0.467s total)
+## Simulation stop time: 0h 0m 0.029s (= 0.029s total)
+## Server uptime: None
+####################################
+```
 </td>
 <td>
 Total test time: 1s 649ms
 
+```
 ####################################
 ##       SERVER MEASUREMENT       ##
 ####################################
@@ -198,6 +309,7 @@ Total test time: 1s 649ms
 ## Simulation stop time: 0h 0m 0.033s (= 0.033s total)
 ## Server uptime: None
 ####################################
+```
 </td>
 </tr>
 </table>
