@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from time import sleep
 from typing import override
 
-import dask.distributed as dd
+from dask import distributed
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.dask.endpoint_dask import EndpointDask
@@ -17,7 +17,6 @@ from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_server.class_serializer import serialize_classes
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -68,8 +67,9 @@ class Server(AbstractServer, ShutdownListener):
             repositories=repositories,
             server_measurement=self.server_measurements,
         )
-        self._channel_endpoint: ESPChannelEndpoint = EndpointSocket(
-            _connection_address=self._server_config.server.connection_address(),
+        self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
+            communication_protocol=server_config.server.communication_protocol,
+            connection_address=self._server_config.server.connection_address(),
         )
         self._rendering_socket: RenderingSocket | None = None
         self._repositories = repositories
@@ -291,16 +291,12 @@ class DaskServer(AbstractServer, ShutdownListener):
             server_state=self._server_state,
             repositories=repositories,
             server_measurement=self.server_measurements,
-            using_dask=True,
         )
         self._channel_endpoint: ESPChannelEndpoint = EndpointDask(
             _connection_address=self._server_config.server.connection_address(),
         )
         self._rendering_socket: RenderingSocket | None = None
         self._repositories = repositories
-        serialize_classes()
-        dask_client = dd.get_client()
-        dask_client.run(serialize_classes)
         ShutdownManager().register_listener(self)
 
     @override
@@ -393,7 +389,7 @@ class ChannelHandling:
         self,
         connection_data: ConnectionData,
     ) -> None:
-        dd_client = dd.get_client()
+        dd_client = distributed.get_client()
 
         async def async_handle() -> None:
             future = dd_client.submit(
@@ -404,7 +400,7 @@ class ChannelHandling:
                 ),
                 key=uuid.uuid4().hex,
             )
-            dd.fire_and_forget(future)
+            distributed.fire_and_forget(future)
 
         dd_client.sync(async_handle)
 
@@ -413,7 +409,7 @@ class ChannelHandling:
         connection: ClientConnection,
     ) -> None:
         client_id: ClientID | None = None
-        dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
+        distributed.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
         with connection:
             try:
                 Server.logger.debug("Handling new client connection")
@@ -446,7 +442,7 @@ class ChannelHandling:
                             f"Received 'none' from client {client_id}.",
                         )
                         calls += 1
-                        if dd.Event(name="global_finish").is_set():
+                        if distributed.Event(name="global_finish").is_set():
                             connection.close()
                         continue
                     self._server_state.message_buffer.add(

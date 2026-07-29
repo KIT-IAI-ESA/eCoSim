@@ -44,7 +44,6 @@ class SimulationExecutor:
         server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
-        using_dask: bool = False,  # TODO_AFTER_MERGE: find better solution
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -73,8 +72,10 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
-        # Built once: constructing them per loop iteration costs a scheduler round-trip each time in dask mode.
-        self._global_finish: dd.Event | None = dd.Event(name="global_finish") if using_dask else None
+        # TODO_AFTER_MERGE: look for common abstraction
+        self._global_finish: dd.Event | None = (
+            dd.Event(name="global_finish") if server_config.server.communication_protocol == CommunicationProtocol.DASK else None
+        )
         self._step_message_client_ids: Tuple[ClientID, ...] = simulation_config.client_ids()
         self._step_message_queue: ESPQueue[BufferedClientMessage] = ESPQueue[BufferedClientMessage].of_type(
             queue_type=ESPStructureType.DASK_VARIABLE
