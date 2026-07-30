@@ -11,6 +11,7 @@ class ESPChannel(ABC):
     def close(self) -> None:
         pass
 
+    # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
     def listen_async(
         self,
