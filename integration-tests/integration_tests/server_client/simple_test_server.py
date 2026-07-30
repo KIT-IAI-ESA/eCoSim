@@ -11,16 +11,14 @@ from ecosim_server.config.server_config import DatabaseConfig, MainConfig, Serve
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import AbstractServer, DaskServer, Server
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
 @dataclass
 class SimpleTestServer(AbstractServer):
-    server: Server | DaskServer
-    server_config: ServerConfig
-    simulation_config: SimulationConfig
-    repositories: Repositories
+    server: Server | DaskServer = field()
 
     def start(self) -> None:
         self.server.start()
@@ -30,6 +28,15 @@ class SimpleTestServer(AbstractServer):
 
     def force_stop(self) -> None:
         self.server.force_stop()
+
+    def measurement_repository(self, client_id: ClientID) -> MeasurementRepository:
+        return self._repositories.measurement_repository(client_id=client_id)
+
+    def step_to_date(self, step: int) -> datetime:
+        return self._simulation_config.date_time_for_step(step)
+
+    def date_to_step(self, date: datetime) -> int:
+        return self._simulation_config.date_time_to_step(date)
 
 
 class RepositoryType(Enum):
@@ -109,22 +116,22 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
     match parameters.communication_protocol:
         case CommunicationProtocol.TCP_SOCKET:
             server = Server(
-                server_config=server_config,
-                simulation_config=simulation_config,
-                repositories=repositories,
+                _server_config=server_config,
+                _simulation_config=simulation_config,
+                _repositories=repositories,
             )
         case CommunicationProtocol.DASK:
             server = DaskServer(
-                server_config=server_config,
-                simulation_config=simulation_config,
-                repositories=repositories,
+                _server_config=server_config,
+                _simulation_config=simulation_config,
+                _repositories=repositories,
             )
         case _:
             assert_never(parameters.communication_protocol)
 
     return SimpleTestServer(
         server=server,
-        server_config=server_config,
-        simulation_config=simulation_config,
-        repositories=repositories,
+        _server_config=server_config,
+        _simulation_config=simulation_config,
+        _repositories=repositories,
     )

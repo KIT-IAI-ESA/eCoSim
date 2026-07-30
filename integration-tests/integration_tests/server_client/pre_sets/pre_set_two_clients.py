@@ -29,10 +29,10 @@ class PreSetTwoClientsData:
     client_2_data: TestClientData
 
     def measurement_repository_client_1(self) -> MeasurementRepository:
-        return self.server.repositories.measurement_repository(client_id=self.client_1.client_id)
+        return self.server.measurement_repository(client_id=self.client_1.client_id)
 
     def measurement_repository_client_2(self) -> MeasurementRepository:
-        return self.server.repositories.measurement_repository(client_id=self.client_2.client_id)
+        return self.server.measurement_repository(client_id=self.client_2.client_id)
 
     def client_2_output_value_at_step(self, step: int) -> float:
         return -(step + 1) * self.step_size_in_seconds * 10_000
@@ -76,10 +76,10 @@ class PreSetTwoClientsData:
         )
 
     def _step_to_date(self, step: int) -> datetime:
-        return self.server.simulation_config.date_time_for_step(step)
+        return self.server.step_to_date(step)
 
     def date_to_step(self, date: datetime) -> int:
-        return self.server.simulation_config.date_time_to_step(date)
+        return self.server.date_to_step(date)
 
     @property
     def step_size_in_seconds(self) -> float:

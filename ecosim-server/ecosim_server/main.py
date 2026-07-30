@@ -2,16 +2,15 @@ import logging
 from time import sleep
 
 from art import tprint
-
 from ecosim_common.tech.deployment.module_version import get_module_version
-from ecosim_server.data.repositories_db import RepositoriesDB
-from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
-from ecosim_server.data.repositories import Repositories
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.data.repositories import Repositories
+from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.server import Server
 
 
@@ -39,7 +38,11 @@ def main() -> None:
         simulation_config=simulation_config,
     )
 
-    server = Server(server_config, simulation_config, repositories)
+    server = Server(
+        _server_config=server_config,
+        _simulation_config=simulation_config,
+        _repositories=repositories,
+    )
     server.start()
     server.server_measurements.set_end(ServerTimeMeasurementType.SERVER_UPTIME)
     server.print_measurement_statistics()

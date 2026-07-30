@@ -75,7 +75,11 @@ def main() -> None:
         simulation_config=simulation_config,
     )
 
-    server = DaskServer(server_config, simulation_config, repositories)
+    server = DaskServer(
+        _server_config=server_config,
+        _simulation_config=simulation_config,
+        _repositories=repositories,
+    )
 
     server_thread = threading.Thread(target=server.start)
     server_thread.daemon = True
