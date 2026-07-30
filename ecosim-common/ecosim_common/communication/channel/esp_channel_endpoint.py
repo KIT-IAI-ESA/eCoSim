@@ -9,8 +9,10 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 
+# TODO_OSR: implement stop listening function
 @dataclass(frozen=True)
 class ESPChannelEndpoint(ABC):
+    # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
     def listen_async(
         self,

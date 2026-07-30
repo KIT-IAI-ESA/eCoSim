@@ -171,6 +171,7 @@ class ClientStates(ShutdownListener):
             if all((state.stopped_simulation or state.connected is False) for state in client_states.values()):
                 self._all_clients_stopped_simulation_event.set()
 
+    # TODO_OSR: after the refactoring, you can probably delete this
     def wait_for_all_clients_connected_and_ready(self) -> None:
         while not self.are_all_clients_connected_and_ready():
             # TODO_OSR: replace sleep with a correct async/threading construct

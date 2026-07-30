@@ -168,6 +168,7 @@ class Server(AbstractServer, ShutdownListener):
                 ),
             ),
         )
+        connection.receive(expected_type=MessageType.SIMULATION_SETUP)
         Server.logger.debug(f"Client {connection.address} accepted step size")
         self._server_state.client_states.step_size_accepted(client_id)
 
@@ -428,7 +429,6 @@ class ChannelHandling:
                 self._server_state.client_states.set_client_ready_for_simulation(
                     client_id,
                 )
-                calls = 0  # Terminate server if no clients are connected after queue timeout
                 while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
 
@@ -436,7 +436,6 @@ class ChannelHandling:
                         Server.logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
-                        calls += 1
                         if distributed.Event(name="global_finish").is_set():
                             connection.close()
                         continue
