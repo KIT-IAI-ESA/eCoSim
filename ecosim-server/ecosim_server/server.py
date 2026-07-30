@@ -1,7 +1,7 @@
 import threading
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import override
 
 from dask import distributed
@@ -27,51 +27,62 @@ from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
 @dataclass
-class AbstractServer(ABC):
-    @abstractmethod
-    def start(self) -> None:
-        pass
+class AbstractServer(ShutdownListener, ABC):
+    _simulation_config: SimulationConfig = field()
+    _server_config: ServerConfig = field()
+    _repositories: Repositories = field()
 
-    @abstractmethod
-    def print_measurement_statistics(self) -> None:
-        pass
+    server_measurements: ServerTimeMeasurement = field(init=False)
 
-    @abstractmethod
-    def force_stop(self) -> None:
-        pass
-
-
-class Server(AbstractServer, ShutdownListener):
-    logger = ESPLogger("Server")
-
-    def __init__(
-        self,
-        server_config: ServerConfig,
-        simulation_config: SimulationConfig,
-        repositories: Repositories,
-    ):
-        self.server_measurements = ServerTimeMeasurement(protocol=server_config.server.communication_protocol)
-        self._simulation_config: SimulationConfig = simulation_config
-        self._server_config: ServerConfig = server_config
+    def __post_init__(self) -> None:
+        self.server_measurements = ServerTimeMeasurement(protocol=self._server_config.server.communication_protocol)
         self._server_state: ServerState = ServerState(
-            server_config=server_config,
-            simulation_config=simulation_config,
-            simulation_state_repository=repositories.simulation_state_repository,
+            server_config=self._server_config,
+            simulation_config=self._simulation_config,
+            simulation_state_repository=self._repositories.simulation_state_repository,
         )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,
             server_config=self._server_config,
             server_state=self._server_state,
-            repositories=repositories,
+            repositories=self._repositories,
             server_measurement=self.server_measurements,
         )
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
-            communication_protocol=server_config.server.communication_protocol,
+            communication_protocol=self._server_config.server.communication_protocol,
             connection_address=self._server_config.server.connection_address(),
         )
         self._rendering_socket: RenderingSocket | None = None
-        self._repositories = repositories
         ShutdownManager().register_listener(self)
+
+    @abstractmethod
+    def start(self) -> None:
+        pass
+
+    def print_measurement_statistics(self) -> None:
+        self.server_measurements.print_statistics()
+
+    def force_stop(self) -> None:
+        self.on_app_shutdown()
+        self._simulation_executor.force_stop()
+
+    @override
+    def on_app_shutdown(self) -> None:
+        if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
+            self._server_state.set_simulation_state(SimulationState.FAILED)
+        self._channel_endpoint.close()
+        self._stop_image_renderer_socket()
+
+    def _stop_image_renderer_socket(self) -> None:
+        if self._rendering_socket is None:
+            return
+        SimulationExecutor.logger.info("Stopping image renderer socket.")
+        self._rendering_socket.close()
+
+
+@dataclass
+class Server(AbstractServer, ShutdownListener):
+    logger = ESPLogger("Server")
 
     @override
     def start(self) -> None:
@@ -215,10 +226,6 @@ class Server(AbstractServer, ShutdownListener):
         )
         self._server_state.client_states.interfaces_validated(client_id)
 
-    @override
-    def print_measurement_statistics(self) -> None:
-        self.server_measurements.print_statistics()
-
     def _start_image_renderer_socket(self) -> None:
         rendering_interval = self._server_config.server.image_renderer_interval
         socket_port = self._server_config.server.image_renderer_port
@@ -248,58 +255,12 @@ class Server(AbstractServer, ShutdownListener):
                 + "but you may not be able to receive rendered images.",
             )
 
-    def _stop_image_renderer_socket(self) -> None:
-        if self._rendering_socket is None:
-            return
-        SimulationExecutor.logger.info("Stopping image renderer socket.")
-        self._rendering_socket.close()
-
-    @override
-    def on_app_shutdown(self) -> None:
-        if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
-            self._server_state.set_simulation_state(SimulationState.FAILED)
-        self._channel_endpoint.close()
-        self._stop_image_renderer_socket()
-
-    @override
-    def force_stop(self) -> None:
-        self.on_app_shutdown()
-        self._simulation_executor.force_stop()
-
 
 # TODO_AFTER_MERGE: extract to custom package/file
 # TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
+@dataclass
 class DaskServer(AbstractServer, ShutdownListener):
     _logger = ESPLogger("Server")
-
-    def __init__(
-        self,
-        server_config: ServerConfig,
-        simulation_config: SimulationConfig,
-        repositories: Repositories,
-    ):
-        self.server_measurements = ServerTimeMeasurement(protocol=server_config.server.communication_protocol)
-        self._simulation_config: SimulationConfig = simulation_config
-        self._server_config: ServerConfig = server_config
-        self._server_state: ServerState = ServerState(
-            server_config=server_config,
-            simulation_config=simulation_config,
-            simulation_state_repository=repositories.simulation_state_repository,
-        )
-        self._simulation_executor: SimulationExecutor = SimulationExecutor(
-            simulation_config=self._simulation_config,
-            server_config=self._server_config,
-            server_state=self._server_state,
-            repositories=repositories,
-            server_measurement=self.server_measurements,
-        )
-        self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
-            communication_protocol=server_config.server.communication_protocol,
-            connection_address=self._server_config.server.connection_address(),
-        )
-        self._rendering_socket: RenderingSocket | None = None
-        self._repositories = repositories
-        ShutdownManager().register_listener(self)
 
     @override
     def start(self) -> None:
@@ -319,10 +280,6 @@ class DaskServer(AbstractServer, ShutdownListener):
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
 
-    @override
-    def print_measurement_statistics(self) -> None:
-        self.server_measurements.print_statistics()
-
     def _start_image_renderer_socket(self) -> None:
         rendering_interval = self._server_config.server.image_renderer_interval
         socket_port = self._server_config.server.image_renderer_port
@@ -351,24 +308,6 @@ class DaskServer(AbstractServer, ShutdownListener):
                 f"The rendering image socket did not start within {timeout}s -> the execution continues "
                 + "but you may not be able to receive rendered images.",
             )
-
-    def _stop_image_renderer_socket(self) -> None:
-        if self._rendering_socket is None:
-            return
-        SimulationExecutor.logger.info("Stopping image renderer socket.")
-        self._rendering_socket.close()
-
-    @override
-    def on_app_shutdown(self) -> None:
-        if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
-            self._server_state.set_simulation_state(SimulationState.FAILED)
-        self._channel_endpoint.close()
-        self._stop_image_renderer_socket()
-
-    @override
-    def force_stop(self) -> None:
-        self.on_app_shutdown()
-        self._simulation_executor.force_stop()
 
 
 # TODO_AFTER_MERGE: check for alternative -> there is only a single call in DaskServer

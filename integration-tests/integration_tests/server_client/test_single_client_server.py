@@ -57,7 +57,7 @@ def test_client_server_single(communication_protocol: CommunicationProtocol) -> 
     server_thread.join()
     server.print_measurement_statistics()
 
-    client_measurement_repository = server.repositories.measurement_repository(client_id=client.client_id)
+    client_measurement_repository = server.measurement_repository(client_id=client.client_id)
 
     if not isinstance(client_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
