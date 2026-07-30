@@ -79,6 +79,25 @@ class AbstractServer(ShutdownListener, ABC):
         SimulationExecutor.logger.info("Stopping image renderer socket.")
         self._rendering_socket.close()
 
+    @staticmethod
+    def handle_simulation_setup(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        client_id: ClientID,
+        connection: ClientConnection,
+    ) -> None:
+        connection.send(
+            ESPChannelMessageJson.create(
+                type=MessageType.SIMULATION_SETUP,
+                payload=SimulationSetupMessage(
+                    step_size_in_ms=simulation_config.step_size_in_ms,
+                ),
+            ),
+        )
+        connection.receive(expected_type=MessageType.SIMULATION_SETUP)
+        Server.logger.debug(f"Client {connection.address} accepted step size")
+        server_state.client_states.step_size_accepted(client_id)
+
 
 @dataclass
 class Server(AbstractServer, ShutdownListener):
@@ -142,7 +161,7 @@ class Server(AbstractServer, ShutdownListener):
 
                 self._handle_interface_request(client_id, connection)
                 self._handle_interface_settings(client_id, connection)
-                self._handle_simulation_setup(client_id, connection)
+                AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
 
                 self._server_state.client_states.set_client_ready_for_simulation(
                     client_id,
@@ -165,23 +184,6 @@ class Server(AbstractServer, ShutdownListener):
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _handle_simulation_setup(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        connection.send(
-            ESPChannelMessageJson.create(
-                type=MessageType.SIMULATION_SETUP,
-                payload=SimulationSetupMessage(
-                    step_size_in_ms=self._simulation_config.step_size_in_ms,
-                ),
-            ),
-        )
-        connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        Server.logger.debug(f"Client {connection.address} accepted step size")
-        self._server_state.client_states.step_size_accepted(client_id)
 
     def _handle_interface_settings(
         self,
@@ -363,7 +365,7 @@ class ChannelHandling:
 
                 self._handle_interface_request(client_id, connection)
                 self._handle_interface_settings(client_id, connection)
-                self._handle_simulation_setup(client_id, connection)
+                AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
 
                 self._server_state.client_states.set_client_ready_for_simulation(
                     client_id,
@@ -388,23 +390,6 @@ class ChannelHandling:
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _handle_simulation_setup(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        connection.send(
-            ESPChannelMessageJson.create(
-                type=MessageType.SIMULATION_SETUP,
-                payload=SimulationSetupMessage(
-                    step_size_in_ms=self._simulation_config.step_size_in_ms,
-                ),
-            ),
-        )
-        connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        Server.logger.debug(f"Client {connection.address} accepted step size")
-        self._server_state.client_states.step_size_accepted(client_id)
 
     def _handle_interface_settings(
         self,
