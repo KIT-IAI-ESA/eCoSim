@@ -8,6 +8,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.tech.dask.init_dask import init_dask
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
+from ecosim_common.tech.parallel.parallel_event import ParallelEventDask
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_common.tech.system_arguments import overwrite_system_argument
 from ecosim_hpc.client_manager import ClientManager
@@ -79,6 +80,7 @@ def main() -> None:
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
+        _global_finish_event=ParallelEventDask.for_name("global_finish"),
     )
 
     server_thread = threading.Thread(target=server.start)

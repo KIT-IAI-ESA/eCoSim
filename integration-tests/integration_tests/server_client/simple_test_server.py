@@ -7,6 +7,7 @@ from typing import List, assert_never
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -37,6 +38,9 @@ class SimpleTestServer(AbstractServer):
 
     def date_to_step(self, date: datetime) -> int:
         return self._simulation_config.date_time_to_step(date)
+
+    def _start_listening(self) -> None:
+        pass
 
 
 class RepositoryType(Enum):
@@ -119,12 +123,14 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
                 _server_config=server_config,
                 _simulation_config=simulation_config,
                 _repositories=repositories,
+                _global_finish_event=ParallelEvent.for_communication_protocol(parameters.communication_protocol),
             )
         case CommunicationProtocol.DASK:
             server = DaskServer(
                 _server_config=server_config,
                 _simulation_config=simulation_config,
                 _repositories=repositories,
+                _global_finish_event=ParallelEvent.for_communication_protocol(parameters.communication_protocol, dask_name="global_finish"),
             )
         case _:
             assert_never(parameters.communication_protocol)
@@ -134,4 +140,5 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
+        _global_finish_event=ParallelEvent.for_communication_protocol(parameters.communication_protocol),
     )
