@@ -2,7 +2,7 @@ import threading
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import override
+from typing import ClassVar, override
 
 from dask import distributed
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
@@ -14,6 +14,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
@@ -31,6 +32,9 @@ class AbstractServer(ShutdownListener, ABC):
     _simulation_config: SimulationConfig = field()
     _server_config: ServerConfig = field()
     _repositories: Repositories = field()
+    _global_finish_event: ParallelEvent = field()
+
+    _logger: ClassVar[ESPLogger] = ESPLogger("Server")
 
     server_measurements: ServerTimeMeasurement = field(init=False)
 
@@ -55,8 +59,23 @@ class AbstractServer(ShutdownListener, ABC):
         self._rendering_socket: RenderingSocket | None = None
         ShutdownManager().register_listener(self)
 
-    @abstractmethod
     def start(self) -> None:
+        self._logger.info("Starting server")
+        self._start_image_renderer_socket()
+        self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
+        self._simulation_config.print_for_start_up()
+        self._server_config.print_config_for_start_up()
+        self._start_listening()
+        self._logger.info("Waiting for all clients to connect...")
+        self._server_state.wait_for_all_clients_connected_and_ready()
+        self._logger.info("All clients connected - starting simulation")
+        self._server_state.set_simulation_state(SimulationState.READY)
+        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
+        self._stop_image_renderer_socket()
+        self._channel_endpoint.close()
+
+    @abstractmethod
+    def _start_listening(self) -> None:
         pass
 
     def print_measurement_statistics(self) -> None:
@@ -95,7 +114,7 @@ class AbstractServer(ShutdownListener, ABC):
             ),
         )
         connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        Server.logger.debug(f"Client {connection.address} accepted step size")
+        AbstractServer._logger.debug(f"Client {connection.address} accepted step size")
         server_state.client_states.step_size_accepted(client_id)
 
     @staticmethod
@@ -118,7 +137,7 @@ class AbstractServer(ShutdownListener, ABC):
             ),
         )
         connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server.logger.debug(f"Client {connection.address} accepted interface settings")
+        AbstractServer._logger.debug(f"Client {connection.address} accepted interface settings")
 
     @staticmethod
     def handle_interface_request(
@@ -139,7 +158,7 @@ class AbstractServer(ShutdownListener, ABC):
             raise Exception(
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
-        Server.logger.debug(
+        AbstractServer._logger.debug(
             f"Successfully validated interfaces for client {connection.address}",
         )
         server_state.client_states.interfaces_validated(client_id)
@@ -173,195 +192,142 @@ class AbstractServer(ShutdownListener, ABC):
                 + "but you may not be able to receive rendered images.",
             )
 
+    @staticmethod
+    def handle_client(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        connection: ClientConnection,
+        global_finish_event: ParallelEvent,
+    ) -> None:
+        client_id: ClientID | None = None
+        with connection:
+            try:
+                AbstractServer._logger.debug("Handling new client connection")
+                connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
+                message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
+                if message is None:
+                    raise Exception(f"No message received from client {client_id}")
+                client_config: ClientMetaData = message.payload(ClientMetaData)
+                if not server_state.client_states.add_if_needed(client_config, connection):
+                    AbstractServer._logger.warning(
+                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
+                    )
+                    connection.close()
+                    return
+                client_id = client_config.client_id()
+
+                AbstractServer.handle_interface_request(server_state, simulation_config, client_id, connection)
+                AbstractServer.handle_interface_settings(simulation_config, client_id, connection)
+                AbstractServer.handle_simulation_setup(server_state, simulation_config, client_id, connection)
+
+                server_state.client_states.set_client_ready_for_simulation(
+                    client_id,
+                )
+                while server_state.is_running() and server_state.client_states.is_connected(client_id):
+                    received_message = connection.receive()
+
+                    if received_message is None:
+                        AbstractServer._logger.warning(
+                            f"Received 'none' from client {client_id}.",
+                        )
+                        if global_finish_event.is_set():
+                            connection.close()
+                        continue
+                    server_state.message_buffer.add(
+                        client_id=client_id,
+                        message=received_message,
+                    )
+
+            except Exception as e:
+                connection.close()
+                if client_id:
+                    server_state.client_states.reset_state(client_id)
+                raise e
+
 
 @dataclass
 class Server(AbstractServer, ShutdownListener):
-    logger = ESPLogger("Server")
-
     @override
-    def start(self) -> None:
-        self.logger.info("Starting server")
-        self._start_image_renderer_socket()
-        self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
-        self._simulation_config.print_for_start_up()
-        self._server_config.print_config_for_start_up()
+    def _start_listening(self) -> None:
         self._channel_endpoint.listen_async(
             on_new_channel=self._handle_new_channel,
         )
-        Server.logger.info("Waiting for all clients to connect...")
-        self._server_state.wait_for_all_clients_connected_and_ready()
-        Server.logger.info("All clients connected - starting simulation")
-        self._server_state.set_simulation_state(SimulationState.READY)
-        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
-        self._stop_image_renderer_socket()
-        self._channel_endpoint.close()
 
     def _handle_new_channel(
         self,
         connection_data: ConnectionData,
     ) -> None:
         client_thread = threading.Thread(
-            target=self._handle_client,
+            target=self.handle_client,
             args=(
+                self._server_state,
+                self._simulation_config,
                 ClientConnection(
                     address=connection_data.client_address,
                     _channel=connection_data.channel,
                 ),
+                self._global_finish_event,
             ),
         )
         client_thread.start()
-
-    def _handle_client(
-        self,
-        connection: ClientConnection,
-    ) -> None:
-        client_id: ClientID | None = None
-        with connection:
-            try:
-                Server.logger.debug("Handling new client connection")
-
-                connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
-
-                message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
-                if message is None:
-                    raise Exception(f"No message received from client {client_id}")
-                client_config: ClientMetaData = message.payload(ClientMetaData)
-                if not self._server_state.client_states.add_if_needed(client_config, connection):
-                    Server.logger.warning(
-                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
-                    )
-                    connection.close()
-                    return
-                client_id = client_config.client_id()
-
-                AbstractServer.handle_interface_request(self._server_state, self._simulation_config, client_id, connection)
-                AbstractServer.handle_interface_settings(self._simulation_config, client_id, connection)
-                AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
-
-                self._server_state.client_states.set_client_ready_for_simulation(
-                    client_id,
-                )
-
-                while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
-                    received_message = connection.receive()
-                    if received_message is None:
-                        Server.logger.warning(
-                            f"Received 'none' from client {client_id}.",
-                        )
-                        continue
-                    self._server_state.message_buffer.add(
-                        client_id=client_id,
-                        message=received_message,
-                    )
-                Server.logger.debug(f"End handling client connection for client id: {client_id}")
-
-            except Exception as e:
-                connection.close()
-                if client_id:
-                    self._server_state.client_states.reset_state(client_id)
-                raise e
 
 
 # TODO_AFTER_MERGE: extract to custom package/file
 # TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
 @dataclass
 class DaskServer(AbstractServer, ShutdownListener):
-    _logger = ESPLogger("Server")
-
     @override
-    def start(self) -> None:
-        self._logger.info("Starting server")
-        self._start_image_renderer_socket()
-        self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
-        self._simulation_config.print_for_start_up()
-        self._server_config.print_config_for_start_up()
+    def _start_listening(self) -> None:
+        server_state = self._server_state
+        simulation_config = self._simulation_config
+        global_finish_event = self._global_finish_event
         self._channel_endpoint.listen_async(
-            on_new_channel=ChannelHandling(simulation_config=self._simulation_config, server_state=self._server_state).handle_new_channel,  #
+            on_new_channel=lambda connection: DaskServer.handle_new_channel(
+                server_state,
+                simulation_config,
+                global_finish_event,
+                connection,
+            ),
         )
-        Server.logger.info("Waiting for all clients to connect...")
-        self._server_state.wait_for_all_clients_connected_and_ready()
-        Server.logger.info("All clients connected - starting simulation")
-        self._server_state.set_simulation_state(SimulationState.READY)
-        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
-        self._stop_image_renderer_socket()
-        self._channel_endpoint.close()
 
-
-# TODO_AFTER_MERGE: check for alternative -> there is only a single call in DaskServer
-class ChannelHandling:
-    def __init__(
-        self,
-        simulation_config: SimulationConfig,
-        server_state: ServerState,
-    ) -> None:
-        self._simulation_config = simulation_config
-        self._server_state = server_state
-
+    @staticmethod
     def handle_new_channel(
-        self,
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
         connection_data: ConnectionData,
     ) -> None:
         dd_client = distributed.get_client()
 
         async def async_handle() -> None:
             future = dd_client.submit(
-                self._handle_client,
+                DaskServer._handle_client_dask,
+                server_state,
+                simulation_config,
                 ClientConnection(
                     address=connection_data.client_address,
                     _channel=connection_data.channel,
                 ),
+                global_finish_event,
                 key=uuid.uuid4().hex,
             )
             distributed.fire_and_forget(future)
 
         dd_client.sync(async_handle)
 
-    def _handle_client(
-        self,
+    @staticmethod
+    def _handle_client_dask(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
         connection: ClientConnection,
+        global_finish_event: ParallelEvent,
     ) -> None:
-        client_id: ClientID | None = None
-        distributed.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
-        with connection:
-            try:
-                Server.logger.debug("Handling new client connection")
-                connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
-                message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
-                if message is None:
-                    raise Exception(f"No message received from client {client_id}")
-                client_config: ClientMetaData = message.payload(ClientMetaData)
-                if not self._server_state.client_states.add_if_needed(client_config, connection):
-                    Server.logger.warning(
-                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
-                    )
-                    connection.close()
-                    return
-                client_id = client_config.client_id()
+        from distributed import secede
 
-                AbstractServer.handle_interface_request(self._server_state, self._simulation_config, client_id, connection)
-                AbstractServer.handle_interface_settings(self._simulation_config, client_id, connection)
-                AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
-
-                self._server_state.client_states.set_client_ready_for_simulation(
-                    client_id,
-                )
-                while self._server_state.is_running() and self._server_state.client_states.is_connected(client_id):
-                    received_message = connection.receive()
-
-                    if received_message is None:
-                        Server.logger.warning(
-                            f"Received 'none' from client {client_id}.",
-                        )
-                        if distributed.Event(name="global_finish").is_set():
-                            connection.close()
-                        continue
-                    self._server_state.message_buffer.add(
-                        client_id=client_id,
-                        message=received_message,
-                    )
-
-            except Exception as e:
-                connection.close()
-                if client_id:
-                    self._server_state.client_states.reset_state(client_id)
-                raise e
+        secede()
+        AbstractServer.handle_client(
+            server_state=server_state,
+            simulation_config=simulation_config,
+            global_finish_event=global_finish_event,
+            connection=connection,
+        )
