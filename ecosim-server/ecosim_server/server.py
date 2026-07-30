@@ -98,6 +98,52 @@ class AbstractServer(ShutdownListener, ABC):
         Server.logger.debug(f"Client {connection.address} accepted step size")
         server_state.client_states.step_size_accepted(client_id)
 
+    @staticmethod
+    def handle_interface_settings(
+        simulation_config: SimulationConfig,
+        client_id: ClientID,
+        connection: ClientConnection,
+    ) -> None:
+        client_simulator_config = simulation_config.client_simulator_config_for(
+            client_id,
+        )
+        if client_simulator_config is None:
+            raise Exception(
+                f"No simulator configuration available for client {connection.address}.",
+            )
+        connection.send(
+            ESPChannelMessageJson.create(
+                type=MessageType.INTERFACE_SETTINGS,
+                payload=client_simulator_config.to_server_interface_settings(),
+            ),
+        )
+        connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
+        Server.logger.debug(f"Client {connection.address} accepted interface settings")
+
+    @staticmethod
+    def handle_interface_request(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        client_id: ClientID,
+        connection: ClientConnection,
+    ) -> None:
+        connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
+        message = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
+        if message is None:
+            raise Exception(f"No message received from client {client_id}")
+        client_interfaces = message.payload(ModelInterfaceIds)
+        if not simulation_config.validate_interfaces(
+            client_id,
+            client_interfaces,
+        ):
+            raise Exception(
+                f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
+            )
+        Server.logger.debug(
+            f"Successfully validated interfaces for client {connection.address}",
+        )
+        server_state.client_states.interfaces_validated(client_id)
+
 
 @dataclass
 class Server(AbstractServer, ShutdownListener):
@@ -159,8 +205,8 @@ class Server(AbstractServer, ShutdownListener):
                     return
                 client_id = client_config.client_id()
 
-                self._handle_interface_request(client_id, connection)
-                self._handle_interface_settings(client_id, connection)
+                AbstractServer.handle_interface_request(self._server_state, self._simulation_config, client_id, connection)
+                AbstractServer.handle_interface_settings(self._simulation_config, client_id, connection)
                 AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
 
                 self._server_state.client_states.set_client_ready_for_simulation(
@@ -184,49 +230,6 @@ class Server(AbstractServer, ShutdownListener):
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _handle_interface_settings(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        client_simulator_config = self._simulation_config.client_simulator_config_for(
-            client_id,
-        )
-        if client_simulator_config is None:
-            raise Exception(
-                f"No simulator configuration available for client {connection.address}.",
-            )
-        connection.send(
-            ESPChannelMessageJson.create(
-                type=MessageType.INTERFACE_SETTINGS,
-                payload=client_simulator_config.to_server_interface_settings(),
-            ),
-        )
-        connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server.logger.debug(f"Client {connection.address} accepted interface settings")
-
-    def _handle_interface_request(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
-        message = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
-        if message is None:
-            raise Exception(f"No message received from client {client_id}")
-        client_interfaces = message.payload(ModelInterfaceIds)
-        if not self._simulation_config.validate_interfaces(
-            client_id,
-            client_interfaces,
-        ):
-            raise Exception(
-                f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
-            )
-        Server.logger.debug(
-            f"Successfully validated interfaces for client {connection.address}",
-        )
-        self._server_state.client_states.interfaces_validated(client_id)
 
     def _start_image_renderer_socket(self) -> None:
         rendering_interval = self._server_config.server.image_renderer_interval
@@ -363,8 +366,8 @@ class ChannelHandling:
                     return
                 client_id = client_config.client_id()
 
-                self._handle_interface_request(client_id, connection)
-                self._handle_interface_settings(client_id, connection)
+                AbstractServer.handle_interface_request(self._server_state, self._simulation_config, client_id, connection)
+                AbstractServer.handle_interface_settings(self._simulation_config, client_id, connection)
                 AbstractServer.handle_simulation_setup(self._server_state, self._simulation_config, client_id, connection)
 
                 self._server_state.client_states.set_client_ready_for_simulation(
@@ -390,46 +393,3 @@ class ChannelHandling:
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _handle_interface_settings(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        client_simulator_config = self._simulation_config.client_simulator_config_for(
-            client_id,
-        )
-        if client_simulator_config is None:
-            raise Exception(
-                f"No simulator configuration available for client {connection.address}.",
-            )
-        connection.send(
-            ESPChannelMessageJson.create(
-                type=MessageType.INTERFACE_SETTINGS,
-                payload=client_simulator_config.to_server_interface_settings(),
-            ),
-        )
-        connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server.logger.debug(f"Client {connection.address} accepted interface settings")
-
-    def _handle_interface_request(
-        self,
-        client_id: ClientID,
-        connection: ClientConnection,
-    ) -> None:
-        connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
-        message = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
-        if message is None:
-            raise Exception(f"No message received from client {client_id}")
-        client_interfaces = message.payload(ModelInterfaceIds)
-        if not self._simulation_config.validate_interfaces(
-            client_id,
-            client_interfaces,
-        ):
-            raise Exception(
-                f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
-            )
-        Server.logger.debug(
-            f"Successfully validated interfaces for client {connection.address}",
-        )
-        self._server_state.client_states.interfaces_validated(client_id)
