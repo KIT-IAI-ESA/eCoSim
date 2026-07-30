@@ -144,6 +144,35 @@ class AbstractServer(ShutdownListener, ABC):
         )
         server_state.client_states.interfaces_validated(client_id)
 
+    def _start_image_renderer_socket(self) -> None:
+        rendering_interval = self._server_config.server.image_renderer_interval
+        socket_port = self._server_config.server.image_renderer_port
+        if rendering_interval is None and socket_port is None:
+            SimulationExecutor.logger.info(
+                "No image renderer config is set - so no rendering socket will be opened.",
+            )
+            return
+        if socket_port is None or rendering_interval is None:
+            SimulationExecutor.logger.error(
+                "Invalid configuration for image renderer, since only either port or interval is set (and not both). "
+                + f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.",
+            )
+            return
+        SimulationExecutor.logger.info(
+            f"Image renderer socket will be opened at port {socket_port}",
+        )
+        self._rendering_socket = RenderingSocket(
+            host=self._server_config.server.host,
+            port=socket_port,
+        )
+        started_event = self._rendering_socket.start()
+        timeout = 5
+        if not started_event.wait(timeout=timeout):
+            SimulationExecutor.logger.warning(
+                f"The rendering image socket did not start within {timeout}s -> the execution continues "
+                + "but you may not be able to receive rendered images.",
+            )
+
 
 @dataclass
 class Server(AbstractServer, ShutdownListener):
@@ -224,41 +253,13 @@ class Server(AbstractServer, ShutdownListener):
                         client_id=client_id,
                         message=received_message,
                     )
+                Server.logger.debug(f"End handling client connection for client id: {client_id}")
 
             except Exception as e:
                 connection.close()
                 if client_id:
                     self._server_state.client_states.reset_state(client_id)
                 raise e
-
-    def _start_image_renderer_socket(self) -> None:
-        rendering_interval = self._server_config.server.image_renderer_interval
-        socket_port = self._server_config.server.image_renderer_port
-        if rendering_interval is None and socket_port is None:
-            SimulationExecutor.logger.info(
-                "No image renderer config is set - so no rendering socket will be opened.",
-            )
-            return
-        if socket_port is None or rendering_interval is None:
-            SimulationExecutor.logger.error(
-                "Invalid configuration for image renderer, since only either port or interval is set (and not both). "
-                + f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.",
-            )
-            return
-        SimulationExecutor.logger.info(
-            f"Image renderer socket will be opened at port {socket_port}",
-        )
-        self._rendering_socket = RenderingSocket(
-            host=self._server_config.server.host,
-            port=socket_port,
-        )
-        started_event = self._rendering_socket.start()
-        timeout = 5
-        if not started_event.wait(timeout=timeout):
-            SimulationExecutor.logger.warning(
-                f"The rendering image socket did not start within {timeout}s -> the execution continues "
-                + "but you may not be able to receive rendered images.",
-            )
 
 
 # TODO_AFTER_MERGE: extract to custom package/file
@@ -284,35 +285,6 @@ class DaskServer(AbstractServer, ShutdownListener):
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
-
-    def _start_image_renderer_socket(self) -> None:
-        rendering_interval = self._server_config.server.image_renderer_interval
-        socket_port = self._server_config.server.image_renderer_port
-        if rendering_interval is None and socket_port is None:
-            SimulationExecutor.logger.info(
-                "No image renderer config is set - so no rendering socket will be opened.",
-            )
-            return
-        if socket_port is None or rendering_interval is None:
-            SimulationExecutor.logger.error(
-                "Invalid configuration for image renderer, since only either port or interval is set (and not both). "
-                + f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.",
-            )
-            return
-        SimulationExecutor.logger.info(
-            f"Image renderer socket will be opened at port {socket_port}",
-        )
-        self._rendering_socket = RenderingSocket(
-            host=self._server_config.server.host,
-            port=socket_port,
-        )
-        started_event = self._rendering_socket.start()
-        timeout = 5
-        if not started_event.wait(timeout=timeout):
-            SimulationExecutor.logger.warning(
-                f"The rendering image socket did not start within {timeout}s -> the execution continues "
-                + "but you may not be able to receive rendered images.",
-            )
 
 
 # TODO_AFTER_MERGE: check for alternative -> there is only a single call in DaskServer
