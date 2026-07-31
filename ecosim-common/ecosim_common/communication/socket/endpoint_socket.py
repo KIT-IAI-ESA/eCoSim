@@ -1,10 +1,10 @@
 import socket
 import threading
 from dataclasses import dataclass, field
-from typing import override
+from typing import ClassVar, override
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint, OnNewChannel
+from ecosim_common.communication.channel.esp_channel_endpoint import ChannelHandler, ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.socket.esp_socket import ESPSocket, create_internal_socket, is_raw_socket_connected
 from ecosim_common.communication.socket.socket_channel import SocketChannel
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -13,7 +13,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 
 @dataclass(frozen=True)
 class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
-    _logger = ESPLogger("EndpointSocket")
+    _logger: ClassVar[ESPLogger] = ESPLogger("EndpointSocket")
 
     _connection_address: ConnectionAddress = field()
     _closed: threading.Event = field(default_factory=threading.Event)
@@ -29,7 +29,7 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
     @override
     def listen_async(
         self,
-        on_new_channel: OnNewChannel,
+        channel_handler: ChannelHandler,
     ) -> None:
         if self._listening.is_set():
             EndpointSocket._logger.warning(
@@ -39,14 +39,14 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
         self._listening.set()
         listen_thread = threading.Thread(
             target=self._listen,
-            args=(on_new_channel,),
+            args=(channel_handler,),
             daemon=False,
         )
         listen_thread.start()
 
     def _listen(
         self,
-        on_new_channel: OnNewChannel,
+        channel_handler: ChannelHandler,
     ) -> None:
         with self._internal_socket:
             try:
@@ -78,13 +78,26 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
                 EndpointSocket._logger.debug(
                     f"New connection on socket {self._connection_address} from {client_address}",
                 )
-                on_new_channel(
-                    ConnectionData(
-                        channel=SocketChannel(ESPSocket(connection)),
-                        client_address=client_address,
-                    ),
+
+                connection_data = ConnectionData(
+                    channel=SocketChannel(ESPSocket(connection)),
+                    client_address=client_address,
                 )
+                threading.Thread(
+                    target=self._serve_channel,
+                    args=(channel_handler, connection_data),
+                    name=f"client-{connection_data.client_address}",
+                ).start()
             EndpointSocket._logger.debug(f"Socket stopped listening on {self._connection_address}")
+
+    @staticmethod
+    def _serve_channel(handler: ChannelHandler, connection_data: ConnectionData) -> None:
+        try:
+            handler(connection_data)
+        except Exception:
+            EndpointSocket._logger.error(
+                f"Client handler for {connection_data.client_address} failed",
+            )
 
     @override
     def close(self) -> None:

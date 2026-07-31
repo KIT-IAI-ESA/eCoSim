@@ -16,7 +16,7 @@ class ESPChannelEndpoint(ABC):
     @abstractmethod
     def listen_async(
         self,
-        on_new_channel: OnNewChannel,
+        channel_handler: ChannelHandler,
     ) -> None:
         pass
 
@@ -48,7 +48,14 @@ class ConnectionData:
     client_address: ConnectionAddress
 
 
-class OnNewChannel(Protocol):
+class ChannelHandler(Protocol):
+    """Invoked once per accepted channel, in a dedicated execution context
+    owned by the endpoint (thread, seceded dask task, ...).
+
+    MAY block for the entire lifetime of the channel. Endpoint implementations
+    must not assume it returns promptly.
+    """
+
     def __call__(
         self,
         connection_data: ConnectionData,
