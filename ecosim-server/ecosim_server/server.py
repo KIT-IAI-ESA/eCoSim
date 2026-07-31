@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import threading
-import uuid
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass, field
 from functools import partial
-from typing import ClassVar, Protocol, override
+from typing import ClassVar, override
 
-from dask import distributed
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
@@ -69,9 +66,8 @@ class AbstractServer(ShutdownListener, ABC):
         self._simulation_config.print_for_start_up()
         self._server_config.print_config_for_start_up()
         self._channel_endpoint.listen_async(
-            on_new_channel=partial(
-                self._on_new_channel,
-                self._dispatch_client,
+            channel_handler=partial(
+                AbstractServer._on_new_channel,
                 self._server_state,
                 self._simulation_config,
                 self._global_finish_event,
@@ -253,104 +249,29 @@ class AbstractServer(ShutdownListener, ABC):
 
     @staticmethod
     def _on_new_channel(
-        dispatch: DispatchClient,
         server_state: ServerState,
         simulation_config: SimulationConfig,
         global_finish_event: ParallelEvent,
         connection_data: ConnectionData,
     ) -> None:
-        dispatch(
-            server_state,
-            simulation_config,
-            global_finish_event,
-            ClientConnection(
+        AbstractServer.handle_client(
+            server_state=server_state,
+            simulation_config=simulation_config,
+            global_finish_event=global_finish_event,
+            connection=ClientConnection(
                 address=connection_data.client_address,
                 _channel=connection_data.channel,
             ),
         )
 
-    @staticmethod
-    @abstractmethod
-    def _dispatch_client(
-        server_state: ServerState,
-        simulation_config: SimulationConfig,
-        global_finish_event: ParallelEvent,
-        connection: ClientConnection,
-    ) -> None: ...
-
 
 @dataclass
 class TCPSocketServer(AbstractServer, ShutdownListener):
-    @staticmethod
-    @override
-    def _dispatch_client(
-        server_state: ServerState,
-        simulation_config: SimulationConfig,
-        global_finish_event: ParallelEvent,
-        connection: ClientConnection,
-    ) -> None:
-        client_thread = threading.Thread(
-            target=AbstractServer.handle_client,
-            kwargs={
-                "server_state": server_state,
-                "simulation_config": simulation_config,
-                "connection": connection,
-                "global_finish_event": global_finish_event,
-            },
-        )
-        client_thread.start()
+    pass
 
 
 # TODO_AFTER_MERGE: extract to custom package/file
 # TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
 @dataclass
 class DaskServer(AbstractServer, ShutdownListener):
-    @staticmethod
-    @override
-    def _dispatch_client(
-        server_state: ServerState,
-        simulation_config: SimulationConfig,
-        global_finish_event: ParallelEvent,
-        connection: ClientConnection,
-    ) -> None:
-        dd_client = distributed.get_client()
-
-        async def async_handle() -> None:
-            future = dd_client.submit(
-                DaskServer._handle_client_dask,
-                server_state,
-                simulation_config,
-                connection,
-                global_finish_event,
-                key=uuid.uuid4().hex,
-            )
-            distributed.fire_and_forget(future)
-
-        dd_client.sync(async_handle)
-
-    @staticmethod
-    def _handle_client_dask(
-        server_state: ServerState,
-        simulation_config: SimulationConfig,
-        connection: ClientConnection,
-        global_finish_event: ParallelEvent,
-    ) -> None:
-        from distributed import secede
-
-        secede()
-        AbstractServer.handle_client(
-            server_state=server_state,
-            simulation_config=simulation_config,
-            global_finish_event=global_finish_event,
-            connection=connection,
-        )
-
-
-class DispatchClient(Protocol):
-    def __call__(
-        self,
-        server_state: ServerState,
-        simulation_config: SimulationConfig,
-        global_finish_event: ParallelEvent,
-        connection: ClientConnection,
-    ) -> None: ...
+    pass

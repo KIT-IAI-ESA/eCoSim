@@ -1,10 +1,11 @@
+import uuid
 from dataclasses import dataclass, field
 from time import sleep
 from typing import override
 
-import dask.distributed as dd
+import dask.distributed as distributed
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint, OnNewChannel
+from ecosim_common.communication.channel.esp_channel_endpoint import ChannelHandler, ConnectionData, ESPChannelEndpoint
 from ecosim_common.communication.dask.dask_channel import DaskChannel
 from ecosim_common.communication.dask.esp_dask import ESPDask, create_internal_dask_id
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -16,10 +17,10 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     _logger = ESPLogger("EndpointDask")
 
     _connection_address: ConnectionAddress = field()
-    _server_closed: dd.Event = field(default_factory=lambda: dd.Event(name="server_closed"))
-    _server_listening: dd.Event = field(default_factory=lambda: dd.Event(name="server_listen"))
+    _server_closed: distributed.Event = field(default_factory=lambda: distributed.Event(name="server_closed"))
+    _server_listening: distributed.Event = field(default_factory=lambda: distributed.Event(name="server_listen"))
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
-    _internal_dask_client: dd.Client = field(default_factory=dd.get_client)
+    _internal_dask_client: distributed.Client = field(default_factory=distributed.get_client)
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
@@ -27,7 +28,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     @override
     def listen_async(
         self,
-        on_new_channel: OnNewChannel,
+        channel_handler: ChannelHandler,
     ) -> None:
         EndpointDask._logger.debug("Starting to listen")
         if self._server_listening.is_set():
@@ -38,8 +39,8 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         self._server_listening.set()
 
         async def listen_start() -> None:
-            future = self._internal_dask_client.submit(EndpointDask._listen, on_new_channel, self._server_closed)
-            dd.fire_and_forget(future)
+            future = self._internal_dask_client.submit(EndpointDask._listen, channel_handler, self._server_closed)
+            distributed.fire_and_forget(future)
 
         self._internal_dask_client.sync(listen_start)
 
@@ -72,13 +73,13 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     @staticmethod
     def _listen(
-        on_new_channel: OnNewChannel,
-        _closed: dd.Event,
+        on_new_channel: ChannelHandler,
+        _closed: distributed.Event,
     ) -> None:
-        dask_client = dd.get_client()
+        dask_client = distributed.get_client()
         EndpointDask._logger.debug("Now listening to Dask Client")
-        closed = dd.Event(name="server_closed")
-        global_finish = dd.Event(name="global_finish")
+        closed = distributed.Event(name="server_closed")
+        global_finish = distributed.Event(name="global_finish")
         current_connections: list[str] = []
         while not closed.is_set() and not global_finish.is_set():
             if dask_client.status != "running":
@@ -97,12 +98,31 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
                         continue
 
                     client_address = ConnectionAddress.of_dask_client(dask_client)
-                    on_new_channel(
-                        ConnectionData(
-                            channel=DaskChannel(ESPDask(dask_id)),
-                            client_address=client_address,
-                        ),
+
+                    connection_data = ConnectionData(
+                        channel=DaskChannel(ESPDask(dask_id)),
+                        client_address=client_address,
                     )
+
+                    async def submit() -> None:
+                        future = dask_client.submit(
+                            _serve_channel_seceded,
+                            on_new_channel,
+                            connection_data,
+                            key=uuid.uuid4().hex,
+                            pure=False,
+                        )
+                        distributed.fire_and_forget(future)
+
+                    dask_client.sync(submit)
                     current_connections.append(dask_id)
         EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
         EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
+
+
+# module level, not a method -> pickles by qualname without dragging the endpoint
+def _serve_channel_seceded(handler: ChannelHandler, connection_data: ConnectionData) -> None:
+    from distributed import secede
+
+    secede()
+    handler(connection_data)

@@ -1,11 +1,10 @@
 from queue import Queue
 
+from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
-from ecosim_common.communication.channel.connection_address import ConnectionAddress
-
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.communication.socket.socket_connector import SocketConnector
@@ -18,7 +17,7 @@ def test_happy_path() -> None:
         port=1234,
     )
     server_socket = EndpointSocket(_connection_address=server_address)
-    server_socket.listen_async(on_new_channel=_mirror_message)
+    server_socket.listen_async(channel_handler=_mirror_message)
 
     socket_channel = SocketConnector().connect(connection_address=server_address)
 
@@ -54,7 +53,7 @@ def test_big_data() -> None:
         port=34567,
     )
     server_socket = EndpointSocket(_connection_address=server_address)
-    server_socket.listen_async(on_new_channel=_mirror_message)
+    server_socket.listen_async(channel_handler=_mirror_message)
 
     socket_channel = SocketConnector().connect(connection_address=server_address)
 
