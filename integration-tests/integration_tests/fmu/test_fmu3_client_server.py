@@ -113,7 +113,6 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
             ],
         ),
     )
-    repositories = server.repositories
 
     mock_client = SimpleTestClient.generate(
         communication_protocol=communication_protocol,
@@ -165,7 +164,7 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
 
     server_thread.join(timeout=60)
 
-    fmu3_measurement_repo: MeasurementRepositoryInMemory = repositories.measurement_repository(fmu3_client.client_id)  # type: ignore
+    fmu3_measurement_repo: MeasurementRepositoryInMemory = server.measurement_repository(fmu3_client.client_id)  # type: ignore
     fmu3_measurement_repo.assert_entry_count(steps)
 
     def assert_for_each_record(
