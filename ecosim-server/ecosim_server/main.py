@@ -12,7 +12,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
-from ecosim_server.server import TCPSocketServer
+from ecosim_server.server import Server
 
 
 def main() -> None:
@@ -39,7 +39,7 @@ def main() -> None:
         simulation_config=simulation_config,
     )
 
-    server = TCPSocketServer(
+    server = Server(
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,

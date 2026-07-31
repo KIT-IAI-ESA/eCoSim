@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass, field
 from functools import partial
 from typing import ClassVar, override
@@ -28,7 +27,7 @@ from ecosim_server.simulation.state.simulation_state import SimulationState
 
 
 @dataclass
-class AbstractServer(ShutdownListener, ABC):
+class Server(ShutdownListener):
     _simulation_config: SimulationConfig = field()
     _server_config: ServerConfig = field()
     _repositories: Repositories = field()
@@ -67,7 +66,7 @@ class AbstractServer(ShutdownListener, ABC):
         self._server_config.print_config_for_start_up()
         self._channel_endpoint.listen_async(
             channel_handler=partial(
-                AbstractServer._on_new_channel,
+                Server._on_new_channel,
                 self._server_state,
                 self._simulation_config,
                 self._global_finish_event,
@@ -117,7 +116,7 @@ class AbstractServer(ShutdownListener, ABC):
             ),
         )
         connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        AbstractServer._logger.debug(f"Client {connection.address} accepted step size")
+        Server._logger.debug(f"Client {connection.address} accepted step size")
         server_state.client_states.step_size_accepted(client_id)
 
     @staticmethod
@@ -140,7 +139,7 @@ class AbstractServer(ShutdownListener, ABC):
             ),
         )
         connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        AbstractServer._logger.debug(f"Client {connection.address} accepted interface settings")
+        Server._logger.debug(f"Client {connection.address} accepted interface settings")
 
     @staticmethod
     def handle_interface_request(
@@ -161,7 +160,7 @@ class AbstractServer(ShutdownListener, ABC):
             raise Exception(
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
-        AbstractServer._logger.debug(
+        Server._logger.debug(
             f"Successfully validated interfaces for client {connection.address}",
         )
         server_state.client_states.interfaces_validated(client_id)
@@ -205,23 +204,23 @@ class AbstractServer(ShutdownListener, ABC):
         client_id: ClientID | None = None
         with connection:
             try:
-                AbstractServer._logger.debug("Handling new client connection")
+                Server._logger.debug("Handling new client connection")
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 if message is None:
                     raise Exception(f"No message received from client {client_id}")
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 if not server_state.client_states.add_if_needed(client_config, connection):
-                    AbstractServer._logger.warning(
+                    Server._logger.warning(
                         f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
                     )
                     connection.close()
                     return
                 client_id = client_config.client_id()
 
-                AbstractServer.handle_interface_request(server_state, simulation_config, client_id, connection)
-                AbstractServer.handle_interface_settings(simulation_config, client_id, connection)
-                AbstractServer.handle_simulation_setup(server_state, simulation_config, client_id, connection)
+                Server.handle_interface_request(server_state, simulation_config, client_id, connection)
+                Server.handle_interface_settings(simulation_config, client_id, connection)
+                Server.handle_simulation_setup(server_state, simulation_config, client_id, connection)
 
                 server_state.client_states.set_client_ready_for_simulation(
                     client_id,
@@ -230,7 +229,7 @@ class AbstractServer(ShutdownListener, ABC):
                     received_message = connection.receive()
 
                     if received_message is None:
-                        AbstractServer._logger.warning(
+                        Server._logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
                         if global_finish_event.is_set():
@@ -254,7 +253,7 @@ class AbstractServer(ShutdownListener, ABC):
         global_finish_event: ParallelEvent,
         connection_data: ConnectionData,
     ) -> None:
-        AbstractServer.handle_client(
+        Server.handle_client(
             server_state=server_state,
             simulation_config=simulation_config,
             global_finish_event=global_finish_event,
@@ -263,15 +262,3 @@ class AbstractServer(ShutdownListener, ABC):
                 _channel=connection_data.channel,
             ),
         )
-
-
-@dataclass
-class TCPSocketServer(AbstractServer, ShutdownListener):
-    pass
-
-
-# TODO_AFTER_MERGE: extract to custom package/file
-# TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
-@dataclass
-class DaskServer(AbstractServer, ShutdownListener):
-    pass
