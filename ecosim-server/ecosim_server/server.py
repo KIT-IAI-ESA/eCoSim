@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import threading
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import ClassVar, override
+from functools import partial
+from typing import ClassVar, Protocol, override
 
 from dask import distributed
 from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
@@ -65,7 +68,15 @@ class AbstractServer(ShutdownListener, ABC):
         self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
         self._simulation_config.print_for_start_up()
         self._server_config.print_config_for_start_up()
-        self._start_listening()
+        self._channel_endpoint.listen_async(
+            on_new_channel=partial(
+                self._on_new_channel,
+                self._dispatch_client,
+                self._server_state,
+                self._simulation_config,
+                self._global_finish_event,
+            ),
+        )
         self._logger.info("Waiting for all clients to connect...")
         self._server_state.wait_for_all_clients_connected_and_ready()
         self._logger.info("All clients connected - starting simulation")
@@ -73,10 +84,6 @@ class AbstractServer(ShutdownListener, ABC):
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
         self._channel_endpoint.close()
-
-    @abstractmethod
-    def _start_listening(self) -> None:
-        pass
 
     def print_measurement_statistics(self) -> None:
         self.server_measurements.print_statistics()
@@ -244,30 +251,52 @@ class AbstractServer(ShutdownListener, ABC):
                     server_state.client_states.reset_state(client_id)
                 raise e
 
-
-@dataclass
-class Server(AbstractServer, ShutdownListener):
-    @override
-    def _start_listening(self) -> None:
-        self._channel_endpoint.listen_async(
-            on_new_channel=self._handle_new_channel,
-        )
-
-    def _handle_new_channel(
-        self,
+    @staticmethod
+    def _on_new_channel(
+        dispatch: DispatchClient,
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
         connection_data: ConnectionData,
     ) -> None:
-        client_thread = threading.Thread(
-            target=self.handle_client,
-            args=(
-                self._server_state,
-                self._simulation_config,
-                ClientConnection(
-                    address=connection_data.client_address,
-                    _channel=connection_data.channel,
-                ),
-                self._global_finish_event,
+        dispatch(
+            server_state,
+            simulation_config,
+            global_finish_event,
+            ClientConnection(
+                address=connection_data.client_address,
+                _channel=connection_data.channel,
             ),
+        )
+
+    @staticmethod
+    @abstractmethod
+    def _dispatch_client(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
+        connection: ClientConnection,
+    ) -> None: ...
+
+
+@dataclass
+class TCPSocketServer(AbstractServer, ShutdownListener):
+    @staticmethod
+    @override
+    def _dispatch_client(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
+        connection: ClientConnection,
+    ) -> None:
+        client_thread = threading.Thread(
+            target=AbstractServer.handle_client,
+            kwargs={
+                "server_state": server_state,
+                "simulation_config": simulation_config,
+                "connection": connection,
+                "global_finish_event": global_finish_event,
+            },
         )
         client_thread.start()
 
@@ -276,26 +305,13 @@ class Server(AbstractServer, ShutdownListener):
 # TODO_AFTER_MERGE: extract common functionality into AbstractServer / find abstractions
 @dataclass
 class DaskServer(AbstractServer, ShutdownListener):
-    @override
-    def _start_listening(self) -> None:
-        server_state = self._server_state
-        simulation_config = self._simulation_config
-        global_finish_event = self._global_finish_event
-        self._channel_endpoint.listen_async(
-            on_new_channel=lambda connection: DaskServer.handle_new_channel(
-                server_state,
-                simulation_config,
-                global_finish_event,
-                connection,
-            ),
-        )
-
     @staticmethod
-    def handle_new_channel(
+    @override
+    def _dispatch_client(
         server_state: ServerState,
         simulation_config: SimulationConfig,
         global_finish_event: ParallelEvent,
-        connection_data: ConnectionData,
+        connection: ClientConnection,
     ) -> None:
         dd_client = distributed.get_client()
 
@@ -304,10 +320,7 @@ class DaskServer(AbstractServer, ShutdownListener):
                 DaskServer._handle_client_dask,
                 server_state,
                 simulation_config,
-                ClientConnection(
-                    address=connection_data.client_address,
-                    _channel=connection_data.channel,
-                ),
+                connection,
                 global_finish_event,
                 key=uuid.uuid4().hex,
             )
@@ -331,3 +344,13 @@ class DaskServer(AbstractServer, ShutdownListener):
             global_finish_event=global_finish_event,
             connection=connection,
         )
+
+
+class DispatchClient(Protocol):
+    def __call__(
+        self,
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
+        connection: ClientConnection,
+    ) -> None: ...

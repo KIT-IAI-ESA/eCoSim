@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from time import sleep
-from typing import Callable, override
+from typing import override
 
 import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
+from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint, OnNewChannel
 from ecosim_common.communication.dask.dask_channel import DaskChannel
 from ecosim_common.communication.dask.esp_dask import ESPDask, create_internal_dask_id
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -27,7 +27,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
     @override
     def listen_async(
         self,
-        on_new_channel: Callable[[ConnectionData], None],
+        on_new_channel: OnNewChannel,
     ) -> None:
         EndpointDask._logger.debug("Starting to listen")
         if self._server_listening.is_set():
@@ -35,7 +35,6 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
                 f"Dask client is already listening to: {self._connection_address}. So nothing is done",
             )
             return
-
         self._server_listening.set()
 
         async def listen_start() -> None:
@@ -73,7 +72,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
     @staticmethod
     def _listen(
-        on_new_channel: Callable[[ConnectionData], None],
+        on_new_channel: OnNewChannel,
         _closed: dd.Event,
     ) -> None:
         dask_client = dd.get_client()

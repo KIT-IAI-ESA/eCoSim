@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable
+from typing import Protocol
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
@@ -16,7 +16,7 @@ class ESPChannelEndpoint(ABC):
     @abstractmethod
     def listen_async(
         self,
-        on_new_channel: Callable[[ConnectionData], None],
+        on_new_channel: OnNewChannel,
     ) -> None:
         pass
 
@@ -46,3 +46,10 @@ class ESPChannelEndpoint(ABC):
 class ConnectionData:
     channel: ESPChannel
     client_address: ConnectionAddress
+
+
+class OnNewChannel(Protocol):
+    def __call__(
+        self,
+        connection_data: ConnectionData,
+    ) -> None: ...
