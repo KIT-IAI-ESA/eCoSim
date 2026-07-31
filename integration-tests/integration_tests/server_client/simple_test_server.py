@@ -3,23 +3,25 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import List, assert_never
+from typing import List, assert_never, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
+from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
-from ecosim_server.server import AbstractServer, DaskServer, Server
+from ecosim_server.server import AbstractServer, DaskServer, TCPSocketServer
+from ecosim_server.server_state import ServerState
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
 @dataclass
 class SimpleTestServer(AbstractServer):
-    server: Server | DaskServer = field()
+    server: TCPSocketServer | DaskServer = field()
 
     def start(self) -> None:
         self.server.start()
@@ -39,7 +41,14 @@ class SimpleTestServer(AbstractServer):
     def date_to_step(self, date: datetime) -> int:
         return self._simulation_config.date_time_to_step(date)
 
-    def _start_listening(self) -> None:
+    @override
+    @staticmethod
+    def _dispatch_client(
+        server_state: ServerState,
+        simulation_config: SimulationConfig,
+        global_finish_event: ParallelEvent,
+        connection: ClientConnection,
+    ) -> None:
         pass
 
 
@@ -116,10 +125,10 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
     else:
         repositories = RepositoriesInMemory.for_communication_protocol(server_config.server.communication_protocol)
 
-    server: Server | DaskServer
+    server: TCPSocketServer | DaskServer
     match parameters.communication_protocol:
         case CommunicationProtocol.TCP_SOCKET:
-            server = Server(
+            server = TCPSocketServer(
                 _server_config=server_config,
                 _simulation_config=simulation_config,
                 _repositories=repositories,

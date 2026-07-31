@@ -1,11 +1,11 @@
 import socket
 import threading
 from dataclasses import dataclass, field
-from typing import override, Callable
+from typing import override
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ESPChannelEndpoint, ConnectionData
-from ecosim_common.communication.socket.esp_socket import create_internal_socket, ESPSocket, is_raw_socket_connected
+from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint, OnNewChannel
+from ecosim_common.communication.socket.esp_socket import ESPSocket, create_internal_socket, is_raw_socket_connected
 from ecosim_common.communication.socket.socket_channel import SocketChannel
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -29,7 +29,7 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
     @override
     def listen_async(
         self,
-        on_new_channel: Callable[[ConnectionData], None],
+        on_new_channel: OnNewChannel,
     ) -> None:
         if self._listening.is_set():
             EndpointSocket._logger.warning(
@@ -46,7 +46,7 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
 
     def _listen(
         self,
-        on_new_channel: Callable[[ConnectionData], None],
+        on_new_channel: OnNewChannel,
     ) -> None:
         with self._internal_socket:
             try:
