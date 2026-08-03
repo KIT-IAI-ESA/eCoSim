@@ -5,7 +5,6 @@ import time
 from time import sleep
 from typing import List, Tuple
 
-import dask.distributed as dd
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
@@ -44,6 +43,7 @@ class SimulationExecutor:
         server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
+        global_finish_event: ParallelEvent,
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -72,10 +72,7 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
-        # TODO_AFTER_MERGE: look for common abstraction
-        self._global_finish: dd.Event | None = (
-            dd.Event(name="global_finish") if server_config.server.communication_protocol == CommunicationProtocol.DASK else None
-        )
+        self._global_finish: ParallelEvent = global_finish_event
         self._step_message_client_ids: Tuple[ClientID, ...] = simulation_config.client_ids()
         self._step_message_queue: ESPQueue[BufferedClientMessage] = ESPQueue[BufferedClientMessage].of_type(
             queue_type=ESPStructureType.DASK_VARIABLE

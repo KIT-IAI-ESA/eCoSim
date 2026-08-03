@@ -50,6 +50,7 @@ class Server(ShutdownListener):
             server_state=self._server_state,
             repositories=self._repositories,
             server_measurement=self.server_measurements,
+            global_finish_event=self._global_finish_event,
         )
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
             communication_protocol=self._server_config.server.communication_protocol,
