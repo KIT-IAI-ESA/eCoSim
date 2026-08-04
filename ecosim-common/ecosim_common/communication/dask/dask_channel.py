@@ -9,7 +9,7 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.dask.esp_dask import ESPDask
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent, ParallelEventDask
 
 
 class DaskChannel(ESPChannel):
@@ -20,7 +20,7 @@ class DaskChannel(ESPChannel):
         esp_dask: ESPDask,
     ):
         self._internal_dask_client = esp_dask
-        self._is_finished: dd.Event = dd.Event(name=f"client_finish_{esp_dask.dask_id()}")
+        self._is_finished: ParallelEvent = ParallelEventDask.for_name(name=f"client_finish_{esp_dask.dask_id()}")
 
     @override
     def close(self) -> None:
@@ -39,10 +39,10 @@ class DaskChannel(ESPChannel):
 
         async def listen_start() -> None:
             future = dask_client.submit(
-                DaskChannel._listen_blocking,
+                DaskChannel._listen_async_internal,
                 on_message=on_message,
                 dask_client=self._internal_dask_client,
-                event_name=f"client_finish_{self._internal_dask_client.dask_id()}",
+                is_finished_event=self._is_finished,
                 pure=False,
             )
             dd.fire_and_forget(future)
@@ -61,11 +61,20 @@ class DaskChannel(ESPChannel):
         self,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
-        dd.get_client()
-        message: ReceivedBinaryMessage | None = self._internal_dask_client.receive()
+        return DaskChannel._listen_blocking_internal(
+            dask_client=self._internal_dask_client,
+            is_finished_event=self._is_finished,
+        )
+
+    @staticmethod
+    def _listen_blocking_internal(
+        dask_client: ESPDask,
+        is_finished_event: ParallelEvent,
+    ) -> ESPChannelMessage | None:
+        message: ReceivedBinaryMessage | None = dask_client.receive()
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
-            self._is_finished.set()
+            is_finished_event.set()
             return None
         return message.to_esp_channel_message()
 
@@ -94,29 +103,16 @@ class DaskChannel(ESPChannel):
     # In addition, dask.distribute.client.Client.submit expects pure functions by default -> so it makes
     # sense to make it static in any case.
     @staticmethod
-    def _listen_blocking(
+    def _listen_async_internal(
         on_message: Callable[[ESPChannelMessage], None],
         dask_client: ESPDask,
-        event_name: str,
+        is_finished_event: ParallelEvent,
     ) -> None:
-        dd_client = dd.get_client()
-        is_finished = dd.Event(name=event_name)
-        is_finished_global = dd.Event(name="global_finish")
         dd.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
-        while not is_finished.is_set() and not is_finished_global.is_set():
-            message: ReceivedBinaryMessage | None = dask_client.receive()
-
-            if not message:
-                DaskChannel._logger.info("Received empty message -> closing connection")
-                is_finished.set()
-                is_finished_global.set()
-
-            if (message is not None) and (message.to_esp_channel_message() is not None):
-                try:
-                    on_message(message.to_esp_channel_message())
-                except Exception as e:
-                    DaskChannel._logger.error(f"Error when processing message: {e}")
-                    is_finished.set()
-                    is_finished_global.set()
-                    dd_client.run(ShutdownManager().set_dask_shutdown)
-                    raise e
+        while not is_finished_event.is_set():
+            message: ESPChannelMessage | None = DaskChannel._listen_blocking_internal(
+                dask_client=dask_client,
+                is_finished_event=is_finished_event,
+            )
+            if message is not None:
+                on_message(message)
