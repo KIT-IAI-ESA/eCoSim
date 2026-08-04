@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import assert_never
 
 
 class CommunicationProtocol(str, Enum):
@@ -12,3 +13,13 @@ class CommunicationProtocol(str, Enum):
         if protocol.lower() == "tcp_socket" or protocol.lower() == "tcp-socket":
             return CommunicationProtocol.TCP_SOCKET
         raise ValueError(f"Type {protocol} not known")
+
+    @property
+    def serialized(self) -> str:
+        match self:
+            case CommunicationProtocol.DASK:
+                return "dask"
+            case CommunicationProtocol.TCP_SOCKET:
+                return "tcp_socket"
+            case _:
+                assert_never(self)

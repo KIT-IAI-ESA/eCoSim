@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List
+from typing import List, override
 
 from ecosim_common.client.config.client_type import ClientType
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
@@ -84,13 +84,17 @@ class ClientConfig(ABC):
             },
         )
 
+    @abstractmethod
+    def as_config_file_content(self) -> str:
+        pass
+
 
 @dataclass(frozen=True)
 class SimpleClientConfig(ClientConfig):
     _server_config: ServerConfig
     _simulator_config: SimulatorConfig
     _interfaces_config: ClientInterfaceConfig
-    _communication_protocol: CommunicationProtocol
+    _extra_sections: List[str]
 
     @staticmethod
     def of_path_string(
@@ -118,39 +122,58 @@ class SimpleClientConfig(ClientConfig):
                 config_path=config_parser.config_file.parent,
                 simulator_config=simulator_config,
             ),
-            _communication_protocol=(
-                if_exists(config_override).communication_protocol
-                or config_parser.get_enum(CommunicationProtocol, "simulator", "communication_protocol", CommunicationProtocol.TCP_SOCKET)
-            ),
+            # currently these are only copied from original client-config
+            _extra_sections=config_parser.extract_extra_sections(),  # todo update generation of other-sections
         )
 
+    @override
     def simulator_config(self) -> SimulatorConfig:
         return self._simulator_config
 
+    @override
     def server_config(self) -> ServerConfig:
         return self._server_config
 
+    @override
     def interfaces_config(self) -> ClientInterfaceConfig:
         return self._interfaces_config
 
+    @override
     def type(self) -> ClientType:
         return self._simulator_config.type
 
+    @override
     def communication_protocol(self) -> CommunicationProtocol:
-        return self._communication_protocol
+        return self._server_config.communication_protocol
+
+    @override
+    def as_config_file_content(self) -> str:
+        other_sections_str = "\n\n".join(s for s in self._extra_sections if s)
+
+        return (
+            f"""
+{self.server_config().as_string()}
+
+{self.simulator_config().as_string()}
+
+{other_sections_str}
+        """
+        ).strip()
 
 
 @dataclass(frozen=True)
 class ServerConfig:
     server_address: ConnectionAddress
+    communication_protocol: CommunicationProtocol
     image_renderer_port: int | None = None
 
     def as_string(self) -> str:
         return (
             f"""
 [server]
-port = {self.server_address.port}
 ip = {self.server_address.ip}
+port = {self.server_address.port}
+communication_protocol = {self.communication_protocol.serialized}
         """
         ).strip()
 
@@ -167,8 +190,15 @@ ip = {self.server_address.ip}
             "server",
             "port",
         )
+        communication_protocol = if_exists(config_override).communication_protocol or config.get_enum(
+            CommunicationProtocol,
+            "server",
+            "communication_protocol",
+            CommunicationProtocol.TCP_SOCKET,
+        )
         return ServerConfig(
             server_address=ConnectionAddress(ip=ip, port=port),
+            communication_protocol=communication_protocol,
             image_renderer_port=if_exists(config_override).image_renderer_port,
         )
 

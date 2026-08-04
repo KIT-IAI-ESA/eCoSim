@@ -1,12 +1,14 @@
 from unittest.mock import Mock
 
+from ecosim_common.client.config.client_config import ClientInterfaceConfig, ServerConfig, SimpleClientConfig, SimulatorConfig
 from ecosim_common.client.config.client_type import ClientType
+from ecosim_common.communication.channel.connection_address import ConnectionAddress
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
-from ecosim_common.client.config.client_config import ClientInterfaceConfig, SimulatorConfig, SimpleClientConfig
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
-from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from tests.tech.resource_utils import config_parser_for_resource, resource_path
 
 
@@ -151,4 +153,39 @@ def test_validate_interface_config_with_actual() -> None:
             ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all_plus_non_matching),
         )
         is False
+    )
+
+
+def test_as_config_file_content() -> None:
+    config = SimpleClientConfig(
+        _server_config=ServerConfig(
+            server_address=ConnectionAddress("localhost", 222),
+            image_renderer_port=333,
+            communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        ),
+        _simulator_config=SimulatorConfig(
+            simulator_name="simulator",
+            model_name="model",
+            fmc_file="fmc_file",
+            type=ClientType.FMU_3,
+        ),
+        _interfaces_config=ClientInterfaceConfig(interfaces=[]),
+        _extra_sections=[],
+    )
+
+    file_content = config.as_config_file_content()
+    assert (
+        file_content
+        == """
+[server]
+ip = localhost
+port = 222
+communication_protocol = tcp_socket
+
+[simulator]
+simulator_name = simulator
+model_name = model
+fmc_file = fmc_file
+type = fmu_3
+""".strip()
     )
