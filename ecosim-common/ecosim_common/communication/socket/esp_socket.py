@@ -84,7 +84,7 @@ class ESPSocket(ShutdownListener):
                     # if it is during shutdown AND 'close' is called more than once,
                     # no error is printed since this is most likely due to race conditions
                     ESPSocket._logger.error(
-                        f"Failed to send shutdown to socket due to '{e}'. (_closing_calls: {self._closing_calls.value}) "
+                        f"Failed to send shutdown to socket due to '{e}'. (_closing_calls={self._closing_calls.value}) "
                         + "-> trying to force close socket.",
                     )
                     try:

@@ -7,7 +7,6 @@ from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
-from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -117,7 +116,6 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
-        _global_finish_event=ParallelEvent.for_communication_protocol(parameters.communication_protocol),
     )
 
     return SimpleTestServer(
@@ -125,5 +123,4 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
-        _global_finish_event=ParallelEvent.for_communication_protocol(parameters.communication_protocol),
     )
