@@ -13,7 +13,6 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
@@ -31,7 +30,6 @@ class Server(ShutdownListener):
     _simulation_config: SimulationConfig = field()
     _server_config: ServerConfig = field()
     _repositories: Repositories = field()
-    _global_finish_event: ParallelEvent = field()
 
     _logger: ClassVar[ESPLogger] = ESPLogger("Server")
 
@@ -50,7 +48,6 @@ class Server(ShutdownListener):
             server_state=self._server_state,
             repositories=self._repositories,
             server_measurement=self.server_measurements,
-            global_finish_event=self._global_finish_event,
         )
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
             communication_protocol=self._server_config.server.communication_protocol,
@@ -70,7 +67,6 @@ class Server(ShutdownListener):
                 Server._on_new_channel,
                 self._server_state,
                 self._simulation_config,
-                self._global_finish_event,
             ),
         )
         self._logger.info("Waiting for all clients to connect...")
@@ -200,7 +196,6 @@ class Server(ShutdownListener):
         server_state: ServerState,
         simulation_config: SimulationConfig,
         connection: ClientConnection,
-        global_finish_event: ParallelEvent,
     ) -> None:
         client_id: ClientID | None = None
         with connection:
@@ -233,8 +228,6 @@ class Server(ShutdownListener):
                         Server._logger.warning(
                             f"Received 'none' from client {client_id}.",
                         )
-                        if global_finish_event.is_set():
-                            connection.close()
                         continue
                     server_state.message_buffer.add(
                         client_id=client_id,
@@ -251,13 +244,11 @@ class Server(ShutdownListener):
     def _on_new_channel(
         server_state: ServerState,
         simulation_config: SimulationConfig,
-        global_finish_event: ParallelEvent,
         connection_data: ConnectionData,
     ) -> None:
         Server.handle_client(
             server_state=server_state,
             simulation_config=simulation_config,
-            global_finish_event=global_finish_event,
             connection=ClientConnection(
                 address=connection_data.client_address,
                 _channel=connection_data.channel,

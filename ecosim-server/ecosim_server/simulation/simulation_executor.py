@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import time
 from time import sleep
 from typing import List, Tuple
@@ -43,7 +42,6 @@ class SimulationExecutor:
         server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
-        global_finish_event: ParallelEvent,
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -72,7 +70,6 @@ class SimulationExecutor:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
-        self._global_finish: ParallelEvent = global_finish_event
         self._step_message_client_ids: Tuple[ClientID, ...] = simulation_config.client_ids()
         self._step_message_queue: ESPQueue[BufferedClientMessage] = ESPQueue[BufferedClientMessage].of_type(
             queue_type=ESPStructureType.DASK_VARIABLE
@@ -155,8 +152,6 @@ class SimulationExecutor:
                         client_id=message.client_id,
                         client_sim_step_data=message.payload(ClientSimStepData),
                     )
-            # TODO_AFTER_MERGE: find better solution
-            self._abort_if_globally_finished("when starting simulators")
             # TODO_OSR: refactor to waiting mechanism
             if self._server_config.server.communication_protocol == CommunicationProtocol.TCP_SOCKET:
                 sleep(1)
@@ -238,18 +233,6 @@ class SimulationExecutor:
             f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
         )
 
-    def _abort_if_globally_finished(
-        self,
-        context: str,
-    ) -> None:
-        if self._global_finish is None:
-            return
-        if not self._global_finish.is_set():
-            return
-        SimulationExecutor.logger.error(f"Error occurred {context}. Exiting...")
-        self.force_stop()
-        sys.exit(1)
-
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
         self._client_communication.on_messages(
@@ -270,7 +253,6 @@ class SimulationExecutor:
                             f"Step {self._current_step}: no client is ready for execution but the step is not complete. "
                             + "This means the clients wait for each other - check the interface connections for a cycle.",
                         )
-                    self._abort_if_globally_finished("while running simulators")
 
                 self._handle_image_renderer()
                 self._current_step += 1
@@ -334,7 +316,6 @@ class SimulationExecutor:
                 timeout=SimulationExecutor._STEP_RESPONSE_TIMEOUT_IN_SECONDS,
             )
             if received_message is None:
-                self._abort_if_globally_finished("while waiting for a simulation step response")
                 self.logger.warning(
                     f"Step {self._current_step}: still waiting for a response from "
                     + f"{', '.join(str(client_id) for client_id, handled in handled_clients.items() if not handled)}",

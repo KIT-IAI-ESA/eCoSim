@@ -4,7 +4,6 @@ from time import sleep
 from art import tprint
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
-from ecosim_common.tech.parallel.parallel_event import ParallelEventThread
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -43,7 +42,6 @@ def main() -> None:
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
-        _global_finish_event=ParallelEventThread(),  # TODO_OSR: handle the global finish event
     )
     server.start()
     server.server_measurements.set_end(ServerTimeMeasurementType.SERVER_UPTIME)

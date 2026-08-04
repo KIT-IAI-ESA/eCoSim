@@ -79,9 +79,8 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         dask_client = distributed.get_client()
         EndpointDask._logger.debug("Now listening to Dask Client")
         closed = distributed.Event(name="server_closed")
-        global_finish = distributed.Event(name="global_finish")
         current_connections: list[str] = []
-        while not closed.is_set() and not global_finish.is_set():
+        while not closed.is_set():
             if dask_client.status != "running":
                 EndpointDask._logger.error("Cannot listen to Dask client")
                 raise Exception
@@ -116,7 +115,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
 
                     dask_client.sync(submit)
                     current_connections.append(dask_id)
-        EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()} | global_finish.is_set: {global_finish.is_set()}")
+        EndpointDask._logger.debug(f"closed.is_set: {closed.is_set()}")
         EndpointDask._logger.debug(f"Stopped listening to Dask Client on {client_address}")
 
 
