@@ -136,9 +136,9 @@ class TestClientConfig(ClientConfig):
         self._model_name = model_name
         self._server_config: ServerConfig = ServerConfig(
             server_address=ConnectionAddress(server_host, server_port),
+            communication_protocol=communication_protocol,
         )
         self._interface_config = interface_config
-        self._communication_protocol = communication_protocol
 
     @override
     def server_config(self) -> ServerConfig:
@@ -163,4 +163,8 @@ class TestClientConfig(ClientConfig):
 
     @override
     def communication_protocol(self) -> CommunicationProtocol:
-        return self._communication_protocol
+        return self._server_config.communication_protocol
+
+    @override
+    def as_config_file_content(self) -> str:
+        return ""
