@@ -91,6 +91,12 @@ class PreSetTwoClientsData:
         server_thread.start()
         return server_thread
 
+    def start_server_and_wait_for_all_clients_connected_and_ready(self) -> threading.Thread:
+        server_thread = threading.Thread(target=self.server.start_and_wait_for_all_clients_connected_and_ready)
+        server_thread.daemon = True
+        server_thread.start()
+        return server_thread
+
     def start_client_1_async(self) -> None:
         self.client_1.start()
 
@@ -132,6 +138,7 @@ class PreSetTwoClientsData:
         client_1_measurement_repository.assert_for_each_record(assert_for_each_record)
 
 
+# TODO_OSR: extract the logic and move the fixture
 @pytest.fixture(
     scope="function",
     autouse=False,

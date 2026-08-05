@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List
+from typing import Dict, List, assert_never
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
@@ -135,24 +135,30 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Received and handling message")
-        if message.type() == MessageType.CLIENT_META_DATA_REQUEST:
-            self._handle_client_meta_data_request(message)
-        elif message.type() == MessageType.INTERFACE_REQUEST:
-            self._handle_interface_requests(message)
-        elif message.type() == MessageType.INTERFACE_SETTINGS:
-            self._handle_interface_settings(message)
-        elif message.type() == MessageType.SIMULATION_SETUP:
-            self._handle_simulation_setup(message)
-        elif message.type() == MessageType.SIMULATION_START:
-            self._handle_simulation_start(message)
-        elif message.type() == MessageType.SIMULATION_STEP:
-            self._handle_simulation_step(message)
-        elif message.type() == MessageType.SIMULATION_STEP_BATCH:
-            self._handle_simulation_step_batch(message)
-        elif message.type() == MessageType.SIMULATION_STOP:
-            self._handle_simulation_stop(message)
-        else:
-            Client.logger.error(f"Unknown message type: '{message.type()}'")
+        message_type = message.type()
+        match message_type:
+            case MessageType.CLIENT_META_DATA_REQUEST:
+                self._handle_client_meta_data_request(message)
+            case MessageType.INTERFACE_REQUEST:
+                self._handle_interface_requests(message)
+            case MessageType.INTERFACE_SETTINGS:
+                self._handle_interface_settings(message)
+            case MessageType.SIMULATION_SETUP:
+                self._handle_simulation_setup(message)
+            case MessageType.SIMULATION_START:
+                self._handle_simulation_start(message)
+            case MessageType.SIMULATION_STEP:
+                self._handle_simulation_step(message)
+            case MessageType.SIMULATION_STEP_BATCH:
+                self._handle_simulation_step_batch(message)
+            case MessageType.SIMULATION_STOP:
+                self._handle_simulation_stop(message)
+            case MessageType.PING:
+                self._handle_ping(message)
+            case MessageType.UNKNOWN:
+                Client.logger.error(f"Unknown message type: '{message_type}'")
+            case _:
+                assert_never(message_type)
 
     def on_app_shutdown(self) -> None:
         self._channel.close()
@@ -358,3 +364,10 @@ class Client(ShutdownListener):
         self.on_simulation_stop()
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
         self._is_finished = True
+
+    def _handle_ping(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug("Handle ping")
+        self._channel.send(ESPChannelMessageJson.empty_answer(message))

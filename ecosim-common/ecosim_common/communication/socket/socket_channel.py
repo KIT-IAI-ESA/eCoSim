@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import threading
-from typing import Callable, override
+from dataclasses import dataclass, field
+from typing import Callable, ClassVar, override
 
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
@@ -11,15 +12,12 @@ from ecosim_common.communication.socket.esp_socket import ESPSocket
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
+@dataclass
 class SocketChannel(ESPChannel):
-    _logger = ESPLogger("SocketChannel")
+    _logger: ClassVar[ESPLogger] = ESPLogger("SocketChannel")
 
-    def __init__(
-        self,
-        esp_socket: ESPSocket,
-    ):
-        self._internal_socket: ESPSocket = esp_socket
-        self._is_finished: threading.Event = threading.Event()
+    _internal_socket: ESPSocket
+    _is_finished: threading.Event = field(default_factory=threading.Event)
 
     @override
     def close(self) -> None:

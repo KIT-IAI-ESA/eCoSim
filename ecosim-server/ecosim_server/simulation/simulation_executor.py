@@ -53,8 +53,9 @@ class SimulationExecutor:
             simulation_config=simulation_config,
         )
         self._client_communication: ClientCommunication = ClientCommunication(
-            client_states=server_state.client_states,
-            client_message_buffer=server_state.message_buffer,
+            _client_states=server_state.client_states,
+            _client_message_buffer=server_state.message_buffer,
+            _communication_protocol=server_config.server.communication_protocol,
         )
         self._current_step_data = CurrentStepData(
             server_config=server_config,
@@ -106,24 +107,27 @@ class SimulationExecutor:
         )
         self._execute_steps()
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_EXECUTION)
-        self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_STOP)
         self._stop_simulation()
-        self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
     def _stop_simulation(self) -> None:
+        self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_STOP)
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
         self._server_state.set_is_finished(True)
         self._handle_image_renderer(wait_for_finish_timeout=9)
+        self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
 
         self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
         while not self._server_state.have_all_clients_stopped_simulation():
-            for message in self._client_communication.messages_of(
+            stopped_message_replies = self._client_communication.messages_of(
                 client_ids=self._server_state.client_states.all_client_ids(),
                 message_types=(MessageType.SIMULATION_STOP,),
-            ):
+            )
+            for message in stopped_message_replies:
                 self._server_state.client_states.simulation_stopped(
                     client_id=message.client_id,
                 )
+            if len(stopped_message_replies) == 0:
+                self._client_communication.check_client_connection_states()
             # TODO_OSR: refactor to waiting mechanism
             if self._server_config.server.communication_protocol == CommunicationProtocol.TCP_SOCKET:
                 sleep(1)

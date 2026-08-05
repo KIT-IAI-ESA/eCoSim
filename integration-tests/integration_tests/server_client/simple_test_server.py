@@ -7,6 +7,8 @@ from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
+from ecosim_server.client.client_communication import ClientCommunication
+from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -37,6 +39,19 @@ class SimpleTestServer(Server):
 
     def date_to_step(self, date: datetime) -> int:
         return self._simulation_config.date_time_to_step(date)
+
+    def client_communication(self) -> ClientCommunication:
+        return self.server._simulation_executor._client_communication  # noqa: SLF001
+
+    def start_and_wait_for_all_clients_connected_and_ready(self) -> None:
+        self.server._start_listening()  # noqa: SLF001
+        self.server._wait_for_all_clients_connected_and_ready()  # noqa: SLF001
+
+    def client_states(self) -> ClientStates:
+        return self.client_communication()._client_states  # noqa: SLF001
+
+    def communication_protocol(self) -> CommunicationProtocol:
+        return self.server._server_config.server.communication_protocol  # noqa: SLF001
 
 
 class RepositoryType(Enum):
