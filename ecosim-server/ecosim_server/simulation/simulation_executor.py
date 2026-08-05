@@ -28,7 +28,6 @@ from ecosim_server.simulation.interface_value_history import InterfaceValueHisto
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 
 
-# TODO_AFTER_MERGE: we probably need an abstract SimulationExecutor
 class SimulationExecutor:
     logger = ESPLogger("SimulationExecutor")
 
