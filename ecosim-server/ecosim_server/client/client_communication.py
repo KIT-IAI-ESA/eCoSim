@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import threading
-from typing import Callable, List, Tuple
+from dataclasses import dataclass, field
+from time import sleep
+from typing import Callable, ClassVar, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
@@ -12,20 +15,18 @@ from ecosim_common.communication.data.simulation_step_request import SimulationS
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.message_buffer import BufferedClientMessage, ClientMessageBuffer
 
 
+@dataclass
 class ClientCommunication:
-    _logger = ESPLogger("ClientCommunication")
+    _logger: ClassVar[ESPLogger] = ESPLogger("ClientCommunication")
 
-    def __init__(
-        self,
-        client_states: ClientStates,
-        client_message_buffer: ClientMessageBuffer,
-    ):
-        self._client_states = client_states
-        self._client_message_buffer = client_message_buffer
+    _client_states: ClientStates = field()
+    _client_message_buffer: ClientMessageBuffer = field()
+    _communication_protocol: CommunicationProtocol = field()
 
     def broadcast(
         self,
@@ -107,3 +108,44 @@ class ClientCommunication:
 
         thread = threading.Thread(target=thread_task)
         thread.start()
+
+    def check_client_connection_states(self) -> None:
+        """
+        This method will check the connection states of all clients. It mainly uses PING to check if the connection is still alive. If the ping
+        fails too often, the connection will be declared as 'connected=false'.
+        """
+        ClientCommunication._logger.debug("Checking client connection states...")
+        for client_state in self._client_states.all_states():
+            if not client_state.connection:
+                continue
+
+            ping_message = ESPChannelMessageJson.empty(MessageType.PING)
+            for attempt in range(5):
+                try:
+                    event = ParallelEvent.for_communication_protocol(self._communication_protocol)
+                    self.on_messages(client_ids=(client_state.client_id,), message_types=(MessageType.PING,), callback=lambda m: event.set())
+                    client_state.connection.send(ping_message)
+                    success = event.wait(timeout=7)
+                    self.remove_on_message_callback(
+                        client_ids=(client_state.client_id,),
+                        message_types=(MessageType.PING,),
+                    )
+                    if not success:
+                        raise TimeoutError(f"timeout for {client_state.client_id}")
+                    ClientCommunication._logger.debug(f"Checking client connection states: reached {client_state.client_id}")
+                    if not client_state.connected:
+                        self._client_states.set_client_connected_state(client_state.client_id, True)
+                    break
+                except Exception as e:
+                    if attempt < 4:
+                        ClientCommunication._logger.debug(
+                            f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> retry",
+                        )
+                        sleep(0.3)
+                        continue
+                    ClientCommunication._logger.debug(
+                        f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> reached end of retries",
+                    )
+                    if client_state.connected:
+                        self._client_states.set_client_connected_state(client_state.client_id, False)
+        ClientCommunication._logger.debug("Checking client connection states...done")

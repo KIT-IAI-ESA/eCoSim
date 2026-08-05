@@ -31,28 +31,36 @@ class ClientStates(ShutdownListener):
         server_config: ServerConfig,
         simulation_config: SimulationConfig,
     ) -> "ClientStates":
-        init_values: dict[ClientID, ClientState] = {client.client_id: ClientState(client) for client in simulation_config.clients}
+        return ClientStates._for_clients_and_protocol(
+            communication_protocol=server_config.server.communication_protocol,
+            init_clients={client.client_id: ClientState.of_client_config(client) for client in simulation_config.clients},
+        )
 
-        match server_config.server.communication_protocol:
+    @staticmethod
+    def _for_clients_and_protocol(
+        communication_protocol: CommunicationProtocol,
+        init_clients: dict[ClientID, ClientState],
+    ) -> "ClientStates":
+        match communication_protocol:
             case CommunicationProtocol.DASK:
                 client_states = ESPMap.of_type(
                     ESPStructureType.DASK_VARIABLE,
                     dask_name="client_states",
-                    data=init_values,
+                    data=init_clients,
                 )
             case CommunicationProtocol.TCP_SOCKET:
                 client_states = ESPMap.of_type(
                     ESPStructureType.THREAD,
-                    data=init_values,
+                    data=init_clients,
                 )
             case _:
-                assert_never(server_config.server.communication_protocol)
+                assert_never(communication_protocol)
 
         return ClientStates(
             _client_states=client_states,
-            _all_clients_started_simulation_event=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol),
-            _all_clients_ready_for_simulation=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol),
-            _all_clients_stopped_simulation_event=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol),
+            _all_clients_started_simulation_event=ParallelEvent.for_communication_protocol(communication_protocol),
+            _all_clients_ready_for_simulation=ParallelEvent.for_communication_protocol(communication_protocol),
+            _all_clients_stopped_simulation_event=ParallelEvent.for_communication_protocol(communication_protocol),
         )
 
     def __post_init__(self) -> None:
@@ -168,6 +176,7 @@ class ClientStates(ShutdownListener):
     ) -> None:
         with self._client_states.transaction() as client_states:
             client_states[client_id].stopped_simulation = True
+            client_states[client_id].connected = False
             if all((state.stopped_simulation or state.connected is False) for state in client_states.values()):
                 self._all_clients_stopped_simulation_event.set()
 
@@ -197,3 +206,7 @@ class ClientStates(ShutdownListener):
 
     def get_connection_for(self, client_id: ClientID) -> ClientConnection | None:
         return self._client_states[client_id].connection
+
+    def set_client_connected_state(self, client_id: ClientID, connected: bool) -> None:
+        with self._client_states.transaction() as client_states:
+            client_states[client_id].connected = connected

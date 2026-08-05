@@ -1,2 +1,2 @@
-# import all fixtures from specified subdir
-from .pre_sets.pre_set_two_clients import *  # type: ignore # noqa # import fixture
+# import all fixtures from specified file
+from test_data.pre_sets.pre_set_two_clients import *  # type: ignore # noqa # import fixture

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from enum import Enum
 
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -21,6 +22,7 @@ class MessageType(Enum):
     SIMULATION_STEP = 6
     SIMULATION_STOP = 7
     SIMULATION_STEP_BATCH = 8
+    PING = 100
     UNKNOWN = 255
 
     def to_int(self) -> int:
@@ -52,6 +54,8 @@ class MessageType(Enum):
             return MessageType.SIMULATION_STOP
         elif value == 8:
             return MessageType.SIMULATION_STEP_BATCH
+        elif value == 100:
+            return MessageType.PING
         else:
             _message_type_logger.error(
                 f"Message type deserialization failed. Value was in range (0-255) but is unknown: {value}.",

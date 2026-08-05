@@ -62,6 +62,15 @@ class Server(ShutdownListener):
         self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
         self._simulation_config.print_for_start_up()
         self._server_config.print_config_for_start_up()
+        self._start_listening()
+        self._wait_for_all_clients_connected_and_ready()
+        self._logger.info("All clients connected - starting simulation")
+        self._server_state.set_simulation_state(SimulationState.READY)
+        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
+        self._stop_image_renderer_socket()
+        self._channel_endpoint.close()
+
+    def _start_listening(self) -> None:
         self._channel_endpoint.listen_async(
             channel_handler=partial(
                 Server._on_new_channel,
@@ -69,13 +78,10 @@ class Server(ShutdownListener):
                 self._simulation_config,
             ),
         )
+
+    def _wait_for_all_clients_connected_and_ready(self) -> None:
         self._logger.info("Waiting for all clients to connect...")
         self._server_state.wait_for_all_clients_connected_and_ready()
-        self._logger.info("All clients connected - starting simulation")
-        self._server_state.set_simulation_state(SimulationState.READY)
-        self._simulation_executor.execute(rendering_socket=self._rendering_socket)
-        self._stop_image_renderer_socket()
-        self._channel_endpoint.close()
 
     def print_measurement_statistics(self) -> None:
         self.server_measurements.print_statistics()
