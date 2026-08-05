@@ -17,7 +17,6 @@ from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 
 
-# TODO_AFTER_MERGE: make usuable for both normal and HPC/dask
 class CurrentStepData:
     _logger = ESPLogger("CurrentStepData")
 
@@ -30,23 +29,6 @@ class CurrentStepData:
         self._simulation_config: SimulationConfig = simulation_config
         self._data_by_client: ESPMap[ClientID, CurrentStepClientData]
         self._logical_delays: ESPMap[int, CurrentStepLogicalDelay]
-        # match server_config.server.communication_protocol:
-        #     case CommunicationProtocol.DASK:
-        #         self._step = ESPInt.of_type(ESPStructureType.DASK_VARIABLE, value=0)
-        #         self._data_by_client = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
-        #         self._logical_delays = ESPMap.of_type(ESPStructureType.DASK_VARIABLE)
-        #     case CommunicationProtocol.TCP_SOCKET:
-        #         self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
-        #         self._data_by_client = ESPMap.of_type(
-        #             ESPStructureType.SIMPLE,
-        #             ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-        #         )
-        #         self._logical_delays = ESPMap.of_type(
-        #             ESPStructureType.SIMPLE,
-        #             ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-        #         )
-        #     case _:
-        #         assert_never(server_config.server.communication_protocol)
         self._step = ESPInt.of_type(ESPStructureType.SIMPLE, value=0)
         self._data_by_client = ESPMap.of_type(
             ESPStructureType.SIMPLE,
