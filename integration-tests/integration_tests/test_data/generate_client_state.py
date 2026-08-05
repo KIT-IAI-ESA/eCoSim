@@ -2,8 +2,8 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_state import ClientState
 from ecosim_server.client_connection import ClientConnection
+from integration_tests.test_data.generate_client_connection import generate_client_connection
 from integration_tests.test_data.generate_client_id import generate_random_client_id
-from test_data.generate_client_connection import generate_client_connection
 
 
 def generate_client_state(

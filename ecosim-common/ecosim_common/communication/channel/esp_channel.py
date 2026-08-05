@@ -5,7 +5,7 @@ from typing import Callable
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ESPChannel(ABC):
     @abstractmethod
     def close(self) -> None:
@@ -24,6 +24,9 @@ class ESPChannel(ABC):
         self,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
+        """
+        :return ESPChannelMessage | None: The received message or None if the connection was closed.
+        """
         pass
 
     @abstractmethod

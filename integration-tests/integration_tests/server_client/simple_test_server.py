@@ -20,17 +20,6 @@ from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemor
 
 @dataclass
 class SimpleTestServer(Server):
-    server: Server = field()
-
-    def start(self) -> None:
-        self.server.start()
-
-    def print_measurement_statistics(self) -> None:
-        self.server.print_measurement_statistics()
-
-    def force_stop(self) -> None:
-        self.server.force_stop()
-
     def measurement_repository(self, client_id: ClientID) -> MeasurementRepository:
         return self._repositories.measurement_repository(client_id=client_id)
 
@@ -41,17 +30,17 @@ class SimpleTestServer(Server):
         return self._simulation_config.date_time_to_step(date)
 
     def client_communication(self) -> ClientCommunication:
-        return self.server._simulation_executor._client_communication  # noqa: SLF001
+        return self._simulation_executor._client_communication  # noqa: SLF001
 
     def start_and_wait_for_all_clients_connected_and_ready(self) -> None:
-        self.server._start_listening()  # noqa: SLF001
-        self.server._wait_for_all_clients_connected_and_ready()  # noqa: SLF001
+        self._start_listening()
+        self._wait_for_all_clients_connected_and_ready()
 
     def client_states(self) -> ClientStates:
         return self.client_communication()._client_states  # noqa: SLF001
 
     def communication_protocol(self) -> CommunicationProtocol:
-        return self.server._server_config.server.communication_protocol  # noqa: SLF001
+        return self._server_config.server.communication_protocol  # noqa: SLF001
 
 
 class RepositoryType(Enum):
@@ -127,14 +116,7 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
     else:
         repositories = RepositoriesInMemory.for_communication_protocol(server_config.server.communication_protocol)
 
-    server: Server = Server(
-        _server_config=server_config,
-        _simulation_config=simulation_config,
-        _repositories=repositories,
-    )
-
     return SimpleTestServer(
-        server=server,
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,

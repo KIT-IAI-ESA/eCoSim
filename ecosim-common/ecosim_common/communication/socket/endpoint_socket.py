@@ -80,7 +80,7 @@ class EndpointSocket(ESPChannelEndpoint, ShutdownListener):
                 )
 
                 connection_data = ConnectionData(
-                    channel=SocketChannel(ESPSocket(connection)),
+                    channel=SocketChannel(_internal_socket=ESPSocket(connection)),
                     client_address=client_address,
                 )
                 threading.Thread(

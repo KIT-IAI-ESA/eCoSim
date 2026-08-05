@@ -31,8 +31,9 @@ def setup_shutdown_manager() -> Generator[None, Any, None]:
     pytest_fixture_logger.debug("Initializing shutdown manager")
     ShutdownManager().init()
     yield None
+    pytest_fixture_logger.debug("Calling shutdown manager at application end...")
     ShutdownManager().set_shutdown_at_application_end()
-    pytest_fixture_logger.debug("Called shutdown manager at application end")
+    pytest_fixture_logger.debug("Calling shutdown manager at application end...done.")
     ShutdownManager.reset_instance()
 
 
