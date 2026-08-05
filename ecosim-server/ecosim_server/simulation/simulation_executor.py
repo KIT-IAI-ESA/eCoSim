@@ -41,6 +41,7 @@ class SimulationExecutor:
         server_state: ServerState,
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
+        client_communication: ClientCommunication,
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -51,11 +52,7 @@ class SimulationExecutor:
             server_config=server_config,
             simulation_config=simulation_config,
         )
-        self._client_communication: ClientCommunication = ClientCommunication(
-            _client_states=server_state.client_states,
-            _client_message_buffer=server_state.message_buffer,
-            _communication_protocol=server_config.server.communication_protocol,
-        )
+        self._client_communication: ClientCommunication = client_communication
         self._current_step_data = CurrentStepData(
             server_config=server_config,
             simulation_config=simulation_config,
@@ -126,7 +123,10 @@ class SimulationExecutor:
                     client_id=message.client_id,
                 )
             if len(stopped_message_replies) == 0:
-                self._client_communication.check_client_connection_states()
+                self._client_communication.check_client_connection_states(
+                    attempts=3,
+                    time_between_attempts_in_seconds=0.1,
+                )
             # TODO_OSR: refactor to waiting mechanism
             if self._server_config.server.communication_protocol == CommunicationProtocol.TCP_SOCKET:
                 sleep(1)

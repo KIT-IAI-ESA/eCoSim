@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from time import sleep
 from typing import Callable, ClassVar, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
@@ -109,7 +108,11 @@ class ClientCommunication:
         thread = threading.Thread(target=thread_task)
         thread.start()
 
-    def check_client_connection_states(self) -> None:
+    def check_client_connection_states(
+        self,
+        attempts: int = 5,
+        time_between_attempts_in_seconds: float = 1.3,
+    ) -> None:
         """
         This method will check the connection states of all clients. It mainly uses PING to check if the connection is still alive. If the ping
         fails too often, the connection will be declared as 'connected=false'.
@@ -120,12 +123,12 @@ class ClientCommunication:
                 continue
 
             ping_message = ESPChannelMessageJson.empty(MessageType.PING)
-            for attempt in range(5):
+            for attempt in range(attempts):
                 try:
                     event = ParallelEvent.for_communication_protocol(self._communication_protocol)
                     self.on_messages(client_ids=(client_state.client_id,), message_types=(MessageType.PING,), callback=lambda m: event.set())
                     client_state.connection.send(ping_message)
-                    success = event.wait(timeout=7)
+                    success = event.wait(timeout=time_between_attempts_in_seconds)
                     self.remove_on_message_callback(
                         client_ids=(client_state.client_id,),
                         message_types=(MessageType.PING,),
@@ -137,11 +140,10 @@ class ClientCommunication:
                         self._client_states.set_client_connected_state(client_state.client_id, True)
                     break
                 except Exception as e:
-                    if attempt < 4:
+                    if attempt < (attempts - 1):
                         ClientCommunication._logger.debug(
-                            f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> retry",
+                            f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> retry {attempt}",
                         )
-                        sleep(0.3)
                         continue
                     ClientCommunication._logger.debug(
                         f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> reached end of retries",

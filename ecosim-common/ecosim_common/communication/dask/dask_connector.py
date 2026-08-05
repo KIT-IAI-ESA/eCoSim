@@ -37,4 +37,4 @@ class DaskConnector(ESPChannelConnector):
         if not connected:
             raise ConnectionError(f"Could not connect to Dask client {connection_address}")
         DaskConnector._logger.info(f"Connected to Dask client successfully: {connection_address}")
-        return DaskChannel(esp_dask)
+        return DaskChannel(_internal_dask_client=esp_dask)

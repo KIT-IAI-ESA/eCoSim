@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Callable, assert_never, override
 from uuid import uuid4
 
-import dask.distributed
+import dask.distributed as distributed
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 
@@ -21,14 +21,22 @@ class ParallelEvent:
     ) -> ParallelEvent:
         match communication_protocol:
             case CommunicationProtocol.DASK:
-                return ParallelEventDask.for_name(name=dask_name or f"parallel_event_dask_{uuid4()}")
+                return ParallelEvent.dask(dask_name=dask_name)
             case CommunicationProtocol.TCP_SOCKET:
-                return ParallelEventThread()
+                return ParallelEvent.thread()
             case _:
                 assert_never(communication_protocol)
 
+    @staticmethod
+    def dask(dask_name: str | None = None) -> ParallelEvent:
+        return ParallelEventDask.for_name(name=dask_name or f"parallel_event_dask_{uuid4()}")
+
+    @staticmethod
+    def thread() -> ParallelEvent:
+        return ParallelEventThread()
+
     @abstractmethod
-    def _event(self) -> threading.Event | dask.distributed.Event:
+    def _event(self) -> threading.Event | distributed.Event:
         pass
 
     def set(self) -> None:
@@ -52,17 +60,17 @@ class ParallelEvent:
 @dataclass(frozen=True)
 class ParallelEventDask(ParallelEvent):
     _name: str = field()
-    _dask_event: dask.distributed.Event = field(compare=False, repr=False)
+    _dask_event: distributed.Event = field(compare=False, repr=False)
 
     @staticmethod
     def for_name(name: str) -> ParallelEventDask:
         return ParallelEventDask(
             _name=name,
-            _dask_event=dask.distributed.Event(name=name),
+            _dask_event=distributed.Event(name=name),
         )
 
     @override
-    def _event(self) -> threading.Event | dask.distributed.Event:
+    def _event(self) -> threading.Event | distributed.Event:
         return self._dask_event
 
     def __reduce__(self) -> tuple[Callable[[str], ParallelEventDask], tuple[str]]:
@@ -74,5 +82,5 @@ class ParallelEventThread(ParallelEvent):
     _thread_event: threading.Event = field(default_factory=threading.Event)
 
     @override
-    def _event(self) -> threading.Event | dask.distributed.Event:
+    def _event(self) -> threading.Event | distributed.Event:
         return self._thread_event

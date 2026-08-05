@@ -14,6 +14,7 @@ def create_internal_dask_id() -> str:
     return internal_dask_id
 
 
+# TODO_OSR: unused raw_dask_id
 def is_raw_dask_client_connected(raw_dask_id: str) -> bool:
     dask_client = dd.get_client()
     if dask_client.status == "running":

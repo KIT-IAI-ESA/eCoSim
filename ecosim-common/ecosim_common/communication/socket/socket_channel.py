@@ -10,6 +10,7 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.socket.esp_socket import ESPSocket
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 
 
 @dataclass
@@ -17,7 +18,7 @@ class SocketChannel(ESPChannel):
     _logger: ClassVar[ESPLogger] = ESPLogger("SocketChannel")
 
     _internal_socket: ESPSocket
-    _is_finished: threading.Event = field(default_factory=threading.Event)
+    _is_finished: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
 
     @override
     def close(self) -> None:

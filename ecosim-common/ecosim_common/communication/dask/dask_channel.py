@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Callable, override
 
 import dask.distributed as dd
@@ -9,25 +10,23 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.dask.esp_dask import ESPDask
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.parallel.parallel_event import ParallelEvent, ParallelEventDask
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 
 
+@dataclass
 class DaskChannel(ESPChannel):
     _logger = ESPLogger("DaskChannel")
 
-    def __init__(
-        self,
-        esp_dask: ESPDask,
-    ):
-        self._internal_dask_client = esp_dask
-        self._is_finished: ParallelEvent = ParallelEventDask.for_name(name=f"client_finish_{esp_dask.dask_id()}")
+    _internal_dask_client: ESPDask = field()
+    _is_finished: ParallelEvent = field(default_factory=lambda: ParallelEvent.dask())
 
     @override
     def close(self) -> None:
         self._is_finished.set()
+        # self.send("empty")  # type: ignore[arg-type] # TODO_AFTER_MERGE: this was added
         connection_address = self._internal_dask_client.connection_address()
         DaskChannel._logger.debug(f"Closing connections to Dask client {connection_address}...")
-        self._internal_dask_client.close()
+        self._internal_dask_client.close()  # TODO_AFTER_MERGE: this was commented out
         DaskChannel._logger.info(f"Connection to Dask client {connection_address} closed.")
 
     @override
@@ -83,20 +82,23 @@ class DaskChannel(ESPChannel):
         self,
         message: ESPChannelMessage,
     ) -> None:
-        if not self._internal_dask_client.is_connected():
+        # TODO_AFTER_MERGE: newly added 'not self._is_finished.is_set()'
+        if not self._internal_dask_client.is_connected() and not self._is_finished.is_set():
             raise Exception("Dask client already closed")
         try:
             self._internal_dask_client.send(
                 SimpleBinaryMessage.of_esp_channel_message(message=message),
             )
         except Exception as e:
+            # TODO_AFTER_MERGE: reconnecting is not specified in the abstraction -> either specify or refactor
             DaskChannel._logger.debug(
                 f"Send messsage to server failed - recreating dask client connection and try again. Error: {e}",
             )
-            self._internal_dask_client.connect()
-            self._internal_dask_client.send(
-                SimpleBinaryMessage.of_esp_channel_message(message=message),
-            )
+            # TODO_AFTER_MERGE: this was commented out -> handle this
+            # self._internal_dask_client.connect()
+            # self._internal_dask_client.send(
+            #     SimpleBinaryMessage.of_esp_channel_message(message=message),
+            # )
 
     # Needs to be a static method due to serialization issues when submitting via dd_client.submit().
     # A non-static method would have either the cls or self as the first parameter.

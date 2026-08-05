@@ -14,6 +14,7 @@ from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -27,13 +28,19 @@ from ecosim_server.simulation.state.simulation_state import SimulationState
 
 @dataclass
 class Server(ShutdownListener):
+    _logger: ClassVar[ESPLogger] = ESPLogger("Server")
+
+    server_measurements: ServerTimeMeasurement = field(init=False)
+
     _simulation_config: SimulationConfig = field()
     _server_config: ServerConfig = field()
     _repositories: Repositories = field()
 
-    _logger: ClassVar[ESPLogger] = ESPLogger("Server")
-
-    server_measurements: ServerTimeMeasurement = field(init=False)
+    _client_communication: ClientCommunication = field(init=False)
+    _server_state: ServerState = field(init=False)
+    _simulation_executor: SimulationExecutor = field(init=False)
+    _channel_endpoint: ESPChannelEndpoint = field(init=False)
+    _rendering_socket: RenderingSocket | None = field(init=False)
 
     def __post_init__(self) -> None:
         self.server_measurements = ServerTimeMeasurement(protocol=self._server_config.server.communication_protocol)
@@ -42,12 +49,18 @@ class Server(ShutdownListener):
             simulation_config=self._simulation_config,
             simulation_state_repository=self._repositories.simulation_state_repository,
         )
+        self._client_communication = ClientCommunication(
+            _client_states=self._server_state.client_states,
+            _client_message_buffer=self._server_state.message_buffer,
+            _communication_protocol=self._server_config.server.communication_protocol,
+        )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,
             server_config=self._server_config,
             server_state=self._server_state,
             repositories=self._repositories,
             server_measurement=self.server_measurements,
+            client_communication=self._client_communication,
         )
         self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
             communication_protocol=self._server_config.server.communication_protocol,
@@ -203,22 +216,23 @@ class Server(ShutdownListener):
         simulation_config: SimulationConfig,
         connection: ClientConnection,
     ) -> None:
-        client_id: ClientID | None = None
         with connection:
             try:
                 Server._logger.debug("Handling new client connection")
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 if message is None:
-                    raise Exception(f"No message received from client {client_id}")
+                    Server._logger.error(f"No message received from client {connection.address} for {MessageType.CLIENT_META_DATA_REQUEST}")
+                    connection.close()
+                    return
                 client_config: ClientMetaData = message.payload(ClientMetaData)
+                client_id: ClientID = client_config.client_id()
                 if not server_state.client_states.add_if_needed(client_config, connection):
                     Server._logger.warning(
-                        f"Client {connection.address} was not expected to connect - it has no needed model/simulator.",
+                        f"Client {client_id} from {connection.address} was not expected to connect - it has no needed model/simulator.",
                     )
                     connection.close()
                     return
-                client_id = client_config.client_id()
 
                 Server.handle_interface_request(server_state, simulation_config, client_id, connection)
                 Server.handle_interface_settings(simulation_config, client_id, connection)
@@ -229,11 +243,11 @@ class Server(ShutdownListener):
                 )
                 while server_state.is_running() and server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
-
                     if received_message is None:
                         Server._logger.warning(
-                            f"Received 'none' from client {client_id}.",
+                            f"Received 'none' from client {client_id} -> this is the closing signal -> ending this connection",
                         )
+                        server_state.client_states.set_client_connected_state(client_id=client_id, connected=False)
                         continue
                     server_state.message_buffer.add(
                         client_id=client_id,
