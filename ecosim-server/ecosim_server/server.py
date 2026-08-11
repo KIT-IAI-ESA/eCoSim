@@ -84,7 +84,7 @@ class Server(ShutdownListener):
         self._channel_endpoint.close()
 
     def _start_listening(self) -> None:
-        self._channel_endpoint.listen_async(
+        self._channel_endpoint.listen_on_connection_loop_async(
             channel_handler=partial(
                 Server._on_new_channel,
                 self._server_state,

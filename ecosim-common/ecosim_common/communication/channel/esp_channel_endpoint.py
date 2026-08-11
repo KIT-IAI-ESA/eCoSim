@@ -14,7 +14,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 class ESPChannelEndpoint(ABC):
     # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
-    def listen_async(
+    def listen_on_connection_loop_async(
         self,
         channel_handler: ChannelHandler,
     ) -> None:
@@ -37,7 +37,7 @@ class ESPChannelEndpoint(ABC):
             case CommunicationProtocol.TCP_SOCKET:
                 from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 
-                return EndpointSocket(connection_address)
+                return EndpointSocket.for_connection_address(connection_address)
             case _:
                 raise ValueError(f"Unknown communication protocol: {communication_protocol}")
 

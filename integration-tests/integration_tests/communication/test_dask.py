@@ -18,7 +18,7 @@ def clear_datasets(client: dd.Client) -> None:
 def test_happy_path(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
     server_dask_client = EndpointDask(_connection_address=server_address)
-    server_dask_client.listen_async(channel_handler=_mirror_message)
+    server_dask_client.listen_on_connection_loop_async(channel_handler=_mirror_message)
 
     dask_client_channel = DaskConnector().connect(connection_address=server_address)
 
@@ -51,7 +51,7 @@ def test_happy_path(dask_client: dd.Client) -> None:
 def test_big_data(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
     server_dask_client = EndpointDask(_connection_address=server_address)
-    server_dask_client.listen_async(channel_handler=_mirror_message)
+    server_dask_client.listen_on_connection_loop_async(channel_handler=_mirror_message)
 
     dask_client_channel = DaskConnector().connect(connection_address=server_address)
 

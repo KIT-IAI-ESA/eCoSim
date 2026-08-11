@@ -16,8 +16,9 @@ def test_happy_path() -> None:
         ip="localhost",
         port=1234,
     )
-    server_socket = EndpointSocket(_connection_address=server_address)
-    server_socket.listen_async(channel_handler=_mirror_message)
+    endpoint_socket = EndpointSocket.for_connection_address(connection_address=server_address)
+    endpoint_socket.listen_on_connection_loop_async(channel_handler=_mirror_message)
+    endpoint_socket.is_listening_event().wait(timeout=10)
 
     socket_channel = SocketConnector().connect(connection_address=server_address)
 
@@ -27,6 +28,7 @@ def test_happy_path() -> None:
         message_queue.put(message)
 
     socket_channel.listen_async(on_message=handle_message)
+    socket_channel.is_listening_event().wait(timeout=1)
 
     correlation_id = CorrelationId.of_int(7777)
     data = MessageDataForTest(
@@ -42,6 +44,7 @@ def test_happy_path() -> None:
     )
 
     received_data = message_queue.get()
+
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
@@ -52,8 +55,8 @@ def test_big_data() -> None:
         ip="localhost",
         port=34567,
     )
-    server_socket = EndpointSocket(_connection_address=server_address)
-    server_socket.listen_async(channel_handler=_mirror_message)
+    server_socket = EndpointSocket.for_connection_address(connection_address=server_address)
+    server_socket.listen_on_connection_loop_async(channel_handler=_mirror_message)
 
     socket_channel = SocketConnector().connect(connection_address=server_address)
 

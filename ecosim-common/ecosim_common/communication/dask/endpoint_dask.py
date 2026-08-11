@@ -26,7 +26,7 @@ class EndpointDask(ESPChannelEndpoint, ShutdownListener):
         ShutdownManager().register_listener(self)
 
     @override
-    def listen_async(
+    def listen_on_connection_loop_async(
         self,
         channel_handler: ChannelHandler,
     ) -> None:
