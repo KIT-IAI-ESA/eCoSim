@@ -4,13 +4,12 @@ from dataclasses import dataclass, field
 from functools import partial
 from typing import ClassVar, override
 
-from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData, ESPChannelEndpoint
+from ecosim_common.communication.channel.esp_channel import ESPChannel, ConnectionData
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
 from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.socket.endpoint_socket import EndpointSocket
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -39,7 +38,7 @@ class Server(ShutdownListener):
     _client_communication: ClientCommunication = field(init=False)
     _server_state: ServerState = field(init=False)
     _simulation_executor: SimulationExecutor = field(init=False)
-    _channel_endpoint: ESPChannelEndpoint = field(init=False)
+    _channel: ESPChannel = field(init=False)
     _rendering_socket: RenderingSocket | None = field(init=False)
 
     def __post_init__(self) -> None:
@@ -62,7 +61,7 @@ class Server(ShutdownListener):
             server_measurement=self.server_measurements,
             client_communication=self._client_communication,
         )
-        self._channel_endpoint: ESPChannelEndpoint = EndpointSocket.for_protocol(
+        self._channel: ESPChannel = ESPChannel.for_protocol(
             communication_protocol=self._server_config.server.communication_protocol,
             connection_address=self._server_config.server.connection_address(),
         )
@@ -81,10 +80,10 @@ class Server(ShutdownListener):
         self._server_state.set_simulation_state(SimulationState.READY)
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
-        self._channel_endpoint.close()
+        self._channel.close()
 
     def _start_listening(self) -> None:
-        self._channel_endpoint.listen_on_connection_loop_async(
+        self._channel.listen_on_connection_loop_async(
             channel_handler=partial(
                 Server._on_new_channel,
                 self._server_state,
@@ -107,7 +106,7 @@ class Server(ShutdownListener):
     def on_app_shutdown(self) -> None:
         if self._repositories.simulation_state_repository.current() != SimulationState.FINISHED:
             self._server_state.set_simulation_state(SimulationState.FAILED)
-        self._channel_endpoint.close()
+        self._channel.close()
         self._stop_image_renderer_socket()
 
     def _stop_image_renderer_socket(self) -> None:

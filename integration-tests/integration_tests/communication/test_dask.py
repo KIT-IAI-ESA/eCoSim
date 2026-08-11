@@ -1,11 +1,11 @@
 import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ConnectionData
+from ecosim_common.communication.channel.esp_channel import ConnectionData
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
+from ecosim_common.communication.dask.dask_channel import DaskChannel
 from ecosim_common.communication.dask.dask_connector import DaskConnector
-from ecosim_common.communication.dask.endpoint_dask import EndpointDask
 from ecosim_common.communication.message_type import MessageType
 from integration_tests.communication.message_data_for_test import MessageDataForTest
 
@@ -17,7 +17,7 @@ def clear_datasets(client: dd.Client) -> None:
 
 def test_happy_path(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
-    server_dask_client = EndpointDask(_connection_address=server_address)
+    server_dask_client = DaskChannel(_connection_address=server_address)
     server_dask_client.listen_on_connection_loop_async(channel_handler=_mirror_message)
 
     dask_client_channel = DaskConnector().connect(connection_address=server_address)
@@ -27,7 +27,7 @@ def test_happy_path(dask_client: dd.Client) -> None:
     def handle_message(message: ESPChannelMessage) -> None:
         message_queue.put(message)
 
-    dask_client_channel.listen_async(on_message=handle_message)
+    dask_client_channel.listen_on_message_async(on_message=handle_message)
 
     correlation_id = CorrelationId.of_int(7777)
     data = MessageDataForTest(
@@ -50,7 +50,7 @@ def test_happy_path(dask_client: dd.Client) -> None:
 
 def test_big_data(dask_client: dd.Client) -> None:
     server_address = ConnectionAddress.of_dask_client(dask_client)
-    server_dask_client = EndpointDask(_connection_address=server_address)
+    server_dask_client = DaskChannel(_connection_address=server_address)
     server_dask_client.listen_on_connection_loop_async(channel_handler=_mirror_message)
 
     dask_client_channel = DaskConnector().connect(connection_address=server_address)
@@ -60,7 +60,7 @@ def test_big_data(dask_client: dd.Client) -> None:
     def handle_message(message: ESPChannelMessage) -> None:
         message_queue.put(message)
 
-    dask_client_channel.listen_async(on_message=handle_message)
+    dask_client_channel.listen_on_message_async(on_message=handle_message)
 
     correlation_id = CorrelationId.of_int(7777)
 

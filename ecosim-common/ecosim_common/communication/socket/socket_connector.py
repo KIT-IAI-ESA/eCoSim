@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
-from ecosim_common.communication.socket.socket_channel import SocketChannel
 from ecosim_common.communication.socket.tcp_socket import TCPSocket
 from ecosim_common.tech.logger.logger import ESPLogger
 from typing_extensions import override
@@ -34,4 +33,4 @@ class SocketConnector(ESPChannelConnector):
         if not tcp_socket.is_connected():
             raise ConnectionError(f"Could not connect to socket {connection_address}")
         SocketConnector._logger.info(f"Connected to socket successfully: {connection_address}")
-        return SocketChannel(tcp_socket)
+        return tcp_socket

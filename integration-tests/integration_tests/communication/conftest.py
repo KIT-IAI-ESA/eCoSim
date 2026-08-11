@@ -3,9 +3,7 @@ from typing import Any, Generator, assert_never, cast
 import pytest
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.communication.dask.dask_channel import DaskChannel
-from ecosim_common.communication.socket.socket_channel import SocketChannel
-from integration_tests.test_data.generate_esp_dask import generate_esp_dask
+from integration_tests.test_data.generate_esp_dask import generate_dask_channel
 from test_data.generate_esp_socket import generate_tcp_socket
 
 
@@ -18,9 +16,9 @@ def esp_channel(request: pytest.FixtureRequest) -> Generator[ESPChannel, Any, No
     channel: ESPChannel
     match communication_protocol:
         case CommunicationProtocol.TCP_SOCKET:
-            channel = SocketChannel(_internal_socket=generate_tcp_socket())
+            channel = generate_tcp_socket()
         case CommunicationProtocol.DASK:
-            channel = DaskChannel(_internal_dask_client=generate_esp_dask())
+            channel = generate_dask_channel()
         case _:
             assert_never(communication_protocol)
 
