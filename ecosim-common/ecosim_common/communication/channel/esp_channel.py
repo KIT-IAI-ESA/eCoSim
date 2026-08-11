@@ -19,12 +19,9 @@ class ESPChannel(ABC):
     ) -> ESPChannel:
         match communication_protocol:
             case CommunicationProtocol.DASK:
-                from ecosim_common.communication.socket.tcp_socket import TCPSocket
+                from ecosim_common.communication.dask.dask_channel import DaskChannel
 
-                return TCPSocket.create(connection_address)
-                # from ecosim_common.communication.dask.endpoint_dask import EndpointDask
-                #
-                # return EndpointDask(connection_address)
+                return DaskChannel(_connection_address=connection_address)
             case CommunicationProtocol.TCP_SOCKET:
                 from ecosim_common.communication.socket.tcp_socket import TCPSocket
 
