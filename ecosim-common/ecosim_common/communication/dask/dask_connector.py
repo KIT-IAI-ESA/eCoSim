@@ -1,13 +1,11 @@
 import time
 from dataclasses import dataclass
-
-from typing_extensions import override
+from typing import override
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
 from ecosim_common.communication.dask.dask_channel import DaskChannel
-from ecosim_common.communication.dask.esp_dask import create_internal_dask_id, ESPDask
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -22,11 +20,11 @@ class DaskConnector(ESPChannelConnector):
         timeout_in_seconds: int = 30,
     ) -> ESPChannel:
         start_time = time.time()
-        esp_dask = ESPDask(internal_dask_id=create_internal_dask_id())
         connected: bool = False
+        channel = DaskChannel(_connection_address=connection_address)
         while not connected and (time.time() - start_time) < timeout_in_seconds:
             try:
-                esp_dask.connect()
+                channel.connect()
                 connected = True
             except Exception as e:
                 DaskConnector._logger.warning(
@@ -37,4 +35,4 @@ class DaskConnector(ESPChannelConnector):
         if not connected:
             raise ConnectionError(f"Could not connect to Dask client {connection_address}")
         DaskConnector._logger.info(f"Connected to Dask client successfully: {connection_address}")
-        return DaskChannel(_internal_dask_client=esp_dask)
+        return channel

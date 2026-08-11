@@ -106,7 +106,7 @@ class Client(ShutdownListener):
             + f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
         )
         self._connect_channel()
-        self._channel.listen_async(
+        self._channel.listen_on_message_async(
             on_message=self._handle_message,
         )
 

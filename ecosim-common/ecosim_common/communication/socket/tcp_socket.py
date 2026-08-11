@@ -3,13 +3,13 @@ from __future__ import annotations
 import socket
 import threading
 from dataclasses import dataclass, field
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, override
 
 from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel_endpoint import ChannelHandler, ConnectionData
+from ecosim_common.communication.channel.esp_channel import ESPChannel, ChannelHandler, ConnectionData
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
@@ -17,7 +17,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 
 
 @dataclass
-class TCPSocket(ShutdownListener):
+class TCPSocket(ESPChannel, ShutdownListener):
     _logger: ClassVar[ESPLogger] = ESPLogger("TCPSocket")
 
     _internal_socket: socket.socket = field()
@@ -39,6 +39,8 @@ class TCPSocket(ShutdownListener):
         internal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # TCP_NODELAY: small messages are not grouped to larger packages but sent immediately
         internal_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        # enable address reuse # TODO check implication for clients - this was added for server
+        internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return TCPSocket(
             _internal_socket=internal_socket,
             _connection_address=connection_address,
@@ -124,14 +126,10 @@ class TCPSocket(ShutdownListener):
                     f"New connection on socket {connection_address} from {client_address}",
                 )
 
-                from ecosim_common.communication.socket.socket_channel import SocketChannel
-
                 connection_data = ConnectionData(
-                    channel=SocketChannel(
-                        _internal_socket=TCPSocket(
-                            _internal_socket=connection,
-                            _connection_address=client_address,
-                        ),
+                    channel=TCPSocket(
+                        _internal_socket=connection,
+                        _connection_address=client_address,
                     ),
                     client_address=client_address,
                 )
@@ -316,3 +314,7 @@ class TCPSocket(ShutdownListener):
             (self._connection_address.ip, self._connection_address.port),
         )
         self._connected.set()
+
+    @override
+    def wait_for_finish(self) -> None:
+        self._closed.wait()
