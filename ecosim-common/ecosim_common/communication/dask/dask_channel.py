@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from time import sleep
-from typing import Callable, override
+from typing import Any, Callable, override
 
 import dask.distributed as distributed
 from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
@@ -34,11 +34,25 @@ class DaskChannel(ESPChannel, ShutdownListener):
     _connected: ParallelEvent = field(default_factory=lambda: ParallelEvent.dask())
     _server_closed: ParallelEvent = field(default_factory=lambda: ParallelEvent.dask(dask_name="server_closed"))
     _internal_dask_id: str = field(default_factory=create_internal_dask_id)
-    _internal_dask_client: distributed.Client = field(default_factory=distributed.get_client)
+    # resolved lazily via '_dask_client()' - never eagerly, so that a channel can be unpickled on a
+    # worker before that worker is able to hand out a client
+    _internal_dask_client: distributed.Client | None = field(default=None)
     _origin_id: int = field(default_factory=lambda: uuid.uuid4().int & (1 << 64) - 1)
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
+
+    def _dask_client(self) -> distributed.Client:
+        if self._internal_dask_client is None:
+            self._internal_dask_client = distributed.get_client()
+        return self._internal_dask_client
+
+    def __getstate__(self) -> dict[str, Any]:
+        # 'distributed.Client' holds live asyncio objects (tasks, futures, comms) and is therefore not
+        # picklable at all. The channel travels without it; the receiving side resolves its own local
+        # client on first use. Everything else on the channel is either plain data or a dask primitive
+        # with a '__reduce__' (see 'ParallelEventDask'), so it survives the trip.
+        return {**self.__dict__, "_internal_dask_client": None}
 
     @override
     def close(self) -> None:
@@ -59,9 +73,9 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if self._is_internal_dask_client_running():
             current_key: str = ""
             try:
-                for key in self._internal_dask_client.datasets.keys():
+                for key in self._dask_client().datasets.keys():
                     current_key = key
-                    self._internal_dask_client.unpublish_dataset(key)
+                    self._dask_client().unpublish_dataset(key)
             except KeyError as e:
                 DaskChannel._logger.error(f"Something went wrong unpublishing key '{current_key}': {e}")
             except Exception as e:
@@ -69,14 +83,17 @@ class DaskChannel(ESPChannel, ShutdownListener):
         DaskChannel._logger.info(f"Connection to Dask client {connection_address} closed.")
 
     def _is_internal_dask_client_running(self) -> bool:
-        return self._internal_dask_client.status == "running"
+        try:
+            return self._dask_client().status == "running"
+        except ValueError:
+            return False
 
     @override
     def listen_on_message_async(
         self,
         on_message: Callable[[ESPChannelMessage], None],
     ) -> None:
-        dask_client = self._internal_dask_client
+        dask_client = self._dask_client()
         is_finished = self._is_finished
         closed = self._closed
         internal_dask_id = self._internal_dask_id
@@ -86,7 +103,6 @@ class DaskChannel(ESPChannel, ShutdownListener):
             future = dask_client.submit(
                 DaskChannel._listen_async_internal,
                 on_message=on_message,
-                dask_client=dask_client,
                 is_finished_event=is_finished,
                 closed=closed,
                 dask_id=internal_dask_id,
@@ -114,7 +130,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
             is_finished_event=self._is_finished,
             internal_dask_id=self._internal_dask_id,
             origin_id=self._origin_id,
-            distributed_client=self._internal_dask_client,
+            distributed_client=self._dask_client(),
             timeout_in_seconds=timeout_in_seconds,
         )
 
@@ -149,8 +165,15 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if not self._connected.is_set() and not self._is_finished.is_set():
             raise Exception("Dask client already closed")
         try:
-            data_var = distributed.Queue(name=self._internal_dask_id, client=self._internal_dask_client)
-            data_var.put(SimpleBinaryMessage.of_esp_channel_message(message=message), self._origin_id)
+            data_var = distributed.Queue(name=self._internal_dask_id, client=self._dask_client())
+            # both endpoints share this one queue, so every entry carries its sender - see
+            # 'receive_from_dask_client', which puts entries of its own origin back
+            data_var.put(
+                (
+                    SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message(),
+                    self._origin_id,
+                ),
+            )
         except Exception as e:
             # TODO_AFTER_MERGE: reconnecting is not specified in the abstraction -> either specify or refactor
             DaskChannel._logger.debug(
@@ -169,13 +192,13 @@ class DaskChannel(ESPChannel, ShutdownListener):
     @staticmethod
     def _listen_async_internal(
         on_message: Callable[[ESPChannelMessage], None],
-        dask_client: distributed.Client,
         dask_id: str,
         origin_id: int,
         is_finished_event: ParallelEvent,
         closed: ParallelEvent,
     ) -> None:
         distributed.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
+        dask_client = distributed.get_client()
         while not is_finished_event.is_set():
             message: ESPChannelMessage | None = DaskChannel._listen_blocking_internal(
                 closed=closed,
@@ -204,11 +227,13 @@ class DaskChannel(ESPChannel, ShutdownListener):
             return
         self._server_listening.set()
 
+        dask_client = self._dask_client()
+
         async def listen_start() -> None:
-            future = self._internal_dask_client.submit(DaskChannel._listen, channel_handler, self._server_closed)
+            future = dask_client.submit(DaskChannel._listen, channel_handler, self._server_closed)
             distributed.fire_and_forget(future)
 
-        self._internal_dask_client.sync(listen_start)
+        dask_client.sync(listen_start)
 
     @override
     def on_app_shutdown(self) -> None:
@@ -220,6 +245,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
         closed: ParallelEvent,
     ) -> None:
         dask_client = distributed.get_client()
+        client_address = ConnectionAddress.of_dask_client(dask_client)
         DaskChannel._logger.debug("Now listening to Dask Client")
         current_connections: list[str] = []
         while not closed.is_set():
@@ -239,17 +265,17 @@ class DaskChannel(ESPChannel, ShutdownListener):
                     if dask_id in current_connections:
                         continue
 
-                    client_address = ConnectionAddress.of_dask_client(dask_client)
-
                     connection_data = ConnectionData(
                         channel=DaskChannel(
                             _connection_address=client_address,
                             _internal_dask_id=dask_id,
+                            _connected=ParallelEvent.dask(init_set=True),
                         ),
                         client_address=client_address,
                     )
 
-                    async def submit() -> None:
+                    # bound as defaults so the closure cannot pick up the next loop iteration's values
+                    async def submit(connection_data: ConnectionData = connection_data) -> None:
                         future = dask_client.submit(
                             _serve_channel_seceded,
                             on_new_channel,
@@ -271,11 +297,10 @@ class DaskChannel(ESPChannel, ShutdownListener):
         origin_id: int,
     ) -> ReceivedBinaryMessage | None:
         while True:
-            received_id = None
             DaskChannel._logger.debug(f"Trying to receive for dask_id {dask_id} and origin_id {origin_id}...")
             try:
                 data_var = distributed.Queue(name=dask_id, client=connection)
-                raw_message = data_var.get(timeout=300)
+                queue_entry = data_var.get(timeout=300)
             except TimeoutError:
                 DaskChannel._logger.debug(f"Received no data at {origin_id} after 300 seconds.")
                 return None
@@ -283,14 +308,12 @@ class DaskChannel(ESPChannel, ShutdownListener):
                 DaskChannel._logger.error(f"Received error non-timeout error while waiting at origin_id {origin_id}: {e}")
                 raise e
             DaskChannel._logger.debug(f"Trying to receive for dask_id {dask_id} and origin_id {origin_id}...done.")
-            try:
-                raw_message, received_id = raw_message
-            except (ValueError, TypeError):
-                pass
-            if not raw_message or received_id == origin_id:
-                data_var.put((raw_message, received_id))
+            # 'send' always queues a (raw_message, origin_id) pair - see the comment there
+            raw_message, received_id = queue_entry
+            if received_id == origin_id:
+                data_var.put(queue_entry)  # our own message -> hand it back to the peer
                 continue
-            if raw_message == "empty" or dask_id not in connection.datasets.keys():
+            if not raw_message or raw_message == "empty" or dask_id not in connection.datasets.keys():
                 DaskChannel._logger.debug(f"Received no data at {origin_id}")
                 return None
             raw_header = raw_message[0 : BinaryMessage.HEADER_BYTES]
