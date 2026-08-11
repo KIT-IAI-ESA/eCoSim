@@ -118,7 +118,7 @@ def test_closing_connection_unsets_connected(_client_communication_setup: Client
         case CommunicationProtocol.DASK:
             future = distributed.get_client().submit(check_if_all_clients_disconnected)
             try:
-                future.result(timeout=1000)
+                future.result(timeout=10)
             except Exception as e:
                 assert False, f"Exception while waiting for clients to disconnect: {e}"
         case CommunicationProtocol.TCP_SOCKET:
