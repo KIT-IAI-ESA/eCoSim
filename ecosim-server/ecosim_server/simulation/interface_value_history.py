@@ -117,19 +117,21 @@ class InterfaceValueHistory:
                 client_id=client.client_id,
             )
             sorted_entries = sorted(client_repo.all(), key=lambda it: it.timestamp)
-            InterfaceValueHistory.logger.debug(
-                "Initializing from repositories for client %s: found %s entries",
-                client.client_id,
-                len(sorted_entries),
-            )
+            if InterfaceValueHistory.logger.is_debug_enabled:
+                InterfaceValueHistory.logger.debug(
+                    "Initializing from repositories for client %s: found %s entries",
+                    client.client_id,
+                    len(sorted_entries),
+                )
             for entry in sorted_entries:
                 step: int = self._simulation_config.date_time_to_step(entry.timestamp)
                 self._add_to_entries_internal(step, client.client_id, entry.values)
-            InterfaceValueHistory.logger.debug(
-                "Initializing from repositories for client %s: successfully restored %s entries",
-                client.client_id,
-                len(sorted_entries),
-            )
+            if InterfaceValueHistory.logger.is_debug_enabled:
+                InterfaceValueHistory.logger.debug(
+                    "Initializing from repositories for client %s: successfully restored %s entries",
+                    client.client_id,
+                    len(sorted_entries),
+                )
 
     def contains_all_default_values(self) -> bool:
         return InterfaceValueHistory._default_values_marker in self._entries.keys() and self._entries[
@@ -224,7 +226,12 @@ class RestoreData:
             too_many_entries = latest_completed_step_client - common_latest_completed_step
             for i in range(too_many_entries):
                 all_entries.pop()
-            InterfaceValueHistory.logger.debug("Transforming history to restore data for client %s: found %s entries", client_id, len(all_entries))
+            if InterfaceValueHistory.logger.is_debug_enabled:
+                InterfaceValueHistory.logger.debug(
+                    "Transforming history to restore data for client %s: found %s entries",
+                    client_id,
+                    len(all_entries),
+                )
             transformed_entries: SimulationStepBatchRequestInputs = {entry.timestamp: list(entry.values) for entry in all_entries}
             result[client_id] = transformed_entries
         return result

@@ -116,12 +116,13 @@ class ClientMessageBuffer:
             callbacks.add(message_callback)
         matching_messages = self.get_and_delete_of(client_ids, message_types)
         for message in matching_messages:
-            _message_buffer_logger.debug(
-                "Message found for newly registered callback on message types %s for client ids %s: type: '%s'",
-                message_types,
-                client_ids,
-                message.message.type(),
-            )
+            if _message_buffer_logger.is_debug_enabled:
+                _message_buffer_logger.debug(
+                    "Message found for newly registered callback on message types %s for client ids %s: type: '%s'",
+                    message_types,
+                    client_ids,
+                    message.message.type(),
+                )
             message_callback.execute_async(message)
 
     def remove_on_message_callback(
@@ -250,7 +251,8 @@ class OnMessageCallbackHandlerThreading(OnMessageCallbackHandler):
         self,
         message: BufferedClientMessage,
     ) -> None:
-        _message_buffer_logger.debug("Executing (threading) callback for %s on %s", message.client_id, message.message.type())
+        if _message_buffer_logger.is_debug_enabled:
+            _message_buffer_logger.debug("Executing (threading) callback for %s on %s", message.client_id, message.message.type())
         threading.Thread(target=self.callback, args=[message]).start()
 
 
@@ -261,7 +263,8 @@ class OnMessageCallbackHandlerDask(OnMessageCallbackHandler):
         self,
         message: BufferedClientMessage,
     ) -> None:
-        _message_buffer_logger.debug("Executing (dask) callback for %s on %s", message.client_id, message.message.type())
+        if _message_buffer_logger.is_debug_enabled:
+            _message_buffer_logger.debug("Executing (dask) callback for %s on %s", message.client_id, message.message.type())
         dask_client = dd.get_client()
 
         async def f() -> None:

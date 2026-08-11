@@ -300,13 +300,14 @@ class SimulationExecutor:
         if len(ready_for_execution_data_by_clients) == 0:
             self.logger.debug("Step %s: Executing possible parts: %s: Nothing to do.", self._current_step, part_description)
             return False
-        self.logger.info(
-            "Step %s: Execute possible parts: %s - %s clients are ready: %s",
-            self._current_step,
-            part_description,
-            len(ready_for_execution_data_by_clients),
-            ", ".join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys()),
-        )
+        if self.logger.is_debug_enabled:
+            self.logger.debug(
+                "Step %s: Execute possible parts: %s - %s clients are ready: %s",
+                self._current_step,
+                part_description,
+                len(ready_for_execution_data_by_clients),
+                ", ".join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys()),
+            )
         for client_id in ready_for_execution_data_by_clients:
             self.logger.debug("Step %s: Execute possible parts: %s - execute client %s", self._current_step, part_description, client_id)
             self._pace_throttle()
