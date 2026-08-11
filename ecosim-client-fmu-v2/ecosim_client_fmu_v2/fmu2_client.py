@@ -61,7 +61,7 @@ class FMU2Client(Client):
     @override
     def image_renderer_service(self) -> SimulationRendererService:
         pre_rendered_images_dir = os.path.dirname(self._config_path) + "/rendered_images"
-        Client.logger.debug(f"Pre-rendered images dir: '{pre_rendered_images_dir}'.")
+        Client.logger.debug("Pre-rendered images dir: '%s'.", pre_rendered_images_dir)
         return PreRenderedImageService(
             PreRenderedImageServiceConfig(
                 image_dir=pre_rendered_images_dir,

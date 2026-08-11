@@ -61,7 +61,8 @@ class SimulationExecutor:
         self._pace_sleep = 4 - (4 * simulation_config.pace)
         if self._pace_sleep != 0:
             SimulationExecutor.logger.info(
-                f"The execution has set up a pace throttle. Between each execution step the thread is paused for {self._pace_sleep}s.",
+                "The execution has set up a pace throttle. Between each execution step the thread is paused for %ss.",
+                self._pace_sleep,
             )
         else:
             SimulationExecutor.logger.debug("No execution pace throttle is set.")
@@ -167,7 +168,7 @@ class SimulationExecutor:
         self._value_history.init_from_repositories()
         restore_data = self._value_history.calculate_current_execution_step_or_exception()
         self._current_step = restore_data.current_step
-        SimulationExecutor.logger.debug(f"[Restore simulation] the latest completed step is: {self._current_step} -> restoring until this step.")
+        SimulationExecutor.logger.debug("[Restore simulation] the latest completed step is: %s -> restoring until this step.", self._current_step)
         save_defaults = False
         if not self._value_history.contains_all_default_values():
             SimulationExecutor.logger.debug("[Restore simulation] no (or not all default) values are stored in the history: saving them now")
@@ -186,7 +187,7 @@ class SimulationExecutor:
         for client_id in self._server_state.client_states.all_client_ids():
             data_for_restoration = restore_data.client_restore_data[client_id]
             if not data_for_restoration or len(data_for_restoration) == 0:
-                SimulationExecutor.logger.debug(f"[Restore simulation] sending step batch to clients: client {client_id} has no data to restore.")
+                SimulationExecutor.logger.debug("[Restore simulation] sending step batch to clients: client %s has no data to restore.", client_id)
                 continue
             handled_client_ids.append(client_id)
             self._client_communication.send_simulation_step_batch(
@@ -212,8 +213,11 @@ class SimulationExecutor:
                 client_id = message.client_id
                 if message.message.correlation_id() != CorrelationId.of_date_time(start_date):
                     self.logger.error(
-                        f"Received a {MessageType.SIMULATION_STEP_BATCH} message from client {client_id} with a wrong correlation_id. "
-                        + f"Expected response for start date {start_date} but got {message.message.correlation_id()}",
+                        "Received a %s message from client %s with a wrong correlation_id. Expected response for start date %s but got %s",
+                        MessageType.SIMULATION_STEP_BATCH,
+                        client_id,
+                        start_date,
+                        message.message.correlation_id(),
                     )
                     return
                 responses[client_id].set()
@@ -233,7 +237,8 @@ class SimulationExecutor:
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
             )
         SimulationExecutor.logger.info(
-            f"[Restore simulation] Restoring simulation on all clients successful - continuing from step {self._current_step}.",
+            "[Restore simulation] Restoring simulation on all clients successful - continuing from step %s.",
+            self._current_step,
         )
 
     def _execute_steps(self) -> None:
@@ -245,7 +250,7 @@ class SimulationExecutor:
         )
         try:
             while self._current_step < self.simulation_config.steps:
-                self.logger.info(f"Step {self._current_step}: Executing step")
+                self.logger.info("Step %s: Executing step", self._current_step)
                 self._current_step_data.reset_for_new_step(step=self._current_step)
                 self._execute_logical_delays()
 
@@ -266,14 +271,17 @@ class SimulationExecutor:
             )
 
     def _execute_logical_delays(self) -> None:
-        self.logger.debug(f"Step {self._current_step}: Execute logical delays")
+        self.logger.debug("Step %s: Execute logical delays", self._current_step)
         delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step().get_snapshot()
         for delayed_time_steps in sorted(delays_by_delay_step.keys()):
-            self.logger.info(f"Step {self._current_step}: Execute logical delays at '{delayed_time_steps}'")
+            self.logger.info("Step %s: Execute logical delays at '%s'", self._current_step, delayed_time_steps)
             for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                 self.logger.debug(
-                    f"Step {self._current_step}: Execute logical delay '{delayed_time_steps}': "
-                    + f"{logical_delay_connection.output_interface} -> {logical_delay_connection.current_value}",
+                    "Step %s: Execute logical delay '%s': %s -> %s",
+                    self._current_step,
+                    delayed_time_steps,
+                    logical_delay_connection.output_interface,
+                    logical_delay_connection.current_value,
                 )
                 self._current_step_data.set_value(
                     logical_delay_connection.output_interface,
@@ -290,18 +298,17 @@ class SimulationExecutor:
             List[ProtocolInterfaceValue],
         ] = self._current_step_data.get_ready_for_execution()
         if len(ready_for_execution_data_by_clients) == 0:
-            self.logger.debug(
-                f"Step {self._current_step}: Executing possible parts: {part_description}: Nothing to do.",
-            )
+            self.logger.debug("Step %s: Executing possible parts: %s: Nothing to do.", self._current_step, part_description)
             return False
         self.logger.info(
-            f"Step {self._current_step}: Execute possible parts: {part_description} - {len(ready_for_execution_data_by_clients)} clients are ready:"
-            + f" {', '.join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys())}",
+            "Step %s: Execute possible parts: %s - %s clients are ready: %s",
+            self._current_step,
+            part_description,
+            len(ready_for_execution_data_by_clients),
+            ", ".join(str(client_id) for client_id in ready_for_execution_data_by_clients.keys()),
         )
         for client_id in ready_for_execution_data_by_clients:
-            self.logger.debug(
-                f"Step {self._current_step}: Execute possible parts: {part_description} - execute client {client_id}",
-            )
+            self.logger.debug("Step %s: Execute possible parts: %s - execute client %s", self._current_step, part_description, client_id)
             self._pace_throttle()
             self._client_communication.send_simulation_step(
                 current_step=self._current_step,
@@ -310,9 +317,7 @@ class SimulationExecutor:
             )
         handled_clients: dict[ClientID, bool] = {client_id: False for client_id in ready_for_execution_data_by_clients}
 
-        self.logger.debug(
-            f"Step {self._current_step}: Waiting for results after executing possible parts: {part_description}",
-        )
+        self.logger.debug("Step %s: Waiting for results after executing possible parts: %s", self._current_step, part_description)
 
         while not all(handled_clients.values()):
             received_message = self._step_message_queue.pop_or_none(
@@ -320,8 +325,9 @@ class SimulationExecutor:
             )
             if received_message is None:
                 self.logger.warning(
-                    f"Step {self._current_step}: still waiting for a response from "
-                    + f"{', '.join(str(client_id) for client_id, handled in handled_clients.items() if not handled)}",
+                    "Step %s: still waiting for a response from %s",
+                    self._current_step,
+                    ", ".join(str(client_id) for client_id, handled in handled_clients.items() if not handled),
                 )
                 continue
             self._handle_received_sim_step(
@@ -333,7 +339,7 @@ class SimulationExecutor:
         for client in handled_clients:
             self._current_step_data.set_is_executed(client)
 
-        self.logger.debug(f"Finished executing possible parts: {part_description}")
+        self.logger.debug("Finished executing possible parts: %s", part_description)
         return True
 
     def _handle_received_sim_step(
@@ -346,15 +352,21 @@ class SimulationExecutor:
         client_id = received_message.client_id
         if received_message.message.correlation_id().to_int() != self._current_step:
             SimulationExecutor.logger.error(
-                f"Received a {MessageType.SIMULATION_STEP} message from client {client_id} with a wrong correlation_id. "
-                + f"Expected {self._current_step} but got {received_message.message.correlation_id()}",
+                "Received a %s message from client %s with a wrong correlation_id. Expected %s but got %s",
+                MessageType.SIMULATION_STEP,
+                client_id,
+                self._current_step,
+                received_message.message.correlation_id(),
             )
             return False
         sim_step_data: ClientSimStepData = received_message.payload(
             ClientSimStepData,
         )
         SimulationExecutor.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}",
+            "Processing a message containing a simulation step from client %s on step %s: %s",
+            client_id,
+            self._current_step,
+            sim_step_data,
         )
         interface_values = tuple(sim_step_data.interface_values)
         self._value_history.add(
@@ -364,7 +376,10 @@ class SimulationExecutor:
         )
         self._current_step_data.add_received_data(client_id, interface_values)
         SimulationExecutor.logger.debug(
-            f"Processing a message containing a simulation step from client {client_id} on step {self._current_step}: {sim_step_data}: DONE",
+            "Processing a message containing a simulation step from client %s on step %s: %s: DONE",
+            client_id,
+            self._current_step,
+            sim_step_data,
         )
         handled_clients[client_id] = True
         return True
@@ -386,7 +401,7 @@ class SimulationExecutor:
         # NOTE: step counts start from zero (so for modulo we need to add 1)
         if step != 0 and (step + 1) % self._rendering_interval != 0 or step >= self.simulation_config.steps:
             return
-        SimulationExecutor.logger.debug(f"Rendering images at {step}")
+        SimulationExecutor.logger.debug("Rendering images at %s", step)
         end_event = self._rendering_socket.request_and_send_images(step)
         if wait_for_finish_timeout is not None:
             end_event.wait(wait_for_finish_timeout)

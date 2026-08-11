@@ -33,7 +33,7 @@ class ClientCommunication:
     ) -> None:
         for client_state in self._client_states.all_states():
             if not client_state.connection:
-                ClientCommunication._logger.warning(f"Cannot broadcast to {client_state.client_id} because connection is not set.")
+                ClientCommunication._logger.warning("Cannot broadcast to %s because connection is not set.", client_state.client_id)
                 continue
             client_state.connection.send(message)
 
@@ -71,7 +71,7 @@ class ClientCommunication:
         def thread_task() -> None:
             connection = self._client_states.get_connection_for(client_id)
             if connection is None:
-                ClientCommunication._logger.warning(f"Cannot send simulation step to {client_id} because connection is not set.")
+                ClientCommunication._logger.warning("Cannot send simulation step to %s because connection is not set.", client_id)
                 return
             connection.send(
                 ESPChannelMessageJson.create(
@@ -95,7 +95,7 @@ class ClientCommunication:
         def thread_task() -> None:
             connection = self._client_states.get_connection_for(client_id)
             if connection is None:
-                ClientCommunication._logger.warning(f"Cannot send simulation step to {client_id} because connection is not set.")
+                ClientCommunication._logger.warning("Cannot send simulation step to %s because connection is not set.", client_id)
                 return
             connection.send(
                 ESPChannelMessageJson.create(
@@ -135,18 +135,23 @@ class ClientCommunication:
                     )
                     if not success:
                         raise TimeoutError(f"timeout for {client_state.client_id}")
-                    ClientCommunication._logger.debug(f"Checking client connection states: reached {client_state.client_id}")
+                    ClientCommunication._logger.debug("Checking client connection states: reached %s", client_state.client_id)
                     if not client_state.connected:
                         self._client_states.set_client_connected_state(client_state.client_id, True)
                     break
                 except Exception as e:
                     if attempt < (attempts - 1):
                         ClientCommunication._logger.debug(
-                            f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> retry {attempt}",
+                            "Checking client connection states: exception contacting %s: %s -> retry %s",
+                            client_state.client_id,
+                            e,
+                            attempt,
                         )
                         continue
                     ClientCommunication._logger.debug(
-                        f"Checking client connection states: exception contacting {client_state.client_id}: {e} -> reached end of retries",
+                        "Checking client connection states: exception contacting %s: %s -> reached end of retries",
+                        client_state.client_id,
+                        e,
                     )
                     if client_state.connected:
                         self._client_states.set_client_connected_state(client_state.client_id, False)

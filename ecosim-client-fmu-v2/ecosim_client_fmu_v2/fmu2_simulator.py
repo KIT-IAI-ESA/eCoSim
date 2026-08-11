@@ -62,7 +62,7 @@ class FMU2Simulator(ShutdownListener):
         if self._is_initialized:
             FMU2Simulator._logger.warning("Already initialized ... aborting second initialization.")
             return
-        FMU2Simulator._logger.info(f"Initializing with start_time {start_time}")
+        FMU2Simulator._logger.info("Initializing with start_time %s", start_time)
         self._start_time = start_time
         self._fmu_instance.instantiate()
         self._fmu_instance.setupExperiment(startTime=start_time)
@@ -79,7 +79,7 @@ class FMU2Simulator(ShutdownListener):
     ) -> None:
         if not isinstance(value, float):
             raise TypeError(f"Expected a float but got {type(value)}.")
-        FMU2Simulator._logger.debug(f"Setting float input {name} to {value}")
+        FMU2Simulator._logger.debug("Setting float input %s to %s", name, value)
         self._fmu_instance.setReal([self._simulation_config.input_value_references(name)], [value])
 
     def set_input_string(
@@ -87,7 +87,7 @@ class FMU2Simulator(ShutdownListener):
         name: str,
         value: str,
     ) -> None:
-        FMU2Simulator._logger.debug(f"Setting string input {name} to {value}")
+        FMU2Simulator._logger.debug("Setting string input %s to %s", name, value)
         self._fmu_instance.setString([self._simulation_config.input_value_references(name)], [value])
 
     def set_input_boolean(
@@ -95,7 +95,7 @@ class FMU2Simulator(ShutdownListener):
         name: str,
         value: bool,
     ) -> None:
-        FMU2Simulator._logger.debug(f"Setting bool input {name} to {value}")
+        FMU2Simulator._logger.debug("Setting bool input %s to %s", name, value)
         self._fmu_instance.setBoolean([self._simulation_config.input_value_references(name)], [value])
 
     def get_output_float(
@@ -103,7 +103,7 @@ class FMU2Simulator(ShutdownListener):
         name: str,
     ) -> float:
         value: float = self._fmu_instance.getReal([self._simulation_config.output_value_references(name)])[0]
-        FMU2Simulator._logger.debug(f"Getting float output {name}: {value}")
+        FMU2Simulator._logger.debug("Getting float output %s: %s", name, value)
         return value
 
     def get_output_string(
@@ -111,7 +111,7 @@ class FMU2Simulator(ShutdownListener):
         name: str,
     ) -> str:
         value: str = self._fmu_instance.getString([self._simulation_config.output_value_references(name)])
-        FMU2Simulator._logger.debug(f"Getting string output {name}: {value}")
+        FMU2Simulator._logger.debug("Getting string output %s: %s", name, value)
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
@@ -131,7 +131,7 @@ class FMU2Simulator(ShutdownListener):
         name: str,
     ) -> bool:
         value: bool = self._fmu_instance.getBoolean([self._simulation_config.output_value_references(name)])
-        FMU2Simulator._logger.debug(f"Getting bool output {name}: {value}")
+        FMU2Simulator._logger.debug("Getting bool output %s: %s", name, value)
         return value
 
     def do_step(
@@ -142,16 +142,16 @@ class FMU2Simulator(ShutdownListener):
         for interface_id, value in input_values.items():
             self.set_input_float(interface_id, value)
         FMU2Simulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+            "Executing next step (current_simulation_time=%s | step_size=%s)...",
+            self._current_simulation_time,
+            step_size_in_seconds,
         )
         self._fmu_instance.doStep(
             currentCommunicationPoint=self._current_simulation_time,
             communicationStepSize=step_size_in_seconds,
         )
         self._current_simulation_time += step_size_in_seconds
-        FMU2Simulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
-        )
+        FMU2Simulator._logger.info("Executing next step finished (current_simulation_time=%s).", self._current_simulation_time)
 
     def clear(self) -> None:
         if self._is_cleared:

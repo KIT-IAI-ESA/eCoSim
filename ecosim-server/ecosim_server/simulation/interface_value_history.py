@@ -63,9 +63,7 @@ class InterfaceValueHistory:
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
         # TODO_OSR: let adding code run in own thread
-        InterfaceValueHistory.logger.debug(
-            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ...",
-        )
+        InterfaceValueHistory.logger.debug("Adding new entry: TimeStep: %s - ClientID: %s - values: %s ...", time_step, client_id, interface_values)
         self._add_to_entries_internal(
             time_step=time_step,
             client_id=client_id,
@@ -77,7 +75,10 @@ class InterfaceValueHistory:
             values=interface_values,
         )
         InterfaceValueHistory.logger.debug(
-            f"Adding new entry: TimeStep: {time_step} - ClientID: {client_id} - values: {interface_values} ... done.",
+            "Adding new entry: TimeStep: %s - ClientID: %s - values: %s ... done.",
+            time_step,
+            client_id,
+            interface_values,
         )
 
     def _add_to_entries_internal(
@@ -111,21 +112,23 @@ class InterfaceValueHistory:
                 "Cannot init from repositories because there are already entries.",
             )
         for client in self._simulation_config.clients:
-            InterfaceValueHistory.logger.debug(
-                f"Initializing from repositories for client {client.client_id}",
-            )
+            InterfaceValueHistory.logger.debug("Initializing from repositories for client %s", client.client_id)
             client_repo = self._repositories.measurement_repository(
                 client_id=client.client_id,
             )
             sorted_entries = sorted(client_repo.all(), key=lambda it: it.timestamp)
             InterfaceValueHistory.logger.debug(
-                f"Initializing from repositories for client {client.client_id}: found {len(sorted_entries)} entries",
+                "Initializing from repositories for client %s: found %s entries",
+                client.client_id,
+                len(sorted_entries),
             )
             for entry in sorted_entries:
                 step: int = self._simulation_config.date_time_to_step(entry.timestamp)
                 self._add_to_entries_internal(step, client.client_id, entry.values)
             InterfaceValueHistory.logger.debug(
-                f"Initializing from repositories for client {client.client_id}: successfully restored {len(sorted_entries)} entries",
+                "Initializing from repositories for client %s: successfully restored %s entries",
+                client.client_id,
+                len(sorted_entries),
             )
 
     def contains_all_default_values(self) -> bool:
@@ -169,7 +172,7 @@ class InterfaceValueHistory:
             latest_completed_step_by_client=latest_completed_step_by_client,
             repositories=self._repositories,
         )
-        InterfaceValueHistory.logger.debug(f"Calculating current execution step... finished. restore_data={restore_data}")
+        InterfaceValueHistory.logger.debug("Calculating current execution step... finished. restore_data=%s", restore_data)
         return restore_data
 
     def _get_latest_timestep(self) -> int:
@@ -221,9 +224,7 @@ class RestoreData:
             too_many_entries = latest_completed_step_client - common_latest_completed_step
             for i in range(too_many_entries):
                 all_entries.pop()
-            InterfaceValueHistory.logger.debug(
-                f"Transforming history to restore data for client {client_id}: found {len(all_entries)} entries",
-            )
+            InterfaceValueHistory.logger.debug("Transforming history to restore data for client %s: found %s entries", client_id, len(all_entries))
             transformed_entries: SimulationStepBatchRequestInputs = {entry.timestamp: list(entry.values) for entry in all_entries}
             result[client_id] = transformed_entries
         return result

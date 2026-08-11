@@ -94,9 +94,7 @@ class SimulationConfig:
         for client in self.clients:
             if client.model_name == client_id.model_name and client.simulator_name == client_id.simulator_name:
                 return client
-        SimulationConfig.logger.warning(
-            f"Cannot find simulator config for client {client_id}",
-        )
+        SimulationConfig.logger.warning("Cannot find simulator config for client %s", client_id)
         return None
 
     def validate_interfaces(
@@ -106,15 +104,13 @@ class SimulationConfig:
     ) -> bool:
         client_simulation_config = self.client_simulator_config_for(client_id)
         if client_simulation_config is None:
-            SimulationConfig.logger.error(f"Client {client_id} does not have a config.")
+            SimulationConfig.logger.error("Client %s does not have a config.", client_id)
             return False
         defined_interfaces = client_simulation_config.interfaces
 
         for defined_interface in defined_interfaces:
             if defined_interface.required and defined_interface.model_interface_id not in client_interface_ids.interfaces:
-                SimulationConfig.logger.error(
-                    f"Client {client_id} does not contain required interface {defined_interface.name}",
-                )
+                SimulationConfig.logger.error("Client %s does not contain required interface %s", client_id, defined_interface.name)
                 return False
         return True
 
@@ -331,8 +327,9 @@ class LogicalDelayConnection:
                 input_interface_id = matching_interfaces[0]
             elif len(matching_interfaces) >= 1:
                 SimulationConfig.logger.error(
-                    f"There are multiple matching input interfaces for {output_simulator_interface_id} but there must only be one. "
-                    + "The first one is used but you need to investigate this issue.",
+                    "There are multiple matching input interfaces for %s but there must only be one. "
+                    "The first one is used but you need to investigate this issue.",
+                    output_simulator_interface_id,
                 )
                 input_interface_id = matching_interfaces[0]
         if input_interface_id:
@@ -358,16 +355,18 @@ class LogicalDelayConnection:
         )
         if client is None:
             SimulationConfig.logger.warning(
-                f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> "
-                + "no clients match the criteria",
+                "Querying the simulation config for simulator interface id '%s' was not successful -> no clients match the criteria",
+                simulator_interface_id,
             )
             return None
         for interface in client.interfaces:
             if interface.simulator_interface_id == simulator_interface_id:
                 return interface
         SimulationConfig.logger.warning(
-            f"Querying the simulation config for simulator interface id '{simulator_interface_id}' was not successful -> client was found "
-            + f"({client.client_id}) but does not contain a matching interface",
+            "Querying the simulation config for simulator interface id '%s' was not successful -> "
+            "client was found (%s) but does not contain a matching interface",
+            simulator_interface_id,
+            client.client_id,
         )
         return None
 

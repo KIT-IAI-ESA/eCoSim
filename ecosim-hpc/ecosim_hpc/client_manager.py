@@ -102,7 +102,7 @@ class ClientManager(ShutdownListener):
                         # dd.fire_and_forget(future)
 
                 else:
-                    ClientManager.logger.error(f"Unable to load {simulator}. FMU V1 format not supported.")
+                    ClientManager.logger.error("Unable to load %s. FMU V1 format not supported.", simulator)
 
             for simulator in simulator_path.glob("*.m"):
                 simulator_config = ConfigParser([ini for ini in simulator.parent.glob("*.ini")][0])

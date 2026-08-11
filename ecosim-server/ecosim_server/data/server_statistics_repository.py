@@ -37,10 +37,10 @@ class ServerTimeMeasurementRepository(ABC):
     ) -> timedelta | None:
         start = self.get_start(type)
         if start is None:
-            ServerTimeMeasurementRepository._logger.warning(f"get_time: No start time found for type: {type}")
+            ServerTimeMeasurementRepository._logger.warning("get_time: No start time found for type: %s", type)
             return None
         end = self.get_start(type)
         if end is None:
-            ServerTimeMeasurementRepository._logger.warning(f"get_time: No end time found for type: {type}")
+            ServerTimeMeasurementRepository._logger.warning("get_time: No end time found for type: %s", type)
             return None
         return end - start

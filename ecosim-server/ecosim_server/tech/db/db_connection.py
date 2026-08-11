@@ -32,9 +32,9 @@ class DBConnection:
     ) -> None:
         table_name = table.__tablename__  # type: ignore # __tablename__ is part of SQLAlchemy
         if self.table_exists(table_name):
-            DBConnection._logger.debug(f"Table {table_name} already exists -> skipping creation")
+            DBConnection._logger.debug("Table %s already exists -> skipping creation", table_name)
             return
-        DBConnection._logger.debug(f"Creating table {table_name}")
+        DBConnection._logger.debug("Creating table %s", table_name)
         table.__table__.create(self._db_engine)  # type: ignore # __table__ is part of SQLAlchemy
 
     def table_exists(
@@ -45,7 +45,7 @@ class DBConnection:
             inspector = inspect(self._db_engine)
             return inspector.has_table(table_name)
         except OperationalError as e:
-            DBConnection._logger.error(f"An error occurred while checking if table exists: {e}")
+            DBConnection._logger.error("An error occurred while checking if table exists: %s", e)
             return False
 
     def insert_into(

@@ -45,7 +45,7 @@ class MatlabSimulator(ShutdownListener):
         if self._is_initialized:
             MatlabSimulator._logger.warning("Already initialized ... aborting second initialization.")
             return
-        MatlabSimulator._logger.info(f"Initializing with start_time {start_time}")
+        MatlabSimulator._logger.info("Initializing with start_time %s", start_time)
         self._start_time = start_time
         self._is_initialized = True
         self._current_simulation_time = start_time
@@ -59,7 +59,7 @@ class MatlabSimulator(ShutdownListener):
         name: str,
         value: float,
     ) -> None:
-        MatlabSimulator._logger.debug(f"Setting float input {name} to {value}")
+        MatlabSimulator._logger.debug("Setting float input %s to %s", name, value)
         self._matlab_engine.workspace[name] = value
 
     def get_output_float(
@@ -67,7 +67,7 @@ class MatlabSimulator(ShutdownListener):
         name: str,
     ) -> float:
         value: float = self._matlab_engine.workspace[name]
-        MatlabSimulator._logger.debug(f"Getting float output {name}: {value}")
+        MatlabSimulator._logger.debug("Getting float output %s: %s", name, value)
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
@@ -99,16 +99,16 @@ class MatlabSimulator(ShutdownListener):
             """
             self.set_input_float(interface_id, value)  # type: ignore  # TODO, s. comment above
         MatlabSimulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+            "Executing next step (current_simulation_time=%s | step_size=%s)...",
+            self._current_simulation_time,
+            step_size_in_seconds,
         )
         self._matlab_engine.workspace["client_time"] = self._current_simulation_time
         # Steps are starting at 0
         self._matlab_engine.workspace["step"] = (self._current_simulation_time / step_size_in_seconds) + 1
         self._matlab_engine.step(nargout=0, stdout=io.StringIO())
         self._current_simulation_time += step_size_in_seconds
-        MatlabSimulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
-        )
+        MatlabSimulator._logger.info("Executing next step finished (current_simulation_time=%s).", self._current_simulation_time)
 
     def clear(self) -> None:
         if self._is_cleared:

@@ -250,12 +250,12 @@ def handle_client_2_sim_step(
     received_values: dict[InterfaceId, InterfaceValueType],
     step_size_in_seconds: float,
 ) -> ClientSimStepData:
-    logger.debug(f"Received values: {received_values}")
+    logger.debug("Received values: %s", received_values)
     assert len(received_values.keys()) == 1
     received_value: InterfaceValueType = received_values["TestInterface_2"]
     assert isinstance(received_value, list)
     return_value = square_each_element(received_value)
-    logger.debug(f"Return value: {return_value}")
+    logger.debug("Return value: %s", return_value)
     return ClientSimStepData(
         interface_values=[
             ProtocolInterfaceValue(

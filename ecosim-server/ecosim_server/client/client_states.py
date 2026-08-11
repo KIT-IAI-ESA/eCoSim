@@ -74,17 +74,17 @@ class ClientStates(ShutdownListener):
         with self._client_states.transaction() as client_states:
             client = client_states.get(client_config.client_id(), None)
             if not client:
-                ClientStates._logger.debug(
-                    f"Client {client_config.client_id()} ({client_connection.address}) connected but is not needed.",
-                )
+                ClientStates._logger.debug("Client %s (%s) connected but is not needed.", client_config.client_id(), client_connection.address)
                 return False
             if client.connected:
                 ClientStates._logger.debug(
-                    f"Client {client_config.client_id()} ({client_connection.address}) connected but "
-                    + f"another client ({client.connection_address}) already fulfills this required.",
+                    "Client %s (%s) connected but another client (%s) already fulfills this required.",
+                    client_config.client_id(),
+                    client_connection.address,
+                    client.connection_address,
                 )
                 return False
-            ClientStates._logger.info(f"Client {client_config.client_id()} ({client_connection.address}) connected.")
+            ClientStates._logger.info("Client %s (%s) connected.", client_config.client_id(), client_connection.address)
             client.connection = client_connection
             client.connected = True
             return True
@@ -94,7 +94,7 @@ class ClientStates(ShutdownListener):
         client_id: ClientID,
     ) -> None:
         with self._client_states.transaction() as client_states:
-            ClientStates._logger.debug(f"Resetting client state of {client_id}.")
+            ClientStates._logger.debug("Resetting client state of %s.", client_id)
             client_states[client_id].close_connection()
             client_states[client_id].connection = None
             client_states[client_id].connected = False
@@ -132,8 +132,9 @@ class ClientStates(ShutdownListener):
             sleep(1)
             # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
             ClientStates._logger.debug(
-                "Waiting for all clients starting simulation: "
-                + f"{sum(1 for state in self._client_states.values() if state.simulation_started)}/{len(self._client_states.values())}",
+                "Waiting for all clients starting simulation: %s/%s",
+                sum(1 for state in self._client_states.values() if state.simulation_started),
+                len(self._client_states.values()),
             )
             if self._shutdown_triggered:
                 raise RuntimeError("Shutdown was triggered during waiting for all clients to start")

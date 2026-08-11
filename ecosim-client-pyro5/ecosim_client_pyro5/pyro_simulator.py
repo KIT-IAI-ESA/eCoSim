@@ -40,7 +40,7 @@ class PyroSimulator(ShutdownListener):
         if self._is_initialized:
             PyroSimulator._logger.warning("Already initialized ... aborting second initialization.")
             return
-        PyroSimulator._logger.info(f"Initializing with start_time {start_time}")
+        PyroSimulator._logger.info("Initializing with start_time %s", start_time)
         self._start_time = start_time
         self._is_initialized = True
         self._current_simulation_time = start_time
@@ -55,7 +55,7 @@ class PyroSimulator(ShutdownListener):
     ) -> None:
         if not isinstance(value, float):
             raise TypeError(f"Expected a float but got {type(value)}.")
-        PyroSimulator._logger.debug(f"Setting float input {name} to {value}")
+        PyroSimulator._logger.debug("Setting float input %s to %s", name, value)
         self._input_dict[name] = value
 
     def get_output_float(
@@ -63,7 +63,7 @@ class PyroSimulator(ShutdownListener):
         name: str,
     ) -> float:
         value = self._output_dict[name]
-        PyroSimulator._logger.debug(f"Getting float output {name}: {value}")
+        PyroSimulator._logger.debug("Getting float output %s: %s", name, value)
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
@@ -87,13 +87,13 @@ class PyroSimulator(ShutdownListener):
         for interface_id, value in input_values.items():
             self.set_input_float(interface_id, value)
         PyroSimulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+            "Executing next step (current_simulation_time=%s | step_size=%s)...",
+            self._current_simulation_time,
+            step_size_in_seconds,
         )
         self._output_dict = self._simulation_object.do_step(self._input_dict)
         self._current_simulation_time += step_size_in_seconds
-        PyroSimulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
-        )
+        PyroSimulator._logger.info("Executing next step finished (current_simulation_time=%s).", self._current_simulation_time)
 
     def clear(self) -> None:
         self._simulation_object._pyroClaimOwnership()

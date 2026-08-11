@@ -87,8 +87,9 @@ class MainConfig:
         if config.contains("server", "port") and config_override.server_port is not None:
             config_port = config.get_int("server", "port")
             ServerConfig.logger.info(
-                f"Port was passed as an CLI argument. The port in the config file ({config_port}) is therefor "
-                f"overridden with {config_override.server_port}",
+                "Port was passed as an CLI argument. The port in the config file (%s) is therefor overridden with %s",
+                config_port,
+                config_override.server_port,
             )
             return config_override.server_port
         if config_override.server_port is not None:

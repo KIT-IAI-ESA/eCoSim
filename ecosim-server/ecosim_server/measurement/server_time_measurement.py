@@ -32,9 +32,7 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"Start time for {type} is already set -> nothing happens",
-            )
+            ServerTimeMeasurement._logger.warning("Start time for %s is already set -> nothing happens", type)
             return
         self._start_times[type] = datetime.now()
 
@@ -43,9 +41,7 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._end_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"End time for {type} is already set -> nothing happens",
-            )
+            ServerTimeMeasurement._logger.warning("End time for %s is already set -> nothing happens", type)
             return
         self._end_times[type] = datetime.now()
 
@@ -54,13 +50,13 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> str | None:
         if type not in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"Measurement type {type} as no start time -> cannot calculate runtime",
-            )
+            ServerTimeMeasurement._logger.warning("Measurement type %s as no start time -> cannot calculate runtime", type)
             return None
         if type not in self._end_times.keys():
             ServerTimeMeasurement._logger.warning(
-                f"Measurement type {type} as no end time (start time: {self._start_times[type]}) -> cannot calculate runtime",
+                "Measurement type %s as no end time (start time: %s) -> cannot calculate runtime",
+                type,
+                self._start_times[type],
             )
             return None
         delta = self._end_times[type] - self._start_times[type]

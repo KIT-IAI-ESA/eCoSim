@@ -270,9 +270,7 @@ class ClientInterfaceConfig:
                 output_interfaces = fmc_json.get("outputs", [])
                 for input_interface in input_interfaces:
                     if not input_interface["name"]:
-                        ClientConfig.logger.warning(
-                            f"There is an input interface without a name in file {fmc_file_absolute}: {input_interface}",
-                        )
+                        ClientConfig.logger.warning("There is an input interface without a name in file %s: %s", fmc_file_absolute, input_interface)
                         continue
                     interfaces.append(
                         ModelInterfaceClient.of_json_client_config(
@@ -296,9 +294,7 @@ class ClientInterfaceConfig:
                         ),
                     )
                     if not output_interface["name"]:
-                        ClientConfig.logger.warning(
-                            f"There is an output interface without a name in file {fmc_file_absolute}: {output_interface}",
-                        )
+                        ClientConfig.logger.warning("There is an output interface without a name in file %s: %s", fmc_file_absolute, output_interface)
                         continue
         except FileNotFoundError:
             error_message = f"Can not load fmc file {simulator_config.fmc_file}"

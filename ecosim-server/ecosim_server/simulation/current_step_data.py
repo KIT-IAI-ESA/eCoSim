@@ -99,22 +99,25 @@ class CurrentStepData:
         client_data = data_by_client[interface.client_id()]
         if client_data.executed:
             CurrentStepData._logger.error(
-                f"(CurrentStep: {self._step.get()}): Setting value for execution for interface {interface} but it is already executed",
+                "(CurrentStep: %s): Setting value for execution for interface %s but it is already executed",
+                self._step.get(),
+                interface,
             )
             return
         for interface_data in client_data.interface_data:
             if interface_data.interface_value.name == interface.model_interface_id.interface:
                 if interface_data.interface_value.value is not None:
                     CurrentStepData._logger.warning(
-                        f"(CurrentStep: {self._step.get()}) Setting value for execution for interface {interface} but it is already set => "
-                        + f"overwriting old value of {interface_data.interface_value.value} with {value}",
+                        "(CurrentStep: %s) Setting value for execution for interface %s but it is already set => overwriting old value of %s with %s",
+                        self._step.get(),
+                        interface,
+                        interface_data.interface_value.value,
+                        value,
                     )
                     return
                 interface_data.interface_value.value = value
                 return
-        CurrentStepData._logger.error(
-            f"(CurrentStep: {self._step.get()}) Could not find {interface} to set execution value to {value}",
-        )
+        CurrentStepData._logger.error("(CurrentStep: %s) Could not find %s to set execution value to %s", self._step.get(), interface, value)
 
     def get_ready_for_execution(self) -> dict[ClientID, List[ProtocolInterfaceValue]]:
         result: dict[ClientID, List[ProtocolInterfaceValue]] = {}
@@ -131,11 +134,11 @@ class CurrentStepData:
         client_id_sender: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
-        CurrentStepData._logger.debug(f"CurrentStepData#add_received_data: entry for {client_id_sender}")
+        CurrentStepData._logger.debug("CurrentStepData#add_received_data: entry for %s", client_id_sender)
         client_config_sender = self._simulation_config.client_simulator_config_for(client_id_sender)
 
         if client_config_sender is None:
-            CurrentStepData._logger.error(f"CurrentStepData#add_received_data: Cannot find client sender for client {client_id_sender}")
+            CurrentStepData._logger.error("CurrentStepData#add_received_data: Cannot find client sender for client %s", client_id_sender)
             return
 
         for interface_value in interface_values:
@@ -154,7 +157,8 @@ class CurrentStepData:
                     client_config_receiver = self._simulation_config.client_simulator_config_for(client_id_receiver)
                     if client_config_receiver is None:
                         CurrentStepData._logger.error(
-                            f"CurrentStepData#add_received_data: Cannot find client receiver for client {client_id_receiver}",
+                            "CurrentStepData#add_received_data: Cannot find client receiver for client %s",
+                            client_id_receiver,
                         )
                         return
                     for interface_data_entry in data_by_client[client_id_receiver].interface_data:
@@ -178,12 +182,16 @@ class CurrentStepData:
                         if logical_delay_connection.settable_by(simulator_interface_id_sender):
                             if cached_step() in logical_delay_connection.set_in_step:
                                 CurrentStepData._logger.warning(
-                                    f"Connection {logical_delay_connection.input_interface} in logical delay {logical_delay.delayed_time_steps} was "
-                                    + f"already set in time step {cached_step()}. This should not happen. The current value "
-                                    + f"{logical_delay_connection.current_value} will be overwritten with {new_value}.",
+                                    "Connection %s in logical delay %s was already set in time step %s. This should not happen. "
+                                    "The current value %s will be overwritten with %s.",
+                                    logical_delay_connection.input_interface,
+                                    logical_delay.delayed_time_steps,
+                                    cached_step(),
+                                    logical_delay_connection.current_value,
+                                    new_value,
                                 )
                             logical_delay_connection.current_value = new_value
-        CurrentStepData._logger.debug(f"CurrentStepData#add_received_data: exit for {client_id_sender}")
+        CurrentStepData._logger.debug("CurrentStepData#add_received_data: exit for %s", client_id_sender)
 
     def all_clients_executed(self) -> bool:
         data_by_client = self._data_by_client.get_snapshot()

@@ -102,13 +102,13 @@ def pytest_runtest_teardown(item: Item, nextitem: Item | None) -> None:
         return
 
     try:
-        pytest_fixture_logger.info(f"Closing dask client: {client}")
+        pytest_fixture_logger.info("Closing dask client: %s", client)
         for key in client.datasets.keys():
-            pytest_fixture_logger.debug(f"Dask teardown: key in dataset: {key} = {client.get_dataset(key)}")
+            pytest_fixture_logger.debug("Dask teardown: key in dataset: %s = %s", key, client.get_dataset(key))
         client.close()
         if client.cluster is not None:
             client.cluster.close()
         if dd.client._global_clients is not None:  # noqa: SLF001
             dd.client._global_clients.clear()  # noqa: SLF001
     except Exception as e:
-        pytest_fixture_logger.error(f"Closing dask client failed: {e}")
+        pytest_fixture_logger.error("Closing dask client failed: %s", e)

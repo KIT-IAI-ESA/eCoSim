@@ -64,7 +64,7 @@ class RenderingSocketClient(ShutdownListener):
         url: str,
     ) -> None:
         try:
-            RenderingSocketClient._logger.debug(f"Connecting to {url}...")
+            RenderingSocketClient._logger.debug("Connecting to %s...", url)
             self._websocket = await websockets.connect(
                 url,
                 additional_headers=RenderingMessageClientHeader.create_raw(
@@ -72,7 +72,7 @@ class RenderingSocketClient(ShutdownListener):
                 ),
                 max_size=None,
             )
-            RenderingSocketClient._logger.debug(f"Connecting to {url}... success.")
+            RenderingSocketClient._logger.debug("Connecting to %s... success.", url)
             if self._started_event:
                 self._started_event.set()
             else:
@@ -92,7 +92,9 @@ class RenderingSocketClient(ShutdownListener):
                             self._no_sending_in_progress.clear()
                             rendering_image_message = message.cast(RenderingImageMessage)
                             RenderingSocketClient._logger.debug(
-                                f"Received {RenderingMessageType.RENDERING_IMAGE.value} message for time step {rendering_image_message.time_step}...",
+                                "Received %s message for time step %s...",
+                                RenderingMessageType.RENDERING_IMAGE.value,
+                                rendering_image_message.time_step,
                             )
                             image = self._renderer_service.render_step(rendering_image_message.time_step)
                             content = base64.b64encode(image).decode("utf-8") if image else None
@@ -103,28 +105,30 @@ class RenderingSocketClient(ShutdownListener):
                                 ).model_dump_json(),
                             )
                             RenderingSocketClient._logger.debug(
-                                f"Handled {RenderingMessageType.RENDERING_IMAGE.value} message for time step "
-                                + f"{rendering_image_message.time_step}... success.",
+                                "Handled %s message for time step %s... success.",
+                                RenderingMessageType.RENDERING_IMAGE.value,
+                                rendering_image_message.time_step,
                             )
                         except Exception as e:
                             RenderingSocketClient._logger.error(
-                                "Something went wrong sending images of time step "
-                                + f"{rendering_image_message.time_step if rendering_image_message else 'N/A'}: {e}",
+                                "Something went wrong sending images of time step %s: %s",
+                                rendering_image_message.time_step if rendering_image_message else "N/A",
+                                e,
                             )
                         finally:
                             self._no_sending_in_progress.set()
                     else:
-                        RenderingSocketClient._logger.warning(f"Received unprocessable message: {message.raw_json()}")
+                        RenderingSocketClient._logger.warning("Received unprocessable message: %s", message.raw_json())
             except ConnectionClosedOK:
                 RenderingSocketClient._logger.debug("received closing connection from server")
             except Exception as e:
-                RenderingSocketClient._logger.error(f"Something went wrong running the rendering socket client: {e}")
+                RenderingSocketClient._logger.error("Something went wrong running the rendering socket client: %s", e)
             finally:
                 RenderingSocketClient._logger.debug("Reached end - closing socket.")
                 if self._websocket:
                     await self._websocket.close()
         except Exception as e:
-            RenderingSocketClient._logger.error(f"Something went wrong connecting to {url}: {e}")
+            RenderingSocketClient._logger.error("Something went wrong connecting to %s: %s", url, e)
 
     def close(self) -> None:
         if not self._running.is_set():
@@ -133,10 +137,12 @@ class RenderingSocketClient(ShutdownListener):
         self._running.clear()
         if not self._no_sending_in_progress.is_set():
             timeout = 9
-            RenderingSocketClient._logger.debug(f"Sending is currently in progress. Waiting for {timeout} seconds...")
+            RenderingSocketClient._logger.debug("Sending is currently in progress. Waiting for %s seconds...", timeout)
             success = self._no_sending_in_progress.wait(timeout)
             RenderingSocketClient._logger.debug(
-                f"Sending is currently in progress. Waited for {timeout} seconds... {'success' if success else 'failed.'}",
+                "Sending is currently in progress. Waited for %s seconds... %s",
+                timeout,
+                "success" if success else "failed.",
             )
         if self._thread:
             self._thread.join()
