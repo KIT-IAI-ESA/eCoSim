@@ -72,18 +72,14 @@ class TCPSocket(ESPChannel, ShutdownListener):
         connection_address: ConnectionAddress,
     ) -> None:
         if self._bound.is_set():
-            TCPSocket._logger.warning(
-                f"Socket is already bound -> skipping binding to {connection_address}",
-            )
+            TCPSocket._logger.warning("Socket is already bound -> skipping binding to %s", connection_address)
             return
         self._bound.set()
         try:
             self._internal_socket.bind((connection_address.ip, connection_address.port))
             self._connection_address = connection_address
         except socket.error as e:
-            TCPSocket._logger.error(
-                f"Something went wrong binding to {connection_address}: {e}",
-            )
+            TCPSocket._logger.error("Something went wrong binding to %s: %s", connection_address, e)
             self._bound.clear()
             raise e
 
@@ -111,20 +107,17 @@ class TCPSocket(ESPChannel, ShutdownListener):
                         return
                     raise e
                 if not connection:
-                    TCPSocket._logger.error(
-                        f"Something went wrong accepting a connection on {connection_address}",
-                    )
+                    TCPSocket._logger.error("Something went wrong accepting a connection on %s", connection_address)
                     continue
                 client_address = ConnectionAddress.of_raw_socket_address(address)
                 if client_address.ip == connection_address.ip:
                     TCPSocket._logger.info(
-                        f"Socket listening on {connection_address} received a connection from itself - this is "
-                        f"probably a shutdown trigger. If this message appears multiple times please investigate.",
+                        "Socket listening on %s received a connection from itself - this is "
+                        "probably a shutdown trigger. If this message appears multiple times please investigate.",
+                        connection_address,
                     )
                     continue
-                TCPSocket._logger.debug(
-                    f"New connection on socket {connection_address} from {client_address}",
-                )
+                TCPSocket._logger.debug("New connection on socket %s from %s", connection_address, client_address)
 
                 connection_data = ConnectionData(
                     channel=TCPSocket(
@@ -149,9 +142,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
         try:
             handler(connection_data)
         except Exception as e:
-            TCPSocket._logger.error(
-                f"Client handler for {connection_data.client_address} failed: {e}",
-            )
+            TCPSocket._logger.error("Client handler for %s failed: %s", connection_data.client_address, e)
 
     def listen_on_connection_loop_async(
         self,
@@ -173,15 +164,17 @@ class TCPSocket(ESPChannel, ShutdownListener):
         TCPSocket._logger.debug("Closing socket...")
         if self._is_internal_socket_listening() or self._has_internal_socket_peer() or self._listening_on_connection.is_set():
             TCPSocket._logger.debug(
-                f"Closing socket: internal listening: {self._is_internal_socket_listening()} | peers: {self._has_internal_socket_peer()} | "
-                + f"listening on connection: {self._listening_on_connection.is_set()}",
+                "Closing socket: internal listening: %s | peers: %s | listening on connection: %s",
+                self._is_internal_socket_listening(),
+                self._has_internal_socket_peer(),
+                self._listening_on_connection.is_set(),
             )
             self._listening_on_connection.clear()
             try:
                 self._internal_socket.shutdown(socket.SHUT_RDWR)
                 TCPSocket._logger.debug("Closing socket: successfully sent SHUT_RDWR signal")
             except socket.error as e:
-                TCPSocket._logger.error(f"Something went wrong closing connection on {self._connection_address}: {e}")
+                TCPSocket._logger.error("Something went wrong closing connection on %s: %s", self._connection_address, e)
         TCPSocket._logger.debug("Closing socket...done.")
 
     def on_app_shutdown(self) -> None:
@@ -198,14 +191,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
         on_message: Callable[[ESPChannelMessage], None],
     ) -> None:
         if self._listening.is_set():
-            TCPSocket._logger.warning(
-                f"Socket is already listening to: {self._connection_address}. So nothing is done.",
-            )
+            TCPSocket._logger.warning("Socket is already listening to: %s. So nothing is done.", self._connection_address)
             return
         if self._start_listening_in_progress.is_set():
-            TCPSocket._logger.warning(
-                f"Socket already starts to listening to: {self._connection_address}. So nothing is done.",
-            )
+            TCPSocket._logger.warning("Socket already starts to listening to: %s. So nothing is done.", self._connection_address)
             return
         self._start_listening_in_progress.set()
         listen_thread = threading.Thread(target=self._listen_on_message_async, args=[on_message])
@@ -228,14 +217,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
         if self._listening.is_set():
-            TCPSocket._logger.warning(
-                f"Socket is already listening to: {self._connection_address}. So nothing is done.",
-            )
+            TCPSocket._logger.warning("Socket is already listening to: %s. So nothing is done.", self._connection_address)
             return None
         if self._start_listening_in_progress.is_set():
-            TCPSocket._logger.warning(
-                f"Socket already starts to listening to: {self._connection_address}. So nothing is done.",
-            )
+            TCPSocket._logger.warning("Socket already starts to listening to: %s. So nothing is done.", self._connection_address)
             return None
         self._listening.set()
         message = self._listen_blocking(timeout_in_seconds)
@@ -275,9 +260,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
             if not chunk:
                 raise ConnectionError("Error while receiving junks.")
             data += chunk
-        TCPSocket._logger.debug(
-            f"Received message of type {message_header.message_type}",
-        )
+        TCPSocket._logger.debug("Received message of type %s", message_header.message_type)
         return ReceivedBinaryMessage(
             message_header,
             data,
@@ -300,9 +283,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
             connection_address = self._connection_address
             if not connection_address:
                 raise e
-            TCPSocket._logger.debug(
-                f"Sending message to server failed - recreating the socket and try again. Error: {e}",
-            )
+            TCPSocket._logger.debug("Sending message to server failed - recreating the socket and try again. Error: %s", e)
             self._internal_socket.connect((connection_address.ip, connection_address.port))
             self._internal_socket.send(raw_message)
 

@@ -2,7 +2,8 @@ line-length = 150
 
 [lint]
 # Enable pycodestyle (E) and Pyflakes (F) rules (flake8's default rule sets), and warnings (W)
-select = ["E", "F", "W", "SLF"]
+# G (flake8-logging-format) keeps log messages lazy: G004 rejects f-strings in log calls,
+select = ["E", "F", "W", "SLF", "G"]
 ignore = []
 
 [lint.per-file-ignores]

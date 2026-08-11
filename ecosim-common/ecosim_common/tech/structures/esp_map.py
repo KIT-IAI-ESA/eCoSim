@@ -154,7 +154,7 @@ class SimpleESPMap(ESPMap[K, V]):
         if not self._ignore_thread_safety_logs:
             _logger.error(
                 "'transaction' is not thread safe for SimpleESPMap -> no lock is used and you will get unpredicted race conditions "
-                + "-> use ThreadESPMap instead.",
+                "-> use ThreadESPMap instead.",
             )
         current = self.get_snapshot()
         yield current
@@ -186,7 +186,7 @@ class DaskVariableESPMap(ESPMap[K, V]):
                 # if it does not exist, initialize it
                 self._dask_variable.set(pickle.dumps(init_data))
             except Exception as e:
-                ESPMap.logger.warning(f"Failed to initialize Dask variable, with other than TimeoutError: {e}")
+                ESPMap.logger.warning("Failed to initialize Dask variable, with other than TimeoutError: %s", e)
                 self._dask_variable.set(pickle.dumps(init_data))
 
     @override

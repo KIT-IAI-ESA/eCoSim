@@ -26,11 +26,9 @@ class SocketConnector(ESPChannelConnector):
             try:
                 tcp_socket.connect()
             except socket.error as e:
-                SocketConnector._logger.warning(
-                    f"Cannot connect to socket - trying in sum for {timeout_in_seconds}s. Error: {e}",
-                )
+                SocketConnector._logger.warning("Cannot connect to socket - trying in sum for %ss. Error: %s", timeout_in_seconds, e)
                 time.sleep(1)
         if not tcp_socket.is_connected():
             raise ConnectionError(f"Could not connect to socket {connection_address}")
-        SocketConnector._logger.info(f"Connected to socket successfully: {connection_address}")
+        SocketConnector._logger.info("Connected to socket successfully: %s", connection_address)
         return tcp_socket

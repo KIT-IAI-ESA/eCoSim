@@ -27,12 +27,10 @@ class DaskConnector(ESPChannelConnector):
                 channel.connect()
                 connected = True
             except Exception as e:
-                DaskConnector._logger.warning(
-                    f"Cannot connect to Dask client - trying in sum for {timeout_in_seconds}s. Error: {e}",
-                )
+                DaskConnector._logger.warning("Cannot connect to Dask client - trying in sum for %ss. Error: %s", timeout_in_seconds, e)
                 time.sleep(1)
 
         if not connected:
             raise ConnectionError(f"Could not connect to Dask client {connection_address}")
-        DaskConnector._logger.info(f"Connected to Dask client successfully: {connection_address}")
+        DaskConnector._logger.info("Connected to Dask client successfully: %s", connection_address)
         return channel

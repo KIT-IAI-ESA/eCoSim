@@ -45,7 +45,7 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
     def current(self) -> SimulationState:
         dto: SimulationStateDTO | None = self._db_connection.select_by_id(SimulationStateDTO, self._state_id)  # type: ignore
         if dto is None:
-            SimulationStateRepositoryDB._logger.error(f"Could not find state in database for state_id {self._state_id}.")
+            SimulationStateRepositoryDB._logger.error("Could not find state in database for state_id %s.", self._state_id)
             return SimulationState.NOT_READY
         return SimulationState.of_db_entry(dto.state)  # type: ignore
 

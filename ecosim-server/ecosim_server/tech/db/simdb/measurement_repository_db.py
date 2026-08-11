@@ -75,7 +75,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
         elif isinstance(value.value, Sequence) and not isinstance(value.value, (str, bytes)):  # type: ignore
             # ignore match on str or bytes -> the exclusion is implemented as a failsafe if at any time str or bytes is a valid value type
             return self._interface_name_to_json_column_name[value.name]
-        self._logger.error(f"Unknown value type: {type(value.value)} -> handling it as json, but you need to fix this.")
+        self._logger.error("Unknown value type: %s -> handling it as json, but you need to fix this.", type(value.value))
         return self._interface_name_to_json_column_name[value.name]
 
     @override

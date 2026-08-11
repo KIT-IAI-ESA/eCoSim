@@ -30,9 +30,7 @@ class ConfigParser:
             return self.config_string_to_bool(self._get(section, option))
         except ConfigParserException as e:
             if default is not None:
-                ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
-                )
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
 
@@ -53,9 +51,7 @@ class ConfigParser:
             return self._get(section, option)
         except ConfigParserException as e:
             if default is not None:
-                ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
-                )
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
 
@@ -71,9 +67,7 @@ class ConfigParser:
             return enum_class[value]
         except ConfigParserException as e:
             if default is not None:
-                ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
-                )
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
 

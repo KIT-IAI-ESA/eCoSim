@@ -102,8 +102,9 @@ class Client(ShutdownListener):
 
     def start(self) -> None:
         Client.logger.info(
-            "Starting to connect to "
-            + f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
+            "Starting to connect to %s:%s",
+            self._client_config.server_config().server_address.ip,
+            self._client_config.server_config().server_address.port,
         )
         self._connect_channel()
         self._channel.listen_on_message_async(
@@ -126,8 +127,9 @@ class Client(ShutdownListener):
             self.on_app_shutdown()
             raise e
         Client.logger.info(
-            f"Connected to socket successfully: "
-            f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
+            "Connected to socket successfully: %s:%s",
+            self._client_config.server_config().server_address.ip,
+            self._client_config.server_config().server_address.port,
         )
 
     def _handle_message(
@@ -156,7 +158,7 @@ class Client(ShutdownListener):
             case MessageType.PING:
                 self._handle_ping(message)
             case MessageType.UNKNOWN:
-                Client.logger.error(f"Unknown message type: '{message_type}'")
+                Client.logger.error("Unknown message type: '%s'", message_type)
             case _:
                 assert_never(message_type)
 
@@ -180,8 +182,9 @@ class Client(ShutdownListener):
         started.wait(timeout)
         if not started:
             Client.logger.warning(
-                f"The image renderer connection was not established within {timeout}s -> "
-                + "the simulation will execute but you may not receive any images from this client.",
+                "The image renderer connection was not established within %ss -> the simulation will execute "
+                "but you may not receive any images from this client.",
+                timeout,
             )
 
     def _handle_client_meta_data_request(
@@ -240,9 +243,7 @@ class Client(ShutdownListener):
         self._execution_config.set_step_size_in_ms(
             message.payload(SimulationSetupMessage).step_size_in_ms,
         )
-        Client.logger.debug(
-            f"  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}",
-        )
+        Client.logger.debug("  -> step size (in seconds): %s", self._execution_config.step_size_in_seconds())
         Client.logger.debug("_handle_simulation_setup: Attempting to send back")
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
@@ -310,7 +311,7 @@ class Client(ShutdownListener):
         for step_datetime, inputs in sorted(
             simulation_step_batch_request.inputs.items(),
         ):
-            Client.logger.debug(f"Executing batch step {step_datetime}")
+            Client.logger.debug("Executing batch step %s", step_datetime)
             filtered_inputs = [input for input in inputs if input.name in input_interfaces]
             filtered_interface_names = [interface.name for interface in filtered_inputs]
             for required_input in required_input_interfaces:
@@ -331,18 +332,17 @@ class Client(ShutdownListener):
                     None,
                 )
                 if matching_interface is None:
-                    Client.logger.warning(
-                        f"Batch step {step_datetime}: No matching interface found for interface '{new_interface_value.name}'",
-                    )
+                    Client.logger.warning("Batch step %s: No matching interface found for interface '%s'", step_datetime, new_interface_value.name)
                     continue
                 if matching_interface.value == new_interface_value.value:
-                    Client.logger.debug(
-                        f"Batch step {step_datetime}: Value matched for interface '{new_interface_value.name}'",
-                    )
+                    Client.logger.debug("Batch step %s: Value matched for interface '%s'", step_datetime, new_interface_value.name)
                 else:
                     Client.logger.error(
-                        f"Batch step {step_datetime}: Value mismatch for interface '{new_interface_value.name}': "
-                        f"expected={matching_interface.value}, actual={new_interface_value.value}",
+                        "Batch step %s: Value mismatch for interface '%s': expected=%s, actual=%s",
+                        step_datetime,
+                        new_interface_value.name,
+                        matching_interface.value,
+                        new_interface_value.value,
                     )
 
         if last_simulation_step_data is None:

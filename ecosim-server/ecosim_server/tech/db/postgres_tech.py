@@ -17,7 +17,7 @@ class PostgresTech(DbTechAbstract):
         self.server_config = server_config
 
     def db_connection(self) -> DBConnection:
-        PostgresTech._logger.debug(f"Creating DB connection to {self.server_config.database.name}")
+        PostgresTech._logger.debug("Creating DB connection to %s", self.server_config.database.name)
         return DBConnection(
             db_config=self.server_config.database,
             base_model=SimControlDB_Base,
@@ -39,9 +39,9 @@ class PostgresTech(DbTechAbstract):
             exists = result.scalar() is not None
             if not exists:
                 root_connection.execute(text(f"CREATE DATABASE {db_name}"))
-                PostgresTech._logger.debug(f"Database '{db_name}' created successfully.")
+                PostgresTech._logger.debug("Database '%s' created successfully.", db_name)
             else:
-                PostgresTech._logger.debug(f"Database '{db_name}' already exists - no need for creation.")
+                PostgresTech._logger.debug("Database '%s' already exists - no need for creation.", db_name)
 
         existing_db = create_engine(self.server_config.database.generate_sqlalchemy_db_url())
         with existing_db.connect() as connection:
@@ -58,4 +58,4 @@ class PostgresTech(DbTechAbstract):
                     connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
             connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             connection.commit()
-            PostgresTech._logger.debug(f"Schema '{schema}' created")
+            PostgresTech._logger.debug("Schema '%s' created", schema)

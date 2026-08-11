@@ -121,7 +121,7 @@ class SimpleESPSet(ESPSet[T]):
         if not self._ignore_thread_safety_logs:
             _logger.error(
                 "'transaction' is not thread safe for SimpleESPSet -> no lock is used and you will get unpredicted race conditions "
-                + "-> use ThreadESPSet instead.",
+                "-> use ThreadESPSet instead.",
             )
         current = self.get_snapshot()
         yield current

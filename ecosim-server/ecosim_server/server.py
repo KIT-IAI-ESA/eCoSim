@@ -131,7 +131,7 @@ class Server(ShutdownListener):
             ),
         )
         connection.receive(expected_type=MessageType.SIMULATION_SETUP)
-        Server._logger.debug(f"Client {connection.address} accepted step size")
+        Server._logger.debug("Client %s accepted step size", connection.address)
         server_state.client_states.step_size_accepted(client_id)
 
     @staticmethod
@@ -154,7 +154,7 @@ class Server(ShutdownListener):
             ),
         )
         connection.receive(expected_type=MessageType.INTERFACE_SETTINGS)
-        Server._logger.debug(f"Client {connection.address} accepted interface settings")
+        Server._logger.debug("Client %s accepted interface settings", connection.address)
 
     @staticmethod
     def handle_interface_request(
@@ -175,9 +175,7 @@ class Server(ShutdownListener):
             raise Exception(
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
-        Server._logger.debug(
-            f"Successfully validated interfaces for client {connection.address}",
-        )
+        Server._logger.debug("Successfully validated interfaces for client %s", connection.address)
         server_state.client_states.interfaces_validated(client_id)
 
     def _start_image_renderer_socket(self) -> None:
@@ -191,12 +189,12 @@ class Server(ShutdownListener):
         if socket_port is None or rendering_interval is None:
             SimulationExecutor.logger.error(
                 "Invalid configuration for image renderer, since only either port or interval is set (and not both). "
-                + f"Port: {socket_port} | Interval: {rendering_interval} -> no socket will be opened.",
+                "Port: %s | Interval: %s -> no socket will be opened.",
+                socket_port,
+                rendering_interval,
             )
             return
-        SimulationExecutor.logger.info(
-            f"Image renderer socket will be opened at port {socket_port}",
-        )
+        SimulationExecutor.logger.info("Image renderer socket will be opened at port %s", socket_port)
         self._rendering_socket = RenderingSocket(
             host=self._server_config.server.host,
             port=socket_port,
@@ -205,8 +203,8 @@ class Server(ShutdownListener):
         timeout = 5
         if not started_event.wait(timeout=timeout):
             SimulationExecutor.logger.warning(
-                f"The rendering image socket did not start within {timeout}s -> the execution continues "
-                + "but you may not be able to receive rendered images.",
+                "The rendering image socket did not start within %ss -> the execution continues but you may not be able to receive rendered images.",
+                timeout,
             )
 
     @staticmethod
@@ -221,14 +219,16 @@ class Server(ShutdownListener):
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 if message is None:
-                    Server._logger.error(f"No message received from client {connection.address} for {MessageType.CLIENT_META_DATA_REQUEST}")
+                    Server._logger.error("No message received from client %s for %s", connection.address, MessageType.CLIENT_META_DATA_REQUEST)
                     connection.close()
                     return
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 client_id: ClientID = client_config.client_id()
                 if not server_state.client_states.add_if_needed(client_config, connection):
                     Server._logger.warning(
-                        f"Client {client_id} from {connection.address} was not expected to connect - it has no needed model/simulator.",
+                        "Client %s from %s was not expected to connect - it has no needed model/simulator.",
+                        client_id,
+                        connection.address,
                     )
                     connection.close()
                     return
@@ -243,9 +243,7 @@ class Server(ShutdownListener):
                 while server_state.is_running() and server_state.client_states.is_connected(client_id):
                     received_message = connection.receive()
                     if received_message is None:
-                        Server._logger.warning(
-                            f"Received 'none' from client {client_id} -> this is the closing signal -> ending this connection",
-                        )
+                        Server._logger.warning("Received 'none' from client %s -> this is the closing signal -> ending this connection", client_id)
                         server_state.client_states.set_client_connected_state(client_id=client_id, connected=False)
                         continue
                     server_state.message_buffer.add(

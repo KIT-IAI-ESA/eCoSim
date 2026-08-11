@@ -44,21 +44,33 @@ class ClientMessageBuffer:
         client_id: ClientID,
         message: ESPChannelMessage,
     ) -> None:
-        _message_buffer_logger.debug(
-            f"Adding new message to buffer. CorrelationID: {message.correlation_id()}  |  Type: {message.type()} | client_id: {client_id}",
-        )
+        # This runs for every message in the system, so the debug calls below are guarded
+        if _message_buffer_logger.is_debug_enabled:
+            _message_buffer_logger.debug(
+                "Adding new message to buffer. CorrelationID: %s  |  Type: %s | client_id: %s",
+                message.correlation_id(),
+                message.type(),
+                client_id,
+            )
         buffered_message = BufferedClientMessage(client_id, message)
         callback = self._find_on_message_callback(buffered_message)
         if callback is not None:
-            _message_buffer_logger.debug(
-                f"CorrelationID: {message.correlation_id()}  |  Type: {message.type()} | client_id: {client_id}: executing callback...",
-            )
+            if _message_buffer_logger.is_debug_enabled:
+                _message_buffer_logger.debug(
+                    "CorrelationID: %s  |  Type: %s | client_id: %s: executing callback...",
+                    message.correlation_id(),
+                    message.type(),
+                    client_id,
+                )
             callback.execute_async(buffered_message)
             return
-        _message_buffer_logger.debug(
-            f"CorrelationID: {message.correlation_id()}  |  Type: {message.type()} | client_id: {client_id}: "
-            + "no callback is found -> adding to buffer",
-        )
+        if _message_buffer_logger.is_debug_enabled:
+            _message_buffer_logger.debug(
+                "CorrelationID: %s  |  Type: %s | client_id: %s: no callback is found -> adding to buffer",
+                message.correlation_id(),
+                message.type(),
+                client_id,
+            )
         self._buffer.append(buffered_message)
 
     def _find_on_message_callback(
@@ -79,11 +91,14 @@ class ClientMessageBuffer:
     ) -> None:
         if len(client_ids) == 0 or len(message_types) == 0:
             _message_buffer_logger.warning(
-                f"Register on_message {message_types} for client_ids {client_ids}: NO CLIENT IDS (f{len(client_ids)}) OR "
-                + f"MESSAGE TYPES ({len(message_types)}).",
+                "Register on_message %s for client_ids %s: NO CLIENT IDS (f%s) OR MESSAGE TYPES (%s).",
+                message_types,
+                client_ids,
+                len(client_ids),
+                len(message_types),
             )
             return
-        _message_buffer_logger.debug(f"Register callback on message types {message_types} for client ids {client_ids}")
+        _message_buffer_logger.debug("Register callback on message types %s for client ids %s", message_types, client_ids)
         message_callback: OnMessageCallbackHandler = OnMessageCallbackHandler.for_communication_protocol(
             protocol=self._communication_protocol,
             client_ids=client_ids,
@@ -93,15 +108,19 @@ class ClientMessageBuffer:
         with self._on_message_callbacks.transaction() as callbacks:
             if message_callback in callbacks:
                 _message_buffer_logger.warning(
-                    f"You can only listen once on the given parameters: {client_ids} | {message_types}. The new callback is discarded.",
+                    "You can only listen once on the given parameters: %s | %s. The new callback is discarded.",
+                    client_ids,
+                    message_types,
                 )
                 return
             callbacks.add(message_callback)
         matching_messages = self.get_and_delete_of(client_ids, message_types)
         for message in matching_messages:
             _message_buffer_logger.debug(
-                f"Message found for newly registered callback on message types {message_types} for client ids {client_ids}:"
-                + f" type: '{message.message.type()}'",
+                "Message found for newly registered callback on message types %s for client ids %s: type: '%s'",
+                message_types,
+                client_ids,
+                message.message.type(),
             )
             message_callback.execute_async(message)
 
@@ -231,7 +250,7 @@ class OnMessageCallbackHandlerThreading(OnMessageCallbackHandler):
         self,
         message: BufferedClientMessage,
     ) -> None:
-        _message_buffer_logger.debug(f"Executing (threading) callback for {message.client_id} on {message.message.type()}")
+        _message_buffer_logger.debug("Executing (threading) callback for %s on %s", message.client_id, message.message.type())
         threading.Thread(target=self.callback, args=[message]).start()
 
 
@@ -242,7 +261,7 @@ class OnMessageCallbackHandlerDask(OnMessageCallbackHandler):
         self,
         message: BufferedClientMessage,
     ) -> None:
-        _message_buffer_logger.debug(f"Executing (dask) callback for {message.client_id} on {message.message.type()}")
+        _message_buffer_logger.debug("Executing (dask) callback for %s on %s", message.client_id, message.message.type())
         dask_client = dd.get_client()
 
         async def f() -> None:

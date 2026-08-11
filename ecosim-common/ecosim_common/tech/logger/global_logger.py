@@ -22,14 +22,14 @@ class GlobalLogger:
         wall = "#" * GlobalLogger._wall_thickness
         list_padding = " " * GlobalLogger._list_padding
         GlobalLogger.logger.info(header_bar)
-        GlobalLogger.logger.info(f"{wall}{' ' * GlobalLogger._header_padding}{header}{' ' * GlobalLogger._header_padding}{wall}")
+        GlobalLogger.logger.info("%s%s%s%s%s", wall, " " * GlobalLogger._header_padding, header, " " * GlobalLogger._header_padding, wall)
         GlobalLogger.logger.info(header_bar)
         for key, value in value_pairs.items():
             # strings are iterable so we explicitly need to check for strings
             if not isinstance(value, Collection) or isinstance(value, str):
-                GlobalLogger.logger.info(f"{wall} {key}{key_value_seperator} {value}")
+                GlobalLogger.logger.info("%s %s%s %s", wall, key, key_value_seperator, value)
             else:
-                GlobalLogger.logger.info(f"{wall} {key}{key_value_seperator}")
+                GlobalLogger.logger.info("%s %s%s", wall, key, key_value_seperator)
                 for item in value:
-                    GlobalLogger.logger.info(f"{wall}{list_padding}{list_point_character} {item}")
+                    GlobalLogger.logger.info("%s%s%s %s", wall, list_padding, list_point_character, item)
         GlobalLogger.logger.info(header_bar)

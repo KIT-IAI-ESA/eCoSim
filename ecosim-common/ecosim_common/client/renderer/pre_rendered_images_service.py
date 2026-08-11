@@ -31,17 +31,13 @@ class PreRenderedImageService(SimulationRendererService):
                     continue
                 number = int(match.group(1))
                 if number == time_step:
-                    PreRenderedImageService._logger.debug(
-                        f"Found pre-rendered image in '{self._config.image_dir}' for time step {time_step}",
-                    )
+                    PreRenderedImageService._logger.debug("Found pre-rendered image in '%s' for time step %s", self._config.image_dir, time_step)
                     with open(file_path, "rb") as file:
                         return file.read()
         except Exception as e:
-            PreRenderedImageService._logger.error("Failed to render image {}".format(e))
+            PreRenderedImageService._logger.error("Failed to render image %s", e)
             return None
-        PreRenderedImageService._logger.error(
-            f"Failed to find pre-rendered image in '{self._config.image_dir}' for time step {time_step}",
-        )
+        PreRenderedImageService._logger.error("Failed to find pre-rendered image in '%s' for time step %s", self._config.image_dir, time_step)
         return None
 
 
