@@ -9,7 +9,7 @@ from ecosim_common.communication.binary_message.binary_message import BinaryMess
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.communication.channel.esp_channel import ESPChannel, ChannelHandler, ConnectionData
+from ecosim_common.communication.channel.esp_channel import ChannelHandler, ConnectionData, ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
@@ -163,18 +163,19 @@ class TCPSocket(ESPChannel, ShutdownListener):
         self._listening.clear()
         TCPSocket._logger.debug("Closing socket...")
         if self._is_internal_socket_listening() or self._has_internal_socket_peer() or self._listening_on_connection.is_set():
-            TCPSocket._logger.debug(
-                "Closing socket: internal listening: %s | peers: %s | listening on connection: %s",
-                self._is_internal_socket_listening(),
-                self._has_internal_socket_peer(),
-                self._listening_on_connection.is_set(),
-            )
+            if TCPSocket._logger.is_debug_enabled:
+                TCPSocket._logger.debug(
+                    "Closing socket: internal listening: %s | peers: %s | listening on connection: %s",
+                    self._is_internal_socket_listening(),
+                    self._has_internal_socket_peer(),
+                    self._listening_on_connection.is_set(),
+                )
             self._listening_on_connection.clear()
             try:
                 self._internal_socket.shutdown(socket.SHUT_RDWR)
                 TCPSocket._logger.debug("Closing socket: successfully sent SHUT_RDWR signal")
             except socket.error as e:
-                TCPSocket._logger.error("Something went wrong closing connection on %s: %s", self._connection_address, e)
+                TCPSocket._logger.warning("Something went wrong closing connection on %s: %s", self._connection_address, e)
         TCPSocket._logger.debug("Closing socket...done.")
 
     def on_app_shutdown(self) -> None:

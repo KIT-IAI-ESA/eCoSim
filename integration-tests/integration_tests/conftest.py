@@ -11,7 +11,7 @@ from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 # INIT LOGGER
-log_level_during_tests = logging.CRITICAL
+log_level_during_tests = logging.DEBUG
 init_logger(log_level=log_level_during_tests)
 pytest_fixture_logger = ESPLogger("PyTestFixture")
 
