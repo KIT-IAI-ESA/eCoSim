@@ -19,14 +19,14 @@ class DaskChannel(ESPChannel):
 
     _internal_dask_client: ESPDask = field()
     _is_finished: ParallelEvent = field(default_factory=lambda: ParallelEvent.dask())
+    _is_listening: ParallelEvent = field(default_factory=lambda: ParallelEvent.dask())
 
     @override
     def close(self) -> None:
         self._is_finished.set()
-        # self.send("empty")  # type: ignore[arg-type] # TODO_AFTER_MERGE: this was added
         connection_address = self._internal_dask_client.connection_address()
         DaskChannel._logger.debug(f"Closing connections to Dask client {connection_address}...")
-        self._internal_dask_client.close()  # TODO_AFTER_MERGE: this was commented out
+        # self._internal_dask_client.close()  # TODO_AFTER_MERGE: this was commented out
         DaskChannel._logger.info(f"Connection to Dask client {connection_address} closed.")
 
     @override
@@ -118,3 +118,6 @@ class DaskChannel(ESPChannel):
             )
             if message is not None:
                 on_message(message)
+
+    def is_listening_event(self) -> ParallelEvent:
+        return self._is_listening

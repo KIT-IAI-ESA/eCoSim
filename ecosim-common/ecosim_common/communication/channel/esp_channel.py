@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 
 
 @dataclass(kw_only=True)
@@ -38,4 +39,8 @@ class ESPChannel(ABC):
 
     @abstractmethod
     def wait_for_finish(self) -> None:
+        pass
+
+    @abstractmethod
+    def is_listening_event(self) -> ParallelEvent:
         pass

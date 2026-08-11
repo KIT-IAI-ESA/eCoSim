@@ -1,11 +1,14 @@
 import uuid
+from typing import override
 
 import dask.distributed as dd
 from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
+from ecosim_common.communication.communication_layer import CommunicationLayer
 from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
@@ -24,7 +27,7 @@ def is_raw_dask_client_connected(raw_dask_id: str) -> bool:
 
 
 # TODO_OSR: refactor to dataclass
-class ESPDask(ShutdownListener):
+class ESPDask(CommunicationLayer, ShutdownListener):
     _logger = ESPLogger("ESPDask")
 
     def __init__(
@@ -35,27 +38,30 @@ class ESPDask(ShutdownListener):
         self._closing_calls = AtomicInteger.dask(0)
         self._closed: dd.Event = dd.Event()
         self._internal_dask_id = internal_dask_id
-        self._connected: bool = is_raw_dask_client_connected(internal_dask_id)
+        self._connected: ParallelEvent = ParallelEvent.dask(init_set=is_raw_dask_client_connected(internal_dask_id))
         self._origin_id: int = uuid.uuid4().int & (1 << 64) - 1
 
     def dask_id(self) -> str:
         return self._internal_dask_id
 
+    @override
     def on_app_shutdown(self) -> None:
         if not self._closed.is_set():
             ESPDask._logger.info("Internal shutdown singal triggered - closing Dask client...")
             self.close()
 
-    def connect(
+    @override
+    def _internal_connect(
         self,
     ) -> None:
         dask_client = dd.get_client()
         dd.Queue(name=self._internal_dask_id, client=dask_client)
         dask_client.datasets[self._internal_dask_id] = None
-        self._connected = True
+        self._connected.set()
 
+    @override
     def is_connected(self) -> bool:
-        return self._connected
+        return self._connected.is_set()
 
     def connection_address(self) -> ConnectionAddress:
         dask_client = dd.get_client()
@@ -69,7 +75,7 @@ class ESPDask(ShutdownListener):
                 return
             closing_calls = self._closing_calls.inc()
             self._closed.set()
-            self._connected = False
+            self._connected.clear()
             if closing_calls == 1:
                 dask_client = dd.get_client()
                 try:
