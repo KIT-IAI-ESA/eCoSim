@@ -6,8 +6,8 @@
   },
   "permission": {
     "external_directory": {
-      "/home/opencode/ecosim/**": "allow",
-      "/home/opencode/.config/opencode/**": "allow"
+      "/home/node/ecosim/**": "allow",
+      "/home/node/.config/opencode/**": "allow"
     }
   },
   "agent": {

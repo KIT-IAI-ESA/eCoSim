@@ -1,5 +1,8 @@
 report.xml
 opencode-auth.json
+opencode-auth.custom.json
+opencode-auth.kit.json
+opencode.custom.json
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
