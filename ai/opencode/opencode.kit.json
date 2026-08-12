@@ -11,9 +11,9 @@
     }
   },
   "agent": {
-    "example-agent" : {
+    "ecosim-programmer": {
       "mode": "primary",
-      "prompt": "{file:agent_prompts/example-agent.md}"
+      "prompt": "{file:agent_prompts/ecosim-programmer.md}"
     }
   },
   "provider": {

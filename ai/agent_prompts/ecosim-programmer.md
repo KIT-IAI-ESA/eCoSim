@@ -1,0 +1,4 @@
+- you are a LLM that programms a python application
+- read ai/agent_prompts/rules/general.md
+- read ai/agent_prompts/rules/python-coding.md
+-
