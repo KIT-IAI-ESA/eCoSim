@@ -1,6 +1,6 @@
 import threading
 from time import sleep
-from typing import Any, Generator, Tuple, assert_never
+from typing import Any, Generator, Tuple
 
 import dask.distributed as distributed
 import pytest
@@ -58,23 +58,13 @@ def test_check_client_connection_states_init_not_connected(_client_communication
 
 
 def test_check_client_connection_states_connected_but_lost(_client_communication_setup: ClientCommunicationData) -> None:
-    client_communication, client_states, communication_protocol = _client_communication_setup
+    # Patching in this process is enough for every protocol: 'listen_on_message_async' invokes the
+    # message handler where it was registered, and these clients are started here. Before that was
+    # guaranteed, the dask variant had to patch the workers via 'get_client().run(...)'.
+    client_communication, client_states = _client_communication_setup[:2]
     buffer = Client._handle_ping  # noqa: SLF001
     try:
-
-        def patch_client_handle_ping() -> None:
-            Client._handle_ping = lambda _, _m: None  # type: ignore[assignment]  # noqa: SLF001
-
-        # TODO_OSR: somehow extract logic for patching methods
-        match communication_protocol:
-            case CommunicationProtocol.TCP_SOCKET:
-                patch_client_handle_ping()
-            case CommunicationProtocol.DASK:
-                from dask import distributed
-
-                distributed.get_client().run(patch_client_handle_ping)
-            case _:
-                assert_never(communication_protocol)
+        Client._handle_ping = lambda _, _m: None  # type: ignore[assignment]  # noqa: SLF001
 
         for _, client_state in enumerate(client_states.all_states()):
             assert client_state.connected
@@ -88,19 +78,7 @@ def test_check_client_connection_states_connected_but_lost(_client_communication
             assert not client_state.connected
             assert client_state.connection is not None
     finally:
-
-        def patch_client_handle_ping() -> None:
-            Client._handle_ping = buffer  # type: ignore[method-assign] # noqa: SLF001
-
-        match communication_protocol:
-            case CommunicationProtocol.TCP_SOCKET:
-                patch_client_handle_ping()
-            case CommunicationProtocol.DASK:
-                from dask import distributed
-
-                distributed.get_client().run(patch_client_handle_ping)
-            case _:
-                assert_never(communication_protocol)
+        Client._handle_ping = buffer  # type: ignore[method-assign] # noqa: SLF001
 
 
 def test_closing_connection_unsets_connected(_client_communication_setup: ClientCommunicationData) -> None:

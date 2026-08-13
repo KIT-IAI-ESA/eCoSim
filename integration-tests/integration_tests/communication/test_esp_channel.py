@@ -1,4 +1,6 @@
-from communication.message_data_for_test import MessageDataForTest
+import threading
+
+from integration_tests.communication.message_data_for_test import MessageDataForTest
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ConnectionData
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
@@ -97,6 +99,56 @@ def test_big_data(communication_protocol: CommunicationProtocol) -> None:
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
+
+
+def test_message_handler_stays_in_the_calling_process(communication_protocol: CommunicationProtocol) -> None:
+    """
+    The handler given to 'listen_on_message_async' must run in the process that registered it.
+
+    It may close over process-local resources that cannot be pickled - an FMU's ctypes handle, a Matlab
+    engine, a Pyro5 proxy. Appending to a plain local list also proves the handler did not run on a copy
+    of itself elsewhere: a remote copy would leave this list empty.
+    """
+    server_address = ConnectionAddress(
+        ip="localhost",
+        port=1234,
+    )
+    connector = ESPChannelConnector(communication_protocol)
+    listening_channel = connector.listener(server_address)
+    listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_message)
+    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+
+    channel = connector.connect(connection_address=server_address)
+
+    process_local_resource = threading.Lock()  # stands in for a native handle - not picklable
+    received_in_this_process: list[ESPChannelMessage] = []
+    message_received = threading.Event()
+
+    def handle_message(message: ESPChannelMessage) -> None:
+        with process_local_resource:
+            received_in_this_process.append(message)
+        message_received.set()
+
+    channel.listen_on_message_async(on_message=handle_message)
+    channel.is_listening_event().wait(timeout=10)
+
+    correlation_id = CorrelationId.of_int(4242)
+    data = MessageDataForTest(
+        string="process local",
+        integer=42,
+    )
+    channel.send(
+        ESPChannelMessageJson.create(
+            type=MessageType.CLIENT_META_DATA_REQUEST,
+            correlation_id=correlation_id,
+            payload=data,
+        ),
+    )
+
+    assert message_received.wait(timeout=30)
+    assert len(received_in_this_process) == 1
+    assert received_in_this_process[0].correlation_id() == correlation_id
+    assert received_in_this_process[0].payload(MessageDataForTest) == data
 
 
 def _mirror_message(connection_data: ConnectionData) -> None:

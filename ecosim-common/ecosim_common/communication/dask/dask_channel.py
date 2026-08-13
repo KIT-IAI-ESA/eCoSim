@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import uuid
 from dataclasses import dataclass, field
 from time import sleep
@@ -103,25 +104,37 @@ class DaskChannel(ESPChannel, ShutdownListener):
         self,
         on_message: Callable[[ESPChannelMessage], None],
     ) -> None:
-        dask_client = self._dask_client()
-        is_finished = self._is_finished
-        closed = self._closed
-        internal_dask_id = self._internal_dask_id
-        origin_id = self._origin_id
+        # The handler is deliberately NOT submitted to the cluster. Submitting it would pickle its
+        # '__self__', i.e. the whole endpoint that registered it - and an endpoint typically owns
+        # process-local resources that cannot be pickled at all (an FMU's ctypes handle, a Matlab
+        # engine, a Pyro5 proxy). It would also run the handler on a *copy*, so every mutation it
+        # makes would be invisible to the process that started listening.
+        # Only the messages cross the wire, through the 'distributed.Queue' that 'send' publishes to.
+        if self._is_listening.is_set():
+            DaskChannel._logger.warning("Dask channel is already listening to: %s. So nothing is done.", self._connection_address)
+            return
+        listen_thread = threading.Thread(
+            target=self._listen_on_message,
+            args=(on_message,),
+            name=f"dask-channel-{self._internal_dask_id}",
+            # the main thread parks on 'wait_for_finish' for the whole run, so this thread never keeps
+            # a finished process alive on its own
+            daemon=True,
+        )
+        listen_thread.start()
 
-        async def listen_start() -> None:
-            future = dask_client.submit(
-                DaskChannel._listen_async_internal,
-                on_message=on_message,
-                is_finished_event=is_finished,
-                closed=closed,
-                dask_id=internal_dask_id,
-                origin_id=origin_id,
-                pure=False,
-            )
-            distributed.fire_and_forget(future)
-
-        dask_client.sync(listen_start)
+    def _listen_on_message(
+        self,
+        on_message: Callable[[ESPChannelMessage], None],
+    ) -> None:
+        self._is_listening.set()
+        try:
+            while not self._is_finished.is_set():
+                message = self.listen_blocking()
+                if message is not None:
+                    on_message(message)
+        finally:
+            self._is_listening.clear()
 
     @override
     def wait_for_finish(
@@ -192,32 +205,6 @@ class DaskChannel(ESPChannel, ShutdownListener):
             # self._internal_dask_client.send(
             #     SimpleBinaryMessage.of_esp_channel_message(message=message),
             # )
-
-    # Needs to be a static method due to serialization issues when submitting via distributed_client.submit().
-    # A non-static method would have either the cls or self as the first parameter.
-    # In addition, dask.distribute.client.Client.submit expects pure functions by default -> so it makes
-    # sense to make it static in any case.
-    @staticmethod
-    def _listen_async_internal(
-        on_message: Callable[[ESPChannelMessage], None],
-        dask_id: str,
-        origin_id: int,
-        is_finished_event: ParallelEvent,
-        closed: ParallelEvent,
-    ) -> None:
-        distributed.secede()  # since it is a long-lived task, we need to secede it from the common thread pool to not block other tasks
-        dask_client = distributed.get_client()
-        while not is_finished_event.is_set():
-            message: ESPChannelMessage | None = DaskChannel._listen_blocking_internal(
-                closed=closed,
-                is_finished_event=is_finished_event,
-                internal_dask_id=dask_id,
-                origin_id=origin_id,
-                distributed_client=dask_client,
-                timeout_in_seconds=None,
-            )
-            if message is not None:
-                on_message(message)
 
     def is_listening_event(self) -> ParallelEvent:
         return self._is_listening
