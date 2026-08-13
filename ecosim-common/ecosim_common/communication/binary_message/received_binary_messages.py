@@ -1,30 +1,17 @@
 import json
+from dataclasses import dataclass, field
 
-from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
+from ecosim_common.communication.binary_message.binary_message_header import BinaryMessageHeader
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 
 
-class ReceivedBinaryMessage(BinaryMessage):
-    def __init__(
-        self,
-        header: BinaryMessageHeader,
-        data: bytes,
-        connection: ConnectionAddress,
-    ):
-        self._header = header
-        self._data = data
-        self._connection = connection
-
-    def raw_message(self) -> bytes:
-        return self._header.raw() + self._data
-
-    def header(self) -> BinaryMessageHeader:
-        return self._header
-
-    def raw_data(self) -> bytes:
-        return self._data
+@dataclass(frozen=True)
+class ReceivedBinaryMessage:
+    _header: BinaryMessageHeader = field()
+    _data: bytes = field()
+    _connection: ConnectionAddress = field()
 
     def to_esp_channel_message(self) -> ESPChannelMessage:
         return ESPChannelMessageJson(

@@ -33,6 +33,14 @@ class ESPChannel(ABC):
     def close(self) -> None:
         pass
 
+    @abstractmethod
+    def connect(self) -> None:
+        pass
+
+    @abstractmethod
+    def is_connected(self) -> bool:
+        pass
+
     # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
     def listen_on_message_async(
@@ -72,6 +80,10 @@ class ESPChannel(ABC):
         self,
         channel_handler: ChannelHandler,
     ) -> None:
+        pass
+
+    @abstractmethod
+    def is_listening_on_connection_event(self) -> ParallelEvent:
         pass
 
 

@@ -11,7 +11,6 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import (
     ESPChannelConnector,
 )
-from ecosim_common.communication.channel.esp_channel_connector_factory import ESPChannelConnectorFactory
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import (
     ESPChannelMessageJson,
@@ -54,7 +53,7 @@ class Client(ShutdownListener):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
-        self._channel_connector: ESPChannelConnector = ESPChannelConnectorFactory.of_client_config(client_config)
+        self._channel_connector: ESPChannelConnector = ESPChannelConnector(_communication_protocol=client_config.communication_protocol())
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
         self._is_finished = False

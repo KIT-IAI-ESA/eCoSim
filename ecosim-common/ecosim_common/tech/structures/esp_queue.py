@@ -7,6 +7,8 @@ from typing import Any, Generic, Iterable, TypeVar, assert_never, cast, override
 
 import distributed
 from distributed import Client
+
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
@@ -23,6 +25,22 @@ class ESPQueue(ABC, Generic[T]):
     ATTENTION: Do not assume 'qsize' is still accurate by the time you act on it -- with multiple
                producers/consumers it is only a hint.
     """
+
+    @staticmethod
+    def of_communication_protocol(
+        communication_protocol: CommunicationProtocol,
+        data: Iterable[T] | None = None,
+        dask_name: str | None = None,
+        dask_client: Client | None = None,
+        maxsize: int = 0,
+    ) -> ESPQueue[T]:
+        return ESPQueue.of_type(
+            queue_type=ESPStructureType.default_for_communication_protocol(communication_protocol),
+            data=data,
+            dask_name=dask_name,
+            dask_client=dask_client,
+            maxsize=maxsize,
+        )
 
     @staticmethod
     def of_type(
