@@ -23,7 +23,11 @@ class FMU2Client(Client):
         super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
-        self._simulator: FMU2Simulator
+        self._simulator: FMU2Simulator = FMU2Simulator.of(
+            simulator_name=self._client_config.simulator_config().simulator_name,
+            fmu_config=self._fmu_config,
+            execution_config=self._execution_config,
+        )
         self._is_finished = False
 
     @override
@@ -34,11 +38,6 @@ class FMU2Client(Client):
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
-        self._simulator = FMU2Simulator.of(
-            simulator_name=self._client_config.simulator_config().simulator_name,
-            fmu_config=self._fmu_config,
-            execution_config=self._execution_config,
-        )
         self._simulator.initialize(start_time=0.0)
         return self._simulator.server_used_output_values()
 

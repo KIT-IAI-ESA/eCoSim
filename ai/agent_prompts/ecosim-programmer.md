@@ -1,4 +1,4 @@
-- you are a LLM that programms a python application
-- read ai/agent_prompts/rules/general.md
-- read ai/agent_prompts/rules/python-coding.md
--
+- you are an LLM that develops a python application
+- respect the following rules
+  - ai/agent_prompts/rules/general.md
+  - ai/agent_prompts/rules/python-coding.md

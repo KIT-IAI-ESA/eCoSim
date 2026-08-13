@@ -23,7 +23,11 @@ class FMU3Client(Client):
         super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
-        self._simulator: FMU3Simulator | None = None
+        self._simulator: FMU3Simulator = FMU3Simulator.of(
+            simulator_name=self._client_config.simulator_config().simulator_name,
+            fmu_config=self._fmu_config,
+            execution_config=self._execution_config,
+        )
         self._is_finished = False
 
     @override
@@ -34,11 +38,6 @@ class FMU3Client(Client):
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
-        self._simulator = FMU3Simulator.of(
-            simulator_name=self._client_config.simulator_config().simulator_name,
-            fmu_config=self._fmu_config,
-            execution_config=self._execution_config,
-        )
         self._simulator.initialize(start_time=0.0)
         return self._simulator.server_used_output_values()
 
@@ -48,8 +47,6 @@ class FMU3Client(Client):
         received_inputs: Dict[InterfaceId, InterfaceValueType],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
-        if self._simulator is None:
-            raise RuntimeError("Simulation has not been started")
         self._simulator.do_step(
             input_values=received_inputs,
             step_size_in_seconds=step_size_in_seconds,

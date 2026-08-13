@@ -5,7 +5,8 @@ import threading
 from dataclasses import dataclass, field
 from typing import Callable, ClassVar, override
 
-from ecosim_common.communication.binary_message.binary_message import BinaryMessage, BinaryMessageHeader
+from ecosim_common.communication.binary_message import binary_message_header
+from ecosim_common.communication.binary_message.binary_message_header import BinaryMessageHeader
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
 from ecosim_common.communication.binary_message.simple_binary_message import SimpleBinaryMessage
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
@@ -59,6 +60,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
     def is_internal_socket_closed(self) -> bool:
         return self._internal_socket.fileno() == -1
 
+    @override
     def is_connected(self) -> bool:
         return not self._closed.is_set() and (self._connected.is_set() or self._listening.is_set() or self._has_internal_socket_peer())
 
@@ -184,6 +186,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
     def is_listening_event(self) -> ParallelEvent:
         return self._listening
 
+    @override
     def is_listening_on_connection_event(self) -> ParallelEvent:
         return self._listening_on_connection
 
@@ -246,7 +249,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
         if self._closed.is_set():
             TCPSocket._logger.warning("Socket is in the progress of closing or already closed.")
             return None
-        raw_header = self._internal_socket.recv(BinaryMessage.HEADER_BYTES)
+        raw_header = self._internal_socket.recv(binary_message_header.HEADER_BYTES)
         if not raw_header:
             TCPSocket._logger.debug("Received no data")
             return None
@@ -263,9 +266,9 @@ class TCPSocket(ESPChannel, ShutdownListener):
             data += chunk
         TCPSocket._logger.debug("Received message of type %s", message_header.message_type)
         return ReceivedBinaryMessage(
-            message_header,
-            data,
-            self._connection_address or ConnectionAddress.of_socket(self._internal_socket),
+            _header=message_header,
+            _data=data,
+            _connection=self._connection_address or ConnectionAddress.of_socket(self._internal_socket),
         )
 
     def is_closed_event(self) -> ParallelEvent:
@@ -288,6 +291,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
             self._internal_socket.connect((connection_address.ip, connection_address.port))
             self._internal_socket.send(raw_message)
 
+    @override
     def connect(self) -> None:
         if self._connected.is_set():
             TCPSocket._logger.debug("Socket is already connected.")

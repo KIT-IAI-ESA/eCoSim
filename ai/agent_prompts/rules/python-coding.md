@@ -6,6 +6,7 @@
 - Follow PEP 8 style guidelines
 - Use meaningful variable and function names
   - Don't use abbreviations
+- Write comments always in English
 
 ## Testing
 - Practice Test-Driven Development (TDD)
@@ -39,3 +40,4 @@
 - Test your changes when possible
 - Run linting and type checking after modifications
 - Never commit changes unless explicitly requested
+- Tests must pass after your finished
