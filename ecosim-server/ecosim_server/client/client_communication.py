@@ -42,18 +42,9 @@ class ClientCommunication:
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
         callback: Callable[[BufferedClientMessage], None],
-    ) -> None:
+    ) -> ClientCommunicationCallbackHandler:
         self._client_message_buffer.on_message(client_ids, message_types, callback)
-
-    # TODO_OSR: this method is error-prone since you must need to remember calling it
-    #      refactor it, so 'on_messages' somehow integrates this functionality
-    #      e.g. it could return a handle that you can call 'remove' on to remove the callback
-    def remove_on_message_callback(
-        self,
-        client_ids: Tuple[ClientID, ...],
-        message_types: Tuple[MessageType, ...],
-    ) -> None:
-        self._client_message_buffer.remove_on_message_callback(client_ids, message_types)
+        return ClientCommunicationCallbackHandler(client_ids, message_types, self._client_message_buffer)
 
     def messages_of(
         self,
@@ -126,13 +117,14 @@ class ClientCommunication:
             for attempt in range(attempts):
                 try:
                     event = ParallelEvent.for_communication_protocol(self._communication_protocol)
-                    self.on_messages(client_ids=(client_state.client_id,), message_types=(MessageType.PING,), callback=lambda m: event.set())
-                    client_state.connection.send(ping_message)
-                    success = event.wait(timeout=time_between_attempts_in_seconds)
-                    self.remove_on_message_callback(
+                    callback_handler = self.on_messages(
                         client_ids=(client_state.client_id,),
                         message_types=(MessageType.PING,),
+                        callback=lambda m: event.set(),
                     )
+                    client_state.connection.send(ping_message)
+                    success = event.wait(timeout=time_between_attempts_in_seconds)
+                    callback_handler.remove_callback()
                     if not success:
                         raise TimeoutError(f"timeout for {client_state.client_id}")
                     ClientCommunication._logger.debug("Checking client connection states: reached %s", client_state.client_id)
@@ -156,3 +148,16 @@ class ClientCommunication:
                     if client_state.connected:
                         self._client_states.set_client_connected_state(client_state.client_id, False)
         ClientCommunication._logger.debug("Checking client connection states...done")
+
+
+@dataclass
+class ClientCommunicationCallbackHandler:
+    _client_ids: Tuple[ClientID, ...] = field()
+    _message_types: Tuple[MessageType, ...] = field()
+    _client_message_buffer: ClientMessageBuffer = field()
+
+    def remove_callback(self) -> None:
+        self._client_message_buffer.remove_on_message_callback(
+            self._client_ids,
+            self._message_types,
+        )
