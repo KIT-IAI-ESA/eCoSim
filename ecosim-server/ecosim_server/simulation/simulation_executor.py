@@ -222,7 +222,7 @@ class SimulationExecutor:
                     return
                 responses[client_id].set()
 
-            self._client_communication.on_messages(
+            callback_handler = self._client_communication.on_messages(
                 client_ids=tuple(handled_client_ids),
                 message_types=(MessageType.SIMULATION_STEP_BATCH,),
                 callback=handle_batch_response,
@@ -232,10 +232,7 @@ class SimulationExecutor:
                 if not event.wait(timeout=60 * 60):
                     raise RuntimeError(f"Timeout while waiting for restore response from client {client_id}")
 
-            self._client_communication.remove_on_message_callback(
-                client_ids=self.simulation_config.client_ids(),
-                message_types=(MessageType.SIMULATION_STEP_BATCH,),
-            )
+            callback_handler.remove_callback()
         SimulationExecutor.logger.info(
             "[Restore simulation] Restoring simulation on all clients successful - continuing from step %s.",
             self._current_step,
@@ -243,7 +240,7 @@ class SimulationExecutor:
 
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
-        self._client_communication.on_messages(
+        callback_handler = self._client_communication.on_messages(
             client_ids=self._step_message_client_ids,
             message_types=(MessageType.SIMULATION_STEP,),
             callback=self._step_message_queue.push,
@@ -265,10 +262,7 @@ class SimulationExecutor:
                 self._handle_image_renderer()
                 self._current_step += 1
         finally:
-            self._client_communication.remove_on_message_callback(
-                self._step_message_client_ids,
-                (MessageType.SIMULATION_STEP,),
-            )
+            callback_handler.remove_callback()
 
     def _execute_logical_delays(self) -> None:
         self.logger.debug("Step %s: Execute logical delays", self._current_step)

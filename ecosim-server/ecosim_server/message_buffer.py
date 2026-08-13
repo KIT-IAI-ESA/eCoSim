@@ -23,6 +23,7 @@ _message_buffer_logger = ESPLogger("MessageBuffer")
 @dataclass
 class ClientMessageBuffer:
     _buffer: ESPList[BufferedClientMessage] = field()
+    # TODO_OSR: this is only a set -> checking for existing callbacks is error prone
     _on_message_callbacks: ESPSet[OnMessageCallbackHandler] = field()
     _communication_protocol: CommunicationProtocol = field()  # TODO_OSR: low prio: search for alternatives to the 'protocol' field
 
