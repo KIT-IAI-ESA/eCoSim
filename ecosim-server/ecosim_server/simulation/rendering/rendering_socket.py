@@ -11,7 +11,7 @@ from ecosim_common.simulation.renderer.rendering_messages import (
     RenderingMessageType,
 )
 from ecosim_common.simulation.renderer.rendering_request_headers import RenderingMessageClientHeader
-from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
+from ecosim_common.tech.atomic import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.simulation.rendering.image_cache import ImageCache
@@ -212,7 +212,7 @@ class RenderingSocket(ShutdownListener):
         RenderingSocket._logger.debug("Processing request for time_step %s in thread %s", time_step, threading.current_thread().name)
         try:
             self._no_sending_in_progress.clear()
-            self._currently_sending_processes.inc()
+            self._currently_sending_processes.increment()
             if self._image_cache.contains(time_step, self._connected_simulator_ids):
                 RenderingSocket._logger.debug(
                     "Image cache contains already all needed images at time step %s for %s -> no need to query the clients.",
@@ -257,7 +257,7 @@ class RenderingSocket(ShutdownListener):
             RenderingSocket._logger.error("Error sending images at time step %s: %s", time_step, e)
         finally:
             end_event.set()
-            current_value = self._currently_sending_processes.dec()
+            current_value = self._currently_sending_processes.decrement()
             if current_value == 0:
                 self._no_sending_in_progress.set()
 

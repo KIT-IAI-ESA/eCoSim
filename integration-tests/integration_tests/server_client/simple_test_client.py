@@ -18,8 +18,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.tech.atomic.atomic_float import AtomicFloat
-from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
+from ecosim_common.tech.atomic import AtomicFloat, AtomicInteger
 from integration_tests.test_data.test_client_data import TestClientData
 
 
@@ -95,7 +94,7 @@ class SimpleTestClient(Client):
         self.accumulated_step_sizes_in_seconds.set(0.0)
 
     def on_simulation_start(self) -> ClientSimStepData:
-        self._on_simulation_start_calls.inc()
+        self._on_simulation_start_calls.increment()
         return ClientSimStepData(
             interface_values=[],
         )
@@ -105,8 +104,8 @@ class SimpleTestClient(Client):
         received_inputs: dict[InterfaceId, InterfaceValueType],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
-        self._on_simulation_step_calls.inc()
-        self.accumulated_step_sizes_in_seconds.inc(step_size_in_seconds)
+        self._on_simulation_step_calls.increment()
+        self.accumulated_step_sizes_in_seconds.increment(step_size_in_seconds)
         return self._on_simulation_step_return(
             self,
             received_inputs,
@@ -115,7 +114,7 @@ class SimpleTestClient(Client):
 
     @override
     def on_simulation_stop(self) -> None:
-        self._on_simulation_stop_calls.inc()
+        self._on_simulation_stop_calls.increment()
 
     @override
     def image_renderer_service(self) -> SimulationRendererService:  # type: ignore # we don't need this in our test client
