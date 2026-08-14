@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from typing import ClassVar, override
 
-from ecosim_common.communication.channel.esp_channel import ESPChannel, ConnectionData
+from ecosim_common.communication.channel.esp_channel import ConnectionData, ESPChannel
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
@@ -240,12 +240,12 @@ class Server(ShutdownListener):
                 server_state.client_states.set_client_ready_for_simulation(
                     client_id,
                 )
-                while server_state.is_running() and server_state.client_states.is_connected(client_id):
+                while server_state.is_running():
                     received_message = connection.receive()
                     if received_message is None:
                         Server._logger.warning("Received 'none' from client %s -> this is the closing signal -> ending this connection", client_id)
                         server_state.client_states.set_client_connected_state(client_id=client_id, connected=False)
-                        continue
+                        return
                     server_state.message_buffer.add(
                         client_id=client_id,
                         message=received_message,

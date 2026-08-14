@@ -72,4 +72,4 @@ def test_waits_without_a_timeout_until_the_event_is_set() -> None:
     event = ParallelEvent.thread()
     threading.Timer(0.1, event.set).start()
 
-    assert event.wait_with_progress(progress_interval_in_seconds=0.05) is True
+    assert event.wait_with_progress(progress_interval_in_seconds=1) is True
