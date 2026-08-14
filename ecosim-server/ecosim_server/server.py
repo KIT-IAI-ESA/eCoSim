@@ -51,7 +51,6 @@ class Server(ShutdownListener):
         self._client_communication = ClientCommunication(
             _client_states=self._server_state.client_states,
             _client_message_buffer=self._server_state.message_buffer,
-            _communication_protocol=self._server_config.server.communication_protocol,
         )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,

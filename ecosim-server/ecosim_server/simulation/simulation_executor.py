@@ -12,12 +12,12 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.client.client_communication import ClientCommunication
+from ecosim_server.client.client_message import ClientMessage
 from ecosim_server.client.message_subscription import MessageSubscription
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
-from ecosim_server.message_buffer import BufferedClientMessage
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory, RestoreData
@@ -157,7 +157,7 @@ class SimulationExecutor:
 
     def _handle_simulation_started(
         self,
-        message: BufferedClientMessage,
+        message: ClientMessage,
         store_default_values_in_history: bool,
     ) -> None:
         self._server_state.client_states.simulation_started(client_id=message.client_id)
@@ -242,7 +242,7 @@ class SimulationExecutor:
 
     def _is_expected_restore_response(
         self,
-        message: BufferedClientMessage,
+        message: ClientMessage,
     ) -> bool:
         expected_correlation_id = CorrelationId.of_date_time(self.simulation_config.start_date)
         if message.message.correlation_id() == expected_correlation_id:
@@ -357,7 +357,7 @@ class SimulationExecutor:
 
     def _handle_received_sim_step(
         self,
-        received_message: BufferedClientMessage,
+        received_message: ClientMessage,
         ready_for_execution_data_by_clients: dict[ClientID, List[ProtocolInterfaceValue]],
         handled_clients: dict[ClientID, bool],
     ) -> bool:

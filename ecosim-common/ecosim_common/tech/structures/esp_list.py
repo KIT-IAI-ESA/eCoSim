@@ -9,6 +9,7 @@ from typing import Any, Generator, Generic, TypeVar, assert_never, overload, ove
 # TODO_SECURITY: cloudpickle also pickles lambdas -> in a bigger co-simulation with external partners, this might be a security issue
 import cloudpickle
 from distributed import Client, Variable
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
@@ -35,6 +36,22 @@ class ESPList(ABC, MutableSequence[T], Generic[T]):
                You get weird side effects if you mutate directly, depending on the concrete implementation. So you cannot assume
                that all implementations will behave the same. Therefore, it is strictly not recommended to mutate directly.
     """
+
+    @staticmethod
+    def default_for_communication_protocol(
+        communication_protocol: CommunicationProtocol,
+        data: list[T] | None = None,
+        dask_name: str | None = None,
+        dask_client: Client | None = None,
+        dask_use_pickle: bool = True,
+    ) -> ESPList[T]:
+        return ESPList.of_type(
+            list_type=ESPStructureType.default_for_communication_protocol(communication_protocol),
+            data=data,
+            dask_name=dask_name,
+            dask_client=dask_client,
+            dask_use_pickle=dask_use_pickle,
+        )
 
     @staticmethod
     def of_type(
