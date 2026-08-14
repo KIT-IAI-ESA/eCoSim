@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from typing import Callable, ClassVar, List, Tuple
+from typing import ClassVar, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
@@ -14,9 +14,10 @@ from ecosim_common.communication.data.simulation_step_request import SimulationS
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.parallel.parallel_event import ParallelEvent
+from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_states import ClientStates
-from ecosim_server.message_buffer import BufferedClientMessage, ClientMessageBuffer
+from ecosim_server.client.message_subscription import MessageSubscription
+from ecosim_server.message_buffer import ClientMessageBuffer
 
 
 @dataclass
@@ -37,21 +38,23 @@ class ClientCommunication:
                 continue
             client_state.connection.send(message)
 
-    def on_messages(
+    def subscribe(
         self,
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
-        callback: Callable[[BufferedClientMessage], None],
-    ) -> ClientCommunicationCallbackHandler:
-        self._client_message_buffer.on_message(client_ids, message_types, callback)
-        return ClientCommunicationCallbackHandler(client_ids, message_types, self._client_message_buffer)
+    ) -> MessageSubscription:
+        """
+        Opens a subscription that queues every matching message until it is closed.
 
-    def messages_of(
-        self,
-        client_ids: Tuple[ClientID, ...],
-        message_types: Tuple[MessageType, ...],
-    ) -> List[BufferedClientMessage]:
-        return self._client_message_buffer.get_and_delete_of(client_ids=client_ids, message_types=message_types)
+        Use this - not a callback registered and removed around every single wait - whenever a caller waits
+        for messages in a loop, see 'MessageSubscription'.
+        """
+        return MessageSubscription.open(
+            message_buffer=self._client_message_buffer,
+            client_ids=client_ids,
+            message_types=message_types,
+            communication_protocol=self._communication_protocol,
+        )
 
     def send_simulation_step(
         self,
@@ -105,59 +108,50 @@ class ClientCommunication:
         time_between_attempts_in_seconds: float = 1.3,
     ) -> None:
         """
-        This method will check the connection states of all clients. It mainly uses PING to check if the connection is still alive. If the ping
-        fails too often, the connection will be declared as 'connected=false'.
+        This method will check the connection states of all clients. It mainly uses MessageType.PING to check if the connection is still alive.
+        If the ping fails too often, the connection will be declared as 'connected=false'.
         """
         ClientCommunication._logger.debug("Checking client connection states...")
         for client_state in self._client_states.all_states():
             if not client_state.connection:
                 continue
-
-            ping_message = ESPChannelMessageJson.empty(MessageType.PING)
-            for attempt in range(attempts):
-                try:
-                    event = ParallelEvent.for_communication_protocol(self._communication_protocol)
-                    callback_handler = self.on_messages(
-                        client_ids=(client_state.client_id,),
-                        message_types=(MessageType.PING,),
-                        callback=lambda m: event.set(),
-                    )
-                    client_state.connection.send(ping_message)
-                    success = event.wait(timeout=time_between_attempts_in_seconds)
-                    callback_handler.remove_callback()
-                    if not success:
-                        raise TimeoutError(f"timeout for {client_state.client_id}")
-                    ClientCommunication._logger.debug("Checking client connection states: reached %s", client_state.client_id)
-                    if not client_state.connected:
-                        self._client_states.set_client_connected_state(client_state.client_id, True)
-                    break
-                except Exception as e:
-                    if attempt < (attempts - 1):
-                        ClientCommunication._logger.debug(
-                            "Checking client connection states: exception contacting %s: %s -> retry %s",
-                            client_state.client_id,
-                            e,
-                            attempt,
-                        )
-                        continue
-                    ClientCommunication._logger.debug(
-                        "Checking client connection states: exception contacting %s: %s -> reached end of retries",
-                        client_state.client_id,
-                        e,
-                    )
-                    if client_state.connected:
-                        self._client_states.set_client_connected_state(client_state.client_id, False)
+            reached = self._is_client_reachable(client_state, attempts, time_between_attempts_in_seconds)
+            if reached != client_state.connected:
+                self._client_states.set_client_connected_state(client_state.client_id, reached)
         ClientCommunication._logger.debug("Checking client connection states...done")
 
+    def _is_client_reachable(
+        self,
+        client_state: ClientState,
+        attempts: int,
+        time_between_attempts_in_seconds: float,
+    ) -> bool:
+        """Pings the client until it answers. The subscription stays open over all attempts so no answer is missed."""
+        with self.subscribe(client_ids=(client_state.client_id,), message_types=(MessageType.PING,)) as subscription:
+            for attempt in range(attempts):
+                if self._ping_once(client_state, subscription, time_between_attempts_in_seconds):
+                    ClientCommunication._logger.debug("Checking client connection states: reached %s", client_state.client_id)
+                    return True
+                ClientCommunication._logger.debug(
+                    "Checking client connection states: no answer from %s -> attempt %s of %s",
+                    client_state.client_id,
+                    attempt + 1,
+                    attempts,
+                )
+        return False
 
-@dataclass
-class ClientCommunicationCallbackHandler:
-    _client_ids: Tuple[ClientID, ...] = field()
-    _message_types: Tuple[MessageType, ...] = field()
-    _client_message_buffer: ClientMessageBuffer = field()
-
-    def remove_callback(self) -> None:
-        self._client_message_buffer.remove_on_message_callback(
-            self._client_ids,
-            self._message_types,
-        )
+    @staticmethod
+    def _ping_once(
+        client_state: ClientState,
+        subscription: MessageSubscription,
+        timeout_in_seconds: float,
+    ) -> bool:
+        try:
+            if client_state.connection is None:
+                return False
+            subscription.pending_messages()  # answers to an earlier ping must not count for this one
+            client_state.connection.send(ESPChannelMessageJson.empty(MessageType.PING))
+            return subscription.next_message(timeout_in_seconds=timeout_in_seconds) is not None
+        except Exception as e:
+            ClientCommunication._logger.debug("Checking client connection states: exception contacting %s: %s", client_state.client_id, e)
+            return False
