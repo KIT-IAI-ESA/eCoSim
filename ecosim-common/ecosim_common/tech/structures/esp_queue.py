@@ -7,7 +7,6 @@ from typing import Any, Generic, Iterable, TypeVar, assert_never, cast, override
 
 import distributed
 from distributed import Client
-
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
@@ -88,6 +87,8 @@ class ESPQueue(ABC, Generic[T]):
     def pop_or_none(self, timeout: float | None = None) -> T | None:
         try:
             return self.pop(timeout=timeout)
+        except Empty:
+            return None
         except TimeoutError:
             return None
 
