@@ -7,6 +7,7 @@
 - Use meaningful variable and function names
   - Don't use abbreviations
 - Write comments always in English
+- Use trailing comma on each parameter if more than one parameter is present
 
 ## Testing
 - Practice Test-Driven Development (TDD)
