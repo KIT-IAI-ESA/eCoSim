@@ -86,6 +86,7 @@ class ClientStates(ShutdownListener):
             ClientStates._logger.info("Client %s (%s) connected.", client_config.client_id(), client_connection.address)
             client.connection = client_connection
             client.connected = True
+            self._update_events(client_states)
             return True
 
     def reset_state(
@@ -101,6 +102,7 @@ class ClientStates(ShutdownListener):
             client_states[client_id].step_size_accepted = False
             client_states[client_id].simulation_started = False
             client_states[client_id].ready_for_simulation = False
+            self._update_events(client_states)
 
     def interfaces_validated(
         self,
@@ -122,8 +124,7 @@ class ClientStates(ShutdownListener):
     ) -> None:
         with self._client_states.transaction() as client_states:
             client_states[client_id].simulation_started = True
-            if all(state.simulation_started for state in client_states.values()):
-                self._all_clients_started_simulation_event.set()
+            self._update_events(client_states)
 
     def wait_for_all_clients_starting_simulation(self) -> None:
         self._all_clients_started_simulation_event.wait_with_progress(
@@ -172,8 +173,7 @@ class ClientStates(ShutdownListener):
     ) -> None:
         with self._client_states.transaction() as client_states:
             client_states[client_id].ready_for_simulation = True
-            if all(state.ready_for_simulation for state in client_states.values()):
-                self._all_clients_ready_for_simulation.set()
+            self._update_events(client_states)
 
     def simulation_stopped(
         self,
@@ -182,8 +182,7 @@ class ClientStates(ShutdownListener):
         with self._client_states.transaction() as client_states:
             client_states[client_id].stopped_simulation = True
             client_states[client_id].connected = False
-            if all((state.stopped_simulation or state.connected is False) for state in client_states.values()):
-                self._all_clients_stopped_simulation_event.set()
+            self._update_events(client_states)
 
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self._all_clients_ready_for_simulation.wait_with_progress(
@@ -208,3 +207,10 @@ class ClientStates(ShutdownListener):
     def set_client_connected_state(self, client_id: ClientID, connected: bool) -> None:
         with self._client_states.transaction() as client_states:
             client_states[client_id].connected = connected
+            self._update_events(client_states)
+
+    def _update_events(self, client_states: dict[ClientID, ClientState]) -> None:
+        states = tuple(client_states.values())
+        self._all_clients_started_simulation_event.set_state(all(state.simulation_started for state in states))
+        self._all_clients_ready_for_simulation.set_state(all((state.connected and state.ready_for_simulation) for state in states))
+        self._all_clients_stopped_simulation_event.set_state(all((state.stopped_simulation or not state.connected) for state in states))

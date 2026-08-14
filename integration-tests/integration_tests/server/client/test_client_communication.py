@@ -81,6 +81,24 @@ def test_check_client_connection_states_connected_but_lost(_client_communication
         Client._handle_ping = buffer  # type: ignore[method-assign] # noqa: SLF001
 
 
+def test_lost_clients_end_the_wait_for_all_clients_stopped(_client_communication_setup: ClientCommunicationData) -> None:
+    client_communication, client_states = _client_communication_setup[:2]
+    buffer = Client._handle_ping  # noqa: SLF001
+    try:
+        # temporarily disable ping answer on client side
+        Client._handle_ping = lambda _, _m: None  # type: ignore[assignment]  # noqa: SLF001
+        assert not client_states.have_all_clients_stopped_simulation()
+
+        client_communication.check_client_connection_states(
+            attempts=3,
+            time_between_attempts_in_seconds=0.3,
+        )
+
+        assert client_states.have_all_clients_stopped_simulation()
+    finally:
+        Client._handle_ping = buffer  # type: ignore[method-assign] # noqa: SLF001
+
+
 def test_closing_connection_unsets_connected(_client_communication_setup: ClientCommunicationData) -> None:
     client_communication, client_states, communication_protocol = _client_communication_setup
     for _, client_state in enumerate(client_states.all_states()):
