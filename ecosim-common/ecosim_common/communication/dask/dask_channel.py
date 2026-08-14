@@ -4,7 +4,7 @@ import threading
 import uuid
 from dataclasses import dataclass, field
 from time import sleep
-from typing import Any, Callable, override
+from typing import Any, Callable, cast, override
 
 import dask.distributed as distributed
 from ecosim_common.communication.binary_message import binary_message_header
@@ -14,9 +14,13 @@ from ecosim_common.communication.binary_message.simple_binary_message import Sim
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ChannelHandler, ConnectionData, ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
+from ecosim_common.communication.dask.channel_endpoint import ChannelEndpoint
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+
+# how long a receive without an explicit timeout waits before it treats the connection as dead
+_DEFAULT_RECEIVE_TIMEOUT_IN_SECONDS = 300
 
 
 def create_internal_dask_id() -> str:
@@ -40,10 +44,22 @@ class DaskChannel(ESPChannel, ShutdownListener):
     # resolved lazily via '_dask_client()' - never eagerly, so that a channel can be unpickled on a
     # worker before that worker is able to hand out a client
     _internal_dask_client: distributed.Client | None = field(default=None)
-    _origin_id: int = field(default_factory=lambda: uuid.uuid4().int & (1 << 64) - 1)
+    # which end of the connection this is - it decides which of the two inboxes is read and which is
+    # written. Only the channel created by the accept loop is the listener, everything else connects.
+    _endpoint: ChannelEndpoint = field(default=ChannelEndpoint.CONNECTOR)
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
+
+    def _inbox(self) -> distributed.Queue:
+        """The queue this endpoint reads."""
+        return self._queue_of(self._endpoint)
+
+    def _peer_inbox(self) -> distributed.Queue:
+        return self._queue_of(self._endpoint.peer())
+
+    def _queue_of(self, endpoint: ChannelEndpoint) -> distributed.Queue:
+        return distributed.Queue(name=endpoint.inbox_name(self._internal_dask_id), client=self._dask_client())
 
     def _dask_client(self) -> distributed.Client:
         if self._internal_dask_client is None:
@@ -73,9 +89,9 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if self._listening_on_connection.is_set():
             # only the channel that accepts connections owns an accept loop that has to be stopped -
             self._listening_on_connection.clear()
-        # Only unpublish own connection marker. Every other key on this dask client
-        # belongs to a different channel, and dropping it makes that channel's reader see
-        # 'dask_id not in datasets' - i.e. it reads the removal as its peer hanging up.
+        # Only unpublish own connection marker: every other key on this dask client belongs to a
+        # different channel, and dropping it would tell the accept loop that channel has gone away.
+        # The peer learns about the close from the sentinel below, not from this key.
         try:
             if self._internal_dask_id in self._dask_client().datasets.keys():
                 self._dask_client().unpublish_dataset(self._internal_dask_id)
@@ -83,13 +99,20 @@ class DaskChannel(ESPChannel, ShutdownListener):
             DaskChannel._logger.error("Something went wrong unpublishing key '%s': %s", self._internal_dask_id, e)
         except Exception as e:
             DaskChannel._logger.error("Something went wrong with closing connection on %s: %s", self._connection_address, e)
-        self._signal_close_to_peer()
+        self._signal_close()
         DaskChannel._logger.info("Connection to Dask client %s closed.", self._connection_address)
 
-    def _signal_close_to_peer(self) -> None:
+    def _signal_close(self) -> None:
+        """
+        Writes the sentinel into both inboxes.
+
+        The peer's inbox tells the other side that this one hung up. The own inbox wakes this side's
+        reader, which is parked in a blocking 'get' and would otherwise sit there until its timeout -
+        closing a channel has to end its own receive, exactly like a closed socket returns no data.
+        """
         try:
-            data_var = distributed.Queue(name=self._internal_dask_id, client=self._dask_client())
-            data_var.put((DaskChannel._CLOSED_SENTINEL, self._origin_id))
+            self._peer_inbox().put(DaskChannel._CLOSED_SENTINEL)
+            self._inbox().put(DaskChannel._CLOSED_SENTINEL)
         except Exception as e:
             DaskChannel._logger.debug("Could not signal close on %s: %s", self._connection_address, e)
 
@@ -148,34 +171,12 @@ class DaskChannel(ESPChannel, ShutdownListener):
         self,
         timeout_in_seconds: int | None = None,
     ) -> ESPChannelMessage | None:
-        return self._listen_blocking_internal(
-            closed=self._closed,
-            is_finished_event=self._is_finished,
-            internal_dask_id=self._internal_dask_id,
-            origin_id=self._origin_id,
-            distributed_client=self._dask_client(),
-            timeout_in_seconds=timeout_in_seconds,
-        )
-
-    @staticmethod
-    def _listen_blocking_internal(
-        closed: ParallelEvent,
-        is_finished_event: ParallelEvent,
-        internal_dask_id: str,
-        origin_id: int,
-        distributed_client: distributed.Client,
-        timeout_in_seconds: int | None = None,
-    ) -> ESPChannelMessage | None:
-        if closed.is_set():
+        if self._closed.is_set():
             raise Exception("Dask client has already or is in the process of being disconnected.")
-        message: ReceivedBinaryMessage | None = DaskChannel.receive_from_dask_client(
-            connection=distributed_client,
-            dask_id=internal_dask_id,
-            origin_id=origin_id,
-        )
+        message: ReceivedBinaryMessage | None = self._receive(timeout_in_seconds or _DEFAULT_RECEIVE_TIMEOUT_IN_SECONDS)
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
-            is_finished_event.set()
+            self._is_finished.set()
             return None
         return message.to_esp_channel_message()
 
@@ -188,15 +189,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if not self._connected.is_set() and not self._is_finished.is_set():
             raise Exception("Dask client already closed")
         try:
-            data_var = distributed.Queue(name=self._internal_dask_id, client=self._dask_client())
-            # both endpoints share this one queue, so every entry carries its sender - see
-            # 'receive_from_dask_client', which puts entries of its own origin back
-            data_var.put(
-                (
-                    SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message(),
-                    self._origin_id,
-                ),
-            )
+            self._peer_inbox().put(SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message())
         except Exception as e:
             # TODO_AFTER_MERGE: reconnecting is not specified in the abstraction -> either specify or refactor
             DaskChannel._logger.debug("Send messsage to server failed - recreating dask client connection and try again. Error: %s", e)
@@ -263,6 +256,8 @@ class DaskChannel(ESPChannel, ShutdownListener):
                             _connection_address=client_address,
                             _internal_dask_id=dask_id,
                             _connected=ParallelEvent.dask(init_set=True),
+                            # this is the end that accepted the connection, so it reads the listener inbox
+                            _endpoint=ChannelEndpoint.LISTENER,
                         ),
                         client_address=client_address,
                     )
@@ -286,55 +281,48 @@ class DaskChannel(ESPChannel, ShutdownListener):
             listening_on_connection.is_set(),
         )
 
-    @staticmethod
-    def receive_from_dask_client(
-        connection: distributed.Client,
-        dask_id: str,
-        origin_id: int,
+    def _receive(
+        self,
+        timeout_in_seconds: int,
     ) -> ReceivedBinaryMessage | None:
-        while True:
-            DaskChannel._logger.debug("Trying to receive for dask_id %s and origin_id %s...", dask_id, origin_id)
-            try:
-                data_var = distributed.Queue(name=dask_id, client=connection)
-                queue_entry = data_var.get(timeout=300)
-            except TimeoutError:
-                DaskChannel._logger.debug("Received no data at %s after 300 seconds.", origin_id)
-                return None
-            except Exception as e:
-                DaskChannel._logger.error("Received error non-timeout error while waiting at origin_id %s: %s", origin_id, e)
-                raise e
-            DaskChannel._logger.debug("Trying to receive for dask_id %s and origin_id %s...done.", dask_id, origin_id)
-            # 'send' always queues a (raw_message, origin_id) pair - see the comment there
-            raw_message, received_id = queue_entry
-            if raw_message == DaskChannel._CLOSED_SENTINEL:
-                # put it back: the sentinel is what every reader on this queue hangs on, and
-                # consuming it here would leave the others parked until their 300s timeout
-                data_var.put(queue_entry)
-                DaskChannel._logger.debug("Received close signal at %s", origin_id)
-                return None
-            if received_id == origin_id:
-                data_var.put(queue_entry)  # our own message -> hand it back to the peer
-                # without this the loop re-reads its own message thousands of times per second
-                sleep(0.01)
-                continue
-            if not raw_message or dask_id not in connection.datasets.keys():
-                DaskChannel._logger.debug("Received no data at %s", origin_id)
-                return None
-            raw_header = raw_message[0 : binary_message_header.HEADER_BYTES]
-            message_header = BinaryMessageHeader(raw_header)
-            if not message_header:
-                DaskChannel._logger.debug("Received no valid header")
-                return None
-            data: bytes = raw_message[binary_message_header.HEADER_BYTES :]
-            DaskChannel._logger.debug("Received message of type %s at %s from %s", message_header.message_type, origin_id, received_id)
-            return ReceivedBinaryMessage(message_header, data, ConnectionAddress.of_dask_client(connection))
+        raw_message = self._next_inbox_entry(timeout_in_seconds)
+        if not isinstance(raw_message, bytes) or not raw_message:
+            # anything that is not a raw message is '_CLOSED_SENTINEL' or nothing at all
+            DaskChannel._logger.debug("Received no data or the close signal on %s", self._inbox_name())
+            return None
+        message_header = BinaryMessageHeader(raw_message[0 : binary_message_header.HEADER_BYTES])
+        if not message_header:
+            DaskChannel._logger.debug("Received no valid header on %s", self._inbox_name())
+            return None
+        data: bytes = raw_message[binary_message_header.HEADER_BYTES :]
+        DaskChannel._logger.debug("Received message of type %s on %s", message_header.message_type, self._inbox_name())
+        return ReceivedBinaryMessage(message_header, data, ConnectionAddress.of_dask_client(self._dask_client()))
+
+    def _next_inbox_entry(
+        self,
+        timeout_in_seconds: int,
+    ) -> bytes | str | None:
+        """Blocks on the scheduler until the peer writes - no polling, so a busy peer costs nothing."""
+        try:
+            return cast(bytes | str, self._inbox().get(timeout=timeout_in_seconds))
+        except TimeoutError:
+            DaskChannel._logger.debug("Received no data on %s after %s seconds.", self._inbox_name(), timeout_in_seconds)
+            return None
+        except Exception as e:
+            DaskChannel._logger.error("Received non-timeout error while waiting on %s: %s", self._inbox_name(), e)
+            raise e
+
+    def _inbox_name(self) -> str:
+        return self._endpoint.inbox_name(self._internal_dask_id)
 
     @override
     def connect(
         self,
     ) -> None:
         dask_client = distributed.get_client()
-        distributed.Queue(name=self._internal_dask_id, client=dask_client)
+        self._internal_dask_client = dask_client
+        # the inbox exists before the connection is announced, so the listener cannot look for it in vain
+        self._inbox()
         dask_client.datasets[self._internal_dask_id] = None
         self._connected.set()
 

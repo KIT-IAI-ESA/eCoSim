@@ -11,6 +11,8 @@ from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.tech.structures.esp_queue import ESPQueue
 
+_MESSAGE_COUNT = 20
+
 
 def test_happy_path(communication_protocol: CommunicationProtocol) -> None:
     server_address = ConnectionAddress(
@@ -151,8 +153,47 @@ def test_message_handler_stays_in_the_calling_process(communication_protocol: Co
     assert received_in_this_process[0].payload(MessageDataForTest) == data
 
 
+def test_message_order_is_kept(communication_protocol: CommunicationProtocol) -> None:
+    """A channel is a stream: what one side sends first has to arrive first."""
+    server_address = ConnectionAddress(
+        ip="localhost",
+        port=1234,
+    )
+    connector = ESPChannelConnector(communication_protocol)
+    listening_channel = connector.listener(server_address)
+    listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_messages)
+    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+
+    channel = connector.connect(connection_address=server_address)
+
+    message_queue: ESPQueue[ESPChannelMessage] = ESPQueue.of_communication_protocol(communication_protocol)
+    channel.listen_on_message_async(on_message=message_queue.push)
+    channel.is_listening_event().wait(timeout=10)
+
+    for step in range(_MESSAGE_COUNT):
+        channel.send(
+            ESPChannelMessageJson.create(
+                type=MessageType.CLIENT_META_DATA_REQUEST,
+                correlation_id=CorrelationId.of_int(step),
+                payload=MessageDataForTest(string="order", integer=step),
+            ),
+        )
+
+    received_ids = [message_queue.pop(timeout=30).correlation_id() for _ in range(_MESSAGE_COUNT)]
+    assert received_ids == [CorrelationId.of_int(step) for step in range(_MESSAGE_COUNT)]
+
+
 def _mirror_message(connection_data: ConnectionData) -> None:
     data = connection_data.channel.listen_blocking()
     if not data:
         return
     connection_data.channel.send(data)
+
+
+def _mirror_messages(connection_data: ConnectionData) -> None:
+    """Mirrors until the peer hangs up - 'listen_blocking' returns None."""
+    while True:
+        data = connection_data.channel.listen_blocking()
+        if not data:
+            return
+        connection_data.channel.send(data)
