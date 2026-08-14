@@ -6,7 +6,6 @@ from typing import ClassVar, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
-from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
@@ -14,10 +13,10 @@ from ecosim_common.communication.data.simulation_step_request import SimulationS
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.client.message_subscription import MessageSubscription
-from ecosim_server.message_buffer import ClientMessageBuffer
 
 
 @dataclass
@@ -26,7 +25,6 @@ class ClientCommunication:
 
     _client_states: ClientStates = field()
     _client_message_buffer: ClientMessageBuffer = field()
-    _communication_protocol: CommunicationProtocol = field()
 
     def broadcast(
         self,
@@ -53,7 +51,6 @@ class ClientCommunication:
             message_buffer=self._client_message_buffer,
             client_ids=client_ids,
             message_types=message_types,
-            communication_protocol=self._communication_protocol,
         )
 
     def send_simulation_step(

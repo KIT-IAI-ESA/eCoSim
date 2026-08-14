@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from types import TracebackType
 from typing import List, Tuple
 
-from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.structures.esp_queue import ESPQueue
-from ecosim_server.message_buffer import BufferedClientMessage, ClientMessageBuffer
+from ecosim_server.client.client_message import ClientMessage
+from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 
 
 @dataclass
@@ -21,17 +21,15 @@ class MessageSubscription:
     _message_buffer: ClientMessageBuffer = field()
     _client_ids: Tuple[ClientID, ...] = field()
     _message_types: Tuple[MessageType, ...] = field()
-    _queue: ESPQueue[BufferedClientMessage] = field()
+    _queue: ESPQueue[ClientMessage] = field()
 
     @staticmethod
     def open(
         message_buffer: ClientMessageBuffer,
         client_ids: Tuple[ClientID, ...],
         message_types: Tuple[MessageType, ...],
-        communication_protocol: CommunicationProtocol,
     ) -> MessageSubscription:
-        queue: ESPQueue[BufferedClientMessage] = ESPQueue.of_communication_protocol(communication_protocol)
-        message_buffer.on_message(client_ids, message_types, queue.push)
+        queue = message_buffer.subscribe(client_ids, message_types)
         return MessageSubscription(
             _message_buffer=message_buffer,
             _client_ids=client_ids,
@@ -42,10 +40,10 @@ class MessageSubscription:
     def next_message(
         self,
         timeout_in_seconds: float | None = None,
-    ) -> BufferedClientMessage | None:
+    ) -> ClientMessage | None:
         return self._queue.pop_or_none(timeout=timeout_in_seconds)
 
-    def pending_messages(self) -> List[BufferedClientMessage]:
+    def pending_messages(self) -> List[ClientMessage]:
         """Returns every message that is already queued, without waiting for more."""
         return self._queue.pop_all()
 
@@ -53,7 +51,7 @@ class MessageSubscription:
         return self._queue.qsize()
 
     def close(self) -> None:
-        self._message_buffer.remove_on_message_callback(self._client_ids, self._message_types)
+        self._message_buffer.unsubscribe(self._client_ids, self._message_types)
         for message in self._queue.pop_all():
             self._message_buffer.add_buffered(message)
 

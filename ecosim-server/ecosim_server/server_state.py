@@ -1,9 +1,9 @@
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
+from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.message_buffer import ClientMessageBuffer
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 
