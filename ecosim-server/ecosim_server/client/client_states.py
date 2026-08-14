@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from time import sleep
-from typing import Tuple, assert_never, override
+from typing import Callable, Tuple, assert_never, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
@@ -127,26 +126,31 @@ class ClientStates(ShutdownListener):
                 self._all_clients_started_simulation_event.set()
 
     def wait_for_all_clients_starting_simulation(self) -> None:
-        while not self.have_all_clients_started_simulation():
-            # TODO_OSR: replace sleep with a correct async/threading construct
-            sleep(1)
-            # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
-            ClientStates._logger.debug(
-                "Waiting for all clients starting simulation: %s/%s",
-                sum(1 for state in self._client_states.values() if state.simulation_started),
-                len(self._client_states.values()),
-            )
-            if self._shutdown_triggered:
-                raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
+        self._all_clients_started_simulation_event.wait_with_progress(
+            progress_interval_in_seconds=1.0,
+            on_progress=lambda: self._log_progress("starting simulation", lambda state: state.simulation_started),
+            abort=lambda: self._shutdown_triggered,
+            abort_message="Shutdown was triggered during waiting for all clients to start",
+        )
+
+    def _log_progress(
+        self,
+        description: str,
+        is_done: Callable[[ClientState], bool],
+    ) -> None:
+        states = self._client_states.values()
+        ClientStates._logger.info(
+            "Waiting for all clients %s: %s/%s",
+            description,
+            sum(1 for state in states if is_done(state)),
+            len(states),
+        )
 
     def have_all_clients_started_simulation(self) -> bool:
         return self._all_clients_started_simulation_event.is_set()
 
     def have_all_clients_stopped_simulation(self) -> bool:
         return self._all_clients_stopped_simulation_event.is_set()
-
-    def are_all_clients_ready_for_simulation(self) -> bool:
-        return self._all_clients_ready_for_simulation.is_set()
 
     @override
     def on_app_shutdown(self) -> None:
@@ -181,20 +185,13 @@ class ClientStates(ShutdownListener):
             if all((state.stopped_simulation or state.connected is False) for state in client_states.values()):
                 self._all_clients_stopped_simulation_event.set()
 
-    # TODO_OSR: after the refactoring, you can probably delete this
     def wait_for_all_clients_connected_and_ready(self) -> None:
-        while not self.are_all_clients_connected_and_ready():
-            # TODO_OSR: replace sleep with a correct async/threading construct
-            sleep(1)
-            # TODO_OSR: check if the 'sum' function can be refactored (also check the similar todo)
-            ClientStates._logger.info(
-                message="Waiting for all clients to connect: "
-                + f"{sum(1 for state in self._client_states.values() if (state.connected and state.ready_for_simulation))}/{
-                    len(self._client_states.values())
-                }",
-            )
-            if self._shutdown_triggered:
-                raise RuntimeError("Shutdown was triggered during waiting for all clients to start")
+        self._all_clients_ready_for_simulation.wait_with_progress(
+            progress_interval_in_seconds=1.0,
+            on_progress=lambda: self._log_progress("to connect", lambda state: state.connected and state.ready_for_simulation),
+            abort=lambda: self._shutdown_triggered,
+            abort_message="Shutdown was triggered during waiting for all clients to connect",
+        )
 
     def all_client_ids(self) -> Tuple[ClientID, ...]:
         return tuple(client_state.client_id for client_state in self._client_states.values())

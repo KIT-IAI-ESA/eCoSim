@@ -45,34 +45,37 @@ class ClientMessageBuffer:
         client_id: ClientID,
         message: ESPChannelMessage,
     ) -> None:
-        # This runs for every message in the system, so the debug calls below are guarded
-        if _message_buffer_logger.is_debug_enabled:
-            _message_buffer_logger.debug(
-                "Adding new message to buffer. CorrelationID: %s  |  Type: %s | client_id: %s",
-                message.correlation_id(),
-                message.type(),
-                client_id,
-            )
-        buffered_message = BufferedClientMessage(client_id, message)
+        self.add_buffered(BufferedClientMessage(client_id, message))
+
+    def add_buffered(
+        self,
+        buffered_message: BufferedClientMessage,
+    ) -> None:
+        """Hands the message to a matching callback or, if there is none, stores it in the buffer."""
+        self._log_message(buffered_message, "Entering 'add_buffered'...")
         callback = self._find_on_message_callback(buffered_message)
-        if callback is not None:
-            if _message_buffer_logger.is_debug_enabled:
-                _message_buffer_logger.debug(
-                    "CorrelationID: %s  |  Type: %s | client_id: %s: executing callback...",
-                    message.correlation_id(),
-                    message.type(),
-                    client_id,
-                )
-            callback.execute_async(buffered_message)
+        if callback is None:
+            self._log_message(buffered_message, "no callback is found -> adding to buffer")
+            self._buffer.append(buffered_message)
             return
-        if _message_buffer_logger.is_debug_enabled:
-            _message_buffer_logger.debug(
-                "CorrelationID: %s  |  Type: %s | client_id: %s: no callback is found -> adding to buffer",
-                message.correlation_id(),
-                message.type(),
-                client_id,
-            )
-        self._buffer.append(buffered_message)
+        self._log_message(buffered_message, "Callback was found -> exeucting async...")
+        callback.execute_async(buffered_message)
+
+    @staticmethod
+    def _log_message(
+        buffered_message: BufferedClientMessage,
+        description: str,
+    ) -> None:
+        # This runs for every message in the system, so the debug call is guarded
+        if not _message_buffer_logger.is_debug_enabled:
+            return
+        _message_buffer_logger.debug(
+            "CorrelationID: %s  |  Type: %s | client_id: %s: %s",
+            buffered_message.message.correlation_id(),
+            buffered_message.message.type(),
+            buffered_message.client_id,
+            description,
+        )
 
     def _find_on_message_callback(
         self,

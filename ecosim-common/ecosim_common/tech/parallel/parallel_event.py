@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from abc import abstractmethod
 from dataclasses import InitVar, dataclass, field
 from typing import Callable, assert_never, override
@@ -56,8 +57,46 @@ class ParallelEvent:
     def is_set(self) -> bool:
         return self._event().is_set()
 
-    def wait(self, timeout: float | None = None) -> bool:
+    def wait(
+        self,
+        timeout: float | None = None,
+    ) -> bool:
         return self._event().wait(timeout=timeout)
+
+    def wait_with_progress(
+        self,
+        progress_interval_in_seconds: float,
+        on_progress: Callable[[], None] | None = None,
+        timeout_in_seconds: float | None = None,
+        abort: Callable[[], bool] | None = None,
+        abort_message: str | None = None,
+    ) -> bool:
+        """
+        Blocks until 'event' is set. Returns False if 'timeout_in_seconds' passed before that happened.
+
+        The event does the waiting, so no thread spins. 'on_progress' is called every
+        'progress_interval_in_seconds' - it is meant for logging, not for doing work. If 'abort' becomes true
+        while waiting, a 'WaitAbortedError' is raised.
+        """
+        deadline = None if timeout_in_seconds is None else time.monotonic() + timeout_in_seconds
+        while not self.wait(timeout=self._next_interval(deadline, progress_interval_in_seconds)):
+            if abort is not None and abort():
+                raise WaitAbortedError(abort_message)
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+            if on_progress is not None:
+                on_progress()
+        return True
+
+    @staticmethod
+    def _next_interval(
+        deadline: float | None,
+        progress_interval_in_seconds: float,
+    ) -> float:
+        """Waits at most until the deadline, so a long progress interval cannot overshoot the timeout."""
+        if deadline is None:
+            return progress_interval_in_seconds
+        return max(0.0, min(progress_interval_in_seconds, deadline - time.monotonic()))
 
     def set_state(self, state: bool) -> None:
         self._event().set() if state else self._event().clear()
@@ -106,3 +145,7 @@ class ParallelEventThread(ParallelEvent):
     @override
     def _event(self) -> threading.Event | distributed.Event:
         return self._thread_event
+
+
+class WaitAbortedError(RuntimeError):
+    """Raised when a wait was given up because its abort condition became true."""
