@@ -94,15 +94,8 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if not self._listening_on_connection.is_set() and not self._connected.is_set():
             DaskChannel._logger.debug("Server is not listening: %s. So nothing is done", self._connection_address)
             return
-        # TODO_AFTER_MERGE: find a better place for the dask shutdown routine
-        #       also, there is currently a (very unlikely) race condition between setting '_server_listening' in 'listen_async' and the method
-        #       'close', that checks for _server_listening.is_set()
         if self._listening_on_connection.is_set():
-            # only the channel that accepts connections owns an accept loop that has to be stopped -
             self._listening_on_connection.clear()
-        # Only unpublish own connection marker: every other key on this dask client belongs to a
-        # different channel, and dropping it would tell the accept loop that channel has gone away.
-        # The peer learns about the close from the sentinel below, not from this key.
         try:
             if self._internal_dask_id in self._dask_client().datasets.keys():
                 self._dask_client().unpublish_dataset(self._internal_dask_id)
@@ -196,19 +189,12 @@ class DaskChannel(ESPChannel, ShutdownListener):
         self,
         message: ESPChannelMessage,
     ) -> None:
-        # TODO_AFTER_MERGE: newly added 'not self._is_finished.is_set()'
         if not self._connected.is_set() and not self._is_finished.is_set():
             raise Exception("Dask client already closed")
         try:
             self._peer_inbox().put(SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message())
         except Exception as e:
-            # TODO_AFTER_MERGE: reconnecting is not specified in the abstraction -> either specify or refactor
-            DaskChannel._logger.debug("Send messsage to server failed - recreating dask client connection and try again. Error: %s", e)
-            # TODO_AFTER_MERGE: this was commented out -> handle this
-            # self._internal_dask_client.connect()
-            # self._internal_dask_client.send(
-            #     SimpleBinaryMessage.of_esp_channel_message(message=message),
-            # )
+            DaskChannel._logger.error("Send messsage to server failed. Error: %s", e)
 
     def is_listening_event(self) -> ParallelEvent:
         return self._is_listening
