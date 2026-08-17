@@ -1,10 +1,17 @@
+import sys
+
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_server.config.cli_arguments import CLIArguments
 
 
 class HPCServerCliArguments(CLIArguments):
     def __init__(self) -> None:
+        args = sys.argv[1:]
+        args.append("--communication-protocol")
+        args.append(CommunicationProtocol.DASK.name)
         super().__init__(
+            passed_arguments=args,
             additional_parameters=[
                 AppConfigParameter(
                     name="simulator-dir",

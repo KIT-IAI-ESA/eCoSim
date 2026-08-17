@@ -4,12 +4,10 @@ from time import sleep
 
 from art import tprint
 from dask import distributed
-from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.dask.init_dask import init_dask
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
-from ecosim_common.tech.system_arguments import overwrite_system_argument
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -34,10 +32,6 @@ def get_mpi_interface() -> str:
 
 
 def main() -> None:
-    # TODO: find a better solution
-    # TODO_OSR: check the todo above
-    overwrite_system_argument("--communication-protocol", CommunicationProtocol.DASK.name)
-
     args = HPCServerCliArguments()
     if args.interactive():
         dask_client = distributed.Client(scheduler_file="scheduler.json")
