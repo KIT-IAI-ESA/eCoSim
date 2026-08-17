@@ -36,7 +36,7 @@ def get_mpi_interface() -> str:
 def main() -> None:
     # TODO: find a better solution
     # TODO_OSR: check the todo above
-    overwrite_system_argument("--communication_protocol", CommunicationProtocol.DASK.name)
+    overwrite_system_argument("--communication-protocol", CommunicationProtocol.DASK.name)
 
     args = HPCServerCliArguments()
     if args.interactive():
