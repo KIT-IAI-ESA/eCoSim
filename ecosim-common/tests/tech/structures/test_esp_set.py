@@ -288,3 +288,6 @@ def test_pickle(dask_client: dask.distributed.Client) -> None:
     assert "d" in esp_set
     assert "e" in restored
     assert "e" in esp_set
+
+    assert restored._dask_variable.name == esp_set._dask_variable.name  # type: ignore[attr-defined]  # noqa: SLF001
+    assert restored._lock._name == esp_set._lock._name  # type: ignore[attr-defined]  # noqa: SLF001
