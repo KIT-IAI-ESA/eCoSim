@@ -47,18 +47,27 @@ class DaskChannel(ESPChannel, ShutdownListener):
     # which end of the connection this is - it decides which of the two inboxes is read and which is
     # written. Only the channel created by the accept loop is the listener, everything else connects.
     _endpoint: ChannelEndpoint = field(default=ChannelEndpoint.CONNECTOR)
+    # both handles are created on first use and then kept, see '_queue_of'
+    _inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
+    _peer_inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
 
     def _inbox(self) -> distributed.Queue:
         """The queue this endpoint reads."""
-        return self._queue_of(self._endpoint)
+        if self._inbox_queue is None:
+            self._inbox_queue = self._queue_of(self._endpoint)
+        return self._inbox_queue
 
     def _peer_inbox(self) -> distributed.Queue:
-        return self._queue_of(self._endpoint.peer())
+        if self._peer_inbox_queue is None:
+            self._peer_inbox_queue = self._queue_of(self._endpoint.peer())
+        return self._peer_inbox_queue
 
     def _queue_of(self, endpoint: ChannelEndpoint) -> distributed.Queue:
+        # ATTENTION: 'distributed.Queue.__init__' is a blocking 'queue_create' on the scheduler, so a
+        # handle per call costs a round trip on top of every put and get - see 'DaskESPQueue'.
         return distributed.Queue(name=endpoint.inbox_name(self._internal_dask_id), client=self._dask_client())
 
     def _dask_client(self) -> distributed.Client:
@@ -71,7 +80,9 @@ class DaskChannel(ESPChannel, ShutdownListener):
         # picklable at all. The channel travels without it; the receiving side resolves its own local
         # client on first use. Everything else on the channel is either plain data or a dask primitive
         # with a '__reduce__' (see 'ParallelEventDask'), so it survives the trip.
-        return {**self.__dict__, "_internal_dask_client": None}
+        # The queue handles are dropped for the same reason they are cached: 'distributed.Queue.__reduce__'
+        # re-runs '__init__', so carrying them would cost a scheduler round trip per unpickling.
+        return {**self.__dict__, "_internal_dask_client": None, "_inbox_queue": None, "_peer_inbox_queue": None}
 
     @override
     def close(self) -> None:
