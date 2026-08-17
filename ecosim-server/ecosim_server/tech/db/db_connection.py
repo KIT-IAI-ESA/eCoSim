@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.config.server_config import DatabaseConfig
@@ -10,20 +11,31 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 
-# TODO_OSR: refactor to dataclass
+@dataclass
 class DBConnection:
-    _logger = ESPLogger("DBConnection")
+    _logger: ClassVar[ESPLogger] = ESPLogger("DBConnection")
 
-    def __init__(
-        self,
+    _db_url: str = field()
+    _base_model: Any = field()
+    _db_engine: Engine = field()
+    default_schema: str = field()
+
+    @staticmethod
+    def of_db_config_and_model(
         db_config: DatabaseConfig,
         base_model: Any,
-    ) -> None:
-        self._db_url: str = db_config.generate_sqlalchemy_db_url()
-        self._base_model = base_model
-        self._db_engine: Engine = create_engine(self._db_url)
-        self.default_schema: str = db_config.schema
-        self._db_engine = self._db_engine.execution_options(schema_translate_map={"": self.default_schema})
+    ) -> DBConnection:
+        db_url = db_config.generate_sqlalchemy_db_url()
+        schema = db_config.schema
+        db_engine = create_engine(db_url).execution_options(schema_translate_map={"": schema})
+        return DBConnection(
+            _db_url=db_url,
+            _base_model=base_model,
+            _db_engine=db_engine,
+            default_schema=schema,
+        )
+
+    def __post_init__(self) -> None:
         self._base_model.metadata.create_all(self._db_engine)
 
     def create_measurement_table(

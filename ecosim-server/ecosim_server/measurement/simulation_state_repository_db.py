@@ -13,8 +13,6 @@ from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
 from sqlalchemy import Column, Integer, Text
 
 
-# TODO_OSR: move to different package ('simdb' is not used anymore)
-# TODO_OSR: remove variant stuff
 @dataclass
 class SimulationStateRepositoryDB(SimulationStateRepository):
     _db_connection: DBConnection = field()
@@ -24,7 +22,6 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
 
     def __post_init__(self) -> None:
         state = SimulationStateDTO(
-            variation_id=0,  # TODO_OSR: remove
             state=SimulationState.NOT_READY.value,
         )
         self._state_id = self._db_connection.insert_into(state)
@@ -37,7 +34,6 @@ class SimulationStateRepositoryDB(SimulationStateRepository):
             self._db_connection.update(
                 SimulationStateDTO(
                     state_id=self._state_id,
-                    variation_id=0,
                     state=state.db_entry,
                 ),
             )
@@ -54,7 +50,6 @@ class SimulationStateDTO(SimControlDB_Base, DTO[int]):
     __tablename__ = "simulation_state"
 
     state_id = Column(Integer, primary_key=True, autoincrement=True)
-    variation_id = Column(Integer)
     state = Column(Text)
 
     def id(self) -> int:
