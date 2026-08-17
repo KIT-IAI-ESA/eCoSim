@@ -15,7 +15,6 @@ from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
 from sqlalchemy import JSON, Column, DateTime, Float
 
 
-# TODO_OSR: move to different package ('simdb' is not used anymore)
 # TODO_OSR: rewrite to dataclass
 class MeasurementRepositoryDB(MeasurementRepository):
     _logger = ESPLogger("MeasurementRepositoryDB")

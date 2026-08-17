@@ -1,10 +1,9 @@
-from sqlalchemy import Engine, text, create_engine
-
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_tech_abstract import DbTechAbstract
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.server_config import ServerConfig
+from sqlalchemy import Engine, create_engine, text
 
 
 class PostgresTech(DbTechAbstract):
@@ -18,7 +17,7 @@ class PostgresTech(DbTechAbstract):
 
     def db_connection(self) -> DBConnection:
         PostgresTech._logger.debug("Creating DB connection to %s", self.server_config.database.name)
-        return DBConnection(
+        return DBConnection.of_db_config_and_model(
             db_config=self.server_config.database,
             base_model=SimControlDB_Base,
         )
