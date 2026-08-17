@@ -88,6 +88,12 @@ class ESPMap(ABC, MutableMapping[K, V], Generic[K, V]):
     def __getitem__(self, k: K) -> V:
         return self.get_snapshot()[k]
 
+    def value_of(self, k: K) -> V | None:
+        """
+        Reads a single entry, or None if there is none.
+        """
+        return self.get_snapshot().get(k)
+
     def __setitem__(self, k: K, v: V) -> None:
         with self.transaction() as internal_map:
             internal_map[k] = v

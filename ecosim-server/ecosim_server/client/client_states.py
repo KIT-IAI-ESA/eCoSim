@@ -23,6 +23,7 @@ class ClientStates(ShutdownListener):
     _all_clients_ready_for_simulation: ParallelEvent = field()
     _all_clients_stopped_simulation_event: ParallelEvent = field()
     _client_states: ESPMap[ClientID, ClientState] = field()
+    _client_ids: Tuple[ClientID, ...] = field()
     _shutdown_triggered: bool = field(default=False)
 
     @staticmethod
@@ -57,6 +58,7 @@ class ClientStates(ShutdownListener):
 
         return ClientStates(
             _client_states=client_states,
+            _client_ids=tuple(init_clients.keys()),
             _all_clients_started_simulation_event=ParallelEvent.for_communication_protocol(communication_protocol),
             _all_clients_ready_for_simulation=ParallelEvent.for_communication_protocol(communication_protocol),
             _all_clients_stopped_simulation_event=ParallelEvent.for_communication_protocol(communication_protocol),
@@ -161,7 +163,8 @@ class ClientStates(ShutdownListener):
         self,
         client_id: ClientID,
     ) -> bool:
-        return self._client_states[client_id] is not None and self._client_states[client_id].connected
+        client_state = self._client_states.value_of(client_id)
+        return client_state is not None and client_state.connected
 
     def are_all_clients_connected_and_ready(self) -> bool:
         with self._client_states.transaction() as client_states:
@@ -193,7 +196,7 @@ class ClientStates(ShutdownListener):
         )
 
     def all_client_ids(self) -> Tuple[ClientID, ...]:
-        return tuple(client_state.client_id for client_state in self._client_states.values())
+        return self._client_ids
 
     def all_connections(self) -> Tuple[ClientConnection | None, ...]:
         return tuple(client_state.connection for client_state in self._client_states.values())
@@ -202,7 +205,8 @@ class ClientStates(ShutdownListener):
         return tuple(self._client_states.values())
 
     def get_connection_for(self, client_id: ClientID) -> ClientConnection | None:
-        return self._client_states[client_id].connection
+        client_state = self._client_states.value_of(client_id)
+        return client_state.connection if client_state is not None else None
 
     def set_client_connected_state(self, client_id: ClientID, connected: bool) -> None:
         with self._client_states.transaction() as client_states:

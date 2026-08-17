@@ -136,6 +136,12 @@ def test_get(esp_structure_type: ESPStructureType) -> None:
     assert esp_map.get("b", 99) == 99
 
 
+def test_value_of(esp_structure_type: ESPStructureType) -> None:
+    esp_map = ESPMap[str, int].of_type(map_type=esp_structure_type, data={"a": 1})
+    assert esp_map.value_of("a") == 1
+    assert esp_map.value_of("b") is None
+
+
 def test_keys_values_items(esp_structure_type: ESPStructureType) -> None:
     esp_map = ESPMap[str, int].of_type(map_type=esp_structure_type, data={"a": 1, "b": 2})
     assert isinstance(esp_map.keys(), KeysView)
