@@ -35,11 +35,6 @@ class InterfaceValueHistory:
         return InterfaceValueHistory(
             _repositories=repositories,
             _simulation_config=simulation_config,
-            # _entries=ESPMap.of_type(
-            #     map_type=ESPStructureType.DASK_VARIABLE
-            #     if server_config.server.communication_protocol == CommunicationProtocol.DASK
-            #     else ESPStructureType.THREAD,
-            # ),
             _entries=ESPMap.of_type(
                 map_type=ESPStructureType.THREAD,
             ),
