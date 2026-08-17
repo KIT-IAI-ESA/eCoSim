@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import argparse
 import os
 import sys
-from ecosim_common.config import config_parser
 from dataclasses import dataclass
 from typing import Any, Callable, List
+
+from ecosim_common.config import config_parser
 
 
 class AppConfig(object):
@@ -19,6 +21,8 @@ class AppConfig(object):
             environment_variables = dict(os.environ)
         if passed_arguments is None:
             passed_arguments = sys.argv[1:]
+        else:
+            passed_arguments = AppConfig.clean_test_arguments(passed_arguments)  # not an ideal solution but it works for now
         self._parser = argparse.ArgumentParser(description=cli_description)
         for parameter in parameters:
             if parameter.is_flag is False:
@@ -70,6 +74,10 @@ class AppConfig(object):
             default=default_value,
             action="store_true",
         )
+
+    @staticmethod
+    def clean_test_arguments(passed_arguments: List[Any]) -> List[Any]:
+        return [arg for arg in passed_arguments if type(arg) is not str or (not arg.startswith("test/") and arg != "--jb-swapdiff")]
 
 
 @dataclass
