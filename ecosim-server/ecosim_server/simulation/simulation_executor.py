@@ -95,6 +95,7 @@ class SimulationExecutor:
             ServerTimeMeasurementType.SIMULATION_EXECUTION,
         )
         self._execute_steps()
+        self._value_history.close()  # the deferred repository writes belong to the execution
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_EXECUTION)
         self._stop_simulation()
 
@@ -180,7 +181,7 @@ class SimulationExecutor:
     def _restore_simulation_run(self) -> None:
         SimulationExecutor.logger.info("[Restore simulation] Starting restore for all clients and waiting for successful start.")
         self._value_history.init_from_repositories()
-        restore_data = self._value_history.calculate_current_execution_step_or_exception()
+        restore_data = self._value_history.calculate_restore_data_or_exception()
         self._current_step = restore_data.current_step
         SimulationExecutor.logger.debug("[Restore simulation] the latest completed step is: %s -> restoring until this step.", self._current_step)
         save_defaults = False

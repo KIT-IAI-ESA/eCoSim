@@ -3,15 +3,18 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim.iml" filepath="$PROJECT_DIR$/.idea/ecosim.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml" filepath="$PROJECT_DIR$/ecosim-client-fmu-v2/.idea/ecosim-client-fmu-v2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml" filepath="$PROJECT_DIR$/ecosim-client-fmu-v3/.idea/ecosim-client-fmu-v3.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-matlab/.idea/ecosim-client-matlab.iml" filepath="$PROJECT_DIR$/ecosim-client-matlab/.idea/ecosim-client-matlab.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-client-pyro5/.idea/ecosim-client-pyro5.iml" filepath="$PROJECT_DIR$/ecosim-client-pyro5/.idea/ecosim-client-pyro5.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml" filepath="$PROJECT_DIR$/ecosim-common/.idea/ecosim-common.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-common-fmpy/.idea/ecosim-common-fmpy.iml" filepath="$PROJECT_DIR$/ecosim-common-fmpy/.idea/ecosim-common-fmpy.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-hpc/.idea/ecosim-hpc.iml" filepath="$PROJECT_DIR$/ecosim-hpc/.idea/ecosim-hpc.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml" filepath="$PROJECT_DIR$/ecosim-server/.idea/ecosim-server.iml" />
-      <module fileurl="file://$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml" filepath="$PROJECT_DIR$/integration-tests/.idea/integration_tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-fmu-v2.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-fmu-v2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-fmu-v3.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-fmu-v3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-matlab.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-matlab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-pyro.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-pyro.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-common.iml" filepath="$PROJECT_DIR$/.idea/ecosim-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-common-fmpy.iml" filepath="$PROJECT_DIR$/.idea/ecosim-common-fmpy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-hpc.iml" filepath="$PROJECT_DIR$/.idea/ecosim-hpc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-server.iml" filepath="$PROJECT_DIR$/.idea/ecosim-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-test-common.iml" filepath="$PROJECT_DIR$/.idea/ecosim-test-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim@1.iml" filepath="$PROJECT_DIR$/.idea/ecosim@1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/integration-tests.iml" filepath="$PROJECT_DIR$/.idea/integration-tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/simulation_example.iml" filepath="$PROJECT_DIR$/.idea/simulation_example.iml" />
     </modules>
   </component>
 </project>
