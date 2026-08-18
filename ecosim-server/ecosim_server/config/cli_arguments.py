@@ -17,10 +17,12 @@ class CLIArguments(AppConfig):
         self,
         passed_arguments: List[Any] | None = None,
         additional_parameters: list[AppConfigParameter] | None = None,
+        ignore_unknown_arguments: bool = False,
     ):
         super().__init__(
             passed_arguments=passed_arguments or sys.argv[1:],
             cli_description="This is the server of eCoSimPy.",
+            ignore_unknown_arguments=ignore_unknown_arguments,
             parameters=[
                 AppConfigParameter(
                     name="server-config",

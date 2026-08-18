@@ -15,7 +15,7 @@ def _resolve_schema() -> str:
         _logger.debug("Test environment detected: using postgres schema.")
         return "postgres"
     try:
-        return CLIArguments().db_config_overwrite().schema(default="ERROR_NO_SCHEMA")
+        return CLIArguments(ignore_unknown_arguments=True).db_config_overwrite().schema(default="ERROR_NO_SCHEMA")
     except (SystemExit, ValueError, TypeError):
         _logger.warning("No schema specified in CLI arguments -> using postgres schema.")
         return "postgres"

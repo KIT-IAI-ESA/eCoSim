@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="PYTHON_MODULE" version="4">
+<module external.system.id="pyproject.toml" type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
-    <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv" />
-      <excludeFolder url="file://$MODULE_DIR$/dist" />
-      <excludeFolder url="file://$MODULE_DIR$/ecosim_client_matlab.egg-info" />
+    <content url="file://$MODULE_DIR$/ecosim-client-matlab">
+      <sourceFolder url="file://$MODULE_DIR$/ecosim-client-matlab" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/ecosim_client_matlab.egg-info" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
