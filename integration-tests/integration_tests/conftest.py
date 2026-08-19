@@ -7,6 +7,7 @@ from _pytest.logging import _LiveLoggingStreamHandler, logging_StreamHandler
 from _pytest.nodes import Item
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.dask.init_dask import init_dask
+from ecosim_common.tech.dask.shutdown_dask import shutdown_dask_workers
 from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
@@ -49,6 +50,7 @@ def dask_client() -> Generator[dd.Client, Any, None]:
         client=client,
     )
     yield client
+    shutdown_dask_workers(client)
 
 
 @pytest.fixture(
