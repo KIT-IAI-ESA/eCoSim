@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class DbConfigOverwrite:
     _host: str | None = None
     _port: str | None = None
