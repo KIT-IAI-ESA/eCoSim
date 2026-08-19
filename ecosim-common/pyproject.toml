@@ -28,6 +28,9 @@ dependencies = [
 [tool.setuptools.package-data]
 ecosim_common = ["py.typed"]
 
+[tool.uv.sources]
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
+
 [project.optional-dependencies]
 dev = [
     "setuptools==83.0.0",
@@ -36,7 +39,8 @@ dev = [
     "pytest-html==4.2.0",
     "mypy==2.3.0",
     "uv==0.11.28",
-    "pip==26.1.2"
+    "pip==26.1.2",
+    "ecosim-test-common==0.14.0",
 ]
 
 #[project.urls]
@@ -44,6 +48,7 @@ dev = [
 #Repository = "https://github.com/yourusername/myapp"
 
 [tool.mypy]
+mypy_path = ["../ecosim-test-common"]
 python_executable = ".venv/bin/python"
 check_untyped_defs = true
 disallow_untyped_defs = true
