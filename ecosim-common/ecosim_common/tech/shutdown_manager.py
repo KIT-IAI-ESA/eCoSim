@@ -89,6 +89,9 @@ class ShutdownManager:
         sys.exit(555)
 
     def __trigger_shutdown(self) -> None:
+        if self.shutdown_event.is_set():
+            self._logger.debug("Shutdown was already triggered - listeners stay untouched.")
+            return
         self.shutdown_event.set()
         with self._lock:
             for listener in self._listener:
