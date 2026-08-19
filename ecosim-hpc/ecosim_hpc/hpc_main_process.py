@@ -2,6 +2,7 @@ import threading
 from time import sleep
 
 import dask.distributed as distributed
+from ecosim_common.tech.dask.shutdown_dask import shutdown_dask_workers
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.client_manager_config import ClientManagerConfig
@@ -35,7 +36,7 @@ def hpc_main_process(
     server.print_measurement_statistics()
     repositories.server_time_measurement_repository.put(server.server_measurements)
 
-    dask_client.run(ShutdownManager().set_shutdown_at_application_end)
+    shutdown_dask_workers(dask_client)
     ShutdownManager().set_shutdown_at_application_end()
 
     sleep(5)
