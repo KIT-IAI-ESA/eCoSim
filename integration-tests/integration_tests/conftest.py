@@ -50,7 +50,6 @@ def dask_client() -> Generator[dd.Client, Any, None]:
         client=client,
     )
     yield client
-    shutdown_dask_workers(client)
 
 
 @pytest.fixture(
@@ -94,6 +93,7 @@ def pytest_runtest_teardown(item: Item, nextitem: Item | None) -> None:
         pytest_fixture_logger.info("Closing dask client: %s", client)
         for key in client.datasets.keys():
             pytest_fixture_logger.debug("Dask teardown: key in dataset: %s = %s", key, client.get_dataset(key))
+        shutdown_dask_workers(client)
         client.close()
         if client.cluster is not None:
             client.cluster.close()
