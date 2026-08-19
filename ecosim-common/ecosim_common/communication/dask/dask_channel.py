@@ -51,6 +51,16 @@ class DaskChannel(ESPChannel, ShutdownListener):
     _inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
     _peer_inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
 
+    @staticmethod
+    def of(
+        connection_address: ConnectionAddress,
+        dask_id: str | None = None,
+    ) -> DaskChannel:
+        return DaskChannel(
+            _connection_address=connection_address,
+            _internal_dask_id=dask_id or create_internal_dask_id(),
+        )
+
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
 

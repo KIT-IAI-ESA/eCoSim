@@ -10,7 +10,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManage
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.client.client_state import ClientState
-from ecosim_server.client_connection import ClientConnection
+from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 

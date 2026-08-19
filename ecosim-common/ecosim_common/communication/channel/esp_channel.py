@@ -16,12 +16,16 @@ class ESPChannel(ABC):
     def for_protocol(
         communication_protocol: CommunicationProtocol,
         connection_address: ConnectionAddress,
+        dask_id: str | None = None,
     ) -> ESPChannel:
         match communication_protocol:
             case CommunicationProtocol.DASK:
                 from ecosim_common.communication.dask.dask_channel import DaskChannel
 
-                return DaskChannel(_connection_address=connection_address)
+                return DaskChannel.of(
+                    connection_address=connection_address,
+                    dask_id=dask_id,
+                )
             case CommunicationProtocol.TCP_SOCKET:
                 from ecosim_common.communication.socket.tcp_socket import TCPSocket
 

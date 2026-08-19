@@ -26,8 +26,8 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import RepositoryType, generate_simple_test_server
+from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
+from ecosim_test_common.test_data.server_client.simple_test_server import RepositoryType, generate_simple_test_server
 from psycopg import Connection
 from testcontainers.postgres import PostgresContainer
 

@@ -11,7 +11,7 @@ from ecosim_common.communication.data.protocol_interface_value import (
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.test_data.test_model_interface import TestModelInterface
+from ecosim_test_common.test_data.test_model_interface import TestModelInterface
 
 
 @dataclasses.dataclass

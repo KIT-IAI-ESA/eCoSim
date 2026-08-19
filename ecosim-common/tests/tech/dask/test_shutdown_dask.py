@@ -21,16 +21,16 @@ def test_shutdown_dask_workers_shuts_down_every_worker(dask_client: dd.Client) -
 
 
 def test_shutdown_dask_workers_completes_the_dask_work_of_the_listeners(dask_client: dd.Client) -> None:
-    event_name = f"shutdown_probe_{uuid4()}"
+    event = ParallelEvent.dask(dask_name=f"shutdown_probe_{uuid4()}")
 
-    def register_probe_listener(event_name: str) -> None:
-        ShutdownManager().register_listener(DaskEventShutdownListener(_event=ParallelEvent.dask(dask_name=event_name)))
+    def register_probe_listener(event: ParallelEvent = event) -> None:
+        ShutdownManager().register_listener(DaskEventShutdownListener(_event=event))
 
-    dask_client.submit(register_probe_listener, event_name, pure=False).result()
+    dask_client.submit(register_probe_listener, pure=False).result()
 
     shutdown_dask_workers(dask_client)
 
-    assert ParallelEvent.dask(dask_name=event_name).wait(timeout=10), "The listener never reached the dask event"
+    assert event.wait(timeout=10), "The listener never reached the dask event"
 
 
 def test_shutdown_dask_workers_leaves_the_calling_process_running(dask_client: dd.Client) -> None:

@@ -1,26 +1,19 @@
-import asyncio
-
 from dask import distributed
+from ecosim_common.tech.dask.worker_thread import on_worker_thread
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
-
-def shutdown_dask_workers(client: distributed.Client) -> None:
-    """Shuts down the 'ShutdownManager' of every worker of the given client."""
-    client.run(_shutdown_worker)
+# a shutting down listener only closes what it already holds, so it either finishes quickly or is stuck
+_DEFAULT_SHUTDOWN_TIMEOUT_IN_SECONDS = 30.0
 
 
-async def _shutdown_worker() -> None:
+def shutdown_dask_workers(
+    client: distributed.Client,
+    timeout_in_seconds: float = _DEFAULT_SHUTDOWN_TIMEOUT_IN_SECONDS,
+) -> None:
     """
-    Shuts down the worker's own 'ShutdownManager'.
-
-    Must stay a coroutine: 'Client.run' calls a plain function on the worker's event loop thread, and
-    'SyncMethodMixin.sync' hands back an un-awaited coroutine instead of blocking whenever it is
-    already inside that loop. The whole shutdown - setting dask events, writing the close sentinel,
-    unpublishing datasets - would then silently do nothing. Awaiting a worker thread keeps the loop
-    free, so those calls block and take effect as intended.
-
-    It must also stay a module level function: a bound method would pickle the calling process'
-    singleton - including its non-picklable 'threading.Event' - and shut down that copy instead of
-    the worker's own instance.
+    ShutdownManager is a per-process singleton. The HPC run spans many processes: one main process
+    plus N dask worker processes, each hosting simulator clients with DaskChannel objects registered
+    as shutdown listeners. When the simulation ends, the main process must tell every worker to
+    release its own resources.
     """
-    await asyncio.to_thread(ShutdownManager().set_shutdown_at_application_end)
+    client.run(on_worker_thread(ShutdownManager().set_shutdown_at_application_end, timeout_in_seconds))

@@ -19,7 +19,7 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.atomic import AtomicFloat, AtomicInteger
-from integration_tests.test_data.test_client_data import TestClientData
+from ecosim_test_common.test_data.test_client_data import TestClientData
 
 
 class SimpleTestClient(Client):
