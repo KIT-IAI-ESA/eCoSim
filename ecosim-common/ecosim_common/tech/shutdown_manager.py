@@ -42,6 +42,16 @@ class ShutdownManager:
                         cls._instance.shutdown_event = threading.Event()
         return cls._instance
 
+    def __reduce__(self) -> tuple[Type[ShutdownManager], tuple[()]]:
+        """
+        Sends the recipe for the singleton instead of a copy of this one.
+
+        A copy would carry this process' resources - among them a non-picklable 'threading.Event' - and
+        shutting it down would leave the receiving process, which is the one that has to release something,
+        untouched.
+        """
+        return (ShutdownManager, ())
+
     def init(self) -> None:
         if ShutdownManager._init:
             return

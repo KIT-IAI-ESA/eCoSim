@@ -6,7 +6,7 @@ from ecosim_common.tech.structures.esp_queue import ESPQueue
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
-from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
+from ecosim_test_common.tech.db.repositories_in_memory import RepositoriesInMemory
 from integration_tests.tech.resource_utils import resource_path_file
 
 

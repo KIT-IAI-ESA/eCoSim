@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.config.client_id import ClientID
-from ecosim_server.client_connection import ClientConnection
+from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 
 

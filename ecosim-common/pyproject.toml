@@ -48,7 +48,7 @@ dev = [
 #Repository = "https://github.com/yourusername/myapp"
 
 [tool.mypy]
-mypy_path = ["../ecosim-test-common"]
+mypy_path = ["../ecosim-test-common", "../ecosim-server"]
 python_executable = ".venv/bin/python"
 check_untyped_defs = true
 disallow_untyped_defs = true

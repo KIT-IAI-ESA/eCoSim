@@ -14,7 +14,7 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client.client_communication import ClientCommunication
-from ecosim_server.client_connection import ClientConnection
+from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories

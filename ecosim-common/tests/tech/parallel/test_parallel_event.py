@@ -2,6 +2,7 @@ import pickle
 
 from distributed import Client
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_common.tech.dask.worker_thread import on_worker_thread
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent, ParallelEventDask, ParallelEventThread
 
 
@@ -97,3 +98,16 @@ def test_dask_reduce_roundtrip_preserves_state(dask_client: Client) -> None:
     assert isinstance(restored, ParallelEventDask)
     assert restored._name == "round_trip"  # noqa: SLF001
     assert restored.is_set() is True
+
+
+def test_set_with_submit(dask_client: Client) -> None:
+    event = ParallelEventDask.for_name("submit_set")
+    dask_client.submit(lambda: event.set())
+    event.wait(10)
+    assert event.is_set() is True
+
+
+def test_set_with_run_on_worker_thread(dask_client: Client) -> None:
+    event = ParallelEventDask.for_name("run_set")
+    dask_client.run(on_worker_thread(event.set))
+    assert event.is_set() is True
