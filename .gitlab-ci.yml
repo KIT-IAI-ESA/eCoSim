@@ -91,9 +91,9 @@ integration_test_ecosim:
   artifacts:
     expire_in: 14 days
     reports:
-      junit: integration-tests/report.xml
+      junit: $PROJECT_DIR/integration-tests/report.xml
     paths:
-      - integration-tests/report.xml
+      - $PROJECT_DIR/integration-tests/report.xml
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 publish_artifacts:
