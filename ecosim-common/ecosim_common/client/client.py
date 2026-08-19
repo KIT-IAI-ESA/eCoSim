@@ -40,6 +40,7 @@ from ecosim_common.tech.datetime.date_time_to_millis import (
     date_time_to_millis_since_unix_epoch,
 )
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
@@ -57,6 +58,7 @@ class Client(ShutdownListener):
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
         self._is_finished = False
+        self._was_started = ParallelEvent.for_communication_protocol(client_config.communication_protocol())
         ShutdownManager().register_listener(self)
 
     @property
@@ -100,6 +102,9 @@ class Client(ShutdownListener):
         pass
 
     def start(self) -> None:
+        if self._was_started.is_set():
+            Client.logger.warning("Client already started, but 'start' called again. This should not happen in normal operation.")
+        self._was_started.set()
         Client.logger.info(
             "Starting to connect to %s:%s",
             self._client_config.server_config().server_address.ip,
@@ -109,6 +114,9 @@ class Client(ShutdownListener):
         self._channel.listen_on_message_async(
             on_message=self._handle_message,
         )
+
+    def was_started_event(self) -> ParallelEvent:
+        return self._was_started
 
     def wait_until_finished(self) -> None:
         self._channel.wait_for_finish()

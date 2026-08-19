@@ -32,6 +32,20 @@ class ESPMonkeyPatch:
     def unset_sys_arg(self, arg: str) -> None:
         self.monkey_patch.setattr(sys, "argv", self._strip(sys.argv.copy(), arg))
 
+    def set_hpc_cli_sys_args(
+        self,
+        simulator_dir: str = "/path/to/simulator",
+        simulation_config_file: str = "/path/to/simulation_config_file",
+        server_config_file: str = "/path/to/server_config_file",
+        steps: str = "100",
+        port: str = "22222",
+    ) -> None:
+        self.set_sys_arg("--simulator-dir", simulator_dir)
+        self.set_sys_arg("--simulation-config", simulation_config_file)
+        self.set_sys_arg("--server-config", server_config_file)
+        self.set_sys_arg("--steps", steps)
+        self.set_sys_arg("--port", port)
+
 
 @pytest.fixture
 def esp_monkey_patch(monkeypatch: pytest.MonkeyPatch) -> ESPMonkeyPatch:
