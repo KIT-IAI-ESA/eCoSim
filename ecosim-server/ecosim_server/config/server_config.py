@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -23,15 +25,35 @@ class ServerConfig:
 
     @staticmethod
     def of_cli_args(args: CLIArguments) -> ServerConfig:
-        config = ConfigParser(args.server_config())
+        return ServerConfig.of_file(
+            file=args.server_config(),
+            config_override=args.config_overrides(),
+            image_renderer_port=args.image_renderer_port(),
+            image_renderer_interval=args.image_renderer_interval(),
+            db_config_overwrite=args.db_config_overwrite(),
+        )
+
+    @staticmethod
+    def of_file(
+        file: Path,
+        config_override: ServerConfigOverride = ServerConfigOverride(
+            server_host=None,
+            server_port=None,
+            communication_protocol=None,
+        ),
+        image_renderer_port: int | None = None,
+        image_renderer_interval: int | None = None,
+        db_config_overwrite: DbConfigOverwrite = DbConfigOverwrite(),
+    ) -> ServerConfig:
+        config = ConfigParser(file)
         return ServerConfig(
             server=MainConfig.of_config_parser(
                 config_parser=config,
-                config_override=args.config_overrides(),
-                image_renderer_port=args.image_renderer_port(),
-                image_renderer_interval=args.image_renderer_interval(),
+                config_override=config_override,
+                image_renderer_port=image_renderer_port,
+                image_renderer_interval=image_renderer_interval,
             ),
-            database=DatabaseConfig.from_config(config, args.db_config_overwrite()),
+            database=DatabaseConfig.from_config(config, db_config_overwrite),
         )
 
     def print_config_for_start_up(self) -> None:

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any, Callable, override
 
 import dask.distributed as dd
@@ -12,7 +11,7 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_common.tech.structures.esp_map import ESPMap
-from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
+from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_hpc.hpc_client_state import HPCClientState
 from ecosim_server.config.simulation_config import SimulationConfig
 from fmpy import read_model_description
@@ -23,11 +22,10 @@ class ClientManager(ShutdownListener):
 
     def __init__(
         self,
-        server_args: HPCServerCliArguments,
+        config: ClientManagerConfig,
     ):
         ShutdownManager().register_listener(self)
-        self._server_args = server_args
-        self._modules_path = Path(server_args.simulator_dir())
+        self._config = config
         self.client_dict: ESPMap[str, HPCClientState] = ESPMap.dask()
 
     def clients_start(
@@ -40,12 +38,12 @@ class ClientManager(ShutdownListener):
             self.client_dict[simulation.model_name] = HPCClientState(
                 simulator_name=simulation.model_name,
                 config_override=ClientConfigOverride(
-                    server_host=self._server_args.host(),
-                    server_port=self._server_args.port,
+                    server_host=self._config.host,
+                    server_port=self._config.port,
                     communication_protocol=CommunicationProtocol.DASK,
                 ),
             )
-        for path in self._modules_path.iterdir():
+        for path in self._config.simulator_dir.iterdir():
             if not path.is_dir():
                 continue
             if not any(path.glob("*.ini")):
