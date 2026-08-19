@@ -117,10 +117,6 @@ class ShutdownManager:
         self._logger.debug("Shutdown was triggered at the end of the application.")
         self.__trigger_shutdown()
 
-    def set_dask_shutdown(self) -> None:
-        self._logger.debug("Shutting down simulators on Dask Client")
-        self.__trigger_shutdown()
-
     @staticmethod
     def reset_instance() -> None:
         ShutdownManager._listener.clear()
