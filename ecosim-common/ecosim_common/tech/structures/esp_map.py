@@ -59,7 +59,7 @@ class ESPMap(ABC, MutableMapping[K, V], Generic[K, V]):
                     ),
                 )
             case ESPStructureType.DASK_VARIABLE:
-                return DaskVariableESPMap(
+                return ESPMap.dask(
                     data=data,
                     dask_name=dask_name,
                     dask_client=dask_client,
@@ -75,6 +75,18 @@ class ESPMap(ABC, MutableMapping[K, V], Generic[K, V]):
                 )
             case _:
                 assert_never(map_type)
+
+    @staticmethod
+    def dask(
+        data: dict[K, V] | None = None,
+        dask_name: str | None = None,
+        dask_client: Client | None = None,
+    ) -> ESPMap:
+        return DaskVariableESPMap(
+            data=data,
+            dask_name=dask_name,
+            dask_client=dask_client,
+        )
 
     @abstractmethod
     @contextmanager
