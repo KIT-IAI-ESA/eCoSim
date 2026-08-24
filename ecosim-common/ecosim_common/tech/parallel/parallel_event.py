@@ -19,12 +19,16 @@ class ParallelEvent:
     def for_communication_protocol(
         communication_protocol: CommunicationProtocol,
         dask_name: str | None = None,
+        init_set: bool = False,
     ) -> ParallelEvent:
         match communication_protocol:
             case CommunicationProtocol.DASK:
-                return ParallelEvent.dask(dask_name=dask_name)
+                return ParallelEvent.dask(
+                    dask_name=dask_name,
+                    init_set=init_set,
+                )
             case CommunicationProtocol.TCP_SOCKET:
-                return ParallelEvent.thread()
+                return ParallelEvent.thread(init_set=init_set)
             case _:
                 assert_never(communication_protocol)
 
