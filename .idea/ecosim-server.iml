@@ -8,6 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-server/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-server/tests/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-server/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-server/tests/simulation/htmlcov" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
@@ -15,6 +16,7 @@
     <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-server)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
+    <orderEntry type="module" module-name="ecosim-test-common" />
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="py.test" />

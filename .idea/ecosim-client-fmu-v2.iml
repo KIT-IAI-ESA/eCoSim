@@ -12,10 +12,11 @@
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-client-fmu-v2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ecosim-common" />
-    <orderEntry type="module" module-name="ecosim-common-fmpy" />
+    <orderEntry type="module" module-name="ecosim-common-fmpy" exported="" />
+    <orderEntry type="module" module-name="ecosim-common" exported="" />
+    <orderEntry type="module" module-name="ecosim-test-common" exported="" />
+    <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-client-fmu-v2)" jdkType="Python SDK" />
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="py.test" />
