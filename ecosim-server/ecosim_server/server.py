@@ -16,8 +16,6 @@ from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_connection import ClientConnection
-from ecosim_server.client.client_message_buffer import ClientMessageBuffer
-from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -48,12 +46,11 @@ class Server(ShutdownListener):
         self.server_measurements = ServerTimeMeasurement(protocol=self._server_config.server.communication_protocol)
         self._server_state: ServerState = ServerState.of(
             server_config=self._server_config,
-            simulation_config=self._simulation_config,
             simulation_state_repository=self._repositories.simulation_state_repository,
         )
-        self._client_communication = ClientCommunication(
-            _client_states=self._server_state.client_states,
-            _client_message_buffer=self._server_state.message_buffer,
+        self._client_communication = ClientCommunication.of(
+            server_config=self._server_config,
+            simulation_config=self._simulation_config,
         )
         self._simulation_executor: SimulationExecutor = SimulationExecutor(
             simulation_config=self._simulation_config,
@@ -89,15 +86,14 @@ class Server(ShutdownListener):
             channel_handler=partial(
                 Server._on_new_channel,
                 self._server_state.is_running_event(),
-                self._server_state.client_states,
-                self._server_state.message_buffer,
+                self._client_communication,
                 self._simulation_config,
             ),
         )
 
     def _wait_for_all_clients_connected_and_ready(self) -> None:
         self._logger.info("Waiting for all clients to connect...")
-        self._server_state.wait_for_all_clients_connected_and_ready()
+        self._client_communication.wait_for_all_clients_connected_and_ready()
 
     def print_measurement_statistics(self) -> None:
         self.server_measurements.print_statistics()
@@ -121,7 +117,7 @@ class Server(ShutdownListener):
 
     @staticmethod
     def handle_simulation_setup(
-        client_states: ClientStates,
+        client_communication: ClientCommunication,
         simulation_config: SimulationConfig,
         client_id: ClientID,
         connection: ClientConnection,
@@ -136,7 +132,7 @@ class Server(ShutdownListener):
         )
         connection.receive(expected_type=MessageType.SIMULATION_SETUP)
         Server._logger.debug("Client %s accepted step size", connection.address)
-        client_states.step_size_accepted(client_id)
+        client_communication.step_size_accepted(client_id)
 
     @staticmethod
     def handle_interface_settings(
@@ -162,7 +158,7 @@ class Server(ShutdownListener):
 
     @staticmethod
     def handle_interface_request(
-        client_states: ClientStates,
+        client_communication: ClientCommunication,
         simulation_config: SimulationConfig,
         client_id: ClientID,
         connection: ClientConnection,
@@ -180,7 +176,7 @@ class Server(ShutdownListener):
                 f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
             )
         Server._logger.debug("Successfully validated interfaces for client %s", connection.address)
-        client_states.interfaces_validated(client_id)
+        client_communication.interfaces_validated(client_id)
 
     def _start_image_renderer_socket(self) -> None:
         rendering_interval = self._server_config.server.image_renderer_interval
@@ -214,8 +210,7 @@ class Server(ShutdownListener):
     @staticmethod
     def handle_client(
         server_running_event: ParallelEvent,
-        client_states: ClientStates,
-        message_buffer: ClientMessageBuffer,
+        client_communication: ClientCommunication,
         simulation_config: SimulationConfig,
         connection: ClientConnection,
     ) -> None:
@@ -230,7 +225,7 @@ class Server(ShutdownListener):
                     return
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 client_id: ClientID = client_config.client_id()
-                if not client_states.add_if_needed(client_config, connection):
+                if not client_communication.add_if_needed(client_config, connection):
                     Server._logger.warning(
                         "Client %s from %s was not expected to connect - it has no needed model/simulator.",
                         client_id,
@@ -239,42 +234,37 @@ class Server(ShutdownListener):
                     connection.close()
                     return
 
-                Server.handle_interface_request(client_states, simulation_config, client_id, connection)
+                Server.handle_interface_request(client_communication, simulation_config, client_id, connection)
                 Server.handle_interface_settings(simulation_config, client_id, connection)
-                Server.handle_simulation_setup(client_states, simulation_config, client_id, connection)
+                Server.handle_simulation_setup(client_communication, simulation_config, client_id, connection)
 
-                client_states.set_client_ready_for_simulation(
+                client_communication.set_client_ready_for_simulation(
                     client_id,
                 )
                 while server_running_event.is_set():
                     received_message = connection.receive()
                     if received_message is None:
                         Server._logger.warning("Received 'none' from client %s -> this is the closing signal -> ending this connection", client_id)
-                        client_states.set_client_connected_state(client_id=client_id, connected=False)
+                        client_communication.set_client_connected_state(client_id=client_id, connected=False)
                         return
-                    message_buffer.add(
-                        client_id=client_id,
-                        message=received_message,
-                    )
+                    client_communication.add_message_from_client(client_id, received_message)
 
             except Exception as e:
                 connection.close()
                 if client_id:
-                    client_states.reset_state(client_id)
+                    client_communication.reset_state(client_id)
                 raise e
 
     @staticmethod
     def _on_new_channel(
         server_running_event: ParallelEvent,
-        client_states: ClientStates,
-        message_buffer: ClientMessageBuffer,
+        client_communication: ClientCommunication,
         simulation_config: SimulationConfig,
         connection_data: ConnectionData,
     ) -> None:
         Server.handle_client(
             server_running_event=server_running_event,
-            client_states=client_states,
-            message_buffer=message_buffer,
+            client_communication=client_communication,
             simulation_config=simulation_config,
             connection=ClientConnection(
                 address=connection_data.client_address,

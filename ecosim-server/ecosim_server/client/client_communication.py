@@ -7,16 +7,20 @@ from typing import ClassVar, List, Tuple
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
+from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.client.message_subscription import MessageSubscription
+from ecosim_server.config.server_config import ServerConfig
+from ecosim_server.config.simulation_config import SimulationConfig
 
 
 @dataclass
@@ -25,6 +29,19 @@ class ClientCommunication:
 
     _client_states: ClientStates = field()
     _client_message_buffer: ClientMessageBuffer = field()
+
+    @staticmethod
+    def of(
+        server_config: ServerConfig,
+        simulation_config: SimulationConfig,
+    ) -> ClientCommunication:
+        return ClientCommunication(
+            _client_message_buffer=ClientMessageBuffer.for_communication_protocol(server_config.server.communication_protocol),
+            _client_states=ClientStates.for_config(
+                server_config=server_config,
+                simulation_config=simulation_config,
+            ),
+        )
 
     def broadcast(
         self,
@@ -152,3 +169,52 @@ class ClientCommunication:
         except Exception as e:
             ClientCommunication._logger.debug("Checking client connection states: exception contacting %s: %s", client_state.client_id, e)
             return False
+
+    def wait_for_all_clients_connected_and_ready(self) -> None:
+        self._client_states.wait_for_all_clients_connected_and_ready()
+
+    def add_if_needed(
+        self,
+        client_config: ClientMetaData,
+        connection: ClientConnection,
+    ) -> bool:
+        return self._client_states.add_if_needed(client_config, connection)
+
+    def interfaces_validated(self, client_id: ClientID) -> None:
+        self._client_states.interfaces_validated(client_id)
+
+    def step_size_accepted(self, client_id: ClientID) -> None:
+        self._client_states.step_size_accepted(client_id)
+
+    def set_client_ready_for_simulation(self, client_id: ClientID) -> None:
+        self._client_states.set_client_ready_for_simulation(client_id)
+
+    def set_client_connected_state(self, client_id: ClientID, connected: bool) -> None:
+        self._client_states.set_client_connected_state(client_id, connected)
+
+    def add_message_from_client(self, client_id: ClientID, received_message: ESPChannelMessage) -> None:
+        self._client_message_buffer.add(
+            client_id=client_id,
+            message=received_message,
+        )
+
+    def reset_state(self, client_id: ClientID) -> None:
+        self._client_states.reset_state(client_id)
+
+    def are_all_clients_connected_and_ready(self) -> bool:
+        return self._client_states.are_all_clients_connected_and_ready()
+
+    def have_all_clients_stopped_simulation(self) -> bool:
+        return self._client_states.have_all_clients_stopped_simulation()
+
+    def simulation_stopped(self, client_id: ClientID) -> None:
+        self._client_states.simulation_stopped(client_id)
+
+    def have_all_clients_started_simulation(self) -> bool:
+        return self._client_states.have_all_clients_started_simulation()
+
+    def simulation_started(self, client_id: ClientID) -> None:
+        self._client_states.simulation_started(client_id)
+
+    def all_client_ids(self) -> tuple[ClientID, ...]:
+        return self._client_states.all_client_ids()

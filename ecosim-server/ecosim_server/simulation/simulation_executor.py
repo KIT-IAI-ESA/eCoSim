@@ -73,7 +73,7 @@ class SimulationExecutor:
         rendering_socket: RenderingSocket | None,
     ) -> None:
         self._rendering_socket = rendering_socket
-        if not self._server_state.are_all_clients_connected_and_ready():
+        if not self._client_communication.are_all_clients_connected_and_ready():
             raise RuntimeError(
                 "Tried to start simulation executor but not all clients are connected and ready",
             )
@@ -115,7 +115,7 @@ class SimulationExecutor:
         self,
         subscription: MessageSubscription,
     ) -> None:
-        while not self._server_state.have_all_clients_stopped_simulation():
+        while not self._client_communication.have_all_clients_stopped_simulation():
             message = subscription.next_message(timeout_in_seconds=SimulationExecutor._STOP_RESPONSE_TIMEOUT_IN_SECONDS)
             if message is None:
                 # on timeout the message is None -> we need to check the client connections
@@ -124,7 +124,7 @@ class SimulationExecutor:
                     time_between_attempts_in_seconds=0.1,
                 )
                 continue
-            self._server_state.client_states.simulation_stopped(client_id=message.client_id)
+            self._client_communication.simulation_stopped(client_id=message.client_id)
 
     def _start_simulation_of_all_clients(
         self,
@@ -145,8 +145,8 @@ class SimulationExecutor:
         subscription: MessageSubscription,
         store_default_values_in_history: bool,
     ) -> None:
-        while not self._server_state.have_all_clients_started_simulation():
-            if not self._server_state.are_all_clients_connected_and_ready():
+        while not self._client_communication.have_all_clients_started_simulation():
+            if not self._client_communication.are_all_clients_connected_and_ready():
                 raise RuntimeError("A client was lost while waiting for all clients to start their simulation")
             message = subscription.next_message(
                 timeout_in_seconds=SimulationExecutor._START_RESPONSE_TIMEOUT_IN_SECONDS,
@@ -161,7 +161,7 @@ class SimulationExecutor:
         message: ClientMessage,
         store_default_values_in_history: bool,
     ) -> None:
-        self._server_state.client_states.simulation_started(client_id=message.client_id)
+        self._client_communication.simulation_started(client_id=message.client_id)
         if not store_default_values_in_history:
             return
         self._value_history.add_default_values(
@@ -174,7 +174,7 @@ class SimulationExecutor:
         message_type: MessageType,
     ) -> MessageSubscription:
         return self._client_communication.subscribe(
-            client_ids=self._server_state.client_states.all_client_ids(),
+            client_ids=self._client_communication.all_client_ids(),
             message_types=(message_type,),
         )
 
@@ -213,7 +213,7 @@ class SimulationExecutor:
     ) -> Tuple[ClientID, ...]:
         """Sends the restore batch to every client that has data to restore and returns exactly those clients."""
         handled_client_ids: List[ClientID] = []
-        for client_id in self._server_state.client_states.all_client_ids():
+        for client_id in self._client_communication.all_client_ids():
             data_for_restoration = restore_data.client_restore_data[client_id]
             if not data_for_restoration or len(data_for_restoration) == 0:
                 SimulationExecutor.logger.debug("[Restore simulation] sending step batch to clients: client %s has no data to restore.", client_id)
