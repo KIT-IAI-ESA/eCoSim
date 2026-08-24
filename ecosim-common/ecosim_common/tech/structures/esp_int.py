@@ -8,8 +8,8 @@ from functools import cache
 from typing import Callable, assert_never, override
 
 from distributed import Variable
-from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_common.tech.structures.dask_variable_initializer import DaskVariableInitializer
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 
@@ -76,13 +76,11 @@ class DaskESPInt(ESPInt):
     ) -> None:
         self._dask_variable: Variable = Variable(name=dask_name)
         self._lock = ParallelLock.dask(f"int_lock_{dask_name or uuid.uuid4()}")
-        try:
-            # in case that the variable is already initialized, check if it can be got
-            with silenced_logger("distributed.core"):
-                self._dask_variable.get(timeout=0.1)
-        except Exception:
-            # if it does not exist, initialize it
-            self._dask_variable.set(value)
+        DaskVariableInitializer.initialize(
+            variable=self._dask_variable,
+            value_supplier=lambda: value,
+            may_already_exist=dask_name is not None,
+        )
 
     @override
     def get(self) -> int:

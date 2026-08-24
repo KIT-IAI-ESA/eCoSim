@@ -19,7 +19,6 @@ def test_append_performance(esp_structure_type: ESPStructureType) -> None:
     esp_list = ESPList[Any].of_type(
         list_type=esp_structure_type,
         data=[],
-        dask_use_pickle=True,
     )
     for i in range(1000):
         with esp_list.transaction() as data:
@@ -37,7 +36,6 @@ def test_append_performance_large(esp_structure_type: ESPStructureType) -> None:
     esp_list = ESPList[Any].of_type(
         list_type=esp_structure_type,
         data=[],
-        dask_use_pickle=True,
     )
     for i in range(10):
         with esp_list.transaction() as data:

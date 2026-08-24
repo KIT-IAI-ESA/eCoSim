@@ -10,8 +10,8 @@ from typing import Any, Generator, Generic, ItemsView, KeysView, MutableMapping,
 
 from distributed import Actor, Client, Variable, fire_and_forget, get_client
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_common.tech.structures.dask_variable_initializer import DaskVariableInitializer
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 K = TypeVar("K")
@@ -196,16 +196,11 @@ class DaskVariableESPMap(ESPMap[K, V]):
         )
         self._lock = ParallelLock.dask(f"espmap_lock_{self._dask_variable.name}")
         with self._lock:
-            try:
-                # for the case that the variable is already initialized, check if it can be got
-                with silenced_logger("distributed.core"):
-                    self._dask_variable.get(timeout=0.1)
-            except TimeoutError:
-                # if it does not exist, initialize it
-                self._dask_variable.set(pickle.dumps(init_data))
-            except Exception as e:
-                ESPMap.logger.warning("Failed to initialize Dask variable, with other than TimeoutError: %s", e)
-                self._dask_variable.set(pickle.dumps(init_data))
+            DaskVariableInitializer.initialize(
+                variable=self._dask_variable,
+                value_supplier=lambda: pickle.dumps(init_data),
+                may_already_exist=dask_name is not None,
+            )
 
     @override
     def get_snapshot(self) -> dict[K, V]:

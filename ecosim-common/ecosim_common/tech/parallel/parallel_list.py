@@ -7,7 +7,6 @@ from typing import Any, Iterator, List, assert_never
 
 from dask.distributed import Variable
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.parallel.concurrency_type import ConcurrencyType
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 
@@ -35,13 +34,7 @@ class ParallelList[T]:
                 )
             case CommunicationProtocol.DASK:
                 dask_variable = Variable(name=f"parallel_list_{uuid.uuid4()}")
-                try:
-                    # for the unlikely case that the variable is already initialized, check if it can be got
-                    with silenced_logger("distributed.core"):
-                        dask_variable.get(timeout=0.3)
-                except Exception:
-                    # if it does not exist, initialize it
-                    dask_variable.set(values)
+                dask_variable.set(values)
 
                 return ParallelList(
                     _parallel_lock=ParallelLock.for_protocol(protocol),
