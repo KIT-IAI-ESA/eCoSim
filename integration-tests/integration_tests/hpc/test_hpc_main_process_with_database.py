@@ -23,6 +23,10 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
     container.stop()
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",  # gitlab sets 'CI' and 'GITLAB_CI' true by default
+    reason="Skipped in CI pipeline because it starts a postgres container",
+)
 def test_hpc_main_process_with_database_repositories(
     dask_client: distributed.Client,
     postgres_container: PostgresContainer,
