@@ -50,7 +50,7 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> str | None:
         if type not in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning("Measurement type %s as no start time -> cannot calculate runtime", type)
+            ServerTimeMeasurement._logger.warning("Measurement type %s has no start time -> cannot calculate runtime", type)
             return None
         if type not in self._end_times.keys():
             ServerTimeMeasurement._logger.warning(
