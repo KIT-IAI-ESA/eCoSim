@@ -24,7 +24,10 @@ class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
         server_time_measurement: ServerTimeMeasurement,
     ) -> None:
         for measurement_type in ServerTimeMeasurementType:
-            self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(server_time_measurement.get(measurement_type)))
+            entry = server_time_measurement.get_or_none(measurement_type)
+            if entry is None:  # a phase the run never entered has nothing to persist
+                continue
+            self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(entry))
 
     @override
     def get_start(self, type: ServerTimeMeasurementType) -> datetime | None:

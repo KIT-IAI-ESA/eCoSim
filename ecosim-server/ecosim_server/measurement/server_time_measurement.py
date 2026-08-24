@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import Enum, unique
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.global_logger import GlobalLogger
@@ -92,10 +92,18 @@ class ServerTimeMeasurement:
         end_time = self._end_times[type]
         return int((end_time - start_time).total_seconds())
 
-    def get(
+    def was_measured(
         self,
         type: ServerTimeMeasurementType,
-    ) -> "ServerTimeMeasurement.Entry":
+    ) -> bool:
+        return type in self._start_times.keys() and type in self._end_times.keys()
+
+    def get_or_none(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> ServerTimeMeasurement.Entry | None:
+        if not self.was_measured(type):
+            return None
         return ServerTimeMeasurement.Entry(
             type=type,
             start_time=self._start_times[type],
@@ -111,9 +119,10 @@ class ServerTimeMeasurement:
         run_time_in_seconds: int
 
 
+@unique
 class ServerTimeMeasurementType(Enum):
     SIMULATION_START = 0
     SIMULATION_EXECUTION = 1
     SIMULATION_STOP = 2
     SERVER_UPTIME = 3
-    RESTORE_SIMULATION_RUN = 3
+    RESTORE_SIMULATION_RUN = 4

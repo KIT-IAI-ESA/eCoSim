@@ -33,10 +33,10 @@ class ServerTimeMeasurementRepositoryInMemory(ServerTimeMeasurementRepository):
 
     @override
     def get_start(self, type: ServerTimeMeasurementType) -> datetime | None:
-        measurement = self._measurements[0].get(type)
+        measurement = self._measurements[0].get_or_none(type)
         return measurement.start_time if measurement is not None else None
 
     @override
     def get_end(self, type: ServerTimeMeasurementType) -> datetime | None:
-        measurement = self._measurements[0].get(type)
+        measurement = self._measurements[0].get_or_none(type)
         return measurement.end_time if measurement is not None else None
