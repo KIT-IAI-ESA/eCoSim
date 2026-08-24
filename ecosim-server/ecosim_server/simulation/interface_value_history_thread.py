@@ -13,6 +13,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 
 DEFAULT_VALUES_MARKER = -1
+_WAKE_UP_MARKER = -2
 
 InterfaceValueHistoryEntries = ESPMap[int, dict[ClientID, List[ProtocolInterfaceValue]]]
 
@@ -22,6 +23,19 @@ class InterfaceValueHistoryEntry:
     time_step: int
     client_id: ClientID
     interface_values: Tuple[ProtocolInterfaceValue, ...]
+
+    def is_wake_up(self) -> bool:
+        return self.time_step == _WAKE_UP_MARKER
+
+
+# Pushed to wake the adding thread out of its blocking pop instead of polling for it. The queue is FIFO
+# with a single consumer, so everything pushed before this entry is added by the time it arrives - that
+# is exactly what 'flush' waits for. It carries no values and is never added to the history.
+_WAKE_UP_ENTRY = InterfaceValueHistoryEntry(
+    time_step=_WAKE_UP_MARKER,
+    client_id=ClientID(model_name="", simulator_name=""),
+    interface_values=(),
+)
 
 
 def add_to_entries(
@@ -51,7 +65,7 @@ class InterfaceValueHistoryThread:
 
     THREAD_NAME = "InterfaceValueHistoryAdder"
 
-    _pop_timeout_in_seconds = 0.1
+    _pop_timeout_in_seconds = 300.0
     _join_timeout_in_seconds = 5.0
 
     _entries_queue: ESPQueue[InterfaceValueHistoryEntry] = field()
@@ -60,7 +74,8 @@ class InterfaceValueHistoryThread:
     _simulation_config: SimulationConfig = field()
     _condition: threading.Condition = field(init=False, default_factory=threading.Condition)
     _thread: threading.Thread | None = field(init=False, default=None)
-    _flush_requested: bool = field(init=False, default=False)
+    _wake_ups_pushed: int = field(init=False, default=0)
+    _wake_ups_consumed: int = field(init=False, default=0)
     _first_failure: BaseException | None = field(init=False, default=None)
 
     def start(self) -> None:
@@ -73,15 +88,21 @@ class InterfaceValueHistoryThread:
         self._thread.start()
 
     def flush(self) -> None:
-        """Waits until the thread found nothing left to add. Raises if an entry could not be added."""
+        """Waits until every entry pushed so far is added. Raises if an entry could not be added."""
         with self._condition:
             if self._thread is not None:
-                self._flush_requested = True
-                self._condition.wait_for(lambda: not self._flush_requested)
+                wake_up = self._request_wake_up()
+                self._condition.wait_for(lambda: self._wake_ups_consumed >= wake_up)
             failure = self._first_failure
             self._first_failure = None
         if failure is not None:
             raise RuntimeError("Failed to add at least one entry to the history.") from failure
+
+    def _request_wake_up(self) -> int:
+        """Ends the thread's blocking pop. Returns the number to wait for."""
+        self._wake_ups_pushed += 1
+        self._entries_queue.push(_WAKE_UP_ENTRY)
+        return self._wake_ups_pushed
 
     def close(self) -> None:
         """Adds the remaining entries and stops the thread."""
@@ -96,22 +117,26 @@ class InterfaceValueHistoryThread:
         if thread is None:
             return
         InterfaceValueHistoryThread.logger.debug("Stopping the adding thread")
-        thread.join(timeout=InterfaceValueHistoryThread._pop_timeout_in_seconds + InterfaceValueHistoryThread._join_timeout_in_seconds)
+        with self._condition:
+            self._request_wake_up()  # the thread parks in a long pop - it must not wait for that timeout
+        thread.join(timeout=InterfaceValueHistoryThread._join_timeout_in_seconds)
         if thread.is_alive():
             InterfaceValueHistoryThread.logger.error("The adding thread did not stop in time.")
 
     def _add_until_stopped(self) -> None:
         while threading.current_thread() is self._thread:
             entry = self._entries_queue.pop_or_none(timeout=InterfaceValueHistoryThread._pop_timeout_in_seconds)
-            if entry is None:
-                self._report_nothing_left_to_add()
+            if entry is None:  # the safety net expired - nothing to do but check whether the thread was stopped
+                continue
+            if entry.is_wake_up():
+                self._report_wake_up_consumed()
                 continue
             self._add(entry)
 
-    def _report_nothing_left_to_add(self) -> None:
-        """A 'flush' returns as soon as the thread popped an empty queue - then everything pushed before is added."""
+    def _report_wake_up_consumed(self) -> None:
+        """Lets the 'flush' that pushed this wake up return - everything it waited for is added."""
         with self._condition:
-            self._flush_requested = False
+            self._wake_ups_consumed += 1
             self._condition.notify_all()
 
     def _add(self, entry: InterfaceValueHistoryEntry) -> None:
