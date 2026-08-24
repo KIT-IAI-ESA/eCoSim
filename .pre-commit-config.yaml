@@ -3,9 +3,10 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: .*\.iml$
       - id: end-of-file-fixer
         types: [ text ]
-        exclude: /windows/.*\.ini$
+        exclude: ^(/windows/.*\.ini|.*\.iml)$
       - id: check-yaml
       - id: check-json
       - id: check-toml
@@ -28,7 +29,7 @@ repos:
     hooks:
       - id: editorconfig-checker
         # disable for python files since flake8 is already checking the linewidth
-        exclude: ^(vendor/|node_modules/)|\.min\.js$|\.py$|\.fmc
+        exclude: ^(vendor/|node_modules/)|\.min\.js$|\.py$|\.iml$|\.fmc$
 
   - repo: local
     hooks:
