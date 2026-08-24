@@ -10,8 +10,8 @@ from typing import Any, Generator, Generic, TypeVar, assert_never, override
 import cloudpickle
 from distributed import Client, Variable
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_common.tech.structures.dask_variable_initializer import DaskVariableInitializer
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 T = TypeVar("T")
@@ -141,13 +141,11 @@ class DaskESPSet(ESPSet[T]):
             name=dask_name or f"esp_set_{uuid.uuid4()}",
         )
         self._lock = ParallelLock.dask()
-        try:
-            # for the case that the variable is already initialized, check if it can be got
-            with silenced_logger("distributed.core"):
-                self._dask_variable.get(timeout=0.1)
-        except Exception:
-            # if it does not exist, initialize it
-            self._dask_variable.set(cloudpickle.dumps(init_data))
+        DaskVariableInitializer.initialize(
+            variable=self._dask_variable,
+            value_supplier=lambda: cloudpickle.dumps(init_data),
+            may_already_exist=dask_name is not None,
+        )
 
     @override
     def get_snapshot(self) -> set[T]:
