@@ -421,6 +421,6 @@ class SimulationExecutor:
             end_event.wait(wait_for_finish_timeout)
 
     def force_stop(self) -> None:
-        if self._server_state.is_running():
+        if self._server_state.is_running_event().is_set():
             SimulationExecutor.logger.debug("Executing force shutdown")
             self._server_state.force_stop()
