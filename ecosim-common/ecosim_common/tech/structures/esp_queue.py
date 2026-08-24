@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from typing import Any, Generic, Iterable, TypeVar, assert_never, cast, override
 
+import cloudpickle
 import distributed
 from distributed import Client
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -116,6 +117,14 @@ class DaskESPQueue(ESPQueue[T]):
     re-runs '__init__' - so every unpickling of an object holding a queue used to cost a scheduler round-trip.
     Since these queues travel inside pickled callbacks, only the name is carried and the handle is created on
     first use.
+
+    ATTENTION: the values are stored as bytes, not as objects.
+
+    A 'distributed.Queue' payload is encoded with msgpack. msgpack cannot encode an arbitrary object, and
+    'distributed' answers that by discarding the whole encoded message, logging 'falling back to pickle' and
+    encoding it a second time through a slower per-object path - once on the pushing side and once on the
+    scheduler that sends the payload back. Bytes are native to msgpack, so serializing here keeps every push
+    and pop on the fast path.
     """
 
     def __init__(
@@ -154,12 +163,13 @@ class DaskESPQueue(ESPQueue[T]):
 
     @override
     def push(self, value: T) -> None:
-        self._dask_queue.put(value)
+        self._dask_queue.put(cloudpickle.dumps(value))
 
     @override
     def pop(self, timeout: float | None = None) -> T:
         with silenced_logger("distributed.core"):
-            return cast(T, self._dask_queue.get(timeout=timeout))
+            raw = self._dask_queue.get(timeout=timeout)
+        return cast(T, cloudpickle.loads(raw))
 
     @override
     def qsize(self) -> int:
