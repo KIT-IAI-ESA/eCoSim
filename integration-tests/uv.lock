@@ -623,7 +623,7 @@ requires-dist = [
 provides-extras = ["dev", "r2024b"]
 
 [[package]]
-name = "ecosim-client-pyro"
+name = "ecosim-client-pyro5"
 version = "0.14.0"
 source = { editable = "../ecosim-client-pyro5" }
 dependencies = [
@@ -666,13 +666,13 @@ dependencies = [
 requires-dist = [
     { name = "art", specifier = "==6.5" },
     { name = "dask", extras = ["distributed"], specifier = "==2026.7.0" },
-    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = "==3.15.1" },
     { name = "setuptools", marker = "extra == 'dev'", specifier = "==83.0.0" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.12.5" },
     { name = "websockets", specifier = "==16.0" },
@@ -713,7 +713,7 @@ dependencies = [
     { name = "ecosim-client-fmu-v2" },
     { name = "ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab" },
-    { name = "ecosim-client-pyro" },
+    { name = "ecosim-client-pyro5" },
     { name = "ecosim-common" },
     { name = "ecosim-server" },
     { name = "fmpy" },
@@ -727,7 +727,7 @@ requires-dist = [
     { name = "ecosim-client-fmu-v2", editable = "../ecosim-client-fmu-v2" },
     { name = "ecosim-client-fmu-v3", editable = "../ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab", editable = "../ecosim-client-matlab" },
-    { name = "ecosim-client-pyro", editable = "../ecosim-client-pyro5" },
+    { name = "ecosim-client-pyro5", editable = "../ecosim-client-pyro5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
     { name = "ecosim-server", editable = "../ecosim-server" },
     { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
@@ -756,7 +756,6 @@ dependencies = [
 requires-dist = [
     { name = "art", specifier = "==6.5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
-    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.4" },
@@ -778,7 +777,6 @@ dependencies = [
     { name = "dask", extra = ["distributed"] },
     { name = "docker" },
     { name = "ecosim-common" },
-    { name = "ecosim-server" },
     { name = "mypy" },
     { name = "pip" },
     { name = "pytest" },
@@ -791,7 +789,6 @@ requires-dist = [
     { name = "dask", extras = ["distributed"], specifier = "==2026.7.0" },
     { name = "docker", specifier = "==7.1.0" },
     { name = "ecosim-common", editable = "../ecosim-common" },
-    { name = "ecosim-server", editable = "../ecosim-server" },
     { name = "mypy", specifier = "==2.3.0" },
     { name = "pip", specifier = "==26.1.2" },
     { name = "pytest", specifier = "==9.1.1" },
