@@ -31,7 +31,6 @@ ecosim_server = ["py.typed"]
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
-ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 
 [project.optional-dependencies]
@@ -41,10 +40,12 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
     "mypy==2.3.0",
-    "uv==0.11.28",
+    "uv==0.12.5",
     "pip==26.1.2",
-    "ecosim-test-common==0.14.0",
 ]
+
+[project.scripts]
+ecosim-server = "ecosim_server.main:main"
 
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"

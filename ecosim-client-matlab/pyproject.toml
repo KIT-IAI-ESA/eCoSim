@@ -33,7 +33,7 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
     "mypy==2.3.0",
-    "uv==0.11.28",
+    "uv==0.12.5",
     "pip==26.1.2",
 ]
 R2024b = ["matlabengine==24.2.1"]
