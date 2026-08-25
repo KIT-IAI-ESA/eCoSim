@@ -26,12 +26,14 @@ dependencies = [
     "psycopg[binary]==3.3.4",
 ]
 
+[project.scripts]
+ecosim-server = "ecosim_server.main:main"
+
 [tool.setuptools.package-data]
 ecosim_server = ["py.typed"]
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
-
 
 [project.optional-dependencies]
 dev = [
@@ -43,9 +45,6 @@ dev = [
     "uv==0.12.5",
     "pip==26.1.2",
 ]
-
-[project.scripts]
-ecosim-server = "ecosim_server.main:main"
 
 #[project.urls]
 #Homepage = "https://github.com/yourusername/myapp"

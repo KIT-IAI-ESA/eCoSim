@@ -1,4 +1,4 @@
-from ecosim_test_common.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
+from integration_tests.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
 
 
 def test_client_server_batch_steps(pre_set_two_clients: PreSetTwoClientsData) -> None:

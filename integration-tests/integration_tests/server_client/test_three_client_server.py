@@ -7,9 +7,9 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from ecosim_test_common.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
-from ecosim_test_common.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
 def test_three_clients_server(communication_protocol: CommunicationProtocol) -> None:

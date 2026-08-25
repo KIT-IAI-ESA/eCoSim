@@ -6,7 +6,6 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-test-common/ecosim_test_common.egg-info" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ecosim-server" exported="" />
     <orderEntry type="module" module-name="ecosim-common" exported="" />
     <orderEntry type="jdk" jdkName="~/dev/ecosim/ecosim-test-common/.venv" jdkType="Python SDK" />
   </component>

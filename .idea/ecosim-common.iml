@@ -14,7 +14,6 @@
       <excludePattern pattern=".coverage" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ecosim-test-common" exported="" />
     <orderEntry type="jdk" jdkName="Python 3.14 (ecosim-common)" jdkType="Python SDK" />
   </component>
   <component name="TestRunnerService">

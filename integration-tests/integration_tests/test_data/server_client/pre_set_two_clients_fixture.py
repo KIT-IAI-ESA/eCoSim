@@ -8,11 +8,10 @@ from ecosim_common.communication.data.protocol_interface_value import InterfaceV
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.port_utils import get_free_port
-
-from ecosim_test_common.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
-from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
-from ecosim_test_common.test_data.server_client.simple_test_server import generate_simple_test_server, SimpleTestServerParameters
-from ecosim_test_common.test_data.test_client_data import TestClientData
+from integration_tests.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 @pytest.fixture(

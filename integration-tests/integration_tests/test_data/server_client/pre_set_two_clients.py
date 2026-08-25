@@ -5,10 +5,10 @@ from typing import Tuple
 
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
-from ecosim_test_common.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
-from ecosim_test_common.test_data.server_client.simple_test_server import SimpleTestServer
-from ecosim_test_common.test_data.test_client_data import TestClientData
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 @dataclasses.dataclass

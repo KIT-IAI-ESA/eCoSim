@@ -6,7 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-fmu-v2.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-fmu-v2.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-fmu-v3.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-fmu-v3.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-matlab.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-matlab.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-pyro.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-pyro.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-client-pyro5.iml" filepath="$PROJECT_DIR$/.idea/ecosim-client-pyro5.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-common.iml" filepath="$PROJECT_DIR$/.idea/ecosim-common.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-common-fmpy.iml" filepath="$PROJECT_DIR$/.idea/ecosim-common-fmpy.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ecosim-hpc.iml" filepath="$PROJECT_DIR$/.idea/ecosim-hpc.iml" />
