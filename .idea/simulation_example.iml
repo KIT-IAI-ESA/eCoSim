@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module external.system.id="pyproject.toml" type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
-    <content url="file://$MODULE_DIR$/simulation_examples" />
+    <content url="file://$MODULE_DIR$/simulation_examples">
+      <excludeFolder url="file://$MODULE_DIR$/simulation_examples/simulation_example.egg-info" />
+    </content>
+    <orderEntry type="jdk" jdkName="~/dev/ecosim/.venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-server" exported="" />
     <orderEntry type="module" module-name="ecosim-hpc" exported="" />
