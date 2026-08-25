@@ -22,7 +22,7 @@ from ecosim_server.measurement.measurement_repository import MeasurementReposito
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
 from ecosim_server.simulation.interface_value_history_thread import InterfaceValueHistoryEntry
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
-from tests.tech.resource_utils import resource_path_file
+from ecosim_test_common.resources.config_files import config_file_path
 
 TIMEOUT_IN_SECONDS = 10.0
 
@@ -83,7 +83,7 @@ def client_sim_step_data() -> ClientSimStepData:
 
 
 def simulation_config() -> SimulationConfig:
-    return SimulationConfig.of_config_file_and_params(resource_path_file("simulation.json"), 100)
+    return SimulationConfig.of_config_file_and_params(config_file_path("simulation.json"), 100)
 
 
 def history(
