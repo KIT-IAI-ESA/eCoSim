@@ -1,6 +1,6 @@
-from ecosim_common.client.client_connection import ClientConnection
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_server.client.client_connection import ClientConnection
 from ecosim_test_common.test_data.generate_esp_channel import generate_esp_channel
 
 
