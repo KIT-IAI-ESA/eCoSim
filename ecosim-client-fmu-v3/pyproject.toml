@@ -14,7 +14,7 @@ requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Topic :: eCoSim :: FMU client",
+    "Topic :: eCoSim :: FMUv3 client",
     #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
 ]
@@ -26,6 +26,9 @@ dependencies = [
     "fmpy==0.3.30",
     "pydantic==2.13.4",
 ]
+
+[project.scripts]
+ecosim-client-fmu-v3 = "ecosim_client_fmu_v3.main:main"
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }

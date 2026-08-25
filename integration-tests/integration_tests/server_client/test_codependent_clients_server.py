@@ -14,9 +14,9 @@ from ecosim_common.config.model_interface_server import ConnectedToData, ModelIn
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from ecosim_test_common.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
-from ecosim_test_common.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
 def test_codependent_clients_server(communication_protocol: CommunicationProtocol) -> None:

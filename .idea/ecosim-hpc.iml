@@ -15,7 +15,7 @@
     <orderEntry type="module" module-name="ecosim-client-matlab" exported="" />
     <orderEntry type="module" module-name="ecosim-client-fmu-v3" exported="" />
     <orderEntry type="module" module-name="ecosim-test-common" exported="" />
-    <orderEntry type="module" module-name="ecosim-client-pyro" exported="" />
+    <orderEntry type="module" module-name="ecosim-client-pyro5" exported="" />
     <orderEntry type="jdk" jdkName="Python 3.12 (ecosim)" jdkType="Python SDK" />
   </component>
 </module>

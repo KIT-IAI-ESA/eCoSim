@@ -240,7 +240,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ecosim-client-pyro"
+name = "ecosim-client-pyro5"
 version = "0.14.0"
 source = { editable = "." }
 dependencies = [

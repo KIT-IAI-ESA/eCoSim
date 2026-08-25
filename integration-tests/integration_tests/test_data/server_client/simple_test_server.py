@@ -15,7 +15,7 @@ from ecosim_server.data.repositories import Repositories
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
-from ecosim_test_common.tech.db.repositories_in_memory import RepositoriesInMemory
+from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
 @dataclass

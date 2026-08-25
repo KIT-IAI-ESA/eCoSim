@@ -17,10 +17,10 @@ from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
-from ecosim_test_common.test_data.server_client.simple_test_client import SimpleTestClient
-from ecosim_test_common.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
-from ecosim_test_common.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.tech.resource_utils import config_parser_for_resource
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")

@@ -87,6 +87,13 @@ repos:
         files: ^ecosim-hpc/
         pass_filenames: false
         types: [ python ]
+      - id: mypy
+        name: mypy (ecosim-test-common)
+        entry: python dev/run_mypy.py ecosim-test-common
+        language: system
+        files: ^ecosim-test-common/
+        pass_filenames: false
+        types: [ python ]
       - id: check-py-filenames
         name: Check Python filenames are snake_case
         entry: python dev/validate_file_name.py

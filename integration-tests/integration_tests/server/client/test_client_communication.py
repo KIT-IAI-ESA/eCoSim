@@ -9,7 +9,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_states import ClientStates
-from ecosim_test_common.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
+from integration_tests.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
 
 ClientCommunicationData = Tuple[ClientCommunication, ClientStates, CommunicationProtocol]
 

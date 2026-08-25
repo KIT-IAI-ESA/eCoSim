@@ -1,8 +1,8 @@
 import dask.distributed as distributed
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_hpc.hpc_main_process import hpc_main_process
-from integration_tests.hpc.hpc_data import client_manager_config, simulation_config, server_config
-from ecosim_test_common.tech.db.repositories_in_memory import RepositoriesInMemory
+from integration_tests.hpc.hpc_data import client_manager_config, server_config, simulation_config
+from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
 def test_hpc_main_process(dask_client: distributed.Client) -> None:

@@ -6,7 +6,7 @@ from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_states import ClientStates
 from ecosim_test_common.test_data.generate_client_id import generate_random_client_id
-from ecosim_test_common.test_data.generate_client_state import generate_client_state
+from integration_tests.test_data.generate_client_state import generate_client_state
 
 
 def _connected_client_states(

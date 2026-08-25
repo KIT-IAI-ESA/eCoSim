@@ -28,6 +28,9 @@ dependencies = [
     "pip==26.1.2",
 ]
 
+[project.scripts]
+ecosim-client-fmu-v2 = "ecosim_client_fmu_v2.main:main"
+
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
