@@ -688,6 +688,7 @@ dependencies = [
 requires-dist = [
     { name = "art", specifier = "==6.5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.4" },
