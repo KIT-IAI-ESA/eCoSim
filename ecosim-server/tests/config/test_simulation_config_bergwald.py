@@ -3,11 +3,11 @@ from ecosim_common.config.model_interface_server import ConnectedToData
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import SimulationConfig
-from tests.tech.resource_utils import resource_path_file
+from ecosim_test_common.resources.config_files import config_file_path
 
 
 def test_load() -> None:
-    config = SimulationConfig.of_config_file_and_params(resource_path_file("simulation_bergwald.json"), 1221)
+    config = SimulationConfig.of_config_file_and_params(config_file_path("simulation_bergwald.json"), 1221)
     # CLIENTS
     assert len(config.clients) == 5
 

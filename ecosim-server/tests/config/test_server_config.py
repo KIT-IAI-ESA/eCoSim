@@ -1,6 +1,6 @@
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
-from tests.tech.resource_utils import resource_path
+from ecosim_test_common.resources.config_files import config_file_path_str
 
 
 def test_load_relative_paths() -> None:
@@ -8,9 +8,9 @@ def test_load_relative_paths() -> None:
         CLIArguments(
             passed_arguments=[
                 "--server-config",
-                f"{resource_path()}/server_config.ini",
+                config_file_path_str("server_config.ini"),
                 "--simulation-config",
-                f"{resource_path()}/simulation.json",
+                config_file_path_str("simulation.json"),
                 "--steps",
                 "100",
                 "--pace",
@@ -35,9 +35,9 @@ def test_load_absolute_paths() -> None:
         CLIArguments(
             passed_arguments=[
                 "--server-config",
-                f"{resource_path()}/server_config.ini",
+                config_file_path_str("server_config.ini"),
                 "--simulation-config",
-                f"{resource_path()}/simulation.json",
+                config_file_path_str("simulation.json"),
                 "--steps",
                 "100",
                 "--pace",
@@ -62,9 +62,9 @@ def test_overwrite_port() -> None:
         args=CLIArguments(
             passed_arguments=[
                 "--server-config",
-                f"{resource_path()}/server_config.ini",
+                config_file_path_str("server_config.ini"),
                 "--simulation-config",
-                f"{resource_path()}/simulation.json",
+                config_file_path_str("simulation.json"),
                 "--steps",
                 "100",
                 "--port",
