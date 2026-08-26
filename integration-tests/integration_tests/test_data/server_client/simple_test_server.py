@@ -97,7 +97,6 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
             username="",
             password="",
             ssl=False,
-            type="",
             drop_existing_schema=False,
         ),
     )
