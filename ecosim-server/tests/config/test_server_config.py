@@ -1,6 +1,24 @@
+import pytest
 from ecosim_server.config.cli_arguments import CLIArguments
+from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.server_config import ServerConfig
-from ecosim_test_common.resources.config_files import config_file_path_str
+from ecosim_test_common.resources.config_files import config_file_path_str, config_file_path
+
+
+def create_config(*additional_arguments: str) -> ServerConfig:
+    return ServerConfig.of_cli_args(
+        CLIArguments(
+            passed_arguments=[
+                "--server-config",
+                config_file_path_str("server_config.ini"),
+                "--simulation-config",
+                config_file_path_str("simulation.json"),
+                "--steps",
+                "100",
+                *additional_arguments,
+            ],
+        ),
+    )
 
 
 def test_load_relative_paths() -> None:
@@ -8,9 +26,9 @@ def test_load_relative_paths() -> None:
         CLIArguments(
             passed_arguments=[
                 "--server-config",
-                config_file_path_str("server_config.ini"),
+                str(config_file_path("server_config.ini")),
                 "--simulation-config",
-                config_file_path_str("simulation.json"),
+                str(config_file_path("simulation.json")),
                 "--steps",
                 "100",
                 "--pace",
@@ -74,3 +92,24 @@ def test_overwrite_port() -> None:
     )
     # SERVER
     assert config.server.port == 999
+
+
+def test_the_database_type_of_the_config_file_is_used() -> None:
+    assert create_config().database.type is DatabaseType.POSTGRES
+
+
+def test_the_database_type_can_be_overwritten_to_file() -> None:
+    config = create_config("--database-type", "file")
+
+    assert config.database.type is DatabaseType.FILE
+
+
+def test_the_database_type_can_be_overwritten_to_postgres() -> None:
+    config = create_config("--database-type", "postgres")
+
+    assert config.database.type is DatabaseType.POSTGRES
+
+
+def test_an_unknown_database_type_fails() -> None:
+    with pytest.raises(ValueError):
+        create_config("--database-type", "mysql")

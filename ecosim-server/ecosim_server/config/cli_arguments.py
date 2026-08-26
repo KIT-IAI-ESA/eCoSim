@@ -8,6 +8,7 @@ from typing import Any, List
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 
 
@@ -97,6 +98,13 @@ class CLIArguments(AppConfig):
                     help_text="If SSL should be used when connecting to the DB",
                 ),
                 AppConfigParameter(
+                    name="database-type",
+                    required=False,
+                    default_value=None,  # NOTE: the actual default value is specified in DatabaseConfig
+                    help_text=f"Where the simulation results are stored. Default: {DatabaseType.POSTGRES.value}. "
+                    + f"Possible: {[member.value for member in DatabaseType]}. Note: this will override the type in config files.",
+                ),
+                AppConfigParameter(
                     name="database-drop-existing-schema",
                     is_flag=True,
                     help_text="This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option.",
@@ -182,6 +190,7 @@ class CLIArguments(AppConfig):
             _schema=self._args.database_schema,
             _ssl=self._args.database_ssl,
             _drop_existing_schema=self._args.database_drop_existing_schema,
+            _type=self.database_type(),
         )
 
     def config_overrides(self) -> ServerConfigOverride:
@@ -190,6 +199,11 @@ class CLIArguments(AppConfig):
             server_port=self.port,
             communication_protocol=self.communication_protocol(),
         )
+
+    def database_type(self) -> DatabaseType | None:
+        if self._args.database_type is None:
+            return None
+        return DatabaseType.of(self._args.database_type)
 
     def communication_protocol(self) -> CommunicationProtocol | None:
         if self._args.communication_protocol is None:

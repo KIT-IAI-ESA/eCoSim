@@ -5,6 +5,7 @@ from typing import override
 
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -63,7 +64,7 @@ class RepositoriesDB(Repositories):
         server_config: ServerConfig,
     ) -> DbTechAbstract:
         match server_config.database.type:
-            case "postgres":
+            case DatabaseType.POSTGRES:
                 return PostgresTech(server_config)
             case _:
-                raise Exception(f"Unsupported database type '{server_config.database.type}'")
+                raise Exception(f"Unsupported database type '{server_config.database.type}' for the database repositories")

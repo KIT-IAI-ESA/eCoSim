@@ -13,6 +13,7 @@ from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.optional_access import if_exists
 from ecosim_server.config.cli_arguments import CLIArguments, ServerConfigOverride
+from ecosim_common.config.database_type import DatabaseType
 
 
 @dataclass(frozen=True)
@@ -63,7 +64,7 @@ class ServerConfig:
                 "Server address": f"{self.server.host}:{self.server.port}",
                 "Image renderer socket": f"{f'{self.server.host}:{self.server.image_renderer_port}' if self.server.image_renderer_port else 'N/A'}",
                 "Image renderer interval": f"{self.server.image_renderer_interval if self.server.image_renderer_interval else 'N/A'}",
-                "Database server": f"{self.database.host}:{self.database.port} ({self.database.type})",
+                "Database server": f"{self.database.host}:{self.database.port} ({self.database.type.value})",
                 "Database name": self.database.name,
                 "Database schema": self.database.schema,
             },
@@ -139,7 +140,7 @@ class DatabaseConfig:
     password: str
     schema: str
     name: str = "sim_control"
-    type: str = "postgres"
+    type: DatabaseType = DatabaseType.POSTGRES
 
     @classmethod
     def from_config(
@@ -160,7 +161,7 @@ class DatabaseConfig:
                 default=config.get_string("database", "password"),
             ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
-            type=config.get_string("database", "type", "postgres"),
+            type=db_overwrite.type(default=DatabaseType.of(config.get_string("database", "type", DatabaseType.POSTGRES.value))),
         )
 
     def generate_sqlalchemy_db_url(self) -> str:
