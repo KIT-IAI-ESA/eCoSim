@@ -18,7 +18,7 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from integration_tests.tech.resource_utils import config_parser_for_resource
+from ecosim_test_common.resources.resource_utils import config_parser_for_resource
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -147,7 +147,7 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
     )
 
     fmu3_client = FMU3Client(
-        config_parser=config_parser_for_resource("models/fmu3/configs/state_space.ini"),
+        config_parser=config_parser_for_resource("integration/models/fmu3/configs/state_space.ini"),
         config_override=ClientConfigOverride(
             server_host=server_host,
             server_port=server_port,

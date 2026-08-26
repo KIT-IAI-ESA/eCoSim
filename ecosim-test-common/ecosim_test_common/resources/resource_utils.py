@@ -14,3 +14,11 @@ def resource_path() -> Path:
 
 def resource_path_file(file: str) -> Path:
     return resource_path() / file
+
+
+def resource_path_file_str(file: str) -> str:
+    return f"{resource_path_file(file)}"
+
+
+def fmc_path() -> Path:
+    return resource_path_file("configs/fmcs")

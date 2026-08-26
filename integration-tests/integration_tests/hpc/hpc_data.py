@@ -3,7 +3,7 @@ from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_server.config.cli_arguments import ServerConfigOverride
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from integration_tests.tech import resource_utils
+from ecosim_test_common.resources import resource_utils
 
 
 def simulation_config() -> SimulationConfig:

@@ -9,12 +9,12 @@ from ecosim_common.communication.data.server_interface_settings import ServerInt
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
-from tests.tech.resource_utils import config_parser_for_resource, resource_path
+from ecosim_test_common.resources.resource_utils import config_parser_for_resource, fmc_path
 
 
 # #SPEC
 def test_load() -> None:
-    config_parser = config_parser_for_resource("client_config.ini")
+    config_parser = config_parser_for_resource("configs/common_client_config.ini")
     config = SimpleClientConfig.of_config_parser(config_parser)
 
     # SERVER
@@ -22,7 +22,7 @@ def test_load() -> None:
     assert config.server_config().server_address.port == 1234
 
     # SIMULATOR
-    assert config.simulator_config().fmc_file == "sub1.fmc"
+    assert config.simulator_config().fmc_file == "fmcs/sub1.fmc"
     assert config.simulator_config().simulator_name == "Simulator Name"
     assert config.simulator_config().model_name == "Model Name"
 
@@ -78,7 +78,7 @@ def test_load() -> None:
 
 # #SPEC
 def test_meta_data() -> None:
-    config_parser = config_parser_for_resource("client_config.ini")
+    config_parser = config_parser_for_resource("configs/common_client_config.ini")
     config = SimpleClientConfig.of_config_parser(config_parser)
 
     assert config.meta_data() == ClientMetaData(
@@ -94,7 +94,7 @@ def test_json_string_interfaces() -> None:
     simulator_config.fmc_file = "fmc_interface_test.fmc"
     simulator_config.ensemble = "Test_Ensemble"
     simulator_config.model_name = "Model_Name"
-    config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=resource_path())
+    config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=fmc_path())
     expected = (
         "["
         '{"model_interface_id": {"model_name": "Model_Name", "interface": "input_1"}, "name": "input_1", "unit": "m", "description": "non required value", "type": "input", "required": false}, '  # noqa: E501
@@ -114,7 +114,7 @@ def test_validate_interface_config_with_actual() -> None:
     simulator_config.fmc_file = "fmc_interface_test.fmc"
     simulator_config.ensemble = "Test_Ensemble"
     simulator_config.model_name = "Model_Name"
-    config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=resource_path())
+    config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=fmc_path())
     actual_input_only_required = ["input_2"]
     actual_input_missing_required = ["input_1", "input_3"]
     actual_input_all = ["input_1", "input_2", "input_3"]
