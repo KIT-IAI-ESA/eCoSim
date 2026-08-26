@@ -24,6 +24,7 @@ from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_server.config.database_type import DatabaseType
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
@@ -101,7 +102,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         step_size_in_ms=step_size_in_ms,
         simulation_start_date=simulation_start_date,
         database_config=DatabaseConfig(
-            type="postgres",
+            type=DatabaseType.POSTGRES,
             host=postgres_container.container.get_container_host_ip(),
             port=postgres_container.container.get_exposed_port(5432),
             name=postgres_container.container.dbname,
