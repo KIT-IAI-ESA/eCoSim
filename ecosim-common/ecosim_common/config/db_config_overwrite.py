@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from ecosim_common.config.database_type import DatabaseType
+
 
 @dataclass(frozen=True)
 class DbConfigOverwrite:
@@ -11,6 +13,7 @@ class DbConfigOverwrite:
     _schema: str | None = None
     _ssl: bool | None = None
     _drop_existing_schema: bool | None = None
+    _type: DatabaseType | None = None
 
     def host(
         self,
@@ -59,3 +62,9 @@ class DbConfigOverwrite:
         default: bool,
     ) -> bool:
         return self._drop_existing_schema or default
+
+    def type(
+        self,
+        default: DatabaseType,
+    ) -> DatabaseType:
+        return self._type or default
