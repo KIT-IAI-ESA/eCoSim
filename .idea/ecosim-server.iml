@@ -15,6 +15,7 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" exported="" />
+    <orderEntry type="module" module-name="ecosim-test-common" exported="" />
     <orderEntry type="jdk" jdkName="Python 3.13 (ecosim-server)" jdkType="Python SDK" />
   </component>
   <component name="TestRunnerService">

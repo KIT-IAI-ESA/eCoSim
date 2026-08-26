@@ -33,7 +33,7 @@ dependencies = [
 include = ["ecosim_test_common*"]
 
 [tool.setuptools.package-data]
-ecosim_test_common = ["py.typed", "resources/*"]
+ecosim_test_common = ["py.typed", "resources/**/*"]
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
