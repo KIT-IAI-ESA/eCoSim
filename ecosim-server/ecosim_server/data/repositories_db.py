@@ -10,7 +10,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.measurement.measurement_repository_db import MeasurementRepositoryDB
-from ecosim_server.measurement.simulation_state_repository_db import SimulationStateRepositoryDB
+from ecosim_server.simulation.state.simulation_state_repository_db import SimulationStateRepositoryDB
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_tech_abstract import DbTechAbstract
 from ecosim_server.tech.db.postgres_tech import PostgresTech
