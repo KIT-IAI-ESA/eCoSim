@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from ecosim_common.config.database_type import DatabaseType
 
@@ -14,6 +15,7 @@ class DbConfigOverwrite:
     _ssl: bool | None = None
     _drop_existing_schema: bool | None = None
     _type: DatabaseType | None = None
+    _directory: Path | None = None
 
     def host(
         self,
@@ -68,3 +70,9 @@ class DbConfigOverwrite:
         default: DatabaseType,
     ) -> DatabaseType:
         return self._type or default
+
+    def directory(
+        self,
+        default: Path,
+    ) -> Path:
+        return self._directory or default

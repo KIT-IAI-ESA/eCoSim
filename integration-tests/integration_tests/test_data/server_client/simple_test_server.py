@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -11,10 +10,10 @@ from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
-from ecosim_server.data.repositories import Repositories
-from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
+from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
@@ -22,6 +21,9 @@ from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemor
 class SimpleTestServer(Server):
     def measurement_repository(self, client_id: ClientID) -> MeasurementRepository:
         return self._repositories.measurement_repository(client_id=client_id)
+
+    def simulation_state_repository(self) -> SimulationStateRepository:
+        return self._repositories.simulation_state_repository
 
     def step_to_date(self, step: int) -> datetime:
         return self._simulation_config.date_time_for_step(step)
@@ -43,11 +45,6 @@ class SimpleTestServer(Server):
         return self._server_config.server.communication_protocol  # noqa: SLF001
 
 
-class RepositoryType(Enum):
-    IN_MEMORY = "IN_MEMORY"
-    DB = "DB"
-
-
 @dataclass
 class SimpleTestServerParameters:
     communication_protocol: CommunicationProtocol
@@ -67,7 +64,6 @@ class SimpleTestServerParameters:
             microsecond=0,
         ),
     )
-    repository_type: RepositoryType = field(default=RepositoryType.IN_MEMORY)
     clients: List[ClientSimulatorConfig] | None = field(default=None)
     database_config: DatabaseConfig | None = field(default=None)
     restore_simulation_run: bool = field(default=False)
@@ -110,10 +106,12 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         restore=parameters.restore_simulation_run,
     )
     repositories: Repositories
-    if parameters.repository_type == RepositoryType.DB:
-        repositories = RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
-    else:
+    if parameters.database_config is None:
+        # without a database there is nothing to store in, so the test runs on the in memory repositories
         repositories = RepositoriesInMemory.for_communication_protocol(server_config.server.communication_protocol)
+    else:
+        # the production implementations are picked by the database type, exactly like 'main.py' picks them
+        repositories = create_repositories(server_config=server_config, simulation_config=simulation_config)
 
     return SimpleTestServer(
         _server_config=server_config,

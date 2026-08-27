@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from typing import ClassVar
 
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 
 
 class ServerTimeMeasurementRepository(ABC):
-    _logger = ESPLogger("ServerTimeMeasurementRepository")
+    _logger: ClassVar[ESPLogger] = ESPLogger("ServerTimeMeasurementRepository")
 
     @abstractmethod
     def put(

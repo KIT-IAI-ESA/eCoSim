@@ -105,6 +105,13 @@ class CLIArguments(AppConfig):
                     + f"Possible: {[member.value for member in DatabaseType]}. Note: this will override the type in config files.",
                 ),
                 AppConfigParameter(
+                    name="database-directory",
+                    required=False,
+                    default_value=None,  # NOTE: the actual default value is specified in DatabaseConfig
+                    help_text="The directory the simulation results are written to if the database type is "
+                    + f"'{DatabaseType.FILE.value}'. Note: this will override the directory in config files.",
+                ),
+                AppConfigParameter(
                     name="database-drop-existing-schema",
                     is_flag=True,
                     help_text="This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option.",
@@ -191,6 +198,7 @@ class CLIArguments(AppConfig):
             _ssl=self._args.database_ssl,
             _drop_existing_schema=self._args.database_drop_existing_schema,
             _type=self.database_type(),
+            _directory=self.database_directory(),
         )
 
     def config_overrides(self) -> ServerConfigOverride:
@@ -199,6 +207,11 @@ class CLIArguments(AppConfig):
             server_port=self.port,
             communication_protocol=self.communication_protocol(),
         )
+
+    def database_directory(self) -> Path | None:
+        if self._args.database_directory is None:
+            return None
+        return Path(self._args.database_directory)
 
     def database_type(self) -> DatabaseType | None:
         if self._args.database_type is None:

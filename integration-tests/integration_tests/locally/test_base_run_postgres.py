@@ -24,11 +24,11 @@ from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.database_type import DatabaseType
+from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
-from integration_tests.test_data.server_client.simple_test_server import RepositoryType, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
 from psycopg import Connection
 from testcontainers.postgres import PostgresContainer
 
@@ -97,7 +97,6 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         communication_protocol=CommunicationProtocol.TCP_SOCKET,
         host=server_host,
         port=server_port,
-        repository_type=RepositoryType.DB,
         steps=steps,
         step_size_in_ms=step_size_in_ms,
         simulation_start_date=simulation_start_date,

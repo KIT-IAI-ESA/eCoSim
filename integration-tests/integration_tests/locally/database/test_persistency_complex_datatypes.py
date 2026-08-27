@@ -14,7 +14,7 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
-from integration_tests.test_data.server_client.simple_test_server import RepositoryType, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
 from psycopg import Connection, sql
 from testcontainers.postgres import PostgresContainer
 
@@ -26,7 +26,6 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
-        repository_type=RepositoryType.DB,
         steps=10,
         database_config=DatabaseConfig(
             host=postgres_container.get_container_host_ip(),
@@ -128,7 +127,6 @@ def test_db_persistence_matrix(
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
-        repository_type=RepositoryType.DB,
         steps=10,
         database_config=DatabaseConfig(
             host=postgres_container.get_container_host_ip(),

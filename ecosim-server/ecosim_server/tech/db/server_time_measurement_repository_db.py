@@ -25,23 +25,35 @@ class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
     ) -> None:
         for measurement_type in ServerTimeMeasurementType:
             entry = server_time_measurement.get_or_none(measurement_type)
-            if entry is None:  # a phase the run never entered has nothing to persist
+            if entry is None:  # a phase the run never entered doesn't have anything to persist
                 continue
             self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(entry))
 
     @override
-    def get_start(self, type: ServerTimeMeasurementType) -> datetime | None:
-        measurement: ServerTimeMeasurementDBEntry = self._db_connection.select_by_id(ServerTimeMeasurementDBEntry, type)  # type: ignore[assignment]
+    def get_start(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> datetime | None:
+        measurement: ServerTimeMeasurementDBEntry | None = self._db_connection.select_by_id(  # type: ignore[assignment]
+            ServerTimeMeasurementDBEntry,
+            type,
+        )
         if measurement is None:
-            self._logger(f"DB: Measurement type {type} not found")
+            self._logger.debug("DB: Measurement type %s not found", type)
             return None
         return measurement.start_time  # type: ignore
 
     @override
-    def get_end(self, type: ServerTimeMeasurementType) -> datetime | None:
-        measurement: ServerTimeMeasurementDBEntry = self._db_connection.select_by_id(ServerTimeMeasurementDBEntry, type)  # type: ignore[assignment]
+    def get_end(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> datetime | None:
+        measurement: ServerTimeMeasurementDBEntry | None = self._db_connection.select_by_id(  # type: ignore[assignment]
+            ServerTimeMeasurementDBEntry,
+            type,
+        )
         if measurement is None:
-            self._logger(f"DB: Measurement type {type} not found")
+            self._logger.debug("DB: Measurement type %s not found", type)
             return None
         return measurement.end_time  # type: ignore
 
