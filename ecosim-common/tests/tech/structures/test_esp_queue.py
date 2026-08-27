@@ -1,4 +1,3 @@
-# --- init ---
 import pytest
 from distributed import Client
 from ecosim_common.tech.structures.esp_queue import ESPQueue
@@ -79,6 +78,12 @@ def test_push_many(esp_structure_type: ESPStructureType) -> None:
 def test_pop_all(esp_structure_type: ESPStructureType) -> None:
     esp_queue = ESPQueue[str].of_type(queue_type=esp_structure_type, data=["a", "b"])
     assert esp_queue.pop_all() == ["a", "b"]
+    assert len(esp_queue) == 0
+
+
+def test_pop_all_empty(esp_structure_type: ESPStructureType) -> None:
+    esp_queue = ESPQueue[str].of_type(queue_type=esp_structure_type)
+    assert esp_queue.pop_all() == []
     assert len(esp_queue) == 0
 
 
