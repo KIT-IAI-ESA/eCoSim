@@ -67,6 +67,7 @@ class ServerConfig:
                 "Database server": f"{self.database.host}:{self.database.port} ({self.database.type.value})",
                 "Database name": self.database.name,
                 "Database schema": self.database.schema,
+                "Database directory": self.database.directory,
             },
         )
 
@@ -132,6 +133,8 @@ class MainConfig:
 
 @dataclass(frozen=True)
 class DatabaseConfig:
+    _default_directory: ClassVar[Path] = Path("simulation_results")
+
     host: str
     port: int
     ssl: bool
@@ -141,6 +144,7 @@ class DatabaseConfig:
     schema: str
     name: str = "sim_control"
     type: DatabaseType = DatabaseType.POSTGRES
+    directory: Path = _default_directory
 
     @classmethod
     def from_config(
@@ -162,6 +166,7 @@ class DatabaseConfig:
             ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
             type=db_overwrite.type(default=DatabaseType.of(config.get_string("database", "type", DatabaseType.POSTGRES.value))),
+            directory=db_overwrite.directory(default=Path(config.get_string("database", "directory", DatabaseConfig._default_directory.name))),
         )
 
     def generate_sqlalchemy_db_url(self) -> str:

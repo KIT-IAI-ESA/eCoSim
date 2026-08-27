@@ -8,8 +8,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.data.repositories import Repositories
-from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.server import Server
 
@@ -33,7 +32,7 @@ def main() -> None:
         restore=args.restore_simulation_run(),
     )
 
-    repositories: Repositories = RepositoriesDB.create(
+    repositories: Repositories = create_repositories(
         server_config=server_config,
         simulation_config=simulation_config,
     )

@@ -11,7 +11,7 @@ from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.data.repositories import create_repositories
 
 
 def get_mpi_interface() -> str:
@@ -67,7 +67,7 @@ def main() -> None:
             server_config=server_config,
             cli_args=cli_arguments,
         ),
-        repositories=RepositoriesDB.create(
+        repositories=create_repositories(
             server_config=server_config,
             simulation_config=simulation_config,
         ),

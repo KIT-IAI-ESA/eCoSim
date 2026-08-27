@@ -26,7 +26,10 @@ class RepositoriesDB(Repositories):
     _client_id_to_measurement_repository: dict[ClientID, MeasurementRepository] = field(default_factory=dict)
 
     @staticmethod
-    def create(server_config: ServerConfig, simulation_config: SimulationConfig) -> RepositoriesDB:
+    def create(
+        server_config: ServerConfig,
+        simulation_config: SimulationConfig,
+    ) -> RepositoriesDB:
         db_tech = RepositoriesDB._get_db_tech(server_config)
         db_tech.init_db()
         db_connection = db_tech.db_connection()

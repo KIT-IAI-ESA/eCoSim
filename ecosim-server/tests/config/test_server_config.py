@@ -1,24 +1,11 @@
+from pathlib import Path
+
 import pytest
-from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_common.config.database_type import DatabaseType
+from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
-from ecosim_test_common.resources.config_files import config_file_path_str, config_file_path
-
-
-def create_config(*additional_arguments: str) -> ServerConfig:
-    return ServerConfig.of_cli_args(
-        CLIArguments(
-            passed_arguments=[
-                "--server-config",
-                config_file_path_str("server_config.ini"),
-                "--simulation-config",
-                config_file_path_str("simulation.json"),
-                "--steps",
-                "100",
-                *additional_arguments,
-            ],
-        ),
-    )
+from ecosim_test_common.resources.config_files import config_file_path, config_file_path_str
+from tests.data.generate_server_config import generate_server_config_from_file_and_cli_arguments
 
 
 def test_load_relative_paths() -> None:
@@ -76,40 +63,36 @@ def test_load_absolute_paths() -> None:
 
 
 def test_overwrite_port() -> None:
-    config = ServerConfig.of_cli_args(
-        args=CLIArguments(
-            passed_arguments=[
-                "--server-config",
-                config_file_path_str("server_config.ini"),
-                "--simulation-config",
-                config_file_path_str("simulation.json"),
-                "--steps",
-                "100",
-                "--port",
-                "999",
-            ],
-        ),
-    )
-    # SERVER
+    config = generate_server_config_from_file_and_cli_arguments(port="999")
     assert config.server.port == 999
 
 
 def test_the_database_type_of_the_config_file_is_used() -> None:
-    assert create_config().database.type is DatabaseType.POSTGRES
+    assert generate_server_config_from_file_and_cli_arguments().database.type is DatabaseType.POSTGRES
 
 
 def test_the_database_type_can_be_overwritten_to_file() -> None:
-    config = create_config("--database-type", "file")
+    config = generate_server_config_from_file_and_cli_arguments(database_type=DatabaseType.FILE.serialized)
 
     assert config.database.type is DatabaseType.FILE
 
 
 def test_the_database_type_can_be_overwritten_to_postgres() -> None:
-    config = create_config("--database-type", "postgres")
+    config = generate_server_config_from_file_and_cli_arguments(database_type=DatabaseType.POSTGRES.serialized)
 
     assert config.database.type is DatabaseType.POSTGRES
 
 
 def test_an_unknown_database_type_fails() -> None:
     with pytest.raises(ValueError):
-        create_config("--database-type", "mysql")
+        generate_server_config_from_file_and_cli_arguments(database_type="mysql")
+
+
+def test_the_default_database_directory_is_used_if_the_config_file_has_none() -> None:
+    assert generate_server_config_from_file_and_cli_arguments().database.directory == Path("simulation_results")
+
+
+def test_the_database_directory_can_be_overwritten() -> None:
+    config = generate_server_config_from_file_and_cli_arguments(database_directory="/tmp/ecosim_results")
+
+    assert config.database.directory == Path("/tmp/ecosim_results")
