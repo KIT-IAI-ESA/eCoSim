@@ -1,7 +1,10 @@
-name: ecosim-example
+name: ecosim-example-file
 
 # Runs the 'house' example: one server and four FMU v2 clients (weather, house,
 # heating, ventilation) that are wired together by config/simulation.json.
+#
+# Unlike the postgres example there is no database service. The server stores the
+# results as JSON lines in /results, which is mounted to ./results on the host.
 #
 # The models are mounted read-only from ecosim-test-common. The *_preferences_linux.ini
 # files next to them point at 'localhost:1234'; the clients override the host on the
@@ -16,51 +19,29 @@ x-client: &client
   depends_on:
     - server
   volumes:
-    - ../../../ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/linux:/models:ro,z
+    - ../../../../ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/linux:/models:ro,z
 
 services:
 
-  db:
-    container_name: ecosim-example-db
-    image: timescale/timescaledb:latest-pg16
-    restart: "no"
-    shm_size: 128mb
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: postgres
-      POSTGRES_PASSWORD: ecosim_example
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-
   server:
-    container_name: ecosim-example-server
+    container_name: ecosim-example-file-server
     image: localhost/ecosim_server:latest
     restart: "no"
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "1234:1234"
     volumes:
       - ./config:/config:ro,z
+      - ./results:/results:z
     command:
       - /opt/ecosim-server.pex
       - --server-config=/config/server_config.ini
       - --simulation-config=/config/simulation.json
       - --steps=60
-      - --database-name=postgres
-      - --database-schema=ecosim_example
-      - --database-drop-existing-schema
       - --debug
 
   weather:
     <<: *client
-    container_name: ecosim-example-weather
+    container_name: ecosim-example-file-weather
     command:
       - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/weather_preferences_linux.ini
@@ -70,7 +51,7 @@ services:
 
   house:
     <<: *client
-    container_name: ecosim-example-house
+    container_name: ecosim-example-file-house
     command:
       - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/house_preferences_linux.ini
@@ -80,7 +61,7 @@ services:
 
   heating:
     <<: *client
-    container_name: ecosim-example-heating
+    container_name: ecosim-example-file-heating
     command:
       - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/heating_preferences_linux.ini
@@ -90,7 +71,7 @@ services:
 
   ventilation:
     <<: *client
-    container_name: ecosim-example-ventilation
+    container_name: ecosim-example-file-ventilation
     command:
       - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/ventilation_preferences_linux.ini
