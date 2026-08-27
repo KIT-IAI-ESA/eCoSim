@@ -48,6 +48,10 @@ class _CountingQueue(ESPQueue[InterfaceValueHistoryEntry]):
         return self._delegate.pop(timeout=timeout)
 
     @override
+    def pop_all(self) -> list[InterfaceValueHistoryEntry]:
+        return self._delegate.pop_all()
+
+    @override
     def qsize(self) -> int:
         return self._delegate.qsize()
 

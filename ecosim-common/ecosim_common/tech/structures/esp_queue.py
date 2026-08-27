@@ -10,7 +10,6 @@ import distributed
 from distributed import Client
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_common.tech.logger.with_silenced_logger import silenced_logger
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 T = TypeVar("T")
@@ -93,11 +92,9 @@ class ESPQueue(ABC, Generic[T]):
         except TimeoutError:
             return None
 
+    @abstractmethod
     def pop_all(self) -> list[T]:
-        items: list[T] = []
-        while (item := self.pop_or_none(timeout=0)) is not None:
-            items.append(item)
-        return items
+        pass
 
     def clear(self) -> None:
         self.pop_all()
@@ -167,8 +164,14 @@ class DaskESPQueue(ESPQueue[T]):
 
     @override
     def pop(self, timeout: float | None = None) -> T:
-        with silenced_logger("distributed.core"):
-            raw = self._dask_queue.get(timeout=timeout)
+        return self._unpickle_and_cast(self._dask_queue.get(timeout=timeout))
+
+    @override
+    def pop_all(self) -> list[T]:
+        return [self._unpickle_and_cast(raw) for raw in self._dask_queue.get(batch=True)]
+
+    @staticmethod
+    def _unpickle_and_cast(raw: bytes) -> T:
         return cast(T, cloudpickle.loads(raw))
 
     @override
@@ -188,6 +191,13 @@ class ThreadESPQueue(ESPQueue[T]):
     @override
     def push(self, value: T) -> None:
         self._internal_queue.put(value)
+
+    @override
+    def pop_all(self) -> list[T]:
+        items: list[T] = []
+        while (item := self.pop_or_none(timeout=0)) is not None:
+            items.append(item)
+        return items
 
     @override
     def pop(self, timeout: float | None = None) -> T:
