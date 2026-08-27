@@ -38,6 +38,8 @@ ARG COMMAND_NAME
 ENV EXECUTABLE=${COMMAND_NAME}.pex
 
 COPY --from=BUILD ${BUILD_DIR}/${EXECUTABLE} /opt
-RUN chmod +x /opt/${EXECUTABLE}
+# '/opt/ecosim' is a fixed name, because the exec form of ENTRYPOINT below does not expand variables
+RUN chmod +x /opt/${EXECUTABLE} && ln -s /opt/${EXECUTABLE} /opt/ecosim
 
-CMD /opt/${EXECUTABLE}
+# ENTRYPOINT instead of CMD, so that arguments are appended to the executable instead of replacing it
+ENTRYPOINT ["/opt/ecosim"]

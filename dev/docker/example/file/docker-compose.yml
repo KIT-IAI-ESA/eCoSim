@@ -33,7 +33,6 @@ services:
       - ./config:/config:ro,z
       - ./results:/results:z
     command:
-      - /opt/ecosim-server.pex
       - --server-config=/config/server_config.ini
       - --simulation-config=/config/simulation.json
       - --steps=60
@@ -43,7 +42,6 @@ services:
     <<: *client
     container_name: ecosim-example-file-weather
     command:
-      - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/weather_preferences_linux.ini
       - --server-host=server
       - --server-port=1234
@@ -53,7 +51,6 @@ services:
     <<: *client
     container_name: ecosim-example-file-house
     command:
-      - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/house_preferences_linux.ini
       - --server-host=server
       - --server-port=1234
@@ -63,7 +60,6 @@ services:
     <<: *client
     container_name: ecosim-example-file-heating
     command:
-      - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/heating_preferences_linux.ini
       - --server-host=server
       - --server-port=1234
@@ -73,7 +69,6 @@ services:
     <<: *client
     container_name: ecosim-example-file-ventilation
     command:
-      - /opt/ecosim-client-fmu-v2.pex
       - --config-file=/models/ventilation_preferences_linux.ini
       - --server-host=server
       - --server-port=1234
