@@ -223,7 +223,12 @@ class DaskChannel(ESPChannel, ShutdownListener):
         dask_client = self._dask_client()
 
         async def listen_start() -> None:
-            future = dask_client.submit(DaskChannel._listen_on_connection_internal, channel_handler, self._listening_on_connection)
+            future = dask_client.submit(
+                DaskChannel._listen_on_connection_internal,
+                channel_handler,
+                self._listening_on_connection,
+                self._is_finished,
+            )
             distributed.fire_and_forget(future)
 
         dask_client.sync(listen_start)
@@ -236,6 +241,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
     def _listen_on_connection_internal(
         on_new_channel: ChannelHandler,
         listening_on_connection: ParallelEvent,
+        finished_event: ParallelEvent,
     ) -> None:
         dask_client = distributed.get_client()
         client_address = ConnectionAddress.of_dask_client(dask_client)
@@ -250,7 +256,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
                 sleep(3)  # if all clients are connected, we need to free the loop from the massive event checks
                 continue
             elif len(dask_client.datasets) < len(current_connections):
-                if not listening_on_connection.is_set():
+                if not listening_on_connection.is_set() or finished_event.is_set():
                     return
                 raise Exception("Server listening ended sooner than anticipated.")
             else:
