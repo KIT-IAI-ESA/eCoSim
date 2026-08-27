@@ -80,6 +80,8 @@ repos:
         entry: python dev/run_mypy.py ecosim-client-pyro5
         language: system
         files: ^ecosim-client-pyro5/
+        pass_filenames: false
+        types: [ python ]
       - id: mypy
         name: mypy (ecosim-hpc)
         entry: python dev/run_mypy.py ecosim-hpc
