@@ -112,6 +112,9 @@ where the results end up.
   override this with `--server-host=server`, so the shared resources stay untouched.
 - The clients retry the connect for 30s, so plain `depends_on` is enough to start them
   together with the server.
+- The executable is the `ENTRYPOINT` of the images, so `command:` only lists arguments -
+  they are appended to it. `docker run localhost/ecosim_server:latest --help` works the
+  same way.
 - Both variants publish port `1234`, so they cannot run at the same time.
 
 ### postgres

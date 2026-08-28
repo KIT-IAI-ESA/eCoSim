@@ -13,7 +13,7 @@
   "agent": {
     "ecosim-programmer": {
       "mode": "primary",
-      "prompt": "{file:agent_prompts/ecosim-programmer.md}"
+      "prompt": "{file:agents/roles/ecosim-programmer.md}"
     }
   },
   "provider": {

@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/ecosim-common-fmpy" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-common-fmpy/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-common-fmpy/ecosim_common_fmpy.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common-fmpy/htmlcov" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />

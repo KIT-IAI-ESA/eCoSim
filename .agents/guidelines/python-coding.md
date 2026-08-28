@@ -16,8 +16,8 @@
 - Use pytest as the testing framework
 
 ## Structure
-- Keep methods short (≤ 10 lines)
-- Keep classes under 150 lines
+- Keep methods short (≤ 10 lines), but don't extract only 2 lines into a new method
+- Keep classes under 150 lines, but don't create an extra class with ≤ 10 lines of code
 - Keep files under 150 lines total
 - Split large modules into smaller, focused modules
 

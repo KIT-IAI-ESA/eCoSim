@@ -5,7 +5,7 @@ services:
     userns_mode: keep-id
     user: node
     volumes:
-      - ../agent_prompts:/home/node/.config/opencode/agent_prompts:ro,z
+      - ../../.agents:/home/node/.config/opencode/agents:ro,z
       - ./opencode.kit.json:/home/node/.config/opencode/opencode.json:ro,z
       - ./opencode-auth.kit.json:/home/node/.local/share/opencode/auth.json:ro,z
       - ../../:/home/node/ecosim:z
@@ -18,7 +18,7 @@ services:
     userns_mode: keep-id
     user: node
     volumes:
-      - ../agent_prompts:/home/node/.config/opencode/agent_prompts:ro,z
+      - ../../.agents:/home/node/.config/opencode/agents:ro,z
       - ./opencode.custom.json:/home/node/.config/opencode/opencode.json:ro,z
       - ./opencode-auth.custom.json:/home/node/.local/share/opencode/auth.json:ro,z
       - ../../:/home/node/ecosim:z

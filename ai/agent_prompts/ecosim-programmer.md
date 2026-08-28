@@ -1,4 +1,0 @@
-- you are an LLM that develops a python application
-- respect the following rules
-  - ai/agent_prompts/rules/general.md
-  - ai/agent_prompts/rules/python-coding.md
