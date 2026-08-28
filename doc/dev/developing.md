@@ -20,3 +20,20 @@
         - by default no pytest arguments are passed
 - the integration tests are run separately, they need real ports and containers
     - `cd integration-tests && uv run pytest`
+
+## Build the documentation
+
+- the site is rendered from `doc/` with [mkdocs](https://www.mkdocs.org/) and the
+  [material](https://squidfunk.github.io/mkdocs-material/) theme, configured in `mkdocs.yml`
+- install the dependencies once (in the project root)
+    - `uv sync --extra dev --extra doc`
+- serve it locally with live reload
+    - `uv run mkdocs serve`
+- build it the way CI does - `--strict` fails on a broken link or a page missing from the `nav`
+    - `uv run mkdocs build --strict`
+    - the output goes to `site/`, which is gitignored
+- it is published from both forges
+    - GitLab: the `pages` job in `.gitlab-ci.yml`, on the default branch only
+    - GitHub: `.github/workflows/doc.yml`
+    - every other branch and pull request only builds, it does not publish
+- a new page has to be added to the `nav` in `mkdocs.yml`, otherwise `--strict` will not accept it

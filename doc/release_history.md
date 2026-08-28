@@ -1,5 +1,10 @@
 # Release History
 
+## v0.14.0
+- added HPC support
+- improved overall architecture
+- improved overall performance
+
 ## v0.12.0
 - added restore functionality
 - [BugFix] start the database entries with the correct date

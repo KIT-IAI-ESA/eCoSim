@@ -26,7 +26,7 @@
         - `export UV_INDEX_ECOSIM_REGISTRY_PASSWORD=TOKEN`
             - the part between `UV_INDEX_` and `_USERNAME`/`_PASSWORD` must match with the `pyproject.toml` index name
     - replace `TOKEN_NAME` with the name of the token (e.g. `API_READ`)
-    - replace `TOKEN` with the actual token (the token is only accessible right after creation)a
+    - replace `TOKEN` with the actual token (the token is only accessible right after creation)
 - add to your `pyproject.toml`
   ```toml
   [[tool.uv.index]]
