@@ -1,0 +1,80 @@
+# Renders doc/ as a static site. See doc/dev/developing.md for how to run it.
+site_name: eCoSim
+site_description: Co-simulation server and clients for coupling independent simulation models
+# The canonical URL only affects sitemap.xml and the canonical link tag. All internal links are
+# relative, so the site works under any path without setting this. CI overrides it per forge.
+site_url: !ENV [SITE_URL, "https://gitlab.kit.edu/kit/iai/esa/ecosim"]
+repo_url: https://gitlab.kit.edu/kit/iai/esa/ecosim
+repo_name: kit/iai/esa/ecosim
+edit_uri: -/edit/main/doc/
+
+# The documentation lives in doc/, not in the mkdocs default docs/.
+docs_dir: doc
+site_dir: site
+
+# Fail the build on a broken internal link instead of publishing it.
+strict: true
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/gitlab
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  # The performance reports write their comparison tables as raw HTML with markdown inside.
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Use eCoSim:
+      - Use packages: use_packages.md
+      - Release history: release_history.md
+  - Development:
+      - Project setup: dev/project_setup.md
+      - Architecture: dev/architecture.md
+      - Dev notes: dev/developing.md
+  - Technical notes:
+      - HPC cheat sheet: dev/tech/hpc.md
+      - Multi threading with fmpy: dev/tech/multi_threading_fmpy.md
+  - Performance:
+      - Original HPC vs common abstraction: dev/performance/2026-07-28/2026-07-28_original_hpc_vs_common_abstraction.md
+      - "… TCP Socket": dev/performance/2026-07-28/2026-07-28_original_hpc_vs_common_abstraction_tcp.md
+      - "… DASK": dev/performance/2026-07-28/2026-07-28_original_hpc_vs_common_abstraction_dask.md

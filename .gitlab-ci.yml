@@ -96,6 +96,39 @@ integration_test_ecosim:
       - $PROJECT_DIR/integration-tests/report.xml
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
+# GitLab Pages: the job must be named 'pages' and the artifact directory must be 'public'.
+pages:
+  needs: [ ]
+  extends: .image-template
+  stage: artifacts
+  variables:
+    # The canonical URL of the deployed site, used for sitemap.xml and the canonical link tag.
+    SITE_URL: $CI_PAGES_URL
+  script:
+    - cd ${SRC_DIR}
+    - uv sync --extra doc
+    - uv run mkdocs build --strict --site-dir public
+  artifacts:
+    expire_in: 14 days
+    paths:
+      - public
+  rules:
+    # Publish only from the default branch, but keep the build as a link check everywhere else.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+doc_build:
+  needs: [ ]
+  extends: .image-template
+  stage: static-code-analysis
+  script:
+    - cd ${SRC_DIR}
+    - uv sync --extra doc
+    # --strict turns a broken link or a page missing from the nav into a failure
+    - uv run mkdocs build --strict
+  rules:
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+
+
 publish_artifacts:
   needs: [ test, integration_test_ecosim ]
   extends: .sub-project-template
