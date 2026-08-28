@@ -97,6 +97,9 @@ integration_test_ecosim:
     when: always  # always = collect artifacts even if the job (i.e. the tests) fails
 
 # GitLab Pages: the job must be named 'pages' and the artifact directory must be 'public'.
+# ATTENTION: GitLab Pages is switched off instance-wide on the KIT GitLab (gitlab.kit.edu), so
+# this job produces the site but nothing serves it. The 'public' artifact can still be downloaded,
+# and 'dev/run_mkdocs.py' renders the docs locally. Keep the job so it works once Pages is enabled.
 pages:
   needs: [ ]
   extends: .image-template
