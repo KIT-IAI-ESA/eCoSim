@@ -44,6 +44,28 @@ dev = [
 ]
 
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_hpc",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_hpc"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
+
 [tool.mypy]
 mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5","../ecosim-test-common",]
 check_untyped_defs = true

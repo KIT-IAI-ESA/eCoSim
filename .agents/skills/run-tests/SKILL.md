@@ -27,12 +27,11 @@ cd ecosim-server && uv run pytest tests/simulation/test_interface_value_history_
 
 ## Which subprojects have tests
 
-| Subproject | Test location                                   |
-|---|-------------------------------------------------|
-| `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab` | `tests/`                                        |
-| `ecosim-hpc` | `tests/` (no `testpaths` configured) |
-| `integration-tests` | `integration_tests/`                            |
-| `ecosim-client-pyro5`, `ecosim-test-common` | no `testpaths` configured                       |
+| Subproject | Test location |
+|---|---|
+| `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-hpc` | `tests/` |
+| `integration-tests` | `integration_tests/` |
+| `ecosim-client-pyro5`, `ecosim-test-common` | no `testpaths` configured, and no tests |
 
 ## Every subproject at once
 
@@ -42,7 +41,8 @@ Use the script, from the repository root:
 python dev/run_tests.py
 ```
 
-It runs `uv run pytest` in every subproject except `integration-tests`, keeps going after a
+It runs `uv run pytest` in every subproject except `integration-tests` and
+`ecosim-test-common`, keeps going after a
 failure, prints a summary, and exits non-zero if anything failed. Subprojects without tests
 are reported as `no tests` rather than as failures (pytest exits with 5 when it collects
 nothing).
@@ -54,15 +54,13 @@ python dev/run_tests.py ecosim-server ecosim-common
 python dev/run_tests.py ecosim-server -- -k history --no-cov
 ```
 
-**The script deliberately passes no pytest arguments by default, and forwarding them is not
-always safe:**
+The script passes no pytest arguments by default.
 
-- the tests of `ecosim-hpc` call `argparse` on the real `sys.argv`, and
-  `ESPMonkeyPatch.set_sys_arg` *appends* to it instead of replacing it — so any pytest flag
-  leaks through and the suite fails with `unrecognized arguments: -q`
-- `ecosim-test-common` has no `pytest-cov`, so `--no-cov` is a usage error there
-
-Both are why a hand-written loop with `-q --no-cov` reports failures that do not exist.
+A test must not depend on how the runner was invoked. The applications parse `sys.argv`
+themselves and reject arguments they do not know, so a test that drives one has to call
+`ESPMonkeyPatch.remove_pytest_sys_args()` before setting its own arguments — otherwise the
+runner's arguments are still there, and the test passes under `pytest` but fails under
+`pytest -q` or under the test path an IDE passes.
 
 CI (`.gitlab-ci.yml`) only runs the matrix `ecosim-common`, `ecosim-client-fmu-v2`,
 `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-server`. A green pipeline therefore

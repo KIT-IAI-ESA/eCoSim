@@ -12,7 +12,7 @@ from config import SUBPROJECTS, error_print, get_uv_path
 
 # 'integration-tests' starts real servers on real ports and needs the other packages
 # installed, so it is not part of this quick feedback run
-EXCLUDED_PROJECTS = frozenset({"integration-tests"})
+EXCLUDED_PROJECTS = frozenset({"integration-tests", "ecosim-test-common"})
 
 # pytest exits with 5 when it did not collect a single test. Some subprojects have no
 # tests (yet), which must not fail the whole run
@@ -26,10 +26,7 @@ Runs 'uv run pytest' in every subproject except the integration tests.
   python dev/run_tests.py ecosim-server          only the given subprojects
   python dev/run_tests.py -- -k history          forward arguments to pytest
 
-ATTENTION: no pytest arguments are passed by default, and forwarding them is not
-           always safe. The tests of 'ecosim-hpc' read 'sys.argv' and fail on
-           unknown entries, and 'ecosim-test-common' has no pytest-cov, so
-           '--no-cov' is a usage error there."""
+ATTENTION: no pytest arguments are passed by default."""
 
 
 @dataclass(frozen=True)
