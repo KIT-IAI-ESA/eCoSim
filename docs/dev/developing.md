@@ -25,15 +25,27 @@
 
 - the site is rendered from `docs/` with [mkdocs](https://www.mkdocs.org/) and the
   [material](https://squidfunk.github.io/mkdocs-material/) theme, configured in `mkdocs.yml`
-- install the dependencies once (in the project root)
-    - `uv sync --extra dev --extra doc`
-- serve it locally with live reload
-    - `uv run mkdocs serve`
-- build it the way CI does - `--strict` fails on a broken link or a page missing from the `nav`
-    - `uv run mkdocs build --strict`
-    - the output goes to `site/`, which is gitignored
-- it is published from both forges
-    - GitLab: the `pages` job in `.gitlab-ci.yml`, on the default branch only
-    - GitHub: `.github/workflows/doc.yml`
-    - every other branch and pull request only builds, it does not publish
-- a new page has to be added to the `nav` in `mkdocs.yml`, otherwise `--strict` will not accept it
+- use the script `dev/run_mkdocs.py` to run mkdocs locally
+- or do it by hand, in the project root
+  - install the dependencies once: `uv sync --extra dev --extra doc`
+  - serve it locally with live reload: `uv run mkdocs serve`
+  - build it the way CI does: `uv run mkdocs build --strict`
+    - `--strict` fails on a broken link or a page missing from the `nav`, so a new page has to be
+        added to the `nav` in `mkdocs.yml`
+  - the output goes to `site/`, which is gitignored
+  - `serve` runs without `--strict`, otherwise a half-written link would kill the running server.
+    Run `build` before handing the work back
+  - the script serves the site at the root URL (it sets `SITE_URL` to empty). `mkdocs serve` on its
+    own puts it under the forge path from `site_url`, e.g. `http://127.0.0.1:8000/kit/iai/esa/ecosim/`
+
+### Publishing
+
+!!! warning "GitLab Pages is disabled on the KIT GitLab"
+
+    The `pages` job in `.gitlab-ci.yml` builds the site and keeps it as an artifact, but the KIT
+    instance (`gitlab.kit.edu`) has GitLab Pages switched off instance-wide, so nothing is served
+    from it. There is no per-project setting that turns it on. Until that changes, read the docs
+    locally with `dev/run_mkdocs.py`, or download the `public` artifact of the `pages` job.
+
+- the `doc_build` job builds every non-default branch as a link check, it never publishes
+- the `pages` job runs on the default branch only
