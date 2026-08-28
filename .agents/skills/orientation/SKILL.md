@@ -83,3 +83,9 @@ Tests are the readable specification. `integration-tests/integration_tests/serve
 runs a real server against a real client over every protocol and every storage backend via
 fixtures, and is the fastest way to understand an end-to-end run.
 `ecosim-test-common` provides those fixtures plus the FMU model resources.
+
+## The human facing counterpart
+
+`docs/dev/architecture.md` covers the same ground for humans and is published as a site (see
+`mkdocs.yml`). This skill is the working map; that page is the documentation. When the structure
+changes, both have to change.

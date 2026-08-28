@@ -1,4 +1,4 @@
-# Renders doc/ as a static site. See doc/dev/developing.md for how to run it.
+# Renders docs/ as a static site. See docs/dev/developing.md for how to run it.
 site_name: eCoSim
 site_description: Co-simulation server and clients for coupling independent simulation models
 # The canonical URL only affects sitemap.xml and the canonical link tag. All internal links are
@@ -6,10 +6,9 @@ site_description: Co-simulation server and clients for coupling independent simu
 site_url: !ENV [SITE_URL, "https://gitlab.kit.edu/kit/iai/esa/ecosim"]
 repo_url: https://gitlab.kit.edu/kit/iai/esa/ecosim
 repo_name: kit/iai/esa/ecosim
-edit_uri: -/edit/main/doc/
+edit_uri: -/edit/main/docs/
 
-# The documentation lives in doc/, not in the mkdocs default docs/.
-docs_dir: doc
+docs_dir: docs
 site_dir: site
 
 # Fail the build on a broken internal link instead of publishing it.
