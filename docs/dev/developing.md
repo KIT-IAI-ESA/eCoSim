@@ -23,7 +23,7 @@
 
 ## Build the documentation
 
-- the site is rendered from `doc/` with [mkdocs](https://www.mkdocs.org/) and the
+- the site is rendered from `docs/` with [mkdocs](https://www.mkdocs.org/) and the
   [material](https://squidfunk.github.io/mkdocs-material/) theme, configured in `mkdocs.yml`
 - install the dependencies once (in the project root)
     - `uv sync --extra dev --extra doc`
