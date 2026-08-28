@@ -27,12 +27,12 @@ cd ecosim-server && uv run pytest tests/simulation/test_interface_value_history_
 
 ## Which subprojects have tests
 
-| Subproject | Test location |
-|---|---|
-| `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab` | `tests/` |
-| `ecosim-hpc` | `test/` (singular — no `testpaths` configured) |
-| `integration-tests` | `integration_tests/` |
-| `ecosim-client-pyro5`, `ecosim-test-common` | no `testpaths` configured |
+| Subproject | Test location                                   |
+|---|-------------------------------------------------|
+| `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab` | `tests/`                                        |
+| `ecosim-hpc` | `tests/` (no `testpaths` configured) |
+| `integration-tests` | `integration_tests/`                            |
+| `ecosim-client-pyro5`, `ecosim-test-common` | no `testpaths` configured                       |
 
 ## Every subproject at once
 
