@@ -19,12 +19,15 @@ class FMU3Client(Client):
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride | None = None,
-        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
-        self._simulator: FMU3Simulator | None = None
+        self._simulator: FMU3Simulator = FMU3Simulator.of(
+            simulator_name=self._client_config.simulator_config().simulator_name,
+            fmu_config=self._fmu_config,
+            execution_config=self._execution_config,
+        )
         self._is_finished = False
 
     @override
@@ -35,11 +38,6 @@ class FMU3Client(Client):
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
-        self._simulator = FMU3Simulator.of(
-            simulator_name=self._client_config.simulator_config().simulator_name,
-            fmu_config=self._fmu_config,
-            execution_config=self._execution_config,
-        )
         self._simulator.initialize(start_time=0.0)
         return self._simulator.server_used_output_values()
 
@@ -49,8 +47,6 @@ class FMU3Client(Client):
         received_inputs: Dict[InterfaceId, InterfaceValueType],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
-        if self._simulator is None:
-            raise RuntimeError("Simulation has not been started")
         self._simulator.do_step(
             input_values=received_inputs,
             step_size_in_seconds=step_size_in_seconds,
@@ -64,7 +60,7 @@ class FMU3Client(Client):
     @override
     def image_renderer_service(self) -> SimulationRendererService:
         pre_rendered_images_dir = os.path.dirname(self._config_path) + "/rendered_images"
-        Client.logger.debug(f"Pre-rendered images dir: '{pre_rendered_images_dir}'.")
+        Client.logger.debug("Pre-rendered images dir: '%s'.", pre_rendered_images_dir)
         return PreRenderedImageService(
             PreRenderedImageServiceConfig(
                 image_dir=pre_rendered_images_dir,

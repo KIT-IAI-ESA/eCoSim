@@ -2,14 +2,15 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
-def test_client_server_single() -> None:
+def test_client_server_single(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
     server_port = 47189
     steps = 100
@@ -24,13 +25,17 @@ def test_client_server_single() -> None:
         microsecond=0,
     )
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        simulation_start_date=simulation_start_date,
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            step_size_in_ms=step_size_in_ms,
+            simulation_start_date=simulation_start_date,
+        ),
     )
     client = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(
@@ -49,10 +54,10 @@ def test_client_server_single() -> None:
 
     client.start()
 
-    server_thread.join()
+    server_thread.join(120)
     server.print_measurement_statistics()
 
-    client_measurement_repository = server.repositories.measurement_repository(client_id=client._client_config.client_id())
+    client_measurement_repository = server.measurement_repository(client_id=client.client_id)
 
     if not isinstance(client_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")

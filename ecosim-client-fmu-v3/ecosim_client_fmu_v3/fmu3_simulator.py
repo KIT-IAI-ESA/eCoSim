@@ -65,7 +65,7 @@ class FMU3Simulator(ShutdownListener):
         if self._is_initialized:
             FMU3Simulator._logger.warning("Already initialized ... aborting second initialization.")
             return
-        FMU3Simulator._logger.info(f"Initializing with start_time {start_time}")
+        FMU3Simulator._logger.info("Initializing with start_time %s", start_time)
         self._start_time = start_time
         self._fmu_instance.instantiate()
         self._fmu_instance.enterInitializationMode(startTime=start_time)
@@ -81,7 +81,7 @@ class FMU3Simulator(ShutdownListener):
     ) -> None:
         if not isinstance(value, (float, int, complex)):
             raise TypeError(f"Expected a float but got {type(value)}.")
-        FMU3Simulator._logger.debug(f"Setting float input {name} to {value}")
+        FMU3Simulator._logger.debug("Setting float input %s to %s", name, value)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], [value])
 
     def set_input_float_matrix(
@@ -91,7 +91,7 @@ class FMU3Simulator(ShutdownListener):
     ) -> None:
         if not isinstance(value, list):
             raise TypeError(f"Expected a list but got {type(value)}.")
-        FMU3Simulator._logger.debug(f"Setting float vector input {name} to {value}")
+        FMU3Simulator._logger.debug("Setting float vector input %s to %s", name, value)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], value)
 
     def set_input_string(
@@ -99,7 +99,7 @@ class FMU3Simulator(ShutdownListener):
         name: str,
         value: str,
     ) -> None:
-        FMU3Simulator._logger.debug(f"Setting string input {name} to {value}")
+        FMU3Simulator._logger.debug("Setting string input %s to %s", name, value)
         self._fmu_instance.setString([self._simulation_config.input_value_references(name)], [value])
 
     def set_input_boolean(
@@ -107,7 +107,7 @@ class FMU3Simulator(ShutdownListener):
         name: str,
         value: bool,
     ) -> None:
-        FMU3Simulator._logger.debug(f"Setting bool input {name} to {value}")
+        FMU3Simulator._logger.debug("Setting bool input %s to %s", name, value)
         self._fmu_instance.setBoolean([self._simulation_config.input_value_references(name)], [value])
 
     def get_output(
@@ -126,7 +126,7 @@ class FMU3Simulator(ShutdownListener):
         name: str,
     ) -> float:
         value: float = self._fmu_instance.getFloat64([self._simulation_config.output_value_references(name)])[0]
-        FMU3Simulator._logger.debug(f"Getting float output {name}: {value}")
+        FMU3Simulator._logger.debug("Getting float output %s: %s", name, value)
         return value
 
     def get_output_float_matrix(
@@ -137,7 +137,7 @@ class FMU3Simulator(ShutdownListener):
     ) -> List[float]:
         dimension = self._matrix_dimension(name, m_dimension, n_dimension)
         value: List[float] = self._fmu_instance.getFloat64([self._simulation_config.output_value_references(name)], dimension[0] * dimension[1])
-        FMU3Simulator._logger.debug(f"Getting matrix[{m_dimension}x{n_dimension}] output {name}: {value}")
+        FMU3Simulator._logger.debug("Getting matrix[%sx%s] output %s: %s", m_dimension, n_dimension, name, value)
         return value
 
     def _matrix_dimension(
@@ -179,7 +179,7 @@ class FMU3Simulator(ShutdownListener):
         name: str,
     ) -> str:
         value: str = self._fmu_instance.getString([self._simulation_config.output_value_references(name)])
-        FMU3Simulator._logger.debug(f"Getting string output {name}: {value}")
+        FMU3Simulator._logger.debug("Getting string output %s: %s", name, value)
         return value
 
     def server_used_output_values(self) -> ClientSimStepData:
@@ -198,7 +198,7 @@ class FMU3Simulator(ShutdownListener):
         name: str,
     ) -> bool:
         value: bool = self._fmu_instance.getBoolean([self._simulation_config.output_value_references(name)])
-        FMU3Simulator._logger.debug(f"Getting bool output {name}: {value}")
+        FMU3Simulator._logger.debug("Getting bool output %s: %s", name, value)
         return value
 
     def do_step(
@@ -212,16 +212,16 @@ class FMU3Simulator(ShutdownListener):
             else:
                 self.set_input_float(interface_id, value)
         FMU3Simulator._logger.info(
-            f"Executing next step (current_simulation_time={self._current_simulation_time} | step_size={step_size_in_seconds})...",
+            "Executing next step (current_simulation_time=%s | step_size=%s)...",
+            self._current_simulation_time,
+            step_size_in_seconds,
         )
         self._fmu_instance.doStep(
             currentCommunicationPoint=self._current_simulation_time,
             communicationStepSize=step_size_in_seconds,
         )
         self._current_simulation_time += step_size_in_seconds
-        FMU3Simulator._logger.info(
-            f"Executing next step finished (current_simulation_time={self._current_simulation_time}).",
-        )
+        FMU3Simulator._logger.info("Executing next step finished (current_simulation_time=%s).", self._current_simulation_time)
 
     def clear(self) -> None:
         if self._is_cleared:

@@ -1,24 +1,22 @@
-from typing_extensions import override
 from ecosim_client_pyro5.pyro_config import PyroConfig
-from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
-from ecosim_common.config.config_parser import ConfigParser
+from ecosim_client_pyro5.pyro_simulator import PyroSimulator
 from ecosim_common.client.client import Client
+from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_client_pyro5.pyro_simulator import PyroSimulator
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.simulation.interface_id import InterfaceId
+from typing_extensions import override
 
 
 class PyroClient(Client):
-
     def __init__(
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
-        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._simulator: PyroSimulator = PyroSimulator(self._execution_config, self._client_config, PyroConfig(config_parser))
         self._is_finished = False
 

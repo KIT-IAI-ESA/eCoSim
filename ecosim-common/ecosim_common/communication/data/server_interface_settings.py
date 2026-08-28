@@ -9,6 +9,5 @@ from ecosim_common.simulation.interface_id import InterfaceId
 
 @dataclass(frozen=True)
 class ServerInterfaceSettings(MessageData):
-
     inputs: List[InterfaceId]
     outputs: List[InterfaceId]

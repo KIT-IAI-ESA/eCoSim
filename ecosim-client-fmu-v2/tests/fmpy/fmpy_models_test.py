@@ -13,7 +13,7 @@ import pytest
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave
 
-from tests.tech.resource_utils import resource_path
+from ecosim_test_common.resources.resource_utils import resource_path
 
 
 @dataclass
@@ -29,19 +29,19 @@ def get_os_name_lower_case() -> str:
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
 def test_sim() -> None:
-    fmu_file = os.path.join(resource_path(), "test_fmus", "Sub1_Linux.fmu")
+    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "Sub1_Linux.fmu")
     # fmu_file = 'CoupledClutches.fmu'
     # download_test_file('2.0', 'CoSimulation', 'MapleSim', '2016.2', 'CoupledClutches', fmu_file)
     model_description = read_model_description(f"{fmu_file}")
 
     unzipdir = extract(fmu_file)
 
-    if model_description.fmiVersion == '2.0':
+    if model_description.fmiVersion == "2.0":
         fmu_instance = FMU2Slave(
             guid=model_description.guid,
             unzipDirectory=unzipdir,
             modelIdentifier=model_description.coSimulation.modelIdentifier,
-            instanceName='instance1',
+            instanceName="instance1",
         )
     else:
         raise RuntimeError(f"Unsupported FMI version: {model_description.fmiVersion}")
@@ -60,10 +60,10 @@ def test_sim() -> None:
     # Time: 0.1, Outputs: {'pos_1': 0.44142016826641434, 'speed_1': -1.121094103090904}
     # Time: 0.2, Outputs: {'pos_1': 0.2891553708658837, 'speed_1': -1.8437541758129694}
 
-    input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
+    input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
     input_values = {
-        'pos_2': 0.3,
-        'speed_2': 0.9,
+        "pos_2": 0.3,
+        "speed_2": 0.9,
     }
     # input_values = {
     #     'inputs': 99999
@@ -90,10 +90,10 @@ def test_sim() -> None:
     # Get the FMU state after the first step
     time = start_time + step_size
 
-    output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+    output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
     output_values = {var.name: fmu_instance.getReal([var.valueReference])[0] for var in output_variables}
 
-    print(f'Time: {time}, Outputs: {output_values}')
+    print(f"Time: {time}, Outputs: {output_values}")
 
     # set inputs
     for var_name, value in input_values.items():
@@ -104,10 +104,10 @@ def test_sim() -> None:
         time,
         communicationStepSize=step_size,
     )
-    output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+    output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
     output_values = {var.name: fmu_instance.getReal([var.valueReference])[0] for var in output_variables}
 
-    print(f'Time: {time + step_size}, Outputs: {output_values}')
+    print(f"Time: {time + step_size}, Outputs: {output_values}")
 
     # Cleanup
     fmu_instance.terminate()
@@ -120,15 +120,15 @@ def test_fmpy() -> None:
     print("")
     print("")
 
-    fmu_file = os.path.join(resource_path(), "test_fmus", "Sub2_Linux.fmu")
+    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "Sub2_Linux.fmu")
     unzip_dir = fmpy.extract(fmu_file)
 
     step_size = 1.0
 
     model_description = fmpy.read_model_description(f"{fmu_file}")
-    input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
+    input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
     input_value_references = {var.name: var.valueReference for var in input_variables}
-    output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+    output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
     output_value_references = {var.name: var.valueReference for var in output_variables}
 
     fmu_instance = fmpy.fmi2.FMU2Slave(
@@ -153,8 +153,8 @@ def test_fmpy() -> None:
     )
 
     print("=== INPUT")
-    print(f"Pos1: {fmu_instance.getReal([input_value_references["pos1"]])}")
-    print(f"Speed1: {fmu_instance.getReal([input_value_references["speed1"]])}")
+    print(f"Pos1: {fmu_instance.getReal([input_value_references['pos1']])}")
+    print(f"Speed1: {fmu_instance.getReal([input_value_references['speed1']])}")
     print(f"Step size: {step_size}")
 
     fmu_instance.doStep(
@@ -163,8 +163,8 @@ def test_fmpy() -> None:
     )
 
     print("=== RESULT")
-    print(f"Pos2: {fmu_instance.getReal([output_value_references["pos2"]])}")
-    print(f"Speed2: {fmu_instance.getReal([output_value_references["speed2"]])}")
+    print(f"Pos2: {fmu_instance.getReal([output_value_references['pos2']])}")
+    print(f"Speed2: {fmu_instance.getReal([output_value_references['speed2']])}")
 
     shutil.rmtree(unzip_dir)
 
@@ -174,15 +174,15 @@ def test_fmpy_coupled_clutches() -> None:
     print("")
     print("")
 
-    fmu_file = os.path.join(resource_path(), "test_fmus", "CoupledClutches.fmu")
+    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "CoupledClutches.fmu")
     unzip_dir = fmpy.extract(fmu_file)
 
     step_size = 100000.0
 
     model_description = fmpy.read_model_description(f"{fmu_file}")
-    input_variables = [v for v in model_description.modelVariables if v.causality == 'input']
+    input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
     input_value_references = {var.name: var.valueReference for var in input_variables}
-    output_variables = [v for v in model_description.modelVariables if v.causality == 'output']
+    output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
     output_value_references = {var.name: var.valueReference for var in output_variables}
 
     fmu_instance = fmpy.fmi2.FMU2Slave(
@@ -203,7 +203,7 @@ def test_fmpy_coupled_clutches() -> None:
     )
 
     print("=== INPUT")
-    print(f"Inputs: {fmu_instance.getReal([input_value_references["inputs"]])}")
+    print(f"Inputs: {fmu_instance.getReal([input_value_references['inputs']])}")
     print(f"Step size: {step_size}")
 
     fmu_instance.doStep(
@@ -212,17 +212,17 @@ def test_fmpy_coupled_clutches() -> None:
     )
 
     print("=== RESULT")
-    print(f"Outputs[1]: {fmu_instance.getReal([output_value_references["outputs[1]"]])}")
-    print(f"Outputs[2]: {fmu_instance.getReal([output_value_references["outputs[2]"]])}")
-    print(f"Outputs[3]: {fmu_instance.getReal([output_value_references["outputs[3]"]])}")
-    print(f"Outputs[4]: {fmu_instance.getReal([output_value_references["outputs[4]"]])}")
+    print(f"Outputs[1]: {fmu_instance.getReal([output_value_references['outputs[1]']])}")
+    print(f"Outputs[2]: {fmu_instance.getReal([output_value_references['outputs[2]']])}")
+    print(f"Outputs[3]: {fmu_instance.getReal([output_value_references['outputs[3]']])}")
+    print(f"Outputs[4]: {fmu_instance.getReal([output_value_references['outputs[4]']])}")
 
     shutil.rmtree(unzip_dir)
 
 
 def test_fmpy_houses_weather() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "weather.fmu"),
+        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "weather.fmu"),
         steps=12,
         step_size=60000,
         inputs=[],
@@ -232,7 +232,7 @@ def test_fmpy_houses_weather() -> None:
 
 def test_fmpy_houses_house() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "house.fmu"),
+        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "house.fmu"),
         steps=10,
         step_size=100,
         inputs=[
@@ -245,7 +245,6 @@ def test_fmpy_houses_house() -> None:
                 value_name="ventilation_pressure_control_signal",
                 init_value=1.0,
                 increase_by_step=1.5,
-
             ),
             FMUInput(
                 value_name="heating_heatExchanger_control_signal",
@@ -269,7 +268,7 @@ def test_fmpy_houses_house() -> None:
 
 def test_fmpy_houses_heating() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "heating.fmu"),
+        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "heating.fmu"),
         steps=10,
         step_size=60,
         inputs=[
@@ -285,7 +284,7 @@ def test_fmpy_houses_heating() -> None:
 
 def test_fmpy_houses_ventilation() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("models", "house", get_os_name_lower_case(), "ventilation.fmu"),
+        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "ventilation.fmu"),
         steps=10,
         step_size=60,
         inputs=[

@@ -26,14 +26,16 @@ dependencies = [
     "ecosim-common==0.14.0",
     "ecosim-common-fmpy==0.14.0",
     "ecosim-server==0.14.0",
-    "mypy==2.2.0",
+    "ecosim-hpc==0.14.0",
+    "ecosim-test-common==0.14.0",
+    "mypy==2.3.0",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
     "pytest-mock==3.15.1",
     "pytest==9.1.1",
     "testcontainers[postgres]==4.13.0",
     "types-docker==7.1.0.20260518",
-    "uv==0.11.28",
+    "uv==0.12.5",
     "websockets==16.0",
     "pip==26.1.2",
     "psycopg[binary]==3.3.4",
@@ -47,10 +49,12 @@ ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
+ecosim-hpc = { path = "../ecosim-hpc", editable = true }
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [tool.mypy]
 python_executable = ".venv/bin/python"
-mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v3"]
+mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v3", "../ecosim-hpc", "ecosim-test-common",]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
@@ -60,6 +64,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
+    "-s",
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",

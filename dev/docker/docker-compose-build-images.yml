@@ -1,0 +1,41 @@
+services:
+  ecosim_server:
+    image: localhost/ecosim_server:latest
+    build:
+      context: ../..
+      dockerfile: dev/docker/Dockerfile
+      args:
+        SOURCE_DIR: ecosim-server
+        COMMAND_NAME: ecosim-server
+  ecosim_client_fmu_v2:
+    image: localhost/ecosim_client_fmu_v2:latest
+    build:
+      context: ../..
+      dockerfile: dev/docker/Dockerfile
+      args:
+        SOURCE_DIR: ecosim-client-fmu-v2
+        COMMAND_NAME: ecosim-client-fmu-v2
+  ecosim_client_fmu_v3:
+    image: localhost/ecosim_client_fmu_v3:latest
+    build:
+      context: ../..
+      dockerfile: dev/docker/Dockerfile
+      args:
+        SOURCE_DIR: ecosim-client-fmu-v3
+        COMMAND_NAME: ecosim-client-fmu-v3
+  ecosim_client_matlab:
+    image: localhost/ecosim_client_matlab:latest
+    build:
+      context: ../..
+      dockerfile: dev/docker/Dockerfile
+      args:
+        SOURCE_DIR: ecosim-client-matlab
+        COMMAND_NAME: ecosim-client-matlab
+  ecosim_client_pyro5:
+    image: localhost/ecosim_client_pyro5:latest
+    build:
+      context: ../..
+      dockerfile: dev/docker/Dockerfile
+      args:
+        SOURCE_DIR: ecosim-client-pyro5
+        COMMAND_NAME: ecosim-client-pyro5

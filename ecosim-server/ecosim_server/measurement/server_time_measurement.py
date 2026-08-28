@@ -2,27 +2,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import Enum, unique
 
-from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.logger.global_logger import GlobalLogger
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 
 
 class ServerTimeMeasurement:
     _logger = ESPLogger("ServerMeasurement")
 
-    def __init__(self) -> None:
-        self._start_times: dict[ServerTimeMeasurementType, datetime] = {}
-        self._end_times: dict[ServerTimeMeasurementType, datetime] = {}
+    def __init__(
+        self,
+        protocol: CommunicationProtocol,
+    ) -> None:
+        self._start_times: ESPMap[ServerTimeMeasurementType, datetime] = ESPMap.of_type(
+            map_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+            dask_name="server_measurements_start_time",
+        )
+        self._end_times: ESPMap[ServerTimeMeasurementType, datetime] = ESPMap.of_type(
+            map_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+            dask_name="server_measurements_end_time",
+        )
 
     def set_start(
         self,
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"Start time for {type} is already set -> nothing happens",
-            )
+            ServerTimeMeasurement._logger.warning("Start time for %s is already set -> nothing happens", type)
             return
         self._start_times[type] = datetime.now()
 
@@ -31,9 +41,7 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> None:
         if type in self._end_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"End time for {type} is already set -> nothing happens",
-            )
+            ServerTimeMeasurement._logger.warning("End time for %s is already set -> nothing happens", type)
             return
         self._end_times[type] = datetime.now()
 
@@ -42,13 +50,13 @@ class ServerTimeMeasurement:
         type: ServerTimeMeasurementType,
     ) -> str | None:
         if type not in self._start_times.keys():
-            ServerTimeMeasurement._logger.warning(
-                f"Measurement type {type} as no start time -> cannot calculate runtime",
-            )
+            ServerTimeMeasurement._logger.warning("Measurement type %s has no start time -> cannot calculate runtime", type)
             return None
         if type not in self._end_times.keys():
             ServerTimeMeasurement._logger.warning(
-                f"Measurement type {type} as no end time (start time: {self._start_times[type]}) -> cannot calculate runtime",
+                "Measurement type %s as no end time (start time: %s) -> cannot calculate runtime",
+                type,
+                self._start_times[type],
             )
             return None
         delta = self._end_times[type] - self._start_times[type]
@@ -84,10 +92,18 @@ class ServerTimeMeasurement:
         end_time = self._end_times[type]
         return int((end_time - start_time).total_seconds())
 
-    def get(
+    def was_measured(
         self,
         type: ServerTimeMeasurementType,
-    ) -> "ServerTimeMeasurement.Entry":
+    ) -> bool:
+        return type in self._start_times.keys() and type in self._end_times.keys()
+
+    def get_or_none(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> ServerTimeMeasurement.Entry | None:
+        if not self.was_measured(type):
+            return None
         return ServerTimeMeasurement.Entry(
             type=type,
             start_time=self._start_times[type],
@@ -103,9 +119,10 @@ class ServerTimeMeasurement:
         run_time_in_seconds: int
 
 
+@unique
 class ServerTimeMeasurementType(Enum):
     SIMULATION_START = 0
     SIMULATION_EXECUTION = 1
     SIMULATION_STOP = 2
     SERVER_UPTIME = 3
-    RESTORE_SIMULATION_RUN = 3
+    RESTORE_SIMULATION_RUN = 4

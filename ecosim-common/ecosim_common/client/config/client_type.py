@@ -5,10 +5,10 @@ from typing import List, Tuple
 
 
 class ClientType(Enum):
-    FMU_2 = ('fmu_2', ('fmu', 'fmu2'))
-    FMU_3 = ('fmu_3', ('fmu3',))
-    Matlab = 'matlab'
-    Pyro5 = ('pyro5', ('pyro',))
+    FMU_2 = ("fmu_2", ("fmu", "fmu2"))
+    FMU_3 = ("fmu_3", ("fmu3",))
+    Matlab = "matlab"
+    Pyro5 = ("pyro5", ("pyro",))
 
     def __init__(
         self,

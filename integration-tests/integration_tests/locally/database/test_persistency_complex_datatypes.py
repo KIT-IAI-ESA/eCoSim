@@ -1,12 +1,10 @@
 import os
 import threading
 
-from psycopg import sql, Connection
-from testcontainers.postgres import PostgresContainer
-
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -15,8 +13,10 @@ from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
+from psycopg import Connection, sql
+from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
@@ -26,7 +26,6 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
-        repository_type=RepositoryType.DB,
         steps=10,
         database_config=DatabaseConfig(
             host=postgres_container.get_container_host_ip(),
@@ -65,6 +64,7 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
     )
 
     client = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host="localhost",
         server_port=6543,
         model_name="TestModel",
@@ -84,9 +84,9 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData([ProtocolInterfaceValue(name="TestInterface", value=2.5)]),
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
+            [ProtocolInterfaceValue(name="TestInterface", value=2.5)],
+        ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -105,8 +105,8 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
 
     assert len(rows) == 10
     for row in rows:
-        assert row['o_testinterface'] == 2.5
-        assert row['o_testinterface_json'] is None
+        assert row["o_testinterface"] == 2.5
+        assert row["o_testinterface_json"] is None
 
     cursor.close()
     server.force_stop()
@@ -127,7 +127,6 @@ def test_db_persistence_matrix(
     server = generate_simple_test_server(
         host="localhost",
         port=6543,
-        repository_type=RepositoryType.DB,
         steps=10,
         database_config=DatabaseConfig(
             host=postgres_container.get_container_host_ip(),
@@ -166,6 +165,7 @@ def test_db_persistence_matrix(
     )
 
     client = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host="localhost",
         server_port=6543,
         model_name="TestModel",
@@ -185,9 +185,9 @@ def test_db_persistence_matrix(
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-                                         received_inputs,
-                                         current_step: ClientSimStepData([ProtocolInterfaceValue(name="TestInterface", value=matrix)]),
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
+            [ProtocolInterfaceValue(name="TestInterface", value=matrix)],
+        ),
     )
 
     server_thread = threading.Thread(target=server.start)
@@ -206,8 +206,8 @@ def test_db_persistence_matrix(
 
     assert len(rows) == 10
     for row in rows:
-        assert row['o_testinterface'] is None
-        assert row['o_testinterface_json'] == matrix
+        assert row["o_testinterface"] is None
+        assert row["o_testinterface_json"] == matrix
 
     cursor.close()
     server.force_stop()

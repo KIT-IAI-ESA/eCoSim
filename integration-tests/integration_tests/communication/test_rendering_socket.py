@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 from unittest.mock import Mock
 
 import websockets
@@ -14,6 +13,7 @@ from ecosim_common.simulation.renderer.rendering_messages import (
     RenderingMessageType,
 )
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
+from ecosim_test_common.resources.resource_utils import resource_path_file_str
 
 
 def test_local_test() -> None:
@@ -27,11 +27,9 @@ def test_local_test() -> None:
     mock_config.client_id.return_value = ClientID(model_name="Model", simulator_name="Simulator")
     mock_config.config_path = "non-existing-dir"
 
-    test_dir = Path(__file__).parent.parent
-    resources_dir = test_dir / "resources"
     renderer_service = PreRenderedImageService(
         PreRenderedImageServiceConfig(
-            image_dir=f"{resources_dir}/rendered_images",
+            image_dir=resource_path_file_str("rendered_images"),
         ),
     )
     client = RenderingSocketClient(

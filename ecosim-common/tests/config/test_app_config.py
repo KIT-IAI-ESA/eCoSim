@@ -1,5 +1,8 @@
 from datetime import datetime
+
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+
+# ruff: noqa: SLF001  # a lot of tests inspect internal data of app_config -> so access to internal data is not restricted
 
 
 def test_app_config_defaults() -> None:

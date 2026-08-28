@@ -15,7 +15,7 @@ dependencies = [
     "ecosim-client-matlab==0.14.0",
     "ecosim-common==0.14.0",
     "ecosim-server==0.14.0",
-    "ecosim-client-pyro==0.14.0",
+    "ecosim-client-pyro5==0.14.0",
     "fmpy==0.3.30",
 ]
 
@@ -29,21 +29,45 @@ ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 ecosim-client-matlab = { path = "../ecosim-client-matlab", editable = true }
-ecosim-client-pyro = { path = "../ecosim-client-pyro5", editable = true }
+ecosim-client-pyro5 = { path = "../ecosim-client-pyro5", editable = true }
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [project.optional-dependencies]
 dev = [
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
-    "mypy==2.2.0",
-    "uv==0.11.28",
+    "mypy==2.3.0",
+    "uv==0.12.5",
     "dask-pyspy==0.4.0",
+    "ecosim-test-common==0.14.0",
 ]
 
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_hpc",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_hpc"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
+
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5",]
+mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5","../ecosim-test-common",]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
@@ -66,5 +90,7 @@ module = [
     "dask_mpi",
     "dask_mpi.*",
     "dask.distributed",
+    "cloudpickle",
+    "cloudpickle.*",
 ]
 ignore_missing_imports = true

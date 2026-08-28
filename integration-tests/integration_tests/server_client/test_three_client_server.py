@@ -2,16 +2,17 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
-def test_three_clients_server() -> None:
+def test_three_clients_server(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
     server_port = 39310
     steps = 10
@@ -26,34 +27,38 @@ def test_three_clients_server() -> None:
         microsecond=0,
     )
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        simulation_start_date=simulation_start_date,
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_1",
-                model_name="TestModel_1",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_2",
-                model_name="TestModel_2",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_3",
-                model_name="TestModel_3",
-                interfaces=[],
-                client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
-            ),
-        ],
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            step_size_in_ms=step_size_in_ms,
+            simulation_start_date=simulation_start_date,
+            clients=[
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_1",
+                    model_name="TestModel_1",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_2",
+                    model_name="TestModel_2",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_3",
+                    model_name="TestModel_3",
+                    interfaces=[],
+                    client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
+                ),
+            ],
+        ),
     )
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -68,6 +73,7 @@ def test_three_clients_server() -> None:
         ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -82,6 +88,7 @@ def test_three_clients_server() -> None:
         ),
     )
     client_3 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_3",
@@ -104,12 +111,10 @@ def test_three_clients_server() -> None:
     client_2.start()
     client_3.start()
 
-    server_thread.join()
+    server_thread.join(120)
     server.print_measurement_statistics()
 
-    repositories = server.repositories
-
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -119,7 +124,7 @@ def test_three_clients_server() -> None:
 
     (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_1_records))
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = server.measurement_repository(client_id=client_2.client_id)
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -129,7 +134,7 @@ def test_three_clients_server() -> None:
 
     (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_2_records))
 
-    client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
+    client_3_measurement_repository = server.measurement_repository(client_id=client_3.client_id)
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 

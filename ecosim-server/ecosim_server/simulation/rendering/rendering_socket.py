@@ -3,16 +3,20 @@ import threading
 from typing import Dict, override
 
 import websockets
-from ecosim_common.tech.atomic.atomic_integer import AtomicInteger
-from websockets import ServerConnection
-from websockets.asyncio.server import Server
-
-from ecosim_common.simulation.renderer.rendering_messages import RenderingImageMessage, \
-    RawRenderingMessageHandler, RenderingMessageType, RenderingImageReplyMessage, ImagesAtTimeStep
+from ecosim_common.simulation.renderer.rendering_messages import (
+    ImagesAtTimeStep,
+    RawRenderingMessageHandler,
+    RenderingImageMessage,
+    RenderingImageReplyMessage,
+    RenderingMessageType,
+)
 from ecosim_common.simulation.renderer.rendering_request_headers import RenderingMessageClientHeader
+from ecosim_common.tech.atomic import AtomicInteger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.simulation.rendering.image_cache import ImageCache
+from websockets import ServerConnection
+from websockets.asyncio.server import Server
 
 
 class RenderingSocket(ShutdownListener):
@@ -37,7 +41,7 @@ class RenderingSocket(ShutdownListener):
         self._finished_event: threading.Event | None = None
         self._no_sending_in_progress: threading.Event = threading.Event()
         self._no_sending_in_progress.set()
-        self._currently_sending_processes: AtomicInteger = AtomicInteger(0)
+        self._currently_sending_processes: AtomicInteger = AtomicInteger.thread(0)
         ShutdownManager().register_listener(self)
 
     def start(self) -> threading.Event:
@@ -69,9 +73,9 @@ class RenderingSocket(ShutdownListener):
         host: str,
         port: int,
     ) -> None:
-        RenderingSocket._logger.debug(f"Open websocket on {host}:{port}...")
+        RenderingSocket._logger.debug("Open websocket on %s:%s...", host, port)
         self._server = await websockets.serve(self._handle_clients, self._host, self._port, max_size=None)
-        RenderingSocket._logger.debug(f"Open websocket on {host}:{port}... success.")
+        RenderingSocket._logger.debug("Open websocket on %s:%s... success.", host, port)
 
     def close(self) -> None:
         if not self._running.is_set():
@@ -80,18 +84,24 @@ class RenderingSocket(ShutdownListener):
         self._running.clear()
         timeout = 9
         RenderingSocket._logger.debug(
-            f"Waiting for {timeout} seconds to finish open sending processes (count: {self._currently_sending_processes.value}). " +
-            f"Sending in progress: {not self._no_sending_in_progress.is_set()}.",
+            "Waiting for %s seconds to finish open sending processes (count: %s). Sending in progress: %s.",
+            timeout,
+            self._currently_sending_processes.value,
+            not self._no_sending_in_progress.is_set(),
         )
         sending_finished = self._no_sending_in_progress.wait(timeout)  # permit a graceful shutdown within timeout
         if not sending_finished:
             RenderingSocket._logger.debug(
-                f"Socket was triggered to shut down. The open sending processes ({self._currently_sending_processes.value}) could not finish " +
-                f"within timeout ({timeout}s) => force closing the socket (this may result in an unhandled exception).",
+                "Socket was triggered to shut down. The open sending processes (%s) could not finish within timeout (%ss) "
+                "=> force closing the socket (this may result in an unhandled exception).",
+                self._currently_sending_processes.value,
+                timeout,
             )
         else:
             RenderingSocket._logger.debug(
-                f"Waiting for {timeout} seconds to finish open sending processes (count: {self._currently_sending_processes.value}) ... success.",
+                "Waiting for %s seconds to finish open sending processes (count: %s) ... success.",
+                timeout,
+                self._currently_sending_processes.value,
             )
         if self._server:
             self._server.close()
@@ -102,12 +112,13 @@ class RenderingSocket(ShutdownListener):
         connection: ServerConnection,
     ) -> None:
         client_header = RenderingMessageClientHeader.of_connection(connection)
-        RenderingSocket._logger.debug(f"Client {client_header.client_id} connected")
+        RenderingSocket._logger.debug("Client %s connected", client_header.client_id)
         if client_header.is_simulator():
             if client_header.client_id in self._connected_simulators:
                 previous_connection = self._connected_simulators[client_header.client_id]
                 RenderingSocket._logger.warning(
-                    f"{client_header.client_id} socket is already taken - this will override and close the previous one.",
+                    "%s socket is already taken - this will override and close the previous one.",
+                    client_header.client_id,
                 )
                 await previous_connection.close()
             self._connected_simulators[client_header.client_id] = connection
@@ -128,7 +139,7 @@ class RenderingSocket(ShutdownListener):
                 else:
                     await self._handle_sim_control_message(message, client_header)
         except websockets.exceptions.ConnectionClosed:
-            RenderingSocket._logger.info(f"Client {client_header.client_id} disconnected")
+            RenderingSocket._logger.info("Client %s disconnected", client_header.client_id)
         finally:
             self._connected_simulators.pop(client_header.client_id, None)
             self._connected_simulator_ids.discard(client_header.client_id)
@@ -141,11 +152,14 @@ class RenderingSocket(ShutdownListener):
         if message.message_type() == RenderingMessageType.RENDERING_IMAGE_REPLY:
             reply = message.cast(RenderingImageReplyMessage)
             RenderingSocket._logger.debug(
-                f"From {client_header.client_id} received {RenderingMessageType.RENDERING_IMAGE_REPLY.value} message for time step {reply.time_step}",
+                "From %s received %s message for time step %s",
+                client_header.client_id,
+                RenderingMessageType.RENDERING_IMAGE_REPLY.value,
+                reply.time_step,
             )
             self._image_cache.put(client_header, reply)
         else:
-            RenderingSocket._logger.debug(f"From {client_header.client_id}: {message}")
+            RenderingSocket._logger.debug("From %s: %s", client_header.client_id, message)
 
     async def _handle_sim_control_message(
         self,
@@ -155,23 +169,25 @@ class RenderingSocket(ShutdownListener):
         if message.message_type() == RenderingMessageType.RENDERING_IMAGE:
             request = message.cast(RenderingImageMessage)
             RenderingSocket._logger.debug(
-                f"From {client_header.client_id} received {RenderingMessageType.RENDERING_IMAGE.value} message for time step {request.time_step}",
+                "From %s received %s message for time step %s",
+                client_header.client_id,
+                RenderingMessageType.RENDERING_IMAGE.value,
+                request.time_step,
             )
             self.request_and_send_images(request.time_step)
         else:
-            RenderingSocket._logger.debug(f"From {client_header.client_id}: {message}")
+            RenderingSocket._logger.debug("From %s: %s", client_header.client_id, message)
 
     def request_and_send_images(
         self,
         time_step: int,
     ) -> threading.Event:
-        RenderingSocket._logger.debug(
-            f"request_and_send_images triggered for time_step {time_step} in thread {threading.current_thread().name}",
-        )
+        RenderingSocket._logger.debug("request_and_send_images triggered for time_step %s in thread %s", time_step, threading.current_thread().name)
         end_event = threading.Event()
         if self._loop is None:
             RenderingSocket._logger.error(
-                f"request_and_send_images triggered for time_step {time_step} but there is no event loop => ignoring this request.",
+                "request_and_send_images triggered for time_step %s but there is no event loop => ignoring this request.",
+                time_step,
             )
             end_event.set()
             return end_event
@@ -188,27 +204,26 @@ class RenderingSocket(ShutdownListener):
     ) -> None:
         if not self._running.is_set():
             RenderingSocket._logger.warning(
-                f"Requesting images for time request_images_and_send_images {time_step} but socket is not running (anymore) => " +
-                "this request will be ignored.",
+                "Requesting images for time request_images_and_send_images %s but socket is not running (anymore) => this request will be ignored.",
+                time_step,
             )
             end_event.set()
             return
-        RenderingSocket._logger.debug(
-            f"Processing request for time_step {time_step} in thread {threading.current_thread().name}",
-        )
+        RenderingSocket._logger.debug("Processing request for time_step %s in thread %s", time_step, threading.current_thread().name)
         try:
             self._no_sending_in_progress.clear()
-            self._currently_sending_processes.inc()
+            self._currently_sending_processes.increment()
             if self._image_cache.contains(time_step, self._connected_simulator_ids):
                 RenderingSocket._logger.debug(
-                    f"Image cache contains already all needed images at time step {time_step} for {self._connected_simulator_ids} -> " +
-                    "no need to query the clients.",
+                    "Image cache contains already all needed images at time step %s for %s -> no need to query the clients.",
+                    time_step,
+                    self._connected_simulator_ids,
                 )
             elif not self._connected_simulators:
                 RenderingSocket._logger.warning("No clients connected, that could serve an image")
                 return
             else:
-                RenderingSocket._logger.debug(f"Requesting image at time_step {time_step}")
+                RenderingSocket._logger.debug("Requesting image at time_step %s", time_step)
                 try:
                     request = RenderingImageMessage(time_step=time_step).model_dump_json()
                     await asyncio.gather(
@@ -216,35 +231,33 @@ class RenderingSocket(ShutdownListener):
                         return_exceptions=True,
                     )
                 except Exception as send_error:
-                    RenderingSocket._logger.error(f"Error gathering images: {send_error}")
+                    RenderingSocket._logger.error("Error gathering images: %s", send_error)
                     raise
 
-            RenderingSocket._logger.debug(f"Waiting for all images of time step {time_step}")
+            RenderingSocket._logger.debug("Waiting for all images of time step %s", time_step)
             await self._image_cache.wait_for_images(time_step, self._connected_simulator_ids)
-            RenderingSocket._logger.debug(f"Waiting for all images of time step {time_step} ... success.")
+            RenderingSocket._logger.debug("Waiting for all images of time step %s ... success.", time_step)
             results = self._image_cache.get(time_step)
             if self._image_receiver_socket is not None:
-                RenderingSocket._logger.debug(f"Images of time step {time_step} sending to image receiver...")
+                RenderingSocket._logger.debug("Images of time step %s sending to image receiver...", time_step)
                 json = ImagesAtTimeStep(
                     time_step=time_step,
                     images=results,
                 ).model_dump_json()
                 message_size_mb = len(json) / (1024 * 1024)
-                RenderingSocket._logger.debug(
-                    f"Images of time step {time_step} sending to image receiver: message_size_mb = {message_size_mb} MB",
-                )
+                RenderingSocket._logger.debug("Images of time step %s sending to image receiver: message_size_mb = %s MB", time_step, message_size_mb)
                 await self._image_receiver_socket.send(json)
-                RenderingSocket._logger.debug(f"Images of time step {time_step} sending to image receiver... success.")
+                RenderingSocket._logger.debug("Images of time step %s sending to image receiver... success.", time_step)
             else:
                 RenderingSocket._logger.warning(
-                    f"Rendering images at time step {time_step} were received, but no image receiver control server is connected => " +
-                    "continue without sending.",
+                    "Rendering images at time step %s were received, but no image receiver control server is connected => continue without sending.",
+                    time_step,
                 )
         except Exception as e:
-            RenderingSocket._logger.error(f"Error sending images at time step {time_step}: {e}")
+            RenderingSocket._logger.error("Error sending images at time step %s: %s", time_step, e)
         finally:
             end_event.set()
-            current_value = self._currently_sending_processes.dec()
+            current_value = self._currently_sending_processes.decrement()
             if current_value == 0:
                 self._no_sending_in_progress.set()
 

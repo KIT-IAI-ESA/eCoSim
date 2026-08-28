@@ -19,7 +19,7 @@ class ModelInterfaceIds(MessageData):
         value: Dict[str, Any],
     ) -> ModelInterfaceIds:
         return ModelInterfaceIds(
-            interfaces=[ModelInterfaceId.of_json(interface) for interface in value['interfaces']],
+            interfaces=[ModelInterfaceId.of_json(interface) for interface in value["interfaces"]],
         )
 
     @classmethod
@@ -32,6 +32,7 @@ class ModelInterfaceIds(MessageData):
                 ModelInterfaceId(
                     interface=interface.name,
                     model_name=config.meta_data().model_name,
-                ) for interface in config.interfaces_config().interfaces
+                )
+                for interface in config.interfaces_config().interfaces
             ],
         )

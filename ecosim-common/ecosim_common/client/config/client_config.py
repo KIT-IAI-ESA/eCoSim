@@ -2,22 +2,23 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List
+from typing import List, override
 
 from ecosim_common.client.config.client_type import ClientType
-from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
-from ecosim_common.config.interface_type import InterfaceType
-from ecosim_common.config.client_id import ClientID
-from ecosim_common.config.config_parser import ConfigParser
-from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.simulation.model_interface_id import ModelInterfaceId
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.server_interface_settings import (
     ServerInterfaceSettings,
 )
+from ecosim_common.config.client_id import ClientID
+from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.config.model_interface_client import ModelInterfaceClient
+from ecosim_common.simulation.interface_id import InterfaceId
+from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.optional_access import if_exists
@@ -45,7 +46,7 @@ class ClientConfig(ABC):
         pass
 
     @abstractmethod
-    def generate_config(self) -> str:
+    def communication_protocol(self) -> CommunicationProtocol:
         pass
 
     def client_id(self) -> ClientID:
@@ -78,12 +79,14 @@ class ClientConfig(ABC):
                 "Model name": self.simulator_config().model_name,
                 "Simulation type": self.type(),
                 "Server address": self.server_config().server_address,
-                "Image renderer port": self.server_config().image_renderer_port
-                if self.server_config().image_renderer_port
-                else "N/A",
+                "Image renderer port": self.server_config().image_renderer_port if self.server_config().image_renderer_port else "N/A",
                 "Provided interfaces": self.interfaces_config().interfaces,
             },
         )
+
+    @abstractmethod
+    def as_config_file_content(self) -> str:
+        pass
 
 
 @dataclass(frozen=True)
@@ -119,23 +122,33 @@ class SimpleClientConfig(ClientConfig):
                 config_path=config_parser.config_file.parent,
                 simulator_config=simulator_config,
             ),
-            _extra_sections=config_parser.extract_extra_sections(),
+            # currently these are only copied from original client-config
+            _extra_sections=config_parser.extract_extra_sections(),  # todo update generation of other-sections
         )
 
+    @override
     def simulator_config(self) -> SimulatorConfig:
         return self._simulator_config
 
+    @override
     def server_config(self) -> ServerConfig:
         return self._server_config
 
+    @override
     def interfaces_config(self) -> ClientInterfaceConfig:
         return self._interfaces_config
 
+    @override
     def type(self) -> ClientType:
         return self._simulator_config.type
 
-    def generate_config(self) -> str:
-        extra_sections_str = "\n\n".join(s for s in self._extra_sections if s)
+    @override
+    def communication_protocol(self) -> CommunicationProtocol:
+        return self._server_config.communication_protocol
+
+    @override
+    def as_config_file_content(self) -> str:
+        other_sections_str = "\n\n".join(s for s in self._extra_sections if s)
 
         return (
             f"""
@@ -143,7 +156,7 @@ class SimpleClientConfig(ClientConfig):
 
 {self.simulator_config().as_string()}
 
-{extra_sections_str}
+{other_sections_str}
         """
         ).strip()
 
@@ -151,14 +164,18 @@ class SimpleClientConfig(ClientConfig):
 @dataclass(frozen=True)
 class ServerConfig:
     server_address: ConnectionAddress
+    communication_protocol: CommunicationProtocol
     image_renderer_port: int | None = None
 
     def as_string(self) -> str:
-        return (f'''
+        return (
+            f"""
 [server]
-port = {self.server_address.port}
 ip = {self.server_address.ip}
-        ''').strip()
+port = {self.server_address.port}
+communication_protocol = {self.communication_protocol.serialized}
+        """
+        ).strip()
 
     @staticmethod
     def of_config_parser(
@@ -173,8 +190,15 @@ ip = {self.server_address.ip}
             "server",
             "port",
         )
+        communication_protocol = if_exists(config_override).communication_protocol or config.get_enum(
+            CommunicationProtocol,
+            "server",
+            "communication_protocol",
+            CommunicationProtocol.TCP_SOCKET,
+        )
         return ServerConfig(
             server_address=ConnectionAddress(ip=ip, port=port),
+            communication_protocol=communication_protocol,
             image_renderer_port=if_exists(config_override).image_renderer_port,
         )
 
@@ -187,13 +211,15 @@ class SimulatorConfig:
     type: ClientType
 
     def as_string(self) -> str:
-        return (f'''
+        return (
+            f"""
 [simulator]
 simulator_name = {self.simulator_name}
 model_name = {self.model_name}
 fmc_file = {self.fmc_file}
 type = {self.type.serialized}
-        ''').strip()
+        """
+        ).strip()
 
     @staticmethod
     def of_config_parser(
@@ -244,9 +270,7 @@ class ClientInterfaceConfig:
                 output_interfaces = fmc_json.get("outputs", [])
                 for input_interface in input_interfaces:
                     if not input_interface["name"]:
-                        ClientConfig.logger.warning(
-                            f"There is an input interface without a name in file {fmc_file_absolute}: {input_interface}",
-                        )
+                        ClientConfig.logger.warning("There is an input interface without a name in file %s: %s", fmc_file_absolute, input_interface)
                         continue
                     interfaces.append(
                         ModelInterfaceClient.of_json_client_config(
@@ -270,9 +294,7 @@ class ClientInterfaceConfig:
                         ),
                     )
                     if not output_interface["name"]:
-                        ClientConfig.logger.warning(
-                            f"There is an output interface without a name in file {fmc_file_absolute}: {output_interface}",
-                        )
+                        ClientConfig.logger.warning("There is an output interface without a name in file %s: %s", fmc_file_absolute, output_interface)
                         continue
         except FileNotFoundError:
             error_message = f"Can not load fmc file {simulator_config.fmc_file}"
@@ -292,31 +314,15 @@ class ClientInterfaceConfig:
         return json.dumps(self.interfaces, default=asdict)
 
     def _required_input_interface_names(self) -> List[str]:
-        return [
-            interface.name
-            for interface in self.interfaces
-            if interface.required and interface.type == InterfaceType.INPUT
-        ]
+        return [interface.name for interface in self.interfaces if interface.required and interface.type == InterfaceType.INPUT]
 
     def input_interface_names(self, only_required: bool = False) -> List[str]:
         if only_required:
-            return [
-                interface.name
-                for interface in self.interfaces
-                if interface.type == InterfaceType.INPUT and interface.required
-            ]
-        return [
-            interface.name
-            for interface in self.interfaces
-            if interface.type == InterfaceType.INPUT
-        ]
+            return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT and interface.required]
+        return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT]
 
     def _output_interface_names(self) -> List[str]:
-        return [
-            interface.name
-            for interface in self.interfaces
-            if interface.type == InterfaceType.OUTPUT
-        ]
+        return [interface.name for interface in self.interfaces if interface.type == InterfaceType.OUTPUT]
 
     def validate_config_with_server(
         self,
@@ -332,28 +338,19 @@ class ClientInterfaceConfig:
         self,
         actual_inputs: List[InterfaceId],
     ) -> bool:
-        return all(
-            required_input in actual_inputs
-            for required_input in self._required_input_interface_names()
-        )
+        return all(required_input in actual_inputs for required_input in self._required_input_interface_names())
 
     def _all_actual_inputs_are_in_config(
         self,
         actual_inputs: List[InterfaceId],
     ) -> bool:
-        return all(
-            actual_input in self.input_interface_names()
-            for actual_input in actual_inputs
-        )
+        return all(actual_input in self.input_interface_names() for actual_input in actual_inputs)
 
     def _all_actual_outputs_are_in_config(
         self,
         actual_outputs: List[InterfaceId],
     ) -> bool:
-        return all(
-            actual_output in self._output_interface_names()
-            for actual_output in actual_outputs
-        )
+        return all(actual_output in self._output_interface_names() for actual_output in actual_outputs)
 
 
 @dataclass
@@ -361,3 +358,4 @@ class ClientConfigOverride:
     server_host: str | None = None
     server_port: int | None = None
     image_renderer_port: int | None = None
+    communication_protocol: CommunicationProtocol | None = None

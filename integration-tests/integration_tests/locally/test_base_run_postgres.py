@@ -1,36 +1,35 @@
 from __future__ import annotations
 
+# Disable Testcontainers Ryuk reaper to avoid connection issues in restricted CI/Docker environments.
+# This must be set BEFORE importing testcontainers.
+import os
 import threading
-from contextlib import contextmanager, AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Callable, Generator, Iterator, Tuple
 
-# Disable Testcontainers Ryuk reaper to avoid connection issues in restricted CI/Docker environments.
-# This must be set BEFORE importing testcontainers.
-import os
-
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.server_config import DatabaseConfig
-
+import psycopg
+import pytest
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.config.model_interface_server import ModelInterfaceServer, ConnectedToData
+from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.config.database_type import DatabaseType
+from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server, RepositoryType
-
-import pytest
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
 from psycopg import Connection
-import psycopg
 from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
@@ -95,14 +94,14 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
 
     simulator_name = "TestSimulator_PostgresIntegration"
     server = generate_simple_test_server(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         host=server_host,
         port=server_port,
-        repository_type=RepositoryType.DB,
         steps=steps,
         step_size_in_ms=step_size_in_ms,
         simulation_start_date=simulation_start_date,
         database_config=DatabaseConfig(
-            type="postgres",
+            type=DatabaseType.POSTGRES,
             host=postgres_container.container.get_container_host_ip(),
             port=postgres_container.container.get_exposed_port(5432),
             name=postgres_container.container.dbname,
@@ -188,6 +187,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     repositories = server.repositories
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -207,9 +207,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
                 ),
             ],
         ),
-        on_simulation_step_return=lambda _self,
-        received_inputs,
-        current_step: ClientSimStepData(
+        on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
                     name="TestInterface_1",
@@ -221,6 +219,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=CommunicationProtocol.TCP_SOCKET,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -263,7 +262,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
 
     server_thread.join()
 
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1.client_id)
 
     def client_1_asserts(
         timestamp: datetime,
@@ -272,8 +271,8 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         base_value = (timestamp - simulation_start_date).total_seconds()
         expected = generate_matrix(base_value)
         actual = values[0].value
-        logger.debug(f"(Client1) Expected: {expected}")
-        logger.debug(f"(Client1) Actual:   {actual}")
+        logger.debug("(Client1) Expected: %s", expected)
+        logger.debug("(Client1) Actual:   %s", actual)
         return actual == expected
 
     repos = client_1_measurement_repository.all()
@@ -282,7 +281,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     for repo in repos:
         assert client_1_asserts(repo.timestamp, repo.values)
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2.client_id)
 
     def client_2_asserts(
         timestamp: datetime,
@@ -291,8 +290,8 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         base_value = (timestamp - simulation_start_date).total_seconds()
         actual = values[1].value
         expected = square_each_element(generate_matrix(base_value))
-        logger.debug(f"(Client2) Expected: {expected}")
-        logger.debug(f"(Client2) Actual:   {actual}")
+        logger.debug("(Client2) Expected: %s", expected)
+        logger.debug("(Client2) Actual:   %s", actual)
         return actual == expected
 
     repos = client_2_measurement_repository.all()
@@ -323,12 +322,12 @@ def handle_client_2_sim_step(
     received_values: dict[InterfaceId, InterfaceValueType],
     step_size_in_seconds: float,
 ) -> ClientSimStepData:
-    logger.debug(f"Received values: {received_values}")
+    logger.debug("Received values: %s", received_values)
     assert len(received_values.keys()) == 1
     received_value: InterfaceValueType = received_values["TestInterface_2"]
     assert isinstance(received_value, list)
     return_value = square_each_element(received_value)
-    logger.debug(f"Return value: {return_value}")
+    logger.debug("Return value: %s", return_value)
     return ClientSimStepData(
         interface_values=[
             ProtocolInterfaceValue(
@@ -341,5 +340,6 @@ def handle_client_2_sim_step(
 
 def square_each_element(matrix: InterfaceValueType) -> InterfaceValueType:
     return [
-        [value * value for value in inner_list] for inner_list in matrix  # type: ignore
+        [value * value for value in inner_list]
+        for inner_list in matrix  # type: ignore
     ]

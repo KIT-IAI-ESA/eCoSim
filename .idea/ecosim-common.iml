@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.system.id="pyproject.toml" type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/ecosim-common">
+      <sourceFolder url="file://$MODULE_DIR$/ecosim-common" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/ecosim_common.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/tests/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/tests/tech/structures/htmlcov" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="ecosim-test-common" exported="" />
+    <orderEntry type="jdk" jdkName="Python 3.14 (ecosim-common)" jdkType="Python SDK" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
+  </component>
+</module>

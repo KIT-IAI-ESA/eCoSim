@@ -19,12 +19,15 @@ class FMU2Client(Client):
         self,
         config_parser: ConfigParser,
         config_override: ClientConfigOverride,
-        dask_connection: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
-        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override), dask_connection)
+        super().__init__(SimpleClientConfig.of_config_parser(config_parser, config_override))
         self._config_path = config_parser.config_file
         self._fmu_config = FMUBaseConfig.of_config_parser(config_parser)
-        self._simulator: FMU2Simulator
+        self._simulator: FMU2Simulator = FMU2Simulator.of(
+            simulator_name=self._client_config.simulator_config().simulator_name,
+            fmu_config=self._fmu_config,
+            execution_config=self._execution_config,
+        )
         self._is_finished = False
 
     @override
@@ -35,11 +38,6 @@ class FMU2Client(Client):
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
-        self._simulator = FMU2Simulator.of(
-            simulator_name=self._client_config.simulator_config().simulator_name,
-            fmu_config=self._fmu_config,
-            execution_config=self._execution_config,
-        )
         self._simulator.initialize(start_time=0.0)
         return self._simulator.server_used_output_values()
 
@@ -62,7 +60,7 @@ class FMU2Client(Client):
     @override
     def image_renderer_service(self) -> SimulationRendererService:
         pre_rendered_images_dir = os.path.dirname(self._config_path) + "/rendered_images"
-        Client.logger.debug(f"Pre-rendered images dir: '{pre_rendered_images_dir}'.")
+        Client.logger.debug("Pre-rendered images dir: '%s'.", pre_rendered_images_dir)
         return PreRenderedImageService(
             PreRenderedImageServiceConfig(
                 image_dir=pre_rendered_images_dir,
