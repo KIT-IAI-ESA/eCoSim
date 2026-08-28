@@ -32,6 +32,9 @@ class ESPMonkeyPatch:
     def unset_sys_arg(self, arg: str) -> None:
         self.monkey_patch.setattr(sys, "argv", self._strip(sys.argv.copy(), arg))
 
+    def remove_pytest_sys_args(self) -> None:
+        self.monkey_patch.setattr(sys, "argv", ["ecosim"])
+
     def set_hpc_cli_sys_args(
         self,
         simulator_dir: str = "/path/to/simulator",

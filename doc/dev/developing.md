@@ -17,7 +17,6 @@
     - it keeps going after a failure, prints a summary and exits non-zero if anything failed
     - limit the run to single subprojects: `python dev/run_tests.py ecosim-server`
     - forward arguments to pytest after `--`: `python dev/run_tests.py ecosim-server -- -k history`
-        - by default no pytest arguments are passed, because the tests of `ecosim-hpc` read
-          `sys.argv` and fail on entries they do not know
+        - by default no pytest arguments are passed
 - the integration tests are run separately, they need real ports and containers
     - `cd integration-tests && uv run pytest`

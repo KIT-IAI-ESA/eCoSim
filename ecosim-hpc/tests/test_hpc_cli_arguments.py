@@ -7,6 +7,7 @@ from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
 def test_communication_protocol(
     esp_monkey_patch: ESPMonkeyPatch,
 ) -> None:
+    esp_monkey_patch.remove_pytest_sys_args()
     esp_monkey_patch.set_hpc_cli_sys_args()
 
     cli_arguments = HPCServerCliArguments()
@@ -18,6 +19,7 @@ def test_cli_arguments_within_sql_alchemy(
     capsys: CaptureFixture[str],
     esp_monkey_patch: ESPMonkeyPatch,
 ) -> None:
+    esp_monkey_patch.remove_pytest_sys_args()
     esp_monkey_patch.set_hpc_cli_sys_args()
 
     from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
