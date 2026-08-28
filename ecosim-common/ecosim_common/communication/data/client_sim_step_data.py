@@ -9,7 +9,6 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 
 @dataclass(frozen=True)
 class ClientSimStepData(MessageData):
-
     interface_values: List[ProtocolInterfaceValue]
 
     @staticmethod
@@ -23,5 +22,5 @@ class ClientSimStepData(MessageData):
         value: Dict[str, Any],
     ) -> ClientSimStepData:
         return ClientSimStepData(
-            interface_values=[ProtocolInterfaceValue.of_json(interface_value) for interface_value in value['interface_values']],
+            interface_values=[ProtocolInterfaceValue.of_json(interface_value) for interface_value in value["interface_values"]],
         )

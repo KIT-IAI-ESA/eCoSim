@@ -1,36 +1,65 @@
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime
+from typing import Any, override
 
-from sqlalchemy import Column, Enum, DateTime, Integer
-
+from ecosim_server.data.server_statistics_repository import ServerTimeMeasurementRepository
+from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_types import DTO
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.data.server_statistics_repository import ServerTimeMeasurementRepository
-from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
+from sqlalchemy import Column, DateTime, Enum, Integer
 
 
 class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
-    _logger = ESPLogger("ServerStatisticsRepositoryDB")
-
     def __init__(
         self,
         db_connection: DBConnection,
     ):
         self._db_connection = db_connection
 
+    @override
     def put(
         self,
         server_time_measurement: ServerTimeMeasurement,
     ) -> None:
         for measurement_type in ServerTimeMeasurementType:
-            self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(server_time_measurement.get(measurement_type)))
+            entry = server_time_measurement.get_or_none(measurement_type)
+            if entry is None:  # a phase the run never entered doesn't have anything to persist
+                continue
+            self._db_connection.upsert(ServerTimeMeasurementDBEntry.of(entry))
+
+    @override
+    def get_start(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> datetime | None:
+        measurement: ServerTimeMeasurementDBEntry | None = self._db_connection.select_by_id(  # type: ignore[assignment]
+            ServerTimeMeasurementDBEntry,
+            type,
+        )
+        if measurement is None:
+            self._logger.debug("DB: Measurement type %s not found", type)
+            return None
+        return measurement.start_time  # type: ignore
+
+    @override
+    def get_end(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> datetime | None:
+        measurement: ServerTimeMeasurementDBEntry | None = self._db_connection.select_by_id(  # type: ignore[assignment]
+            ServerTimeMeasurementDBEntry,
+            type,
+        )
+        if measurement is None:
+            self._logger.debug("DB: Measurement type %s not found", type)
+            return None
+        return measurement.end_time  # type: ignore
 
 
 class ServerTimeMeasurementDBEntry(SimControlDB_Base, DTO[ServerTimeMeasurementType]):
-    __tablename__ = 'server_time_measurement'
+    __tablename__ = "server_time_measurement"
 
     time_measurement_type = Column(Enum(ServerTimeMeasurementType), primary_key=True)  # type: ignore
     start_time = Column(DateTime, nullable=False)

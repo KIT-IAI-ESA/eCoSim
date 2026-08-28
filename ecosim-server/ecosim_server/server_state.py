@@ -1,63 +1,52 @@
-from dask.distributed import get_client
+from __future__ import annotations
 
+from dataclasses import dataclass, field
+
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_server.client.client_state import ClientStates, ClientStatesDask
-from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
-from ecosim_server.message_buffer import ClientMessageBuffer
+from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 
 
+@dataclass
 class ServerState(ShutdownListener):
+    _simulation_state_repository: SimulationStateRepository = field()
+    _is_finished: ParallelEvent = field()
+    _is_interrupted: ParallelEvent = field()
+    _is_running: ParallelEvent = field()
 
-    def __init__(
-        self,
-        simulation_config: SimulationConfig,
+    @staticmethod
+    def of(
+        server_config: ServerConfig,
         simulation_state_repository: SimulationStateRepository,
-    ):
+    ) -> ServerState:
+        return ServerState(
+            _simulation_state_repository=simulation_state_repository,
+            _is_finished=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol),
+            _is_interrupted=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol),
+            _is_running=ParallelEvent.for_communication_protocol(server_config.server.communication_protocol, init_set=True),
+        )
+
+    def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
-        self._simulation_state_repository: SimulationStateRepository = simulation_state_repository
-        # TODO_AFTER_MERGE: search for a better abstraction
-        try:
-            get_client()
-            self.client_states: ClientStates | ClientStatesDask = ClientStatesDask(simulation_config)
-        except ValueError:
-            self.client_states = ClientStates(simulation_config)
-        self._is_finished = False
-        self._is_interrupted = False
-        self.message_buffer: ClientMessageBuffer = ClientMessageBuffer()
-        self.server_measurement = ServerTimeMeasurement()
 
-    def wait_for_all_clients_starting_simulation(self) -> None:
-        self.client_states.wait_for_all_clients_starting_simulation()
-
-    def have_all_clients_started_simulation(self) -> bool:
-        return self.client_states.have_all_clients_started_simulation()
-
-    def have_all_clients_stopped_simulation(self) -> bool:
-        return self.client_states.have_all_clients_stopped_simulation()
-
-    def are_all_clients_connected_and_ready(self) -> bool:
-        return self.client_states.are_all_clients_connected_and_ready()
-
-    def is_running(self) -> bool:
-        return not self._is_finished and not self._is_interrupted
+    def _update_is_running(self) -> None:
+        self._is_running.set_state(not self._is_finished.is_set() and not self._is_interrupted.is_set())
 
     # callback of ShutdownManager => if this is called the server is interrupted
     def on_app_shutdown(self) -> None:
-        self._is_interrupted = True
+        self._is_interrupted.set()
+        self._update_is_running()
         if self._simulation_state_repository.current() != SimulationState.FINISHED:
             self.set_simulation_state(SimulationState.FAILED)
-
-    def wait_for_all_clients_connected_and_ready(self) -> None:
-        self.client_states.wait_for_all_clients_connected_and_ready()
 
     def set_is_finished(
         self,
         state: bool,
     ) -> None:
-        self._is_finished = state
+        self._is_finished.set_state(state)
+        self._update_is_running()
         self.set_simulation_state(SimulationState.FINISHED)
 
     def set_simulation_state(self, simulation_state: SimulationState) -> None:
@@ -65,55 +54,8 @@ class ServerState(ShutdownListener):
 
     def force_stop(self) -> None:
         self.on_app_shutdown()
-        self._is_finished = True
+        self._is_finished.set()
+        self._update_is_running()
 
-
-# TODO_AFTER_MERGE: find common abstraction
-class ServerStateDask(ShutdownListener):
-
-    def __init__(
-        self,
-        simulation_config: SimulationConfig,
-    ):
-        ShutdownManager().register_listener(self)
-        try:
-            get_client()
-            self.client_states: ClientStates | ClientStatesDask = ClientStatesDask(simulation_config)
-        except ValueError:
-            self.client_states = ClientStates(simulation_config)
-        self._is_finished = False
-        self._is_interrupted = False
-        self.message_buffer: ClientMessageBuffer = ClientMessageBuffer()
-        self.server_measurement = ServerTimeMeasurement()
-
-    def wait_for_all_clients_starting_simulation(self) -> None:
-        self.client_states.wait_for_all_clients_starting_simulation()
-
-    def have_all_clients_started_simulation(self) -> bool:
-        return self.client_states.have_all_clients_started_simulation()
-
-    def have_all_clients_stopped_simulation(self) -> bool:
-        return self.client_states.have_all_clients_stopped_simulation()
-
-    def are_all_clients_connected_and_ready(self) -> bool:
-        return self.client_states.are_all_clients_connected_and_ready()
-
-    def is_running(self) -> bool:
-        return not self._is_finished and not self._is_interrupted
-
-    # callback of ShutdownManager => if this is called the server is interrupted
-    def on_app_shutdown(self) -> None:
-        self._is_interrupted = True
-
-    def wait_for_all_clients_connected_and_ready(self) -> None:
-        self.client_states.wait_for_all_clients_connected_and_ready()
-
-    def set_is_finished(
-        self,
-        state: bool,
-    ) -> None:
-        self._is_finished = state
-
-    def force_stop(self) -> None:
-        self.on_app_shutdown()
-        self._is_finished = True
+    def is_running_event(self) -> ParallelEvent:
+        return self._is_running

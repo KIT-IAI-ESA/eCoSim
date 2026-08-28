@@ -1,4 +1,10 @@
 report.xml
+opencode-auth.json
+opencode-auth.custom.json
+opencode-auth.kit.json
+opencode.custom.json
+agent-todo.md
+ecosim_roegling_log.txt
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
@@ -68,6 +74,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+
+# mkdocs
+/site/
 
 # PyBuilder
 target/

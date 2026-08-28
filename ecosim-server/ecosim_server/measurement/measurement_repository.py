@@ -7,7 +7,6 @@ from ecosim_server.measurement.measurement_entry import MeasurementEntry
 
 
 class MeasurementRepository(ABC):
-
     @abstractmethod
     def add(
         self,

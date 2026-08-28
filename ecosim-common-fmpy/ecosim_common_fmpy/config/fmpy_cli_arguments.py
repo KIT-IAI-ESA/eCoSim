@@ -18,3 +18,6 @@ class FMPyCliArguments(CLIArguments):
                 ),
             ],
         )
+
+    def validate_fmu_file_only(self) -> bool:
+        return self.get_additional_parameter("validate-fmu-file-only") is True

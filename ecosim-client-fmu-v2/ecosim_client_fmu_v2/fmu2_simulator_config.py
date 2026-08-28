@@ -55,19 +55,19 @@ class FMU2SimulatorConfig:
             today = datetime.now()
             temp_dir_name = f"{today.strftime('%Y-%m-%d %H:%M:%S')}.{nano_seconds % 1_000_000_000:09d}"
             # For identifying FMUs that throw XMLParseErrors
-            FMU2SimulatorConfig._logger.warning(f"Model failed to read initially with '{first_exception}'. Trying to reload model description.")
+            FMU2SimulatorConfig._logger.warning("Model failed to read initially with '%s'. Trying to reload model description.", first_exception)
             for i in range(2):
                 try:
                     importlib.reload(fmpy)
                     return fmpy.read_model_description(str(fmu_config.fmu_file))
                 except Exception as inner_exception:
                     unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir=f"./failed_fmus/{temp_dir_name}")
-                    FMU2SimulatorConfig._logger.debug(f"Reading modelDescription.xml directly from {unzip_dir}")
+                    FMU2SimulatorConfig._logger.debug("Reading modelDescription.xml directly from %s", unzip_dir)
                     try:
                         importlib.reload(fmpy)
                         return fmpy.read_model_description(f"./failed_fmus/{temp_dir_name}/modelDescription.xml")
                     except Exception:
-                        FMU2SimulatorConfig._logger.warning(f"Failed to read modelDescription.xml on {i + 1}. attempt: {inner_exception}")
+                        FMU2SimulatorConfig._logger.warning("Failed to read modelDescription.xml on %s. Exception: %s", i + 1, inner_exception)
             raise first_exception
 
     def is_fmi_version(

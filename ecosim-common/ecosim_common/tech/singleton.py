@@ -1,7 +1,7 @@
 import threading
 from typing import Type, Any, TypeVar, cast
 
-T = TypeVar('T', bound='Singleton')
+T = TypeVar("T", bound="Singleton")
 
 
 # Attention:

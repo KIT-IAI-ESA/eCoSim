@@ -16,15 +16,15 @@ class ModelInterfaceServer:
 
     @staticmethod
     def of_config_json(
-            simulator_name: str,
-            model_name: str,
-            raw_interface: dict[str, Any],
-            raw_simulators: List[dict[str, str]],
+        simulator_name: str,
+        model_name: str,
+        raw_interface: dict[str, Any],
+        raw_simulators: List[dict[str, str]],
     ) -> ModelInterfaceServer:
-        interface_name = raw_interface['name']
+        interface_name = raw_interface["name"]
         if not interface_name:
             raise RuntimeError(f"Interface name is required: Interface: {raw_interface} || Simulator: {simulator_name} || Model: {model_name}")
-        interface_type = raw_interface['type']
+        interface_type = raw_interface["type"]
         if not interface_type:
             raise RuntimeError(f"Interface type is required: Interface: {raw_interface} || Simulator: {simulator_name} || Model: {model_name}")
         return ModelInterfaceServer(
@@ -36,17 +36,17 @@ class ModelInterfaceServer:
                 ),
             ),
             name=interface_name,
-            unit=raw_interface.get('unit'),
-            description=raw_interface.get('description'),
+            unit=raw_interface.get("unit"),
+            description=raw_interface.get("description"),
             interface_type=InterfaceType.of(interface_type),
             required=config_parser.ConfigParser.config_string_to_bool(
                 raw_interface.setdefault(
-                    'required',
-                    'false',
+                    "required",
+                    "false",
                 ),
             ),
             connected_to=ModelInterfaceServer._get_connected_to(
-                raw_interface.get('connected_to'),
+                raw_interface.get("connected_to"),
                 raw_simulators,
             ),
         )
@@ -87,7 +87,7 @@ class ModelInterfaceServer:
         if len(raw_connected_to) != 1:
             raise RuntimeError(f"Expected 1 connected_to, got {len(raw_connected_to)}")
         connection = raw_connected_to[0]
-        simulator_index_string = connection.get('simulator')
+        simulator_index_string = connection.get("simulator")
         if not simulator_index_string:
             raise RuntimeError(f"Simulator index is required: {connection}")
         simulator_index = int(simulator_index_string)
@@ -110,7 +110,7 @@ class ModelInterfaceServer:
                         interface=model_interface_name,
                     ),
                 ),
-                delay_path=connection.get('delay_path', []),  # type: ignore
+                delay_path=connection.get("delay_path", []),  # type: ignore
             ),
         )
         return result

@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Tuple
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
@@ -13,12 +14,12 @@ from ecosim_common.config.model_interface_server import ConnectedToData, ModelIn
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.server_client.simple_test_client import SimpleTestClient
-from integration_tests.server_client.simple_test_server import generate_simple_test_server
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
-def test_codependent_clients_server() -> None:
+def test_codependent_clients_server(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
     server_port = 23921
     steps = 100
@@ -33,135 +34,138 @@ def test_codependent_clients_server() -> None:
         microsecond=0,
     )
     server = generate_simple_test_server(
-        host=server_host,
-        port=server_port,
-        steps=steps,
-        step_size_in_ms=step_size_in_ms,
-        simulation_start_date=simulation_start_date,
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_1",
-                model_name="TestModel_1",
-                client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator_1",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel_1",
-                                interface="TestInterface_1",
-                            ),
-                        ),
-                        name="TestInterface_1",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_2",
-                model_name="TestModel_2",
-                client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator_2",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel_2",
-                                interface="TestInterface_2",
-                            ),
-                        ),
-                        name="TestInterface_2",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.INPUT,
-                        required=True,
-                        connected_to=[
-                            ConnectedToData(
-                                simulator_interface_id=SimulatorInterfaceId(
-                                    simulator_name="TestSimulator_1",
-                                    model_interface_id=ModelInterfaceId(
-                                        interface="TestInterface_1",
-                                        model_name="TestModel_1",
-                                    ),
+        SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=server_host,
+            port=server_port,
+            steps=steps,
+            step_size_in_ms=step_size_in_ms,
+            simulation_start_date=simulation_start_date,
+            clients=[
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_1",
+                    model_name="TestModel_1",
+                    client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator_1",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel_1",
+                                    interface="TestInterface_1",
                                 ),
-                                delay_path=[],
                             ),
-                        ],
-                    ),
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator_2",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel_2",
-                                interface="TestInterface_2_2",
-                            ),
+                            name="TestInterface_1",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
                         ),
-                        name="TestInterface_2_2",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
-            ),
-            ClientSimulatorConfig(
-                simulator_name="TestSimulator_3",
-                model_name="TestModel_3",
-                client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator_3",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel_3",
-                                interface="TestInterface_3",
-                            ),
-                        ),
-                        name="TestInterface_3",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.INPUT,
-                        required=True,
-                        connected_to=[
-                            ConnectedToData(
-                                simulator_interface_id=SimulatorInterfaceId(
-                                    simulator_name="TestSimulator_2",
-                                    model_interface_id=ModelInterfaceId(
-                                        interface="TestInterface_2_2",
-                                        model_name="TestModel_2",
-                                    ),
+                    ],
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_2",
+                    model_name="TestModel_2",
+                    client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator_2",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel_2",
+                                    interface="TestInterface_2",
                                 ),
-                                delay_path=[],
                             ),
-                        ],
-                    ),
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator_3",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel_3",
-                                interface="TestInterface_3_2",
-                            ),
+                            name="TestInterface_2",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.INPUT,
+                            required=True,
+                            connected_to=[
+                                ConnectedToData(
+                                    simulator_interface_id=SimulatorInterfaceId(
+                                        simulator_name="TestSimulator_1",
+                                        model_interface_id=ModelInterfaceId(
+                                            interface="TestInterface_1",
+                                            model_name="TestModel_1",
+                                        ),
+                                    ),
+                                    delay_path=[],
+                                ),
+                            ],
                         ),
-                        name="TestInterface_3_2",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
-            ),
-        ],
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator_2",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel_2",
+                                    interface="TestInterface_2_2",
+                                ),
+                            ),
+                            name="TestInterface_2_2",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
+                        ),
+                    ],
+                ),
+                ClientSimulatorConfig(
+                    simulator_name="TestSimulator_3",
+                    model_name="TestModel_3",
+                    client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator_3",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel_3",
+                                    interface="TestInterface_3",
+                                ),
+                            ),
+                            name="TestInterface_3",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.INPUT,
+                            required=True,
+                            connected_to=[
+                                ConnectedToData(
+                                    simulator_interface_id=SimulatorInterfaceId(
+                                        simulator_name="TestSimulator_2",
+                                        model_interface_id=ModelInterfaceId(
+                                            interface="TestInterface_2_2",
+                                            model_name="TestModel_2",
+                                        ),
+                                    ),
+                                    delay_path=[],
+                                ),
+                            ],
+                        ),
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator_3",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel_3",
+                                    interface="TestInterface_3_2",
+                                ),
+                            ),
+                            name="TestInterface_3_2",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
+                        ),
+                    ],
+                ),
+            ],
+        ),
     )
-    repositories = server.repositories
 
     client_1 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_1",
@@ -191,6 +195,7 @@ def test_codependent_clients_server() -> None:
         ),
     )
     client_2 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_2",
@@ -235,6 +240,7 @@ def test_codependent_clients_server() -> None:
         ),
     )
     client_3 = SimpleTestClient.generate(
+        communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
         model_name="TestModel_3",
@@ -293,7 +299,7 @@ def test_codependent_clients_server() -> None:
     server_thread.join()
     server.print_measurement_statistics()
 
-    client_1_measurement_repository = repositories.measurement_repository(client_id=client_1._client_config.client_id())
+    client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
     if not isinstance(client_1_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -304,7 +310,7 @@ def test_codependent_clients_server() -> None:
 
     (client_1_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_1_records))
 
-    client_2_measurement_repository = repositories.measurement_repository(client_id=client_2._client_config.client_id())
+    client_2_measurement_repository = server.measurement_repository(client_id=client_2.client_id)
     if not isinstance(client_2_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 
@@ -315,7 +321,7 @@ def test_codependent_clients_server() -> None:
 
     (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_2_records))
 
-    client_3_measurement_repository = repositories.measurement_repository(client_id=client_3._client_config.client_id())
+    client_3_measurement_repository = server.measurement_repository(client_id=client_3.client_id)
     if not isinstance(client_3_measurement_repository, MeasurementRepositoryInMemory):
         raise RuntimeError("You can only use in memory DBs")
 

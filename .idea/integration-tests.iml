@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.system.id="pyproject.toml" type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/integration-tests">
+      <sourceFolder url="file://$MODULE_DIR$/integration-tests" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/integration-tests/integration_tests" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/integration-tests/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/integration-tests/build" />
+      <excludeFolder url="file://$MODULE_DIR$/integration-tests/integration_tests.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/integration-tests/dist" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="ecosim-common-fmpy" exported="" />
+    <orderEntry type="module" module-name="ecosim-server" exported="" />
+    <orderEntry type="module" module-name="ecosim-hpc" exported="" />
+    <orderEntry type="module" module-name="ecosim-common" exported="" />
+    <orderEntry type="module" module-name="ecosim-client-fmu-v2" exported="" />
+    <orderEntry type="module" module-name="ecosim-client-fmu-v3" exported="" />
+    <orderEntry type="module" module-name="ecosim-test-common" exported="" />
+    <orderEntry type="jdk" jdkName="Python 3.14 virtualenv at ~/dev/ecosim/integration-tests/.venv" jdkType="Python SDK" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
+  </component>
+</module>

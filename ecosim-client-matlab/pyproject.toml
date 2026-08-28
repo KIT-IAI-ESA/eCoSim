@@ -24,6 +24,9 @@ dependencies = [
     "pydantic==2.13.4",
 ]
 
+[project.scripts]
+ecosim-client-matlab = "ecosim_client_matlab.main:main"
+
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 
@@ -32,8 +35,8 @@ dev = [
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
-    "mypy==2.2.0",
-    "uv==0.11.28",
+    "mypy==2.3.0",
+    "uv==0.12.5",
     "pip==26.1.2",
 ]
 R2024b = ["matlabengine==24.2.1"]

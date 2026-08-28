@@ -19,3 +19,8 @@ def test_unknown_type() -> None:
     for number in range(0, 256):
         if number not in taken_values:
             assert MessageType.UNKNOWN == MessageType.of_int(number)
+
+
+def test_all_message_types() -> None:
+    for message_type in MessageType:
+        assert message_type == MessageType.of_int(message_type.value)

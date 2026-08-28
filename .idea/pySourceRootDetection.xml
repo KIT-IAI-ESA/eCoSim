@@ -4,6 +4,7 @@
     <option name="sourcePathsSet">
       <set>
         <option value="$PROJECT_DIR$/ecosim-client-fmu-v2/tests" />
+        <option value="$PROJECT_DIR$/ecosim-test-common/ecosim_test_common/test_data" />
       </set>
     </option>
   </component>

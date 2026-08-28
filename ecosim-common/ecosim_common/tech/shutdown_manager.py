@@ -42,6 +42,16 @@ class ShutdownManager:
                         cls._instance.shutdown_event = threading.Event()
         return cls._instance
 
+    def __reduce__(self) -> tuple[Type[ShutdownManager], tuple[()]]:
+        """
+        Sends the recipe for the singleton instead of a copy of this one.
+
+        A copy would carry this process' resources - among them a non-picklable 'threading.Event' - and
+        shutting it down would leave the receiving process, which is the one that has to release something,
+        untouched.
+        """
+        return (ShutdownManager, ())
+
     def init(self) -> None:
         if ShutdownManager._init:
             return
@@ -89,6 +99,9 @@ class ShutdownManager:
         sys.exit(555)
 
     def __trigger_shutdown(self) -> None:
+        if self.shutdown_event.is_set():
+            self._logger.debug("Shutdown was already triggered - listeners stay untouched.")
+            return
         self.shutdown_event.set()
         with self._lock:
             for listener in self._listener:
@@ -112,10 +125,6 @@ class ShutdownManager:
 
     def set_shutdown_at_application_end(self) -> None:
         self._logger.debug("Shutdown was triggered at the end of the application.")
-        self.__trigger_shutdown()
-
-    def set_dask_shutdown(self) -> None:
-        self._logger.debug("Shutting down simulators on Dask Client")
         self.__trigger_shutdown()
 
     @staticmethod

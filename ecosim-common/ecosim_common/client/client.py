@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List
+from typing import Dict, List, assert_never
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
@@ -16,32 +16,31 @@ from ecosim_common.communication.channel.esp_channel_message_json import (
     ESPChannelMessageJson,
 )
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.protocol_interface_value import (
     InterfaceValueType,
     ProtocolInterfaceValue,
 )
-from ecosim_common.communication.data.simulation_step_batch_request import (
-    SimulationStepBatchRequest,
-)
-from ecosim_common.communication.message_type import MessageType
-from ecosim_common.communication.data.simulation_step_request import (
-    SimulationStepRequest,
-)
-from ecosim_common.communication.socket.socket_connector import SocketConnector
-from ecosim_common.communication.dask.dask_connector import DaskConnector
-from ecosim_common.config.client_id import ClientID
-from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.server_interface_settings import (
     ServerInterfaceSettings,
 )
 from ecosim_common.communication.data.simulation_setup_message import (
     SimulationSetupMessage,
 )
+from ecosim_common.communication.data.simulation_step_batch_request import (
+    SimulationStepBatchRequest,
+)
+from ecosim_common.communication.data.simulation_step_request import (
+    SimulationStepRequest,
+)
+from ecosim_common.communication.message_type import MessageType
+from ecosim_common.config.client_id import ClientID
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.datetime.date_time_to_millis import (
     date_time_to_millis_since_unix_epoch,
 )
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
@@ -51,16 +50,15 @@ class Client(ShutdownListener):
     def __init__(
         self,
         client_config: ClientConfig,
-        dask_connector: bool = False,  # TODO_AFTER_MERGE: clean up after the merge
     ):
         self._client_config: ClientConfig = client_config
         self._client_config.print_to_info()
         self._execution_config: ExecutionConfig = ExecutionConfig()
-        # TODO_AFTER_MERGE: clean up after the merge
-        self._channel_connector: ESPChannelConnector = DaskConnector() if dask_connector else SocketConnector()
+        self._channel_connector: ESPChannelConnector = ESPChannelConnector(_communication_protocol=client_config.communication_protocol())
         self._channel_or_none: ESPChannel | None = None
         self._image_renderer_socket: RenderingSocketClient | None = None
         self._is_finished = False
+        self._was_started = ParallelEvent.for_communication_protocol(client_config.communication_protocol())
         ShutdownManager().register_listener(self)
 
     @property
@@ -104,14 +102,21 @@ class Client(ShutdownListener):
         pass
 
     def start(self) -> None:
+        if self._was_started.is_set():
+            Client.logger.warning("Client already started, but 'start' called again. This should not happen in normal operation.")
+        self._was_started.set()
         Client.logger.info(
-            "Starting to connect to "
-            + f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
+            "Starting to connect to %s:%s",
+            self._client_config.server_config().server_address.ip,
+            self._client_config.server_config().server_address.port,
         )
         self._connect_channel()
-        self._channel.listen_async(
+        self._channel.listen_on_message_async(
             on_message=self._handle_message,
         )
+
+    def was_started_event(self) -> ParallelEvent:
+        return self._was_started
 
     def wait_until_finished(self) -> None:
         self._channel.wait_for_finish()
@@ -129,8 +134,9 @@ class Client(ShutdownListener):
             self.on_app_shutdown()
             raise e
         Client.logger.info(
-            f"Connected to socket successfully: "
-            f"{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().server_address.port}",
+            "Connected to socket successfully: %s:%s",
+            self._client_config.server_config().server_address.ip,
+            self._client_config.server_config().server_address.port,
         )
 
     def _handle_message(
@@ -138,24 +144,30 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Received and handling message")
-        if message.type() == MessageType.CLIENT_META_DATA_REQUEST:
-            self._handle_client_meta_data_request(message)
-        elif message.type() == MessageType.INTERFACE_REQUEST:
-            self._handle_interface_requests(message)
-        elif message.type() == MessageType.INTERFACE_SETTINGS:
-            self._handle_interface_settings(message)
-        elif message.type() == MessageType.SIMULATION_SETUP:
-            self._handle_simulation_setup(message)
-        elif message.type() == MessageType.SIMULATION_START:
-            self._handle_simulation_start(message)
-        elif message.type() == MessageType.SIMULATION_STEP:
-            self._handle_simulation_step(message)
-        elif message.type() == MessageType.SIMULATION_STEP_BATCH:
-            self._handle_simulation_step_batch(message)
-        elif message.type() == MessageType.SIMULATION_STOP:
-            self._handle_simulation_stop(message)
-        else:
-            Client.logger.error(f"Unknown message type: '{message.type()}'")
+        message_type = message.type()
+        match message_type:
+            case MessageType.CLIENT_META_DATA_REQUEST:
+                self._handle_client_meta_data_request(message)
+            case MessageType.INTERFACE_REQUEST:
+                self._handle_interface_requests(message)
+            case MessageType.INTERFACE_SETTINGS:
+                self._handle_interface_settings(message)
+            case MessageType.SIMULATION_SETUP:
+                self._handle_simulation_setup(message)
+            case MessageType.SIMULATION_START:
+                self._handle_simulation_start(message)
+            case MessageType.SIMULATION_STEP:
+                self._handle_simulation_step(message)
+            case MessageType.SIMULATION_STEP_BATCH:
+                self._handle_simulation_step_batch(message)
+            case MessageType.SIMULATION_STOP:
+                self._handle_simulation_stop(message)
+            case MessageType.PING:
+                self._handle_ping(message)
+            case MessageType.UNKNOWN:
+                Client.logger.error("Unknown message type: '%s'", message_type)
+            case _:
+                assert_never(message_type)
 
     def on_app_shutdown(self) -> None:
         self._channel.close()
@@ -177,8 +189,9 @@ class Client(ShutdownListener):
         started.wait(timeout)
         if not started:
             Client.logger.warning(
-                f"The image renderer connection was not established within {timeout}s -> "
-                + "the simulation will execute but you may not receive any images from this client.",
+                "The image renderer connection was not established within %ss -> the simulation will execute "
+                "but you may not receive any images from this client.",
+                timeout,
             )
 
     def _handle_client_meta_data_request(
@@ -215,10 +228,8 @@ class Client(ShutdownListener):
         )
 
         # check if config matches actual interfaces
-        config_validated = (
-            self._client_config.interfaces_config().validate_config_with_server(
-                server_interface_settings,
-            )
+        config_validated = self._client_config.interfaces_config().validate_config_with_server(
+            server_interface_settings,
         )
         self._execution_config.set_server_interface_settings(server_interface_settings)
 
@@ -239,9 +250,7 @@ class Client(ShutdownListener):
         self._execution_config.set_step_size_in_ms(
             message.payload(SimulationSetupMessage).step_size_in_ms,
         )
-        Client.logger.debug(
-            f"  -> step size (in seconds): {self._execution_config.step_size_in_seconds()}",
-        )
+        Client.logger.debug("  -> step size (in seconds): %s", self._execution_config.step_size_in_seconds())
         Client.logger.debug("_handle_simulation_setup: Attempting to send back")
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
@@ -301,22 +310,16 @@ class Client(ShutdownListener):
         last_timestamp = date_time_to_millis_since_unix_epoch(
             simulation_step_batch_request.start_datetime,
         )
-        input_interfaces = (
-            self._client_config.interfaces_config().input_interface_names()
-        )
-        required_input_interfaces = (
-            self._client_config.interfaces_config().input_interface_names(
-                only_required=True,
-            )
+        input_interfaces = self._client_config.interfaces_config().input_interface_names()
+        required_input_interfaces = self._client_config.interfaces_config().input_interface_names(
+            only_required=True,
         )
         last_simulation_step_data: ClientSimStepData | None = None
         for step_datetime, inputs in sorted(
             simulation_step_batch_request.inputs.items(),
         ):
-            Client.logger.debug(f"Executing batch step {step_datetime}")
-            filtered_inputs = [
-                input for input in inputs if input.name in input_interfaces
-            ]
+            Client.logger.debug("Executing batch step %s", step_datetime)
+            filtered_inputs = [input for input in inputs if input.name in input_interfaces]
             filtered_interface_names = [interface.name for interface in filtered_inputs]
             for required_input in required_input_interfaces:
                 if required_input not in filtered_interface_names:
@@ -332,26 +335,21 @@ class Client(ShutdownListener):
             last_timestamp = current_timestamp
             for new_interface_value in last_simulation_step_data.interface_values:
                 matching_interface = next(
-                    (
-                        interface
-                        for interface in inputs
-                        if interface.name == new_interface_value.name
-                    ),
+                    (interface for interface in inputs if interface.name == new_interface_value.name),
                     None,
                 )
                 if matching_interface is None:
-                    Client.logger.warning(
-                        f"Batch step {step_datetime}: No matching interface found for interface '{new_interface_value.name}'",
-                    )
+                    Client.logger.warning("Batch step %s: No matching interface found for interface '%s'", step_datetime, new_interface_value.name)
                     continue
                 if matching_interface.value == new_interface_value.value:
-                    Client.logger.debug(
-                        f"Batch step {step_datetime}: Value matched for interface '{new_interface_value.name}'",
-                    )
+                    Client.logger.debug("Batch step %s: Value matched for interface '%s'", step_datetime, new_interface_value.name)
                 else:
                     Client.logger.error(
-                        f"Batch step {step_datetime}: Value mismatch for interface '{new_interface_value.name}': "
-                        f"expected={matching_interface.value}, actual={new_interface_value.value}",
+                        "Batch step %s: Value mismatch for interface '%s': expected=%s, actual=%s",
+                        step_datetime,
+                        new_interface_value.name,
+                        matching_interface.value,
+                        new_interface_value.value,
                     )
 
         if last_simulation_step_data is None:
@@ -373,3 +371,10 @@ class Client(ShutdownListener):
         self.on_simulation_stop()
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
         self._is_finished = True
+
+    def _handle_ping(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        Client.logger.debug("Handle ping")
+        self._channel.send(ESPChannelMessageJson.empty_answer(message))

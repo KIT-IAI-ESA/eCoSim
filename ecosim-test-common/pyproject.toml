@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools==83.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecosim-test-common"
+version = "0.14.0"
+description = "Common test utils for the eCoSim project"
+authors = [
+    { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: eCoSim :: Integration Tests",
+    #    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "dask[distributed]==2026.7.0",
+    "docker==7.1.0",
+    "ecosim-common==0.14.0",
+    "mypy==2.3.0",
+    "pytest-mock==3.15.1",
+    "pytest==9.1.1",
+    "uv==0.12.5",
+    "pip==26.1.2"
+]
+
+[tool.setuptools.packages.find]
+include = ["ecosim_test_common*"]
+
+[tool.setuptools.package-data]
+ecosim_test_common = ["py.typed", "resources/**/*"]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+
+[project.entry-points.pytest11]
+ecosim-test-common = "ecosim_test_common"
+
+[tool.mypy]
+python_executable = ".venv/bin/python"
+mypy_path = ["../ecosim-common"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # dask is only typed partly
+    "dask",
+    "dask.distributed",
+    "dask.distributed.*",
+    "dask.*",
+    "cloudpickle",
+    "cloudpickle.*",
+]
+ignore_missing_imports = true

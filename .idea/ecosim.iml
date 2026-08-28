@@ -3,9 +3,13 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$/.venv">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludePattern pattern="report.xml" />
+      <excludePattern pattern="coverage.xml" />
+      <excludePattern pattern=".coverage" />
     </content>
     <content url="file://$MODULE_DIR$/dev">
       <excludeFolder url="file://$MODULE_DIR$/dev/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/docker/example/file/results" />
     </content>
     <content url="file://$MODULE_DIR$/doc" />
     <orderEntry type="jdk" jdkName="Python 3.13 virtualenv at ~/dev/ecosim/.venv" jdkType="Python SDK" />

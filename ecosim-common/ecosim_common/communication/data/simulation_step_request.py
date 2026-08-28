@@ -19,11 +19,12 @@ class SimulationStepRequest(MessageData):
         value: Dict[str, Any],
     ) -> SimulationStepRequest:
         return SimulationStepRequest(
-            step=value['step'],
+            step=value["step"],
             inputs=[
                 ProtocolInterfaceValue(
-                    name=interface_value['name'],
-                    value=interface_value['value'],
-                ) for interface_value in value['inputs']
+                    name=interface_value["name"],
+                    value=interface_value["value"],
+                )
+                for interface_value in value["inputs"]
             ],
         )

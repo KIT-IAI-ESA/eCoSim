@@ -1,6 +1,7 @@
 import configparser
 import os.path
 import re
+from enum import Enum
 from pathlib import Path
 from typing import List
 
@@ -29,9 +30,7 @@ class ConfigParser:
             return self.config_string_to_bool(self._get(section, option))
         except ConfigParserException as e:
             if default is not None:
-                ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
-                )
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
 
@@ -52,9 +51,23 @@ class ConfigParser:
             return self._get(section, option)
         except ConfigParserException as e:
             if default is not None:
-                ConfigParser._logger.debug(
-                    f"Config '{section}.{option}' was not found. So the default value '{default}' will be used.",
-                )
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
+                return default
+            raise e
+
+    def get_enum[T: Enum](
+        self,
+        enum_class: type[T],
+        section: str,
+        option: str,
+        default: T | None = None,
+    ) -> T:
+        try:
+            value = self.get_string(section, option)
+            return enum_class[value]
+        except ConfigParserException as e:
+            if default is not None:
+                ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ecosim_common.client.config.client_config import ClientConfigOverride
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 
 
@@ -10,7 +11,7 @@ class CLIArguments(AppConfig):
         additional_parameters: list[AppConfigParameter] | None = None,
     ) -> None:
         super().__init__(
-            cli_description="This is the client of eCoSimPy.",
+            cli_description="This is a client of eCoSimPy.",
             parameters=[
                 AppConfigParameter(
                     name="config-file",
@@ -43,6 +44,13 @@ class CLIArguments(AppConfig):
                     transform=lambda x: int(x),
                     help_text="The port for the image renderer socket on the target server. If not set no connection will be opened.",
                 ),
+                AppConfigParameter(
+                    name="communication-protocol",
+                    required=False,
+                    default_value=None,  # NOTE: the actual default value is specified in ClientConfig
+                    help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
+                    + f"Possible: {[p.name for p in CommunicationProtocol]}",
+                ),
             ]
             + (additional_parameters or []),
         )
@@ -62,11 +70,17 @@ class CLIArguments(AppConfig):
     def image_renderer_port(self) -> int | None:
         return self._args.image_renderer_port  # type: ignore
 
+    def communication_protocol(self) -> CommunicationProtocol | None:
+        if self._args.communication_protocol is None:
+            return None
+        return CommunicationProtocol.of(self._args.communication_protocol)
+
     def config_overrides(self) -> ClientConfigOverride:
         return ClientConfigOverride(
             server_host=self._args.server_host,
             server_port=self._args.server_port,
             image_renderer_port=self._args.image_renderer_port,
+            communication_protocol=self.communication_protocol(),
         )
 
     def get_additional_parameter(self, name: str) -> str | bool | None:

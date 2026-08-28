@@ -30,20 +30,22 @@ ecosim_common = ["py.typed"]
 
 [project.optional-dependencies]
 dev = [
-    "setuptools==83.0.0",
-    "pytest==9.1.1",
+    "ecosim-test-common==0.14.0",
+    "mypy==2.3.0",
+    "pip==26.1.2",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
-    "mypy==2.2.0",
-    "uv==0.11.28",
-    "pip==26.1.2"
+    "pytest-mock==3.15.1",
+    "pytest==9.1.1",
+    "setuptools==83.0.0",
+    "uv==0.12.5",
 ]
 
-#[project.urls]
-#Homepage = "https://github.com/yourusername/myapp"
-#Repository = "https://github.com/yourusername/myapp"
+[tool.uv.sources]
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [tool.mypy]
+mypy_path = ["../ecosim-test-common", "../ecosim-server"]
 python_executable = ".venv/bin/python"
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -55,6 +57,8 @@ module = [
     "dask.distributed",
     "dask.distributed.*",
     "dask.*",
+    "cloudpickle",
+    "cloudpickle.*",
 ]
 ignore_missing_imports = true
 

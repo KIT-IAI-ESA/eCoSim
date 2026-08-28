@@ -1,0 +1,75 @@
+name: ecosim-example-file
+
+# Runs the 'house' example: one server and four FMU v2 clients (weather, house,
+# heating, ventilation) that are wired together by config/simulation.json.
+#
+# Unlike the postgres example there is no database service. The server stores the
+# results as JSON lines in /results, which is mounted to ./results on the host.
+#
+# The models are mounted read-only from ecosim-test-common. The *_preferences_linux.ini
+# files next to them point at 'localhost:1234'; the clients override the host on the
+# command line so they reach the 'server' service instead.
+#
+# Build the images first:
+#   docker compose -f ../docker-compose-build-images.yml build
+
+x-client: &client
+  image: localhost/ecosim_client_fmu_v2:latest
+  restart: "no"
+  depends_on:
+    - server
+  volumes:
+    - ../../../../ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/linux:/models:ro,z
+
+services:
+
+  server:
+    container_name: ecosim-example-file-server
+    image: localhost/ecosim_server:latest
+    restart: "no"
+    ports:
+      - "1234:1234"
+    volumes:
+      - ./config:/config:ro,z
+      - ./results:/results:z
+    command:
+      - --server-config=/config/server_config.ini
+      - --simulation-config=/config/simulation.json
+      - --steps=60
+      - --debug
+
+  weather:
+    <<: *client
+    container_name: ecosim-example-file-weather
+    command:
+      - --config-file=/models/weather_preferences_linux.ini
+      - --server-host=server
+      - --server-port=1234
+      - --debug
+
+  house:
+    <<: *client
+    container_name: ecosim-example-file-house
+    command:
+      - --config-file=/models/house_preferences_linux.ini
+      - --server-host=server
+      - --server-port=1234
+      - --debug
+
+  heating:
+    <<: *client
+    container_name: ecosim-example-file-heating
+    command:
+      - --config-file=/models/heating_preferences_linux.ini
+      - --server-host=server
+      - --server-port=1234
+      - --debug
+
+  ventilation:
+    <<: *client
+    container_name: ecosim-example-file-ventilation
+    command:
+      - --config-file=/models/ventilation_preferences_linux.ini
+      - --server-host=server
+      - --server-port=1234
+      - --debug

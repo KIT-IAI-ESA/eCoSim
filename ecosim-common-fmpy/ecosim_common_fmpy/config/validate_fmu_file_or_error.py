@@ -15,7 +15,7 @@ def validate_fmu_file_or_error(
     try:
         fmpy.read_model_description(fmu2_config.fmu_file, validate=True)
     except Exception as e:
-        logger.error(f"Checking FMU file failed: {e}")
+        logger.error("Checking FMU file failed: %s", e)
         raise e
     logger.info("Validating FMU file...completed. No errors found.")
     return

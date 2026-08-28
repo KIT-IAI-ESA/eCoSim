@@ -11,7 +11,7 @@ from ecosim_common.communication.data.protocol_interface_value import (
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.test_data.test_model_interface import TestModelInterface
+from ecosim_test_common.test_data.test_model_interface import TestModelInterface
 
 
 @dataclasses.dataclass
@@ -48,16 +48,12 @@ class TestClientData:
                 model_name=self.model_name,
                 simulator_name=self.simulator_name,
             ),
-            interfaces=[
-                interface.to_model_interface_server() for interface in self.interfaces
-            ],
+            interfaces=[interface.to_model_interface_server() for interface in self.interfaces],
         )
 
     def to_client_interface_config(self) -> ClientInterfaceConfig:
         return ClientInterfaceConfig(
-            interfaces=[
-                interface.to_model_interface_client() for interface in self.interfaces
-            ],
+            interfaces=[interface.to_model_interface_client() for interface in self.interfaces],
         )
 
     def interface_protocol_value_of(
