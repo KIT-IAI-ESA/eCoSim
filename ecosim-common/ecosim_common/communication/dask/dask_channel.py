@@ -249,7 +249,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
         current_connections: list[str] = []
         while listening_on_connection.is_set():
             if dask_client.status != "running":
-                DaskChannel._logger.error("Cannot listen to Dask client")
+                DaskChannel._logger.error("Cannot listen to Dask client - dask client is not running.")
                 raise Exception
             if len(dask_client.datasets) == len(current_connections):
                 # TODO_OSR: find alternative to sleep
