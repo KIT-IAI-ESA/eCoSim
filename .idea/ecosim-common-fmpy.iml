@@ -10,7 +10,7 @@
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
     </content>
-    <orderEntry type="jdk" jdkName="uv (ecosim-common-fmpy)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="common fmpy interpreter" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
   </component>

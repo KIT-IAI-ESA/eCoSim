@@ -27,6 +27,10 @@ dependencies = [
 [project.scripts]
 ecosim-client-matlab = "ecosim_client_matlab.main:main"
 
+
+[tool.uv]
+python-downloads = "automatic"
+
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 

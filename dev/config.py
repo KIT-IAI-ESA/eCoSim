@@ -36,7 +36,19 @@ def run(
     print(f"$ {as_str}{loc}")
     if dry_run:
         return
-    subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=True)
+    subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=True, env=subproject_environment())
+
+
+def subproject_environment() -> dict[str, str]:
+    """Environment without the caller's venv, so uv uses the venv of the project in cwd.
+
+    PyCharm's uv runner sets UV_PROJECT_ENVIRONMENT to the run config's interpreter; inherited,
+    it makes every `uv venv --clear` / `uv sync` target that one venv instead.
+    """
+    environment = os.environ.copy()
+    for name in ("UV_PROJECT_ENVIRONMENT", "VIRTUAL_ENV", "VIRTUAL_ENV_PROMPT"):
+        environment.pop(name, None)
+    return environment
 
 
 def get_uv_path() -> str:
