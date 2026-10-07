@@ -22,6 +22,7 @@ dev = [
     "pytest==9.1.1",
     "pip==26.1.2", # PyCharm mypy plugin needs pip
     "ruff==0.14.4",
+    "uv==0.12.5",
 ]
 doc = [
     "mkdocs==1.6.1",

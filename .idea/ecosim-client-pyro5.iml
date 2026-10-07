@@ -9,7 +9,7 @@
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="pyro interpreter" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecosim-common" />
   </component>
