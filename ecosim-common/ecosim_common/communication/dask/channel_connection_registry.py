@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 import dask.distributed as distributed
+
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ChannelHandler, ConnectionData
 from ecosim_common.communication.dask.channel_endpoint import ChannelEndpoint
@@ -44,13 +45,14 @@ class ChannelConnectionRegistry(ShutdownListener):
     def start_listening(
         self,
         channel_handler: ChannelHandler,
-    ) -> None:
+    ) -> bool:
+        """Starts the one accept loop of the cluster. Returns False if one is already running."""
         with self._start_listening_lock:
             if self._listening_on_connection.is_set():
                 ChannelConnectionRegistry._logger.warning(
                     "There should only be one listener for new dask connection -> this call is skipped but must be investigated.",
                 )
-                return
+                return False
             ChannelConnectionRegistry._logger.debug("Starting to listen on dask connections.")
             self._listening_on_connection.set()
 
@@ -66,8 +68,12 @@ class ChannelConnectionRegistry(ShutdownListener):
             distributed.fire_and_forget(future)
 
         dask_client.sync(listen_start)
+        return True
 
     def stop_listening(self) -> None:
+        if self._dask_client.status != "running":
+            self._logger.debug("close: dask client is not running -> nothing is done")
+            return
         if not self._listening_on_connection.is_set():
             self._logger.debug("stop_listening: not listening on connection -> nothing is done")
             return
@@ -89,23 +95,36 @@ class ChannelConnectionRegistry(ShutdownListener):
         dask_client = distributed.get_client()
         client_address = ConnectionAddress.of_dask_client(dask_client)
         ChannelConnectionRegistry._logger.debug("Now listening to Dask Client")
-        while listening_on_connection.is_set():
-            if dask_client.status != "running":
-                ChannelConnectionRegistry._logger.error("Cannot listen to Dask client - dask client is not running.")
-                raise Exception
-            # blocks on the scheduler, so an idle server costs one round trip per timeout and a connecting
-            # client is served the moment it announces itself
-            dask_id = connection_queue.pop_or_none(timeout=ChannelConnectionRegistry._accept_timeout_in_seconds)
-            if dask_id is None:
-                continue
-            if dask_id == ChannelConnectionRegistry._closed_sentinel:
-                break
-            ChannelConnectionRegistry._accept_connection(on_new_channel, dask_client, client_address, dask_id)
+        try:
+            # ATTENTION: only the sentinel ends the loop, never the event. 'stop_listening' clears the event
+            # *and* queues the sentinel - a loop leaving on the event would leave the sentinel behind, and
+            # that ends the next listener the moment it starts.
+            while (
+                dask_id := ChannelConnectionRegistry._next_connection_id(dask_client, connection_queue)
+            ) != ChannelConnectionRegistry._closed_sentinel:
+                if dask_id is not None:
+                    ChannelConnectionRegistry._accept_connection(on_new_channel, dask_client, client_address, dask_id)
+        except BaseException:
+            # nobody accepts any more, so a new listener must be allowed to start
+            listening_on_connection.clear()
+            raise
         ChannelConnectionRegistry._logger.debug(
             "Stopped listening to Dask Client on %s. (listening_on_connection.is_set(): %s)",
             client_address,
             listening_on_connection.is_set(),
         )
+
+    @staticmethod
+    def _next_connection_id(
+        dask_client: distributed.Client,
+        connection_queue: ESPQueue[str],
+    ) -> str | None:
+        if dask_client.status != "running":
+            ChannelConnectionRegistry._logger.error("Cannot listen to Dask client - dask client is not running.")
+            raise ConnectionError("dask client is not running")
+        # blocks on the scheduler, so an idle server costs one round trip per timeout and a connecting
+        # client is served the moment it announces itself
+        return connection_queue.pop_or_none(timeout=ChannelConnectionRegistry._accept_timeout_in_seconds)
 
     @staticmethod
     def _accept_connection(

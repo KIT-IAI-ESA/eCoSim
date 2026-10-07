@@ -51,6 +51,8 @@ class DaskChannel(ESPChannel, ShutdownListener):
     _inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
     _peer_inbox_queue: distributed.Queue | None = field(default=None, init=False, repr=False)
     _channel_connection_registry: ChannelConnectionRegistry | None = field(default=None, init=False, repr=False)
+    # the accept loop is one per cluster and shared by every channel, so only the channel that started it may stop it
+    _started_listening: bool = field(default=False, init=False)
 
     @staticmethod
     def of(
@@ -102,7 +104,10 @@ class DaskChannel(ESPChannel, ShutdownListener):
         if not self._is_internal_dask_client_running():
             DaskChannel._logger.warning("Dask client is not running: %s. So nothing is done", self._connection_address)
             return
-        self._channel_registry().close()
+        if self._started_listening:
+            self._channel_registry().stop_listening()
+        if self._connected.is_set():
+            self._signal_close()
         DaskChannel._logger.info("Connection to Dask client %s closed.", self._connection_address)
 
     def _signal_close(self) -> None:
@@ -204,7 +209,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
         channel_handler: ChannelHandler,
     ) -> None:
         DaskChannel._logger.debug("Starting to listen")
-        self._channel_registry().start_listening(channel_handler)
+        self._started_listening = self._channel_registry().start_listening(channel_handler)
 
     def _channel_registry(self) -> ChannelConnectionRegistry:
         if self._channel_connection_registry is not None:
