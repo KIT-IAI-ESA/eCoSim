@@ -4,8 +4,9 @@ from dataclasses import dataclass, field
 from typing import override
 
 from ecosim_common.config.client_id import ClientID
-from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.config.database_type import DatabaseType
+from ecosim_common.tech.parallel.parallel_lock import ParallelLock
+
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
@@ -55,7 +56,7 @@ class RepositoriesDB(Repositories):
             return self._client_id_to_measurement_repository[client_id]
         with self._measurement_repository_creation_lock:
             if client_id not in self._client_id_to_measurement_repository:
-                self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryDB(
+                self._client_id_to_measurement_repository[client_id] = MeasurementRepositoryDB.create(
                     simulation_config=self._simulation_config,
                     client_id=client_id,
                     db_connection=self._db_connection,
