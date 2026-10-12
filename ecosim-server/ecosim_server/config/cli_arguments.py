@@ -12,7 +12,6 @@ from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 
 
-# TODO_OSR: refactor to dataclass
 class CLIArguments(AppConfig):
     def __init__(
         self,

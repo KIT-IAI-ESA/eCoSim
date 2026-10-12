@@ -10,6 +10,15 @@ from ecosim_common.config import config_parser
 
 
 class AppConfig(object):
+    """
+    This class bootstraps the app configuration. In general, it adds all given parameters as CLI arguments. All CLI arguments can optionally
+    have default values that optionally can be overridden by environment variables.
+
+    A given CLI argument has a higher priority than an environment variable.
+
+    So the implicit priority is:  CLI argument > Environment variable > Default value
+    """
+
     def __init__(
         self,
         cli_description: str,
