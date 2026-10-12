@@ -1,61 +1,99 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Sequence
-from typing import Any, List, Tuple, override
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, List, Tuple, override
 
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
 from ecosim_common.tech.logger.logger import ESPLogger
-from ecosim_server.config.simulation_config import SimulationConfig
+from sqlalchemy import FLOAT, JSON, Column, DateTime
+
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from sqlalchemy import JSON, Column, DateTime, Float
 
 
-# TODO_OSR: rewrite to dataclass
+@dataclass(frozen=True)
 class MeasurementRepositoryDB(MeasurementRepository):
-    _logger = ESPLogger("MeasurementRepositoryDB")
+    _logger: ClassVar[ESPLogger] = ESPLogger("MeasurementRepositoryDB")
 
-    def __init__(
-        self,
+    _db_connection: DBConnection = field()
+    _dynamic_table: type = field()
+    _interface_name_to_column_name: dict[str, str] = field()
+    _interface_name_to_json_column_name: dict[str, str] = field()
+
+    @staticmethod
+    def create(
         simulation_config: SimulationConfig,
         client_id: ClientID,
         db_connection: DBConnection,
-    ):
-        self._db_connection = db_connection
-        self._interface_name_to_column_name: dict[str, str] = {}
-        self._interface_name_to_json_column_name: dict[str, str] = {}
-        self._DynamicTable = self._create_dynamic_class(simulation_config, client_id)
-        self._db_connection.create_measurement_table(self._DynamicTable)
-
-    def _create_dynamic_class(
-        self,
-        simulation_config: SimulationConfig,
-        client_id: ClientID,
-    ) -> type:
+    ) -> MeasurementRepositoryDB:
         client_config = simulation_config.client_simulator_config_for(client_id)
         if client_config is None:
             raise RuntimeError(f"No config for clientID {client_id} found.")
+        interface_name_to_column_name = MeasurementRepositoryDB._create_interface_name_to_column_name(client_config)
+        interface_name_to_json_column_name = MeasurementRepositoryDB._create_interface_name_to_json_column_name(client_config)
+        dynamic_table = MeasurementRepositoryDB._create_dynamic_class(
+            db_connection,
+            client_config,
+            interface_name_to_column_name=interface_name_to_column_name,
+            interface_name_to_json_column_name=interface_name_to_json_column_name,
+        )
+        db_connection.create_measurement_table(dynamic_table)
+        return MeasurementRepositoryDB(
+            _db_connection=db_connection,
+            _dynamic_table=dynamic_table,
+            _interface_name_to_column_name=interface_name_to_column_name,
+            _interface_name_to_json_column_name=interface_name_to_json_column_name,
+        )
+
+    @staticmethod
+    def _create_dynamic_class(
+        db_connection: DBConnection,
+        client_config: ClientSimulatorConfig,
+        interface_name_to_column_name: dict[str, str],
+        interface_name_to_json_column_name: dict[str, str],
+    ) -> type:
         table_name = f"module_{client_config.simulator_name.lower()}"
 
         attributes = {
             "__tablename__": table_name,
-            "__table_args__": {"schema": self._db_connection.default_schema},
+            "__table_args__": {"schema": db_connection.default_schema},
             "timestamp": Column(DateTime(timezone=True), primary_key=True),
         }
-        for interface in client_config.interfaces:
-            column_name = MeasurementRepositoryDB._column_name_of_server_interface(interface)
-            self._interface_name_to_column_name[interface.name] = column_name
-            attributes[column_name] = Column(Float)
-            json_column_name = MeasurementRepositoryDB._json_column_name_of_server_interface(interface)
-            self._interface_name_to_json_column_name[interface.name] = json_column_name
-            attributes[json_column_name] = Column(JSON)
+        for column_name in interface_name_to_column_name.values():
+            attributes[column_name] = Column(FLOAT)
+        for column_name in interface_name_to_json_column_name.values():
+            attributes[column_name] = Column(JSON)
 
         dynamic_class = type(table_name, (SimControlDB_Base,), attributes)
         return dynamic_class
+
+    @staticmethod
+    def _create_interface_name_to_column_name(
+        client_config: ClientSimulatorConfig,
+    ) -> dict[str, str]:
+        interface_name_to_column_name: dict[str, str] = {}
+        for interface in client_config.interfaces:
+            column_name = MeasurementRepositoryDB._column_name_of_server_interface(interface)
+            interface_name_to_column_name[interface.name] = column_name
+        return interface_name_to_column_name
+
+    @staticmethod
+    def _create_interface_name_to_json_column_name(
+        client_config: ClientSimulatorConfig,
+    ) -> dict[str, str]:
+        interface_name_to_json_column_name: dict[str, str] = {}
+        for interface in client_config.interfaces:
+            column_name = MeasurementRepositoryDB._json_column_name_of_server_interface(interface)
+            interface_name_to_json_column_name[interface.name] = column_name
+        return interface_name_to_json_column_name
 
     @staticmethod
     def _column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
@@ -84,7 +122,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
         timestamp: datetime.datetime,
     ) -> None:
         with self._db_connection.session() as session:
-            new_record = self._DynamicTable(
+            new_record = self._dynamic_table(
                 timestamp=timestamp,
                 **{f"{self._select_column(v)}": v.value for v in values},
             )
@@ -95,8 +133,8 @@ class MeasurementRepositoryDB(MeasurementRepository):
     def all(self) -> List[MeasurementEntry]:
         result: List[MeasurementEntry] = []
         with self._db_connection.session() as session:
-            ts_col = getattr(self._DynamicTable, "timestamp")
-            rows: List[Any] = session.query(self._DynamicTable).order_by(ts_col.asc()).all()
+            ts_col = getattr(self._dynamic_table, "timestamp")
+            rows: List[Any] = session.query(self._dynamic_table).order_by(ts_col.asc()).all()
             for row in rows:
                 values_list: List[ProtocolInterfaceValue] = []
                 # First, collect scalar (float) values
