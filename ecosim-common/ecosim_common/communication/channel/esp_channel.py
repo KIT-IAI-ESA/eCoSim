@@ -45,7 +45,6 @@ class ESPChannel(ABC):
     def is_connected(self) -> bool:
         pass
 
-    # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
     def listen_on_message_async(
         self,
@@ -78,7 +77,6 @@ class ESPChannel(ABC):
     def is_listening_event(self) -> ParallelEvent:
         pass
 
-    # TODO_OSR: think about returning an ESPQueue
     @abstractmethod
     def listen_on_connection_loop_async(
         self,
@@ -91,7 +89,6 @@ class ESPChannel(ABC):
         pass
 
 
-# TODO_OSR: channel contains connection address (but this can be actually client or server address)
 @dataclass(frozen=True)
 class ConnectionData:
     channel: ESPChannel
