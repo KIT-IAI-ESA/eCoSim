@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-pyro5/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-pyro5/ecosim_client_pyro.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-pyro5/ecosim_client_pyro5.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-pyro5/uv.lock" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
