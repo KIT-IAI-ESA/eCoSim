@@ -8,6 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-fmu-v2/ecosim_client_fmu_v2.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-fmu-v2/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-fmu-v2/tests/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-fmu-v2/uv.lock" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />

@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-hpc/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-hpc/ecosim_hpc.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-hpc/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-hpc/uv.lock" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
