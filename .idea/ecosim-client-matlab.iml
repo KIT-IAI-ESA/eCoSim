@@ -7,6 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/dist" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/ecosim_client_matlab.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-client-matlab/uv.lock" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />

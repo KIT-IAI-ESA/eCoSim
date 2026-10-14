@@ -9,6 +9,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ecosim-common/tests/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-common/dist" />
       <excludeFolder url="file://$MODULE_DIR$/ecosim-common/tests/tech/structures/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/ecosim-common/uv.lock" />
       <excludePattern pattern="report.xml" />
       <excludePattern pattern="coverage.xml" />
       <excludePattern pattern=".coverage" />
