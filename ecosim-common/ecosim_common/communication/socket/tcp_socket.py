@@ -12,6 +12,7 @@ from ecosim_common.communication.binary_message.simple_binary_message import Sim
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ChannelHandler, ConnectionData, ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
+from ecosim_common.config.executing_platform import ExecutingPlatform
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -38,14 +39,31 @@ class TCPSocket(ESPChannel, ShutdownListener):
         # AF_INET: address family internet => socket is using IPv4
         # SOCK_STREAM: byte-stream communication (by TCP)
         internal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # TCP_NODELAY: small messages are not grouped to larger packages but sent immediately
-        internal_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        # enable address reuse # TODO check implication for clients - this was added for server
-        internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        TCPSocket._setup_internal_socket(internal_socket)
         return TCPSocket(
             _internal_socket=internal_socket,
             _connection_address=connection_address,
         )
+
+    @staticmethod
+    def _setup_internal_socket(internal_socket: socket.socket) -> None:
+        # TCP_NODELAY: small messages are not grouped to larger packages but sent immediately
+        internal_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        platform = ExecutingPlatform.current()
+        if platform is ExecutingPlatform.WINDOWS:
+            # Windows: SO_REUSEADDR would allow other sockets to hijack an active port.
+            # Request exclusive use explicitly (not the default on Windows).
+            internal_socket.setsockopt(
+                socket.SOL_SOCKET,
+                # mypy complains on Linux because this is Windows exclusive
+                socket.SO_EXCLUSIVEADDRUSE,  # type: ignore[attr-defined]
+                1,
+            )
+        elif platform.is_posix:
+            # BSD-style stacks refuse bind() while old connections on the port are in
+            # TIME_WAIT (lasts ~1-4 min on the side that closed first).
+            # SO_REUSEADDR allows rebinding immediately, e.g. after a server restart.
+            internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def _is_internal_socket_listening(self) -> bool:
         return not self._internal_socket.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
