@@ -21,6 +21,21 @@
 - the integration tests are run separately, they need real ports and containers
     - `cd integration-tests && uv run pytest`
 
+## Commit messages
+
+[Conventional Commits](https://www.conventionalcommits.org/), checked by `dev/check_commit_msg.py`:
+
+```text
+<type>[(<scope>)][!]: <summary>
+
+[optional body, e.g. Closes #12]
+```
+
+- types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- summary in the imperative: `add`, not `added`
+- `!` marks a breaking change
+- the check runs as a `commit-msg` hook after `uv run pre-commit install`, and on GitHub for every new commit
+
 ## Build the documentation
 
 - the site is rendered from `docs/` with [mkdocs](https://www.mkdocs.org/) and the
