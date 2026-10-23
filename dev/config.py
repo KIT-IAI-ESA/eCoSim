@@ -26,6 +26,16 @@ def error_print(*args: object) -> None:
     print(*args, file=sys.stderr)
 
 
+def write_or_check(path: Path, content: str, check: bool) -> int:
+    if not check:
+        path.write_text(content, encoding="utf-8")
+        return 0
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return 0
+    error_print(f"{path.name} is out of date, run the same command without --check")
+    return 1
+
+
 def run(
     cmd: List[str],
     cwd: Path | None = None,
