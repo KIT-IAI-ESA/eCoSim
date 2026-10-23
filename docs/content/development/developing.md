@@ -44,7 +44,7 @@ Node.js 20 or newer.
 
 - install the dependencies once: `cd docs && npm ci`
 - serve it locally with live reload: `npm start`
-- build it: `npm run build`
+- build it the way CI does: `npm run build`
     - the build fails on a broken link, so run it before handing the work back
     - the output goes to `docs/build/`, which is gitignored
 - a new page has to be added to `docs/sidebars.ts`
@@ -57,4 +57,9 @@ config reader, regenerate them in the repository root:
 - `uv run --project simulation_examples python dev/generate_cli_reference.py`
 - `uv run python dev/generate_config_reference.py`
 
-With `--check`, both scripts only compare and fail if the page is out of date.
+With `--check`, both scripts only compare and fail if the page is out of date. CI runs them this way.
+
+### Publishing
+
+The workflow `.github/workflows/docs.yml` builds the site for every push and pull request, and
+publishes `main` to GitHub Pages.
