@@ -75,8 +75,11 @@ The files are appended to on every run. Delete `results/` to start clean.
 | `Modules/<model>/preferences.ini` | Where the client finds the server, and which model it runs |
 | `Modules/<model>/*.fmu`, `*.fmc` | The model and its interface description |
 
+The [configuration reference](../reference/configuration-files.md) lists every key of these files.
+
 ## Next steps
 
 - Store the results in PostgreSQL/TimescaleDB: leave out `--database-type` and `--database-directory`
   and fill in the `[database]` section of `server/preferences.ini`.
 - Run a simulation in containers with the [Docker guide](../guides/docker.md).
+- See every option of the server and the clients in the [command-line reference](../reference/command-line.md).

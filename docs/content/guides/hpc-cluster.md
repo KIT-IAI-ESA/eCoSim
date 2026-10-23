@@ -51,3 +51,4 @@ pg_ctl stop -D test
 ## See also
 
 - [HPC cheat sheet](../development/tech/hpc-cheat-sheet.md): batch and interactive mode with Dask-MPI
+- [Command-line options](../reference/command-line.md#hpc) of the HPC entry point
