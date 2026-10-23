@@ -16,7 +16,7 @@ from ecosim_common.config.model_interface_server import ConnectedToData, ModelIn
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.fmu.fmu3_state_space_results import fmu3_state_space_results
+from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from ecosim_test_common.resources.resource_utils import config_parser_for_resource
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
@@ -146,7 +146,7 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
         ),
     )
 
-    fmu3_client = FMU3Client(
+    fmu3_client = FMU3Client.of(
         config_parser=config_parser_for_resource("integration/models/fmu3/configs/state_space.ini"),
         config_override=ClientConfigOverride(
             server_host=server_host,
@@ -176,11 +176,9 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
         y = [v for v in values if v.name == "y"][0]
 
         assert u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
-        assert y.value == fmu3_state_space_results[int(passed_seconds - 1)]
+        expected_y = state_space_outputs(int(passed_seconds), (1, 1_000, 100_000))
+        assert y.value == expected_y
 
-        return (
-            u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds]
-            and y.value == fmu3_state_space_results[int(passed_seconds - 1)]
-        )
+        return u.value == [1 * passed_seconds, 1_000 * passed_seconds, 100_000 * passed_seconds] and y.value == expected_y
 
     fmu3_measurement_repo.assert_for_each_record(assertion=assert_for_each_record)

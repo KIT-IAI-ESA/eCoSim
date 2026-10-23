@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, cast, override
 
 import dask.distributed as distributed
+
 from ecosim_common.communication.binary_message import binary_message_header
 from ecosim_common.communication.binary_message.binary_message_header import BinaryMessageHeader
 from ecosim_common.communication.binary_message.received_binary_messages import ReceivedBinaryMessage
@@ -64,6 +65,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
             _internal_dask_id=dask_id or create_internal_dask_id(),
         )
 
+    @override
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
 
