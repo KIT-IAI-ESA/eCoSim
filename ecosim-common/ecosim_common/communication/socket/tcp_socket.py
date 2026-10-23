@@ -31,6 +31,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
     _listening_on_connection: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
     _start_listening_in_progress: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
 
+    @override
     def __post_init__(self) -> None:
         ShutdownManager().register_listener(self)
 

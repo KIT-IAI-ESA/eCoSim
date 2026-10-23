@@ -1,10 +1,13 @@
 import dask.distributed as distributed
+import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_hpc.hpc_main_process import hpc_main_process
 from integration_tests.hpc.hpc_data import client_manager_config, server_config, simulation_config
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 
 
+# the server runs in a thread of its own - without this its death would only be reported as a warning
+@pytest.mark.filterwarnings("error::pytest.PytestUnhandledThreadExceptionWarning")
 def test_hpc_main_process(dask_client: distributed.Client) -> None:
     hpc_main_process(
         dask_client=dask_client,

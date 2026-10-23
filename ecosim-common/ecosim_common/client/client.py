@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Dict, List, assert_never
+from dataclasses import dataclass, field
+from typing import ClassVar, Dict, List, assert_never
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
@@ -44,21 +45,23 @@ from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
 
+@dataclass
 class Client(ShutdownListener):
-    logger = ESPLogger("Client")
+    logger: ClassVar[ESPLogger] = ESPLogger("Client")
 
-    def __init__(
-        self,
-        client_config: ClientConfig,
-    ):
-        self._client_config: ClientConfig = client_config
+    _client_config: ClientConfig = field()
+    _execution_config: ExecutionConfig = field(default_factory=ExecutionConfig)
+    _channel_connector: ESPChannelConnector = field(init=False)
+    _channel_or_none: ESPChannel | None = field(default=None)
+    _image_renderer_socket: RenderingSocketClient | None = field(default=None)
+    _is_finished: bool = field(default=False)
+    _was_started: ParallelEvent = field(init=False)
+    _image_renderer_service: SimulationRendererService | None = field(default=None)
+
+    def __post_init__(self) -> None:
         self._client_config.print_to_info()
-        self._execution_config: ExecutionConfig = ExecutionConfig()
-        self._channel_connector: ESPChannelConnector = ESPChannelConnector(_communication_protocol=client_config.communication_protocol())
-        self._channel_or_none: ESPChannel | None = None
-        self._image_renderer_socket: RenderingSocketClient | None = None
-        self._is_finished = False
-        self._was_started = ParallelEvent.for_communication_protocol(client_config.communication_protocol())
+        self._channel_connector = ESPChannelConnector(_communication_protocol=self._client_config.communication_protocol())
+        self._was_started = ParallelEvent.for_communication_protocol(self._client_config.communication_protocol())
         ShutdownManager().register_listener(self)
 
     @property
@@ -95,10 +98,6 @@ class Client(ShutdownListener):
 
     @abstractmethod
     def on_simulation_stop(self) -> None:
-        pass
-
-    @abstractmethod
-    def image_renderer_service(self) -> SimulationRendererService:
         pass
 
     def start(self) -> None:
@@ -139,11 +138,21 @@ class Client(ShutdownListener):
             self._client_config.server_config().server_address.port,
         )
 
+    def _before_handle_message(
+        self,
+        message: ESPChannelMessage,
+    ) -> None:
+        """
+        A simple callback for things, that need to be done before a message is handled.
+        """
+        pass
+
     def _handle_message(
         self,
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Received and handling message")
+        self._before_handle_message(message=message)
         message_type = message.type()
         match message_type:
             case MessageType.CLIENT_META_DATA_REQUEST:
@@ -170,7 +179,10 @@ class Client(ShutdownListener):
                 assert_never(message_type)
 
     def on_app_shutdown(self) -> None:
-        self._channel.close()
+        if self._channel_or_none is None:
+            Client.logger.debug("Client was never connected -> no channel to close.")
+            return
+        self._channel_or_none.close()
 
     def _init_image_renderer_connection(self) -> None:
         if self._client_config.server_config().image_renderer_port is None:
@@ -179,10 +191,15 @@ class Client(ShutdownListener):
             )
             return
         Client.logger.debug("Initializing the image service.")
+        image_service = self._image_renderer_service
+        if image_service is None:
+            Client.logger.warning("No image renderer service was initialized but image rendering was requested. No images will be rendered.")
+            return
+
         self._image_renderer_socket = RenderingSocketClient(
             uri=f"ws://{self._client_config.server_config().server_address.ip}:{self._client_config.server_config().image_renderer_port}",
             client_config=self._client_config,
-            renderer_service=self.image_renderer_service(),
+            renderer_service=image_service,
         )
         started = self._image_renderer_socket.start()
         timeout = 5

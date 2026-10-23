@@ -123,7 +123,7 @@ class SimpleClientConfig(ClientConfig):
                 simulator_config=simulator_config,
             ),
             # currently these are only copied from original client-config
-            _extra_sections=config_parser.extract_extra_sections(),  # todo update generation of other-sections
+            _extra_sections=config_parser.extract_extra_sections(),
         )
 
     @override
@@ -148,7 +148,7 @@ class SimpleClientConfig(ClientConfig):
 
     @override
     def as_config_file_content(self) -> str:
-        other_sections_str = "\n\n".join(s for s in self._extra_sections if s)
+        extra_sections_str = "\n\n".join(s for s in self._extra_sections if s)
 
         return (
             f"""
@@ -156,7 +156,7 @@ class SimpleClientConfig(ClientConfig):
 
 {self.simulator_config().as_string()}
 
-{other_sections_str}
+{extra_sections_str}
         """
         ).strip()
 

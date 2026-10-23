@@ -11,10 +11,11 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_common.tech.structures.esp_map import ESPMap
-from ecosim_hpc.client_manager_config import ClientManagerConfig
-from ecosim_hpc.hpc_client_state import HPCClientState
 from ecosim_server.config.simulation_config import SimulationConfig
 from fmpy import read_model_description
+
+from ecosim_hpc.client_manager_config import ClientManagerConfig
+from ecosim_hpc.hpc_client_state import HPCClientState
 
 
 class ClientManager(ShutdownListener):
@@ -68,7 +69,7 @@ class ClientManager(ShutdownListener):
                         break
                 dask_client.sync(
                     client_submit,
-                    client_function=PyroClient,
+                    client_function=PyroClient.of,
                     client_states=self.client_dict,
                     state=self.client_dict[simulator_name],
                     workers=workers,
@@ -80,7 +81,7 @@ class ClientManager(ShutdownListener):
                     if simulator_name in self.client_dict.keys():
                         dask_client.sync(
                             client_submit,
-                            client_function=FMU3Client,
+                            client_function=FMU3Client.of,
                             client_states=self.client_dict,
                             state=self.client_dict[simulator_name],
                         )
@@ -88,7 +89,7 @@ class ClientManager(ShutdownListener):
                     if simulator_name in self.client_dict.keys():
                         dask_client.sync(
                             client_submit,
-                            client_function=FMU2Client,
+                            client_function=FMU2Client.create,
                             client_states=self.client_dict,
                             state=self.client_dict[simulator_name],
                         )
@@ -101,7 +102,7 @@ class ClientManager(ShutdownListener):
                 if simulator_name in self.client_dict.keys():
                     dask_client.sync(
                         client_submit,
-                        client_function=MatlabClient,
+                        client_function=MatlabClient.of,
                         client_states=self.client_dict,
                         state=self.client_dict[simulator_name],
                     )

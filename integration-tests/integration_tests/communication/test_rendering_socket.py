@@ -28,7 +28,7 @@ def test_local_test() -> None:
     mock_config.config_path = "non-existing-dir"
 
     renderer_service = PreRenderedImageService(
-        PreRenderedImageServiceConfig(
+        _config=PreRenderedImageServiceConfig(
             image_dir=resource_path_file_str("rendered_images"),
         ),
     )

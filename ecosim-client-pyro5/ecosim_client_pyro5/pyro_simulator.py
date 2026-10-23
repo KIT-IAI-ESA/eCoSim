@@ -1,12 +1,13 @@
-from ecosim_client_pyro5.pyro_config import PyroConfig
+import Pyro5.api
+from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue, InterfaceValueType
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from ecosim_common.client.config.client_config import ClientConfig
-import Pyro5.api
+
+from ecosim_client_pyro5.pyro_config import PyroConfig
 
 """
 For the usage of the Pyro simulator check the appropriate section in the README
@@ -48,7 +49,7 @@ class PyroSimulator(ShutdownListener):
         self._output_dict = self._simulation_object.initialize()
         PyroSimulator._logger.debug("Initializing... finished.")
 
-    def set_input_float(
+    def _set_input_float(
         self,
         name: str,
         value: InterfaceValueType,
@@ -85,7 +86,8 @@ class PyroSimulator(ShutdownListener):
     ) -> None:
         self._simulation_object._pyroClaimOwnership()
         for interface_id, value in input_values.items():
-            self.set_input_float(interface_id, value)
+            # TODO: support for lists
+            self._set_input_float(interface_id, value)
         PyroSimulator._logger.info(
             "Executing next step (current_simulation_time=%s | step_size=%s)...",
             self._current_simulation_time,

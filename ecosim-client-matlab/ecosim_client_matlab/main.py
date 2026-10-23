@@ -2,12 +2,13 @@ import logging
 from time import sleep
 
 from art import tprint
-from ecosim_client_matlab.matlab_client import MatlabClient
 from ecosim_common.client.config.cli_arguments import CLIArguments
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+
+from ecosim_client_matlab.matlab_client import MatlabClient
 
 
 def main() -> None:
@@ -23,7 +24,10 @@ def main() -> None:
     main_logger = ESPLogger("main")
 
     config_parser = ConfigParser(args.config_file())
-    client = MatlabClient(config_parser, args.config_overrides())
+    client = MatlabClient.of(
+        config_parser=config_parser,
+        config_overrides=args.config_overrides(),
+    )
     main_logger.debug("Calling client.connect()")
     client.start()
     client.wait_until_finished()
