@@ -1,0 +1,165 @@
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.inner {
+  display: flex;
+  min-height: 5rem;
+  max-width: 80rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  font-size: 0.875rem;
+}
+
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.easimov {
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  transition: opacity 150ms;
+}
+
+.easimov:hover {
+  color: var(--foreground);
+  text-decoration: none;
+  opacity: 0.75;
+}
+
+.o {
+  position: relative;
+  display: inline-flex;
+  width: 1.14cap;
+  height: 1.14cap;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -0.08cap;
+}
+
+/* logos inversion and special case for energy lab logo */
+:global([data-theme="dark"]) .darkInvert,
+.lightInvert {
+  filter: invert(1) hue-rotate(180deg) brightness(1);
+}
+
+:global([data-theme="dark"]) .lightInvert {
+  filter: none;
+}
+
+.o img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.divider {
+  width: 1px;
+  height: 1.25rem;
+  margin: 0 0.5rem;
+  background: var(--border);
+}
+
+.logoLink,
+.energyLabLink {
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 150ms;
+}
+
+.logoLink:hover,
+.energyLabLink:hover {
+  opacity: 0.75;
+}
+
+.logoLink {
+  height: 1.75rem;
+}
+
+.logo {
+  width: auto;
+  height: 1.25rem;
+}
+
+.energyLabLink {
+  height: 2.25rem;
+}
+
+.energyLab {
+  width: auto;
+  height: 2rem;
+}
+
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem 1.5rem;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.legal a {
+  border-radius: 0.25rem;
+  color: var(--foreground);
+  transition: color 150ms;
+}
+
+.legal a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.legal a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.copyright {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .easimov {
+    font-size: 1.875rem;
+  }
+
+  .divider {
+    height: 1.5rem;
+  }
+
+  .logoLink {
+    height: 2rem;
+  }
+
+  .logo {
+    height: 1.5rem;
+  }
+
+  .energyLabLink {
+    height: 2.5rem;
+  }
+
+  .energyLab {
+    height: 2.25rem;
+  }
+}
