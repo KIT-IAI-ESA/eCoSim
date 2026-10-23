@@ -1,0 +1,30 @@
+{
+    "fmu-file": "",
+    "modeldescription": "",
+    "inputs": [
+        {
+            "name": "Float64_continuous_input",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        },
+        {
+            "name": "Float64_discrete_input",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "Float64_continuous_output",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "Float64_discrete_output",
+            "unit": "",
+            "description": ""
+        }
+    ]
+}

@@ -22,3 +22,19 @@ def resource_path_file_str(file: str) -> str:
 
 def fmc_path() -> Path:
     return resource_path_file("configs/fmcs")
+
+
+def fmu2_model_path() -> Path:
+    return resource_path_file("integration/models/fmu2/Feedthrough.fmu")
+
+
+def fmu2_fmc_path() -> Path:
+    return resource_path_file("integration/models/fmu2/configs/Feedthrough.fmc")
+
+
+def fmu3_model_path() -> Path:
+    return resource_path_file("integration/models/fmu3/StateSpace.fmu")
+
+
+def fmu3_fmc_path() -> Path:
+    return resource_path_file("integration/models/fmu3/configs/StateSpace.fmc")

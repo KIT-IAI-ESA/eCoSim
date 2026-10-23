@@ -34,6 +34,10 @@ class ESPChannel(ABC):
                 raise ValueError(f"Unknown communication protocol: {communication_protocol}")
 
     @abstractmethod
+    def __post_init__(self) -> None:
+        pass
+
+    @abstractmethod
     def close(self) -> None:
         pass
 
