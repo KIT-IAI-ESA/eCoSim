@@ -1,8 +1,8 @@
 # eCoSim
 
-- [Use packages](docs/use_packages.md)
-- [Project setup](docs/dev/project_setup.md)
-- [Architecture](docs/dev/architecture.md)
-- [Dev notes](docs/dev/developing.md)
+- [Introduction](docs/content/intro.mdx)
+- [Project setup](docs/content/development/project-setup.md)
+- [Architecture](docs/content/development/architecture.md)
+- [Dev notes](docs/content/development/developing.md)
 
-- [Release history](docs/release_history.md)
+- [Release history](docs/content/development/release-history.md)

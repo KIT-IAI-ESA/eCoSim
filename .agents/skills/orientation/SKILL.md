@@ -86,6 +86,6 @@ fixtures, and is the fastest way to understand an end-to-end run.
 
 ## The human facing counterpart
 
-`docs/dev/architecture.md` covers the same ground for humans and is published as a site (see
-`mkdocs.yml`). This skill is the working map; that page is the documentation. When the structure
+`docs/content/development/architecture.md` covers the same ground for humans and is published
+with the docs site in `docs/`. This skill is the working map; that page is the documentation. When the structure
 changes, both have to change.

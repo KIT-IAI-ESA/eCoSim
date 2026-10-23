@@ -61,7 +61,7 @@ middle part of those names must match the index name in `pyproject.toml`.
 
 Never write a token into a file in the repository, and never echo one into the transcript.
 If a sync fails with `401`, report that the credentials are missing and let the user supply
-them. `docs/use_packages.md` is the reference for consumers outside this repository.
+them.
 
 ## Untyped dependencies
 

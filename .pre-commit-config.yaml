@@ -11,14 +11,6 @@ repos:
         types: [ text ]
         exclude: ^(/windows/.*\.ini|.*\.iml)$
       - id: check-yaml
-        # mkdocs.yml is checked separately, see below
-        exclude: ^mkdocs\.yml$
-      - id: check-yaml
-        name: check yaml (mkdocs)
-        # '!ENV' is a mkdocs specific tag that the hook cannot resolve.
-        # '--unsafe': Instead of loading the files, simply parse them for syntax.
-        args: [ --unsafe ]
-        files: ^mkdocs\.yml$
       - id: check-json
       - id: check-toml
       - id: check-merge-conflict
