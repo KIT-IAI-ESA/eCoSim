@@ -71,4 +71,4 @@ python dev/sync_projects.py
 uv run pre-commit run --all-files
 ```
 
-Then update `docs/dev/` if the new package changes how the project is set up.
+Then update `docs/content/development/` if the new package changes how the project is set up.

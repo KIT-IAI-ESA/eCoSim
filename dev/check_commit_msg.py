@@ -41,7 +41,7 @@ def commit_messages(revisions: list[str]) -> dict[str, str]:
 
 
 def parse_arguments(arguments: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Check commit messages, see docs/dev/developing.md")
+    parser = argparse.ArgumentParser(description="Check commit messages, see docs/content/development/developing.md")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("file", nargs="?", type=Path)
     source.add_argument("--revisions", nargs="+")
@@ -55,7 +55,7 @@ def main(arguments: list[str]) -> int:
     for name, errors in failures.items():
         print(f"{name}:", *(f"  - {error}" for error in errors), sep="\n", file=sys.stderr)
     if failures:
-        print("format: <type>[(<scope>)][!]: <summary>, see docs/dev/developing.md", file=sys.stderr)
+        print("format: <type>[(<scope>)][!]: <summary>, see docs/content/development/developing.md", file=sys.stderr)
     return 1 if failures else 0
 
 

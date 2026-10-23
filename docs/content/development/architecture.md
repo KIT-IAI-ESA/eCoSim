@@ -20,19 +20,20 @@ Ten independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.
 
 ## Dependency direction
 
-A child in this tree is a dependency of its parent.
+An arrow points from a subproject to one it depends on. Every subproject also depends on
+`ecosim-common`, which is left out of the diagram.
 
-```
-integration-tests
-├── ecosim-hpc
-│   ├── ecosim-server
-│   ├── ecosim-client-fmu-v2 ─┐
-│   ├── ecosim-client-fmu-v3 ─┴─▶ ecosim-common-fmpy
-│   ├── ecosim-client-matlab
-│   └── ecosim-client-pyro5
-└── ecosim-test-common
-
-every subproject above ──▶ ecosim-common
+```mermaid
+flowchart TD
+  tests[integration-tests] --> hpc[ecosim-hpc]
+  tests --> testcommon[ecosim-test-common]
+  hpc --> server[ecosim-server]
+  hpc --> fmu2[ecosim-client-fmu-v2]
+  hpc --> fmu3[ecosim-client-fmu-v3]
+  hpc --> matlab[ecosim-client-matlab]
+  hpc --> pyro[ecosim-client-pyro5]
+  fmu2 --> fmpy[ecosim-common-fmpy]
+  fmu3 --> fmpy
 ```
 
 - `ecosim-common` depends on no other subproject; everything else depends on it
@@ -95,10 +96,13 @@ The server and the clients never speak a transport directly. They use `ESPChanne
 `ESPChannel.for_protocol()` picks the implementation from the configured
 `CommunicationProtocol`:
 
-| Protocol | Value in the config | Implementation |
-| --- | --- | --- |
-| TCP socket | `tcp_socket` | `communication/socket/tcp_socket.py` |
-| Dask | `dask` | `communication/dask/dask_channel.py` |
+| Protocol | In ini files | On the command line | Implementation |
+| --- | --- | --- | --- |
+| TCP socket | `TCP_SOCKET` | `tcp_socket` or `TCP_SOCKET` | `communication/socket/tcp_socket.py` |
+| Dask | `DASK` | `dask` or `DASK` | `communication/dask/dask_channel.py` |
+
+The ini files take the member name, because `ConfigParser.get_enum` looks the value up by name. The
+command line goes through `CommunicationProtocol.of()`, which ignores the case.
 
 `MessageType` is the protocol vocabulary. It is deliberately restricted to the values 0–255, so
 that one byte carries it regardless of the transport underneath.
@@ -151,4 +155,4 @@ Each deployable subproject declares a console script:
 | `ecosim-client-matlab` | `ecosim_client_matlab.main:main` |
 | `ecosim-client-pyro5` | `ecosim_client_pyro5.main:main` |
 
-`ecosim-hpc` is started through `ecosim_hpc/main.py` instead — see the [HPC notes](tech/hpc.md).
+`ecosim-hpc` is started through `ecosim_hpc/main.py` instead — see the [HPC notes](tech/hpc-cheat-sheet.md).
