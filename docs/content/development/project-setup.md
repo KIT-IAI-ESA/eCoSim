@@ -3,7 +3,7 @@
 - [PyCharm](https://www.jetbrains.com/pycharm/) is the recommended IDE, though it is not required
 - the following commands should be executed in the root directory of the project
 - **either** run the `init_dev.py` script
-    - `python init-dev.py`
+    - `python dev/init_dev.py`
       - *troubleshooting*
         - if you ran into an error like `.venv/bin/python: No module named pip` you have a custom `venv` enabled
           -> you should run the script with your default python interpreter -> deactivate the custom venv
@@ -27,17 +27,17 @@ If you use PyCharm as the IDE you should do the following steps:
 - install `mypy` plugin from Peter Szabo
     - after the installation reference the `mypy.ini` file as config file
         - Settings -> Tools -> MyPy -> Config file
-          ![mypy settings](resources/mypy_settings.png)
+          ![mypy settings](img/mypy_settings.png)
 - it should be enough to open the project root (`ecosim`) to load the project including the subprojects
     - **only** if this is not working and if you need to set everything up manually, follow the next steps
         - open the project root
         - remove all content root
             - Settings -> Project -> Project Structure -> remove the 'content root' on the right
-              ![remove content root](resources/remove_content_root.png)
+              ![remove content root](img/remove_content_root.png)
         - open `ecosim-common` and select `Attach`
         - repeat for all subprojects
         - set up the interpreter for each subproject
-            - Settings -> Project -> Python Interpreter -> [Subproject] -> Add exisiting
+            - Settings -> Project -> Python Interpreter -> [Subproject] -> Add existing
                 - use `python` from the corresponding subproject's `.venv`
         - set up dependencies
             - Settings -> Project -> Project Dependencies -> [Subproject] -> select the needed projects
@@ -52,7 +52,7 @@ If you use PyCharm as the IDE you should do the following steps:
   - Settings -> Python -> Integrated Tools
     - select `pytest` as default test runner
     - if you get a warning that `pytest runner` is not found, click the `Fix` button
-    ![fix pytest](resources/fix_pytest.png)
+    ![fix pytest](img/fix_pytest.png)
 
 
 ## (PyCharm) Mypy shows import errors for subprojects
@@ -60,4 +60,4 @@ If you use PyCharm as the IDE you should do the following steps:
 - e.g. if imports like `import ecosim_common.config` are marked as errors you probably have the wrong mypy executable selected
 - Settings -> Tools -> Mypy -> Mypy executable
     - make sure the executable points to the `mypy` executable in the virtual environment of the project root
-  ![set mypy exec](resources/set_mypy_exec.png)
+  ![set mypy exec](img/set_mypy_exec.png)

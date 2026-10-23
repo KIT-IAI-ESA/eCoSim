@@ -70,8 +70,10 @@ instance/
 # Sphinx documentation
 docs/_build/
 
-# mkdocs
-/site/
+# docusaurus
+/docs/node_modules/
+/docs/build/
+/docs/.docusaurus/
 
 # PyBuilder
 target/
