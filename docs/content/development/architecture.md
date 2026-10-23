@@ -140,7 +140,7 @@ the server ini:
 | `postgres` | `RepositoriesDB` | a PostgreSQL/TimescaleDB instance |
 | `file` | `RepositoriesFileBased` | a writable directory, one JSON lines file per module |
 
-Both are exercised end to end by `dev/docker/example/`. The domain code never sees the
+Both are exercised end to end by the [Docker example](../guides/docker.md). The domain code never sees the
 difference; everything database specific lives under `tech/db/`.
 
 ## Entry points

@@ -7,6 +7,17 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
+      label: 'Getting started',
+      collapsed: false,
+      items: ['getting-started/installation', 'getting-started/quick-start'],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      items: ['guides/docker', 'guides/hpc-cluster', 'guides/matlab-client', 'guides/pyro5-client'],
+    },
+    {
+      type: 'category',
       label: 'Development',
       items: [
         'development/project-setup',
