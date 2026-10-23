@@ -24,7 +24,7 @@ The section name is `pyro`, in lowercase. Section names in the ini files are cas
 
 :::
 
-The other keys are the same as for every client.
+The other keys are the same as for every client, see the [configuration reference](../reference/configuration-files.md).
 
 ## The Pyro object
 

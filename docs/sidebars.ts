@@ -18,6 +18,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Reference',
+      items: ['reference/command-line', 'reference/configuration-files'],
+    },
+    {
+      type: 'category',
       label: 'Development',
       items: [
         'development/project-setup',

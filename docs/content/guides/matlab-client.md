@@ -33,7 +33,7 @@ The client's `preferences.ini` names the folder with the scripts:
 scriptfolder = path/to/the/scripts
 ```
 
-The other keys are the same as for every client.
+The other keys are the same as for every client, see the [configuration reference](../reference/configuration-files.md).
 
 ## Install
 
