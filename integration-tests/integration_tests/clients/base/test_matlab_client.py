@@ -6,11 +6,12 @@ from ecosim_client_matlab.matlab_client import MatlabClient
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.config.config_parser import ConfigParser
 
 from integration_tests.clients.base.base_simulation import BaseSimulation
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
-from integration_tests.test_data.write_ini import write_client_ini, write_fmc
 from integration_tests.clients.base.fake_matlab import FakeMatlab
+from integration_tests.test_data.write_ini import write_client_ini, write_fmc
 
 
 class TestMatlabClientBase(ClientBaseTest):
@@ -25,7 +26,9 @@ class TestMatlabClientBase(ClientBaseTest):
     def create_client(self, config_override: ClientConfigOverride) -> SimulatorClient:
         matlab_section = {"scriptfolder": str(self._config_directory)}
         fmc_file = write_fmc(self._config_directory, inputs=["u"], outputs=["y", "time"])
-        config_parser = write_client_ini(self._config_directory, "matlab", "matlab_model", fmc_file, {"matlab": matlab_section})
+        config_parser = ConfigParser(
+            path=write_client_ini(self._config_directory, "matlab", "matlab_model", fmc_file, {"matlab": matlab_section}),
+        )
         return MatlabClient.of(config_parser=config_parser, config_overrides=config_override)
 
     @override
