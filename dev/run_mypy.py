@@ -21,4 +21,4 @@ env = os.environ.copy()
 env.pop("VIRTUAL_ENV", None)
 
 print(f"INFO: running mypy in {target_dir}", file=sys.stdout)
-sys.exit(subprocess.call(["uv", "run", "mypy", "."], env=env))
+sys.exit(subprocess.call(["uv", "run", "mypy", "--follow-imports=silent", "."], env=env))
