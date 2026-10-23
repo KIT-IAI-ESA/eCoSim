@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from ecosim_common.config.config_parser import ConfigParser
 
 Sections = dict[str, dict[str, str]]
 
@@ -22,7 +21,7 @@ def write_client_ini(
     model_name: str,
     fmc_file: str,
     extra_sections: Sections | None = None,
-) -> ConfigParser:
+) -> Path:
     sections: Sections = {
         "server": {"ip": "localhost", "port": "1234"},
         "simulator": {"simulator_name": client_type, "model_name": model_name, "fmc_file": f"[{fmc_file}]", "type": client_type},
@@ -32,4 +31,4 @@ def write_client_ini(
     ini_file.write_text(
         "\n".join(f"[{section}]\n" + "\n".join(f"{key}={value}" for key, value in entries.items()) for section, entries in sections.items()),
     )
-    return ConfigParser(ini_file)
+    return ini_file
