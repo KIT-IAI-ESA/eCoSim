@@ -26,6 +26,13 @@ const config: Config = {
     },
   },
 
+  stylesheets: [
+    {
+      href: "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap",
+      type: "text/css",
+    },
+  ],
+
   themes: [
     "@docusaurus/theme-mermaid",
     [
@@ -52,6 +59,9 @@ const config: Config = {
           numberPrefixParser: false,
         },
         blog: false,
+        theme: {
+          customCss: "./src/css/custom.css",
+        },
       } satisfies Preset.Options,
     ],
   ],
@@ -63,6 +73,26 @@ const config: Config = {
     navbar: {
       title: "eCoSim",
       items: [
+        {
+          href: "https://easimov.cloud.iai.kit.edu",
+          label: "eASiMOV",
+          position: "right",
+        },
+        {
+          href: "https://www.iai.kit.edu/english/groups_4104.php",
+          label: "ESA",
+          position: "right",
+        },
+        {
+          href: "https://www.iai.kit.edu/english/index.php",
+          label: "IAI",
+          position: "right",
+        },
+        {
+          href: "https://www.kit.edu/english/index.php",
+          label: "KIT",
+          position: "right",
+        },
         { href: repository, label: "GitHub", position: "right" },
       ],
     },
@@ -70,6 +100,15 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.vsDark,
       additionalLanguages: ["bash", "ini", "toml"],
+    },
+    mermaid: {
+      theme: { light: "base", dark: "dark" },
+      options: {
+        flowchart: { curve: "basis" },
+        themeVariables: {
+          fontFamily: "Work Sans, system-ui, sans-serif",
+        },
+      },
     },
   } satisfies Preset.ThemeConfig,
 };
