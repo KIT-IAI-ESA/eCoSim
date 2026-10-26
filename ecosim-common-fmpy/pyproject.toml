@@ -54,6 +54,11 @@ module = [
     # Ignore lxml library (not typed)
     "lxml",
     "lxml.*",
+    # mypy_path includes the sources of ecosim-common, so its untyped imports need the same overrides
+    "cloudpickle",
+    "cloudpickle.*",
+    "dask",
+    "dask.*",
 ]
 ignore_missing_imports = true
 
