@@ -54,6 +54,11 @@ module = [
     # Ignore Pyro5 library (not typed)
     "Pyro5",
     "Pyro5.*",
+    # mypy_path includes the sources of ecosim-common, so its untyped imports need the same overrides
+    "cloudpickle",
+    "cloudpickle.*",
+    "dask",
+    "dask.*",
 ]
 ignore_missing_imports = true
 
