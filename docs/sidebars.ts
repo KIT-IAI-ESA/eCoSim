@@ -28,6 +28,10 @@ const sidebars: SidebarsConfig = {
         'development/project-setup',
         'development/architecture',
         'development/developing',
+        'development/testing',
+        'development/dependencies',
+        'development/adding-a-subproject',
+        'development/coding-guidelines',
         'development/release-history',
         {
           type: 'category',
