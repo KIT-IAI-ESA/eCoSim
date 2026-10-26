@@ -62,6 +62,7 @@ has to happen in every `pyproject.toml` at once.
 | `client` | `Client` — the base class every client subproject specialises |
 | `simulation` | Interface identity: `InterfaceID`, `ModelInterfaceID`, `SimulatorInterfaceID` |
 | `tech` | Infrastructure without domain knowledge: logging, threading, json, datetime |
+| `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |
 
 ### `ecosim_server`
 
@@ -91,6 +92,10 @@ The FMU clients name the last one `fmu2_simulator_config.py` / `fmu3_simulator_c
 others use `matlab_config.py` and `pyro_config.py`.
 
 ## Communication
+
+Clients never talk to each other: every value goes from a client to the server, and from there to
+the clients it is connected to. That is what lets the server delay connections and keep all
+clients on the same step. Pyro5 is a kind of client, not a protocol.
 
 The server and the clients never speak a transport directly. They use `ESPChannel`, and
 `ESPChannel.for_protocol()` picks the implementation from the configured
@@ -141,7 +146,8 @@ the server ini:
 | `file` | `RepositoriesFileBased` | a writable directory, one JSON lines file per module |
 
 Both are exercised end to end by the [Docker example](../guides/docker.md). The domain code never sees the
-difference; everything database specific lives under `tech/db/`.
+difference; everything database specific lives under `tech/db/`. The final state is stored as
+`finished` in the database and as `Finished` in the file backend.
 
 ## Entry points
 

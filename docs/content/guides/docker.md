@@ -35,6 +35,14 @@ Build the images once. They are tagged `localhost/ecosim_*`:
 docker compose -f ../docker-compose-build-images.yml build ecosim_server ecosim_client_fmu_v2
 ```
 
+### How the images are built
+
+- every image comes from `dev/docker/Dockerfile`, with `SOURCE_DIR` and `COMMAND_NAME` as build arguments
+- each service in `docker-compose-build-images.yml` sets `image: localhost/<service>:latest`; without it,
+  compose tags the build `localhost/docker_<service>` and the examples keep using an older image
+- the build turns the package into one self-contained `<command>.pex` and links it to `/opt/ecosim`,
+  the `ENTRYPOINT`. The exec form of `ENTRYPOINT` does not expand build arguments, hence the fixed path
+
 ## Variant: postgres
 
 ```shell
@@ -102,6 +110,8 @@ docker compose down
 rm -rf results
 ```
 
+With a rootful Docker daemon the files belong to root, so remove them with `sudo rm -rf results`.
+
 ## Files
 
 | File | Purpose |
@@ -122,6 +132,12 @@ results end up.
 - The executable is the `ENTRYPOINT` of the images, so `command:` only lists arguments, which are
   appended to it. `docker run localhost/ecosim_server:latest --help` works the same way.
 - Both variants publish port `1234`, so they cannot run at the same time.
+- After rebuilding an image, run `docker compose down` before `up`. `up` reuses the existing
+  containers and keeps running the old image.
+- `docker` may be Podman, where `podman compose` hands over to `podman-compose`. It should not make
+  a difference, but check which one runs when something fails.
+- The models are mounted from four levels up (`../../../../ecosim-test-common/...`). With a wrong
+  path, the container fails on a missing model, not on the mount.
 
 ### postgres
 
