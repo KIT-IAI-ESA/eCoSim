@@ -1,0 +1,102 @@
+name: tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # the local hooks call a plain `python`
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Sync every subproject
+        run: python dev/sync_projects.py
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run every hook
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - ecosim-common
+          - ecosim-common-fmpy
+          - ecosim-server
+          - ecosim-client-fmu-v2
+          - ecosim-client-fmu-v3
+          - ecosim-client-matlab
+          - ecosim-client-pyro5
+          - ecosim-hpc
+        python: [ "3.12", "3.14" ]
+        exclude:
+          # the MATLAB engine supports only Python 3.12, and ecosim-hpc depends on the MATLAB client
+          - project: ecosim-client-matlab
+            python: "3.14"
+          - project: ecosim-hpc
+            python: "3.14"
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Sync
+        working-directory: ${{ matrix.project }}
+        run: uv sync --locked --extra dev
+      - name: Test
+        run: uv run --no-project python dev/run_tests.py ${{ matrix.project }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unit-tests-${{ matrix.project }}-py${{ matrix.python }}
+          path: |
+            ${{ matrix.project }}/report.xml
+            ${{ matrix.project }}/coverage.xml
+            ${{ matrix.project }}/htmlcov/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      # the tests under locally/ need external models or an HPC environment
+      - name: Test
+        working-directory: integration-tests
+        run: uv run --locked pytest --ignore=integration_tests/locally
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-tests
+          path: integration-tests/report.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  dev-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Test
+        run: uv run --locked --extra dev pytest dev/tests
