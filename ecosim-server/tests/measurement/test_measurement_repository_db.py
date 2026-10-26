@@ -53,6 +53,11 @@ def test_the_timestamp_is_the_primary_key(weather_table: Any) -> None:
     assert [column.name for column in weather_table.__table__.primary_key] == ["timestamp"]
 
 
+def test_the_timestamp_keeps_its_time_zone(weather_table: Any) -> None:
+    # read back with its time zone, like from the file repository, so both give the same step
+    assert weather_table.__table__.c.timestamp.type.timezone
+
+
 def test_the_number_column_of_an_interface_is_a_float(weather_table: Any) -> None:
     assert isinstance(weather_table.__table__.columns["o_t_out"].type, Float)
 
