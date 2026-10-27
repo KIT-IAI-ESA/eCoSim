@@ -52,7 +52,7 @@ class FMU3Client(SimulatorClient):
     def _set_input_float(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: float | None,
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], [value])
@@ -65,22 +65,6 @@ class FMU3Client(SimulatorClient):
     ) -> None:
         self.logger.debug("Setting float vector input %s to %s", name, value)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], value)
-
-    def _set_input_string(
-        self,
-        name: str,
-        value: str,
-    ) -> None:
-        self.logger.debug("Setting string input %s to %s", name, value)
-        self._fmu_instance.setString([self._simulation_config.input_value_references(name)], [value])
-
-    def _set_input_boolean(
-        self,
-        name: str,
-        value: bool,
-    ) -> None:
-        self.logger.debug("Setting bool input %s to %s", name, value)
-        self._fmu_instance.setBoolean([self._simulation_config.input_value_references(name)], [value])
 
     @override
     def _get_model_output(
@@ -146,22 +130,6 @@ class FMU3Client(SimulatorClient):
             return type_getters[variable_type]([value_reference])[0]  # type: ignore
         else:
             raise ValueError(f"Variable {value_reference} is not an integer type (found: {variable_type})")
-
-    def _get_output_string(
-        self,
-        name: str,
-    ) -> str:
-        value: str = self._fmu_instance.getString([self._simulation_config.output_value_references(name)])
-        self.logger.debug("Getting string output %s: %s", name, value)
-        return value
-
-    def _get_output_boolean(
-        self,
-        name: str,
-    ) -> bool:
-        value: bool = self._fmu_instance.getBoolean([self._simulation_config.output_value_references(name)])
-        self.logger.debug("Getting bool output %s: %s", name, value)
-        return value
 
     @override
     def _on_do_step(
