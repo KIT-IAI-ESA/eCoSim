@@ -21,11 +21,6 @@ class ExecutionConfig:
     ) -> None:
         self._server_interface_settings = server_interface_settings
 
-    def server_used_inputs(self) -> List[InterfaceId]:
-        if self._server_interface_settings is None:
-            return []
-        return self._server_interface_settings.inputs
-
     def server_used_outputs(self) -> List[InterfaceId]:
         if self._server_interface_settings is None:
             return []

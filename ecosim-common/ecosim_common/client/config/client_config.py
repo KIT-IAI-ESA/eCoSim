@@ -62,15 +62,6 @@ class ClientConfig(ABC):
             model_name=self.simulator_config().model_name,
         )
 
-    def json_string(self) -> str:
-        return json.dumps(
-            {
-                "version": ClientConfig.__protocol_version,
-                "simulator": self.simulator_config().simulator_name,
-                "model": self.simulator_config().model_name,
-            },
-        )
-
     def print_to_info(self) -> None:
         GlobalLogger.print_values(
             header="CLIENT CONFIG",
@@ -95,16 +86,6 @@ class SimpleClientConfig(ClientConfig):
     _simulator_config: SimulatorConfig
     _interfaces_config: ClientInterfaceConfig
     _extra_sections: List[str]
-
-    @staticmethod
-    def of_path_string(
-        path: str,
-        config_override: ClientConfigOverride | None = None,
-    ) -> ClientConfig:
-        return SimpleClientConfig.of_config_parser(
-            config_parser=ConfigParser(path=Path(path)),
-            config_override=config_override,
-        )
 
     @staticmethod
     def of_config_parser(

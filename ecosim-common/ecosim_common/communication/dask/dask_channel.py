@@ -240,7 +240,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
             return None
         data: bytes = raw_message[binary_message_header.HEADER_BYTES :]
         DaskChannel._logger.debug("Received message of type %s on %s", message_header.message_type, self._inbox_name())
-        return ReceivedBinaryMessage(message_header, data, ConnectionAddress.of_dask_client(self._dask_client()))
+        return ReceivedBinaryMessage(message_header, data)
 
     def _next_inbox_entry(
         self,
