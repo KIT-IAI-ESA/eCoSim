@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from check_commit_msg import find_errors, main
+from check_commit_message import find_errors, main
 
 
 @pytest.mark.parametrize(

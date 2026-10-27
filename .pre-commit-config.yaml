@@ -106,9 +106,9 @@ repos:
         types: [ python ]
         files: .*\.py
         pass_filenames: true
-      - id: check-commit-msg
+      - id: check-commit-message
         name: Check commit message
-        entry: python dev/check_commit_msg.py
+        entry: python dev/check_commit_message.py
         language: python
         stages: [ commit-msg ]
 
