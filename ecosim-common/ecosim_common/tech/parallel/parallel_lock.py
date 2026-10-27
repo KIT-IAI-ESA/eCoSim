@@ -28,10 +28,6 @@ class ParallelLock(AbstractContextManager, ABC):
                 assert_never(communication_protocol)
 
     @staticmethod
-    def no_lock() -> "ParallelLock":
-        return NullLock()
-
-    @staticmethod
     def thread() -> "ParallelLock":
         return ParallelLockImpl(
             _lock=threading.Lock(),

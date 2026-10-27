@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.tech.db.db_types import DTO, GenericEntity, GenericId
-from sqlalchemy import Engine, Executable, create_engine, func, inspect
+from sqlalchemy import Engine, Executable, create_engine, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -97,14 +97,6 @@ class DBConnection:
                 if key != table.id_column().name and not key.startswith("_sa_"):
                     setattr(current, key, value)
             session.commit()
-
-    def count_entries(
-        self,
-        table: type[DTO[GenericId]],
-    ) -> int:
-        # pass a column like SimulationStateDTO.variation_id
-        with Session(self._db_engine) as session:
-            return session.query(func.count(table.id_column())).scalar()
 
     def clear_table(
         self,

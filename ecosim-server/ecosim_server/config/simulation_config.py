@@ -114,25 +114,6 @@ class SimulationConfig:
                 return False
         return True
 
-    def connected_input_interfaces_by_client_and_interface_name(
-        self,
-        client_id: ClientID,
-        interface_name: str,
-    ) -> Tuple[SimulatorInterfaceId, ...]:
-        client_config = self.client_simulator_config_for(client_id)
-        if client_config is None:
-            raise Exception(f"Client {client_id} does not have a config.")
-        simulator_interface_id = SimulatorInterfaceId(
-            simulator_name=client_config.simulator_name,
-            model_interface_id=ModelInterfaceId(
-                model_name=client_config.model_name,
-                interface=interface_name,
-            ),
-        )
-        return self.connected_output_interfaces_by_simulator_interface_id(
-            simulator_interface_id,
-        )
-
     def connected_output_interfaces_by_simulator_interface_id(
         self,
         simulator_interface_id: SimulatorInterfaceId,

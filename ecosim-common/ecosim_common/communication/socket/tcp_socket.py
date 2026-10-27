@@ -76,17 +76,9 @@ class TCPSocket(ESPChannel, ShutdownListener):
         except socket.error:
             return False
 
-    def is_internal_socket_closed(self) -> bool:
-        return self._internal_socket.fileno() == -1
-
     @override
     def is_connected(self) -> bool:
         return not self._closed.is_set() and (self._connected.is_set() or self._listening.is_set() or self._has_internal_socket_peer())
-
-    def enable_address_reuse(self) -> None:
-        # SO_REUSEADDR: allow reusing the socket if it is in time-wait / time_out mode (the socket retains open
-        #   about 2min in time_out mode after the socket is closed - this is an OS setting and handled by the OS)
-        self._internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def _bind(
         self,
@@ -287,11 +279,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
         return ReceivedBinaryMessage(
             _header=message_header,
             _data=data,
-            _connection=self._connection_address or ConnectionAddress.of_socket(self._internal_socket),
         )
-
-    def is_closed_event(self) -> ParallelEvent:
-        return self._closed
 
     def send(
         self,
