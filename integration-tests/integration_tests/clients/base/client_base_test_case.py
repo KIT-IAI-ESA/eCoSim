@@ -1,15 +1,15 @@
 import socket
-import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, ClassVar, Generator
 
 import pytest
+import time
+
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
-
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from integration_tests.clients.base.base_simulation import BaseSimulation
 
 
@@ -41,11 +41,11 @@ class ClientBaseTest(ABC):
         pass
 
     @abstractmethod
-    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValueType]) -> None:
+    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValue]) -> None:
         pass
 
     @abstractmethod
-    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValueType:
+    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         pass
 
     @pytest.fixture

@@ -6,7 +6,7 @@ from typing import Tuple
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -237,7 +237,7 @@ def add_floats(*floats: float) -> float:
     return float(sum([Decimal(str(f)) for f in floats]))
 
 
-def generate_matrix(input: float) -> InterfaceValueType:
+def generate_matrix(input: float) -> InterfaceValue:
     return [
         [input, add_floats(input, 1.0), add_floats(input, 2.0)],
         [add_floats(input, 3.0), add_floats(input, 4.0), add_floats(input, 5.0)],
@@ -247,12 +247,12 @@ def generate_matrix(input: float) -> InterfaceValueType:
 
 def handle_client_2_sim_step(
     simple_test_client: SimpleTestClient,
-    received_values: dict[InterfaceId, InterfaceValueType],
+    received_values: dict[InterfaceId, InterfaceValue],
     step_size_in_seconds: float,
 ) -> ClientSimStepData:
     logger.debug("Received values: %s", received_values)
     assert len(received_values.keys()) == 1
-    received_value: InterfaceValueType = received_values["TestInterface_2"]
+    received_value: InterfaceValue = received_values["TestInterface_2"]
     assert isinstance(received_value, list)
     return_value = square_each_element(received_value)
     logger.debug("Return value: %s", return_value)
@@ -266,7 +266,7 @@ def handle_client_2_sim_step(
     )
 
 
-def square_each_element(matrix: InterfaceValueType) -> InterfaceValueType:
+def square_each_element(matrix: InterfaceValue) -> InterfaceValue:
     return [
         [value * value for value in inner_list]
         for inner_list in matrix  # type: ignore

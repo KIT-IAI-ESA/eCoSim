@@ -4,12 +4,12 @@ from typing import Any, Generator, override
 
 import Pyro5.api
 import pytest
+
 from ecosim_client_pyro5.pyro_client import PyroClient
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.config.config_parser import ConfigParser
-
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
 from integration_tests.test_data.write_ini import write_client_ini, write_fmc
 
@@ -52,9 +52,9 @@ class TestPyro5ClientBase(ClientBaseTest):
         return PyroClient.of(config_parser=config_parser, config_override=config_override)
 
     @override
-    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValueType]) -> None:
+    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValue]) -> None:
         assert outputs == {"y": 2 * passed_seconds}
 
     @override
-    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValueType:
+    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         return passed_seconds

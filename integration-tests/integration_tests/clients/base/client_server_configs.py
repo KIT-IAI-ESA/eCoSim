@@ -3,7 +3,7 @@ from typing import Callable
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -16,10 +16,10 @@ from integration_tests.test_data.server_client.simple_test_client import SimpleT
 DRIVER_NAME = "ProtocolDriver"
 """Simulator and model name of the driver client, which provides one output per input of the client under test."""
 
-InputValueGenerator = Callable[[str, float], InterfaceValueType]
+InputValueGenerator = Callable[[str, float], InterfaceValue]
 """The value the driver sends to an input of the client under test: (input name, passed seconds) -> value."""
 
-ClientMeasurementRecords = dict[float, dict[str, InterfaceValueType]]
+ClientMeasurementRecords = dict[float, dict[str, InterfaceValue]]
 """The recorded values of the client under test: passed seconds -> interface name -> value."""
 
 

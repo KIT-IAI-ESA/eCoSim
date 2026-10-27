@@ -16,7 +16,7 @@ from ecosim_common.client.renderer.simulation_renderer_service import (
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.atomic import AtomicFloat, AtomicInteger
 from integration_tests.test_data.test_client_data import TestClientData
@@ -29,7 +29,7 @@ class SimpleTestClient(Client):
         server_host: str,
         server_port: int,
         on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ],
         model_name: str = "TestModel",
@@ -53,7 +53,7 @@ class SimpleTestClient(Client):
         server_host: str,
         server_port: int,
         on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ],
         test_client_data: TestClientData,
@@ -75,7 +75,7 @@ class SimpleTestClient(Client):
         self,
         client_config: ClientConfig,
         on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ],
     ):
@@ -86,7 +86,7 @@ class SimpleTestClient(Client):
         self.accumulated_step_sizes_in_seconds = AtomicFloat.for_protocol(client_config.communication_protocol(), 0.0)
         # the parameters: the instance of itself, the received_inputs and the step_size_in_seconds
         self._on_simulation_step_return: Callable[
-            [SimpleTestClient, dict[InterfaceId, InterfaceValueType], float],
+            [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ] = on_simulation_step_return
 
@@ -101,7 +101,7 @@ class SimpleTestClient(Client):
 
     def on_simulation_step(
         self,
-        received_inputs: dict[InterfaceId, InterfaceValueType],
+        received_inputs: dict[InterfaceId, InterfaceValue],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
         self._on_simulation_step_calls.increment()

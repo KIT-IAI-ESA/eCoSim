@@ -3,7 +3,7 @@ import threading
 from datetime import datetime
 from typing import Tuple
 
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
@@ -111,8 +111,8 @@ class PreSetTwoClientsData:
         ) -> bool:
             current_step = self.date_to_step(timestamp)
 
-            output_value: InterfaceValueType | None = None
-            input_value: InterfaceValueType | None = None
+            output_value: InterfaceValue | None = None
+            input_value: InterfaceValue | None = None
             for value in values:
                 if value.name == "Interface_Output_1":
                     output_value = value.value

@@ -23,9 +23,9 @@ def test_with_matrix_inputs() -> None:
     )
     client._initialize_model()  # noqa: SLF001
 
-    client._do_model_step(input_values={"u": [111, 222, 333]}, step_size_in_seconds=1)  # noqa: SLF001
+    client._do_model_step(input_values={"u": [111.0, 222.0, 333.0]}, step_size_in_seconds=1)  # noqa: SLF001
     assert client._get_model_output("y") == [301.57855647818417, 603.1571129563683, 904.7356694345515]  # noqa: SLF001
 
-    client._do_model_step(input_values={"u": [222, 444, 666]}, step_size_in_seconds=1)  # noqa: SLF001
+    client._do_model_step(input_values={"u": [222.0, 444.0, 666.0]}, step_size_in_seconds=1)  # noqa: SLF001
     assert client._get_model_output("y") == [1120.9445540229174, 2241.8891080458347, 3362.8336620687433]  # noqa: SLF001
     client.on_app_shutdown()
