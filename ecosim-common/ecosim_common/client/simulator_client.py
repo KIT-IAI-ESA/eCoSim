@@ -6,7 +6,6 @@ from ecosim_common.client.client import Client
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 
 @dataclass
@@ -14,7 +13,12 @@ class SimulatorClient(Client, ABC):
     """
     A basic template that assumes that 'input' and 'output' values are set 'somewhere' and can be read from 'somewhere'.
 
-    The '_set_input_*' methods are called, followed by '_do_step_after_set_input_values'.
+    On each step, all received inputs are set first, then the model advances by one step, and finally the outputs
+    the server uses are read. The model is initialized once at simulation start and cleared once at app shutdown.
+    For each of the steps described above, there are callbacks for the concrete classes to implement.
+
+    Please note, that the __post_init__ method is essential. If you overwrite it in a subclass, you need to call
+    the parent's __post_init__ method as well.
     """
 
     _current_simulation_time: float = field(default=0.0)
@@ -23,16 +27,15 @@ class SimulatorClient(Client, ABC):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        ShutdownManager().register_listener(self)
 
     def _initialize_model(self, start_time: float = 0.0) -> None:
         if self._is_initialized:
             self.logger.warning("Already initialized, skipping initialization.")
             return
-        self._is_initialized = True
         self.logger.info("Initializing with start_time %s", start_time)
         self._current_simulation_time = start_time
         self._on_initialize_model(start_time)
+        self._is_initialized = True
         self.logger.debug("Initializing... finished.")
 
     @override
@@ -82,7 +85,7 @@ class SimulatorClient(Client, ABC):
     def _set_input_float(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: float | None,
     ) -> None:
         pass
 

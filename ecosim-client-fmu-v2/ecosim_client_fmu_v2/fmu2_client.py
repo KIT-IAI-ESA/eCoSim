@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import os
 import shutil
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import override
 
 import fmpy
-from ecosim_common.client.client import Client
 from ecosim_common.client.config.client_config import ClientConfig, ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
-from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, PreRenderedImageServiceConfig
-from ecosim_common.client.renderer.simulation_renderer_service import SimulationRendererService
+from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
 from ecosim_common.config.config_parser import ConfigParser
@@ -46,21 +42,6 @@ class FMU2Client(SimulatorClient):
             _fmu_instance=simulator_config.create_fmu2_instance(),
         )
 
-    @staticmethod
-    def create_image_renderer_service(config_path: Path) -> SimulationRendererService:
-        pre_rendered_images_dir = os.path.dirname(config_path) + "/rendered_images"
-        Client.logger.debug("Pre-rendered images dir: '%s'.", pre_rendered_images_dir)
-        return PreRenderedImageService(
-            _config=PreRenderedImageServiceConfig(
-                image_dir=pre_rendered_images_dir,
-            ),
-        )
-
-    @override
-    def __post_init__(self) -> None:
-        # to prevent a future accidental override of this method without calling the super() method, this method already exists
-        super().__post_init__()
-
     @override
     def _on_initialize_model(
         self,
@@ -75,7 +56,7 @@ class FMU2Client(SimulatorClient):
     def _set_input_float(
         self,
         name: str,
-        value: InterfaceValueType,  # noqa: F821
+        value: float | None,  # noqa: F821
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
         self._fmu_instance.setReal([self._simulator_config.input_value_references(name)], [value])

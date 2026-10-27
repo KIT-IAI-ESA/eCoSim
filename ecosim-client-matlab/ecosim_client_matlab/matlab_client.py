@@ -54,7 +54,7 @@ class MatlabClient(SimulatorClient):
     def _set_input_float(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: float | None,
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
         self._matlab_engine.workspace[name] = value
@@ -91,13 +91,8 @@ class MatlabClient(SimulatorClient):
         if self._matlab_engine_or_none is None:
             self.logger.debug("Matlab engine was never started, nothing to clear.")
             return
-        self.logger.info("Clearing MatlabSimulatorV2...")
+        self.logger.info("Clearing MatlabClient...")
         self.logger.debug("        ->> terminating instance...")
         self._matlab_engine.finishing(nargout=0, stdout=io.StringIO())
         self._matlab_engine.shutdown(nargout=0)
-        self.logger.debug("Clearing MatlabSimulatorV2...finished")
-        self._is_cleared = True
-
-    @override
-    def on_app_shutdown(self) -> None:
-        super().on_app_shutdown()
+        self.logger.debug("Clearing MatlabClient...finished")
