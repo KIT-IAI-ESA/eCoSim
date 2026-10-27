@@ -66,10 +66,6 @@ class ESPLogger:
     def is_debug_enabled(self) -> bool:
         return self._logger.isEnabledFor(logging.DEBUG)
 
-    @property
-    def is_info_enabled(self) -> bool:
-        return self._logger.isEnabledFor(logging.INFO)
-
     def error(
         self,
         message: str,

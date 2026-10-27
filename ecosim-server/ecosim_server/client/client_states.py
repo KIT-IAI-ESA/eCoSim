@@ -128,14 +128,6 @@ class ClientStates(ShutdownListener):
             client_states[client_id].simulation_started = True
             self._update_events(client_states)
 
-    def wait_for_all_clients_starting_simulation(self) -> None:
-        self._all_clients_started_simulation_event.wait_with_progress(
-            progress_interval_in_seconds=1.0,
-            on_progress=lambda: self._log_progress("starting simulation", lambda state: state.simulation_started),
-            abort=lambda: self._shutdown_triggered,
-            abort_message="Shutdown was triggered during waiting for all clients to start",
-        )
-
     def _log_progress(
         self,
         description: str,

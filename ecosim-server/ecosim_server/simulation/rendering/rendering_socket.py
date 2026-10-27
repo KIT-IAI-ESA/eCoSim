@@ -38,7 +38,6 @@ class RenderingSocket(ShutdownListener):
         self._loop: asyncio.AbstractEventLoop | None = None
         self._image_cache: ImageCache = ImageCache()
         self._started_event: threading.Event | None = None
-        self._finished_event: threading.Event | None = None
         self._no_sending_in_progress: threading.Event = threading.Event()
         self._no_sending_in_progress.set()
         self._currently_sending_processes: AtomicInteger = AtomicInteger.thread(0)
@@ -80,7 +79,6 @@ class RenderingSocket(ShutdownListener):
     def close(self) -> None:
         if not self._running.is_set():
             return
-        self._finished_event = threading.Event()
         self._running.clear()
         timeout = 9
         RenderingSocket._logger.debug(
