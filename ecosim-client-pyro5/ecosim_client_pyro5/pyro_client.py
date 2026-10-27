@@ -7,7 +7,7 @@ import Pyro5.api
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.config.config_parser import ConfigParser
 
 from ecosim_client_pyro5.pyro_config import PyroConfig
@@ -17,7 +17,7 @@ from ecosim_client_pyro5.pyro_config import PyroConfig
 class PyroClient(SimulatorClient):
     _pyro_config: PyroConfig
     _simulation_object: Pyro5.api.Proxy
-    _input_dict: dict[str, InterfaceValueType] = field(default_factory=dict)
+    _input_dict: dict[str, InterfaceValue] = field(default_factory=dict)
     _output_dict: dict[str, float] = field(default_factory=dict)
 
     @staticmethod
@@ -55,13 +55,13 @@ class PyroClient(SimulatorClient):
     def _set_input_float_matrix(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: FloatMatrix,
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
         self._input_dict[name] = value
 
     @override
-    def _get_model_output(self, name: str) -> InterfaceValueType:
+    def _get_model_output(self, name: str) -> InterfaceValue:
         return self._output_dict[name]
 
     @override

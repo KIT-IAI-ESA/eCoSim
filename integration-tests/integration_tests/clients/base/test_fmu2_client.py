@@ -1,13 +1,13 @@
-import sys
 from typing import override
 
 import pytest
+import sys
+
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_test_common.resources.resource_utils import config_parser_for_resource
-
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
 
 _INPUT_INTERFACES_TO_FACTOR = {"Float64_continuous_input": 1.0, "Float64_discrete_input": 10.0}
@@ -25,11 +25,11 @@ class TestFMU2ClientBase(ClientBaseTest):
         )
 
     @override
-    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValueType:
+    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         return _INPUT_INTERFACES_TO_FACTOR[name] * passed_seconds
 
     @override
-    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValueType]) -> None:
+    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValue]) -> None:
         assert outputs == {
             "Float64_continuous_output": self.input_value_generator("Float64_continuous_input", passed_seconds),
             "Float64_discrete_output": self.input_value_generator("Float64_discrete_input", passed_seconds),

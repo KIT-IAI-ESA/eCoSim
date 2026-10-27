@@ -1,10 +1,13 @@
 import os
 import threading
 
+from psycopg import Connection, sql
+from testcontainers.postgres import PostgresContainer
+
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -15,8 +18,6 @@ from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
-from psycopg import Connection, sql
-from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
@@ -117,7 +118,7 @@ def test_db_persistence_matrix(
     postgres_container: PostgresContainer,
     db_connection: Connection,
 ) -> None:
-    matrix: InterfaceValueType = [
+    matrix: InterfaceValue = [
         [1.1, 2.2, 3.3],
         [4.4, 5.5, 6.6],
         [7.7, 8.8, 9.9],

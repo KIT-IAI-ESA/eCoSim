@@ -4,7 +4,7 @@ from typing import Dict, override
 
 from ecosim_common.client.client import Client
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 
 
@@ -46,7 +46,7 @@ class SimulatorClient(Client, ABC):
     @override
     def on_simulation_step(
         self,
-        received_inputs: Dict[InterfaceId, InterfaceValueType],
+        received_inputs: Dict[InterfaceId, InterfaceValue],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
         self._do_model_step(
@@ -78,7 +78,7 @@ class SimulatorClient(Client, ABC):
     def _get_model_output(
         self,
         name: str,
-    ) -> InterfaceValueType:
+    ) -> InterfaceValue:
         pass
 
     @abstractmethod
@@ -93,7 +93,7 @@ class SimulatorClient(Client, ABC):
     def _set_input_float_matrix(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: FloatMatrix,
     ) -> None:
         pass
 
@@ -113,7 +113,7 @@ class SimulatorClient(Client, ABC):
 
     def _do_model_step(
         self,
-        input_values: dict[InterfaceId, InterfaceValueType],
+        input_values: dict[InterfaceId, InterfaceValue],
         step_size_in_seconds: float,
     ) -> None:
         for interface_id, value in input_values.items():

@@ -8,7 +8,7 @@ import fmpy
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from typing_extensions import override
@@ -61,7 +61,7 @@ class FMU3Client(SimulatorClient):
     def _set_input_float_matrix(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: FloatMatrix,
     ) -> None:
         self.logger.debug("Setting float vector input %s to %s", name, value)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], value)
@@ -70,7 +70,7 @@ class FMU3Client(SimulatorClient):
     def _get_model_output(
         self,
         name: str,
-    ) -> InterfaceValueType:
+    ) -> InterfaceValue:
         var_type = self._simulation_config.output_type(name)
         if var_type == FMU3VariableType.Float64:
             return self._get_output_float(name)

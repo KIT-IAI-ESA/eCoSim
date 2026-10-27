@@ -1,13 +1,13 @@
-import sys
 from typing import override
 
 import pytest
+import sys
+
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_test_common.resources.resource_utils import config_parser_for_resource
-
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
 from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 
@@ -24,9 +24,9 @@ class TestFMU3ClientBase(ClientBaseTest):
         )
 
     @override
-    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValueType:
+    def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         return [factor * passed_seconds for factor in _INPUT_FACTORS]
 
     @override
-    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValueType]) -> None:
+    def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValue]) -> None:
         assert outputs == {"y": state_space_outputs(int(passed_seconds), _INPUT_FACTORS)}

@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Any, Generator
 
 import pytest
+
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.port_utils import get_free_port
@@ -79,7 +80,7 @@ def pre_set_two_clients(communication_protocol: CommunicationProtocol) -> Genera
 
     def client_1_on_simulation_step(
         client: SimpleTestClient,
-        received_inputs: dict[InterfaceId, InterfaceValueType],
+        received_inputs: dict[InterfaceId, InterfaceValue],
         steps: float,
     ) -> ClientSimStepData:
         received_value = received_inputs.get(

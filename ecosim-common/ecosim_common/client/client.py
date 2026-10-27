@@ -19,7 +19,7 @@ from ecosim_common.communication.channel.esp_channel_message_json import (
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
 from ecosim_common.communication.data.protocol_interface_value import (
-    InterfaceValueType,
+    InterfaceValue,
     ProtocolInterfaceValue,
 )
 from ecosim_common.communication.data.server_interface_settings import (
@@ -86,7 +86,7 @@ class Client(ShutdownListener):
     @abstractmethod
     def on_simulation_step(
         self,
-        received_inputs: dict[InterfaceId, InterfaceValueType],
+        received_inputs: dict[InterfaceId, InterfaceValue],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
         """
@@ -310,8 +310,8 @@ class Client(ShutdownListener):
     def _protocol_interface_value_to_dict(
         self,
         values: List[ProtocolInterfaceValue],
-    ) -> dict[InterfaceId, InterfaceValueType]:
-        transformed: Dict[InterfaceId, InterfaceValueType] = {}
+    ) -> dict[InterfaceId, InterfaceValue]:
+        transformed: Dict[InterfaceId, InterfaceValue] = {}
         for server_inputs in values:
             transformed[server_inputs.name] = server_inputs.value
         return transformed
