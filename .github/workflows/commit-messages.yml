@@ -27,4 +27,4 @@ jobs:
             # new branch or force push: only commits that no other branch has
             revisions="$AFTER $(git rev-parse --not --exclude="origin/$BRANCH" --exclude=origin/HEAD --remotes=origin)"
           fi
-          python3 dev/check_commit_msg.py --revisions $revisions
+          python3 dev/check_commit_message.py --revisions $revisions
