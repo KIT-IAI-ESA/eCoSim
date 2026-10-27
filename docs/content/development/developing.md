@@ -23,7 +23,7 @@
 
 ## Commit messages
 
-[Conventional Commits](https://www.conventionalcommits.org/), checked by `dev/check_commit_msg.py`:
+[Conventional Commits](https://www.conventionalcommits.org/), checked by `dev/check_commit_message.py`:
 
 ```text
 <type>[(<scope>)][!]: <summary>
