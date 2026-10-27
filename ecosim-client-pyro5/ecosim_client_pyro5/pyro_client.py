@@ -34,6 +34,7 @@ class PyroClient(SimulatorClient):
             _simulation_object=simulation_object,
         )
 
+    @override
     def _on_initialize_model(
         self,
         start_time: float = 0.0,
@@ -45,7 +46,7 @@ class PyroClient(SimulatorClient):
     def _set_input_float(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: float | None,
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
         self._input_dict[name] = value
