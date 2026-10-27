@@ -6,7 +6,7 @@ from typing import List
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
-    InterfaceValueType,
+    InterfaceValue,
 )
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
@@ -59,7 +59,7 @@ class TestClientData:
     def interface_protocol_value_of(
         self,
         interface_name: str,
-        value: InterfaceValueType,
+        value: InterfaceValue,
     ) -> ProtocolInterfaceValue:
         for interface in self.interfaces:
             if interface.interface_name == interface_name:

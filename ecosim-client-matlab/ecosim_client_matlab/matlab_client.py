@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.config.config_parser import ConfigParser
 from typing_extensions import override
 
@@ -63,7 +63,7 @@ class MatlabClient(SimulatorClient):
     def _set_input_float_matrix(
         self,
         name: str,
-        value: InterfaceValueType,
+        value: FloatMatrix,
     ) -> None:
         raise NotImplementedError("MatlabClient currently does not support float matrix.")
 
@@ -71,7 +71,7 @@ class MatlabClient(SimulatorClient):
     def _get_model_output(
         self,
         name: str,
-    ) -> InterfaceValueType:
+    ) -> InterfaceValue:
         value: float = self._matlab_engine.workspace[name]
         self.logger.debug("Getting float output %s: %s", name, value)
         return value

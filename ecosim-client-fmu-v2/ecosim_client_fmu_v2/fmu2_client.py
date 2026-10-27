@@ -9,7 +9,7 @@ from ecosim_common.client.config.client_config import ClientConfig, ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
 from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 
@@ -65,7 +65,7 @@ class FMU2Client(SimulatorClient):
     def _get_model_output(
         self,
         name: str,
-    ) -> InterfaceValueType:
+    ) -> InterfaceValue:
         value: float = self._fmu_instance.getReal([self._simulator_config.output_value_references(name)])[0]
         self.logger.debug("Getting float output %s: %s", name, value)
         return value
@@ -82,7 +82,11 @@ class FMU2Client(SimulatorClient):
         shutil.rmtree(self._simulator_config.unzip_dir())
 
     @override
-    def _set_input_float_matrix(self, name: str, value: InterfaceValueType) -> None:  # noqa: F821
+    def _set_input_float_matrix(
+        self,
+        name: str,
+        value: FloatMatrix,
+    ) -> None:
         raise TypeError("FMUv2 cannot handle matrix types.")
 
     @override

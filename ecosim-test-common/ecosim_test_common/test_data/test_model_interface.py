@@ -4,7 +4,7 @@ import dataclasses
 
 from ecosim_common.communication.data.protocol_interface_value import (
     ProtocolInterfaceValue,
-    InterfaceValueType,
+    InterfaceValue,
 )
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -64,7 +64,7 @@ class TestModelInterface:
 
     def to_protocol_interface_value(
         self,
-        value: InterfaceValueType,
+        value: InterfaceValue,
     ) -> ProtocolInterfaceValue:
         return ProtocolInterfaceValue(
             name=self.interface_name,
