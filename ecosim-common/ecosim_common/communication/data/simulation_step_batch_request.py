@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from typing import List, override, Any, Dict
+from typing import Any, Dict, List, override
 
 from ecosim_common.communication.channel.message_data import MessageData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -16,6 +16,13 @@ from ecosim_common.tech.datetime.date_time_to_millis import (
 
 @dataclass(frozen=True)
 class SimulationStepBatchRequest(MessageData):
+    """
+    Replays several simulation steps at once (e.g. to restore a client's state).
+
+    'inputs' are keyed by the end time of each step. 'start_datetime' is the time the model is at (and must be)
+    before the first step. So the first step size is '[first step time] - start_datetime'.
+    """
+
     start_datetime: datetime.datetime
     inputs: SimulationStepBatchRequestInputs
 
@@ -55,4 +62,4 @@ class SimulationStepBatchRequest(MessageData):
         }
 
 
-SimulationStepBatchRequestInputs = dict[datetime.datetime, List[ProtocolInterfaceValue]]
+type SimulationStepBatchRequestInputs = dict[datetime.datetime, List[ProtocolInterfaceValue]]
