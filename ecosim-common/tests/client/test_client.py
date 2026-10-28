@@ -1,3 +1,4 @@
+import pytest
 from typing import override
 from unittest.mock import MagicMock
 
@@ -47,3 +48,11 @@ def test_shutdown_closes_the_channel_of_a_connected_client() -> None:
     client.on_app_shutdown()
 
     client._channel.close.assert_called_once()  # type: ignore[attr-defined]  # noqa: SLF001
+
+
+def test_a_subclass_logs_under_its_own_name(caplog: pytest.LogCaptureFixture) -> None:
+    client = _NeverStartedClient(_client_config=_client_config())
+
+    client.logger.warning("hello")
+
+    assert [record.name for record in caplog.records] == ["_NeverStartedClient"]
