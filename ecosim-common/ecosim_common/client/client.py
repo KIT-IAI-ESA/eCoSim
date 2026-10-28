@@ -360,13 +360,18 @@ class Client(ShutdownListener):
                     None,
                 )
                 if matching_interface is None:
-                    Client.logger.warning("Batch step %s: No matching interface found for interface '%s'", step_datetime, new_interface_value.name)
+                    Client.logger.warning(
+                        "Batch step %s: No matching interface found for interface '%s', so it cannot be compared if the values match. "
+                        + "The batch execution still continues.",
+                        step_datetime,
+                        new_interface_value.name,
+                    )
                     continue
                 if matching_interface.value == new_interface_value.value:
                     Client.logger.debug("Batch step %s: Value matched for interface '%s'", step_datetime, new_interface_value.name)
                 else:
                     Client.logger.error(
-                        "Batch step %s: Value mismatch for interface '%s': expected=%s, actual=%s",
+                        "Batch step %s: Value mismatch for interface '%s' | the batch execution still continues: expected=%s, actual=%s",
                         step_datetime,
                         new_interface_value.name,
                         matching_interface.value,
