@@ -5,20 +5,17 @@ from unittest.mock import MagicMock
 import pytest
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_client_fmu_v2.fmu2_simulator_config import FMU2SimulatorConfig
-from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.communication.channel.esp_channel import ESPChannel
-from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from ecosim_test_common.resources.resource_utils import resource_path
+from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
 
 
 def _create_client() -> FMU2Client:
-    client_config = MagicMock(spec=ClientConfig)
-    client_config.communication_protocol.return_value = CommunicationProtocol.TCP_SOCKET
     fmu_config = FMUBaseConfig(fmu_file=resource_path() / "fmu_v2" / "test_fmus" / "Sub1_Linux.fmu")
     simulator_config = FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config)
     return FMU2Client(
-        _client_config=client_config,
+        _client_config=generate_mocked_client_config(),
         _channel_or_none=MagicMock(spec=ESPChannel),
         _simulator_config=simulator_config,
         _fmu_instance=simulator_config.create_fmu2_instance(),
