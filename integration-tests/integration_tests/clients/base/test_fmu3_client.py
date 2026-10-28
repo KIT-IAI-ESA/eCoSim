@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import override
 
 import pytest
@@ -30,3 +31,8 @@ class TestFMU3ClientBase(ClientBaseTest):
     @override
     def assert_outputs(self, passed_seconds: float, outputs: dict[str, InterfaceValue]) -> None:
         assert outputs == {"y": state_space_outputs(int(passed_seconds), _INPUT_FACTORS)}
+
+    @override
+    def assert_resources_released(self, client: SimulatorClient) -> None:
+        assert isinstance(client, FMU3Client)
+        assert not Path(client._simulation_config.unzip_dir).exists()  # noqa: SLF001
