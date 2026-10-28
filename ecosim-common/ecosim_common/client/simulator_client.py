@@ -40,6 +40,11 @@ class SimulatorClient(Client, ABC):
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
+        """
+        In theory, we can have a start_time != 0.0. The current protocol does not support it, but the foundation is already laid.
+        To implement it, we need to adapt the SIMULATION_START message to contain a corresponding parameter. We also need to
+        check all clients, if they handle the start_time correctly (e.g. the MatLab and Pyro clients currently ignore it).
+        """
         self._initialize_model(start_time=0.0)
         return self._server_used_output_values()
 
