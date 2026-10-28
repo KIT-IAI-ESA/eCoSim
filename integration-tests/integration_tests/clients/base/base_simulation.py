@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from ecosim_common.client.config.client_config import ClientInterfaceConfig
+from ecosim_common.client.simulator_client import SimulatorClient
 
 from integration_tests.clients.base.client_server_configs import (
     ClientMeasurementRecords,
@@ -11,9 +14,6 @@ from integration_tests.clients.base.client_server_configs import (
     create_driver_client_for,
     driver_simulator_config,
 )
-from ecosim_common.client.config.client_config import ClientInterfaceConfig
-from ecosim_common.client.simulator_client import SimulatorClient
-
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -78,3 +78,9 @@ class BaseSimulation:
 
     def output_names(self) -> set[str]:
         return {interface.name for interface in self._client_interfaces().interfaces} - self.input_names()
+
+    def current_time(self) -> datetime:
+        return START_DATE + timedelta(self.current_simulation_time())
+
+    def current_simulation_time(self) -> float:
+        return self.client._current_simulation_time  # noqa: SLF001

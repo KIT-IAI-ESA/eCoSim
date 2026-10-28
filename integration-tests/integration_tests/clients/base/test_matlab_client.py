@@ -16,11 +16,13 @@ from integration_tests.test_data.write_ini import write_client_ini, write_fmc
 
 class TestMatlabClientBase(ClientBaseTest):
     _config_directory: Path
+    _fake_matlab: FakeMatlab
 
     @pytest.fixture(autouse=True)
     def _config_in(self, tmp_path: Path, fake_matlab: FakeMatlab) -> None:
         # requesting 'fake_matlab' here puts the fake in place for every test of this class
         self._config_directory = tmp_path
+        self._fake_matlab = fake_matlab
 
     @override
     def create_client(self, config_override: ClientConfigOverride) -> SimulatorClient:
@@ -39,6 +41,10 @@ class TestMatlabClientBase(ClientBaseTest):
     @override
     def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         return passed_seconds
+
+    @override
+    def assert_resources_released(self, client: SimulatorClient) -> None:
+        assert all(engine.is_shut_down for engine in self._fake_matlab.started)
 
     def test_starts_one_engine_and_shuts_it_down(self, simulation: BaseSimulation, fake_matlab: FakeMatlab) -> None:
         simulation.client.on_app_shutdown()

@@ -1,16 +1,19 @@
 import socket
+import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, ClassVar, Generator
+from unittest.mock import MagicMock
 
 import pytest
-import time
-
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
+from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
+
 from integration_tests.clients.base.base_simulation import BaseSimulation
+from integration_tests.test_data.messages.step_batch_request import create_step_batch_message
 
 
 def _free_port() -> int:
@@ -48,6 +51,11 @@ class ClientBaseTest(ABC):
     def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         pass
 
+    @abstractmethod
+    def assert_resources_released(self, client: SimulatorClient) -> None:
+        """Asserts that the model behind the client holds nothing anymore (files, engines, remote state, ...)."""
+        pass
+
     @pytest.fixture
     def simulation(self, communication_protocol: CommunicationProtocol) -> Generator[BaseSimulation, Any, None]:
         port = _free_port()
@@ -72,16 +80,45 @@ class ClientBaseTest(ABC):
     def test_advances_the_simulation_time_once_per_step(self, simulation: BaseSimulation) -> None:
         assert simulation.client._current_simulation_time == self.STEPS * self.STEP_SIZE_IN_SECONDS  # noqa: SLF001
 
-    def test_finishes_on_simulation_stop(self, simulation: BaseSimulation) -> None:
+    def test_a_step_batch_advances_the_time_by_each_step_size(
+        self,
+        simulation: BaseSimulation,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        expected_simulation_time = simulation.current_simulation_time() + 3
+        client = simulation.client
+        monkeypatch.setattr(client, "_channel_or_none", MagicMock(spec=ESPChannel))
+
+        client._handle_message(  # noqa: SLF001
+            create_step_batch_message(
+                input_interface_names=simulation.input_names(),
+                start_date=simulation.current_time(),
+                number_of_steps=3,
+                step_size=1.0,
+                input_value_generator=self.input_value_generator,
+            ),
+        )
+
+        assert simulation.current_simulation_time() == expected_simulation_time
+        client._channel.send.assert_called_once()  # type: ignore[attr-defined]  # noqa: SLF001
+
+    def test_finishes_on_simulation_stop(
+        self,
+        simulation: BaseSimulation,
+    ) -> None:
         assert _eventually(
             timeout_in_seconds=10,
             condition=lambda: simulation.client._is_finished,  # noqa: SLF001
         )
 
-    def test_clears_the_simulator_on_shutdown(self, simulation: BaseSimulation) -> None:
+    def test_clears_the_simulator_on_shutdown(
+        self,
+        simulation: BaseSimulation,
+    ) -> None:
         simulation.client.on_app_shutdown()
 
         assert simulation.client._is_cleared  # noqa: SLF001
+        self.assert_resources_released(simulation.client)
 
     def test_shuts_down_without_ever_connecting(self) -> None:
         override = ClientConfigOverride(server_host="localhost", server_port=_free_port(), communication_protocol=CommunicationProtocol.TCP_SOCKET)
@@ -90,3 +127,6 @@ class ClientBaseTest(ABC):
 
         executor.submit(client.on_app_shutdown).result(timeout=10)
         executor.shutdown(wait=False)
+
+        assert client._is_cleared  # noqa: SLF001
+        self.assert_resources_released(client)

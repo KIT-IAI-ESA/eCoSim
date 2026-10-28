@@ -18,24 +18,30 @@ _OBJECT_NAME = "pyro5_test_model"
 
 @Pyro5.api.expose
 class PyroTestModel:
+    def __init__(self) -> None:
+        self.holds_state = False
+
     def initialize(self) -> dict[str, float]:
+        self.holds_state = True
         return {"y": 0.0}
 
     def do_step(self, inputs: dict[str, float]) -> dict[str, float]:
         return {"y": 2 * inputs["u"]}
 
     def clear(self) -> None:
-        pass
+        self.holds_state = False
 
 
 class TestPyro5ClientBase(ClientBaseTest):
     _daemon_port: int
     _config_directory: Path
+    _model: PyroTestModel
 
     @pytest.fixture(autouse=True)
     def _pyro_daemon(self, tmp_path: Path) -> Generator[None, Any, None]:
         daemon = Pyro5.api.Daemon(host="localhost", port=0)
-        daemon.register(PyroTestModel(), objectId=_OBJECT_NAME)
+        self._model = PyroTestModel()
+        daemon.register(self._model, objectId=_OBJECT_NAME)
         threading.Thread(target=daemon.requestLoop, daemon=True).start()
         self._daemon_port = daemon.sock.getsockname()[1]
         self._config_directory = tmp_path
@@ -58,3 +64,7 @@ class TestPyro5ClientBase(ClientBaseTest):
     @override
     def input_value_generator(self, name: str, passed_seconds: float) -> InterfaceValue:
         return passed_seconds
+
+    @override
+    def assert_resources_released(self, client: SimulatorClient) -> None:
+        assert not self._model.holds_state

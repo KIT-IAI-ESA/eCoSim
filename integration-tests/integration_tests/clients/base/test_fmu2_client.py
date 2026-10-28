@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import override
 
 import pytest
@@ -34,3 +35,8 @@ class TestFMU2ClientBase(ClientBaseTest):
             "Float64_continuous_output": self.input_value_generator("Float64_continuous_input", passed_seconds),
             "Float64_discrete_output": self.input_value_generator("Float64_discrete_input", passed_seconds),
         }
+
+    @override
+    def assert_resources_released(self, client: SimulatorClient) -> None:
+        assert isinstance(client, FMU2Client)
+        assert not Path(client._simulator_config.unzip_dir()).exists()  # noqa: SLF001
