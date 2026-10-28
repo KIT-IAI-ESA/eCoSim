@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import override
-from unittest.mock import MagicMock
 
-from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
+from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
 
 
 @dataclass(kw_only=True)
@@ -20,9 +19,10 @@ class SpySimulatorClient(SimulatorClient):
         channel: ESPChannel | None = None,
         communication_protocol: CommunicationProtocol = CommunicationProtocol.TCP_SOCKET,
     ) -> SpySimulatorClient:
-        client_config = MagicMock(spec=ClientConfig)
-        client_config.communication_protocol.return_value = communication_protocol
-        return SpySimulatorClient(_client_config=client_config, _channel_or_none=channel)
+        return SpySimulatorClient(
+            _client_config=generate_mocked_client_config(communication_protocol),
+            _channel_or_none=channel,
+        )
 
     @override
     def _on_initialize_model(self, start_time: float) -> None:

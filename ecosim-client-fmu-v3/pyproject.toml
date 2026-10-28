@@ -33,6 +33,7 @@ ecosim-client-fmu-v3 = "ecosim_client_fmu_v3.main:main"
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [project.optional-dependencies]
 dev = [
@@ -42,6 +43,7 @@ dev = [
     "mypy==2.3.0",
     "uv==0.12.5",
     "pip==26.1.2",
+    "ecosim-test-common==0.14.0",
 ]
 
 [tool.pytest.ini_options]
@@ -71,7 +73,7 @@ exclude_lines = []
 #Repository = "https://github.com/yourusername/myapp"
 
 [tool.mypy]
-mypy_path = ["../ecosim-common","../ecosim-common-fmpy"]
+mypy_path = ["../ecosim-common","../ecosim-common-fmpy", "../ecosim-test-common"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
