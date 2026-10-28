@@ -58,6 +58,10 @@ class Client(ShutdownListener):
     _was_started: ParallelEvent = field(init=False)
     _image_renderer_service: SimulationRendererService | None = field(default=None)
 
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        super().__init_subclass__(**kwargs)
+        cls.logger = ESPLogger(cls.__name__)
+
     def __post_init__(self) -> None:
         self._client_config.print_to_info()
         self._channel_connector = ESPChannelConnector(_communication_protocol=self._client_config.communication_protocol())
