@@ -9,7 +9,7 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
-from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, LogicalDelay, SimulationConfig
 from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
@@ -67,6 +67,27 @@ class SimpleTestServerParameters:
     clients: List[ClientSimulatorConfig] | None = field(default=None)
     database_config: DatabaseConfig | None = field(default=None)
     restore_simulation_run: bool = field(default=False)
+    logical_delays: List[LogicalDelay] = field(default_factory=list)
+
+    @staticmethod
+    def of_simulation_config(
+        communication_protocol: CommunicationProtocol,
+        host: str,
+        port: int,
+        simulation_config: SimulationConfig,
+    ) -> SimpleTestServerParameters:
+        return SimpleTestServerParameters(
+            communication_protocol=communication_protocol,
+            host=host,
+            port=port,
+            pace=simulation_config.pace,
+            steps=simulation_config.steps,
+            step_size_in_ms=simulation_config.step_size_in_ms,
+            simulation_start_date=simulation_config.start_date,
+            clients=simulation_config.clients,
+            restore_simulation_run=simulation_config.restore,
+            logical_delays=simulation_config.logical_delays,
+        )
 
 
 def generate_simple_test_server(parameters: SimpleTestServerParameters) -> SimpleTestServer:
@@ -99,7 +120,7 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
     simulation_config = SimulationConfig(
         clients=clients,
         start_date=parameters.simulation_start_date,
-        logical_delays=[],
+        logical_delays=parameters.logical_delays,
         pace=parameters.pace,
         steps=parameters.steps,
         step_size_in_ms=parameters.step_size_in_ms,
