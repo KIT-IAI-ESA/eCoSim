@@ -35,6 +35,15 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 - `integration_tests/server_client/` runs a real server against real clients for every protocol and
   storage backend, the quickest way to see a whole run
 
+### Simulations
+
+`ecosim_test_common/resources/simulations/` holds complete simulations with their expected results:
+
+- `HouseSimulationData`: weather, house, heating and ventilation as FMI 2.0 FMUs, 200 steps. The
+  resources are in `resources/fmu_v2/models/house/`, with one FMU build per platform (`linux/`,
+  `windows/`). Used by `integration-tests/integration_tests/server_client/house_simulation/`.
+  - `integration_tests/server_client/house_simulation/` already uses this data, so you can look it up for example usage.
+
 ## Before a commit
 
 1. pre-commit on the changed files: `uv run pre-commit run --files $(git diff --name-only --diff-filter=d HEAD)`
