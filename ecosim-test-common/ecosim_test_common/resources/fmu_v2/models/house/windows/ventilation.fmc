@@ -1,1 +1,24 @@
-{"fmu-file": "", "modeldescription": "","inputs": [{"name": "T_room","unit": "","description": ""}],"outputs":[{"name": "ventilation_pressure_control_signal","unit": "","description": ""},{"name": "ventilation_valve_control_signal","unit": "","description": ""}]}
+{
+    "fmu-file": "",
+    "modeldescription": "",
+    "inputs": [
+        {
+            "name": "T_room",
+            "unit": "",
+            "description": "T_room",
+            "required": "true"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "ventilation_pressure_control_signal",
+            "unit": "",
+            "description": "ventilation_pressure_control_signal"
+        },
+        {
+            "name": "ventilation_valve_control_signal",
+            "unit": "",
+            "description": "ventilation_valve_control_signal"
+        }
+    ]
+}

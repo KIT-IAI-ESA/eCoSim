@@ -1,13 +1,12 @@
-import sys
-
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_common.config.executing_platform import ExecutingPlatform
 from ecosim_test_common.resources.simulations.house_simulation_data import HouseSimulationData
 
 from integration_tests.server_client.house_simulation.house_simulation import HouseSimulation
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="The FMUs only contain linux64 binaries")
+@pytest.mark.skipif(ExecutingPlatform.current() not in HouseSimulationData.PLATFORMS, reason="There are only linux and windows builds of the FMUs")
 def test_the_house_simulation_reproduces_the_recorded_results(communication_protocol: CommunicationProtocol) -> None:
     simulation = HouseSimulation.of(communication_protocol, host="localhost", port=38412)
 
