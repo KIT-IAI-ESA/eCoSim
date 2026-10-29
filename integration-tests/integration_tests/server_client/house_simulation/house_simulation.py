@@ -48,7 +48,11 @@ class HouseSimulation:
             communication_protocol=communication_protocol,
         )
         clients = {
-            module: FMU2Client(ConfigParser(HouseSimulationData.client_config_file(module)), override) for module in HouseSimulationData.MODULES
+            module: FMU2Client.create(
+                config_parser=ConfigParser(HouseSimulationData.client_config_file(module)),
+                config_override=override,
+            )
+            for module in HouseSimulationData.MODULES
         }
         return HouseSimulation(server=server, clients=clients)
 
@@ -61,6 +65,5 @@ class HouseSimulation:
         assert not server_thread.is_alive(), f"The simulation did not finish within {timeout_in_seconds}s"
 
     def recorded_rows(self, module: str) -> list[ExpectedResultEntry]:
-        """The measured values of the module per step, keyed like the expected results: lower case, without 'i_'/'o_'."""
         entries = sorted(self.server.measurement_repository(self.clients[module].client_id).all(), key=lambda entry: entry.timestamp)
         return [{value.name.lower(): value.value for value in entry.values} for entry in entries]

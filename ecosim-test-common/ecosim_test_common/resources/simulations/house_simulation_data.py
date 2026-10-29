@@ -2,12 +2,12 @@ import csv
 from pathlib import Path
 from typing import ClassVar
 
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValueType
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.config.executing_platform import ExecutingPlatform
 
 from ecosim_test_common.resources.resource_utils import resource_path_file
 
-ExpectedResultEntry = dict[str, InterfaceValueType]
+ExpectedResultEntry = dict[str, InterfaceValue]
 
 
 class HouseSimulationData:
