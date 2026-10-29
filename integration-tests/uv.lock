@@ -585,6 +585,7 @@ requires-dist = [
     { name = "art", specifier = "==6.5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
     { name = "ecosim-common-fmpy", editable = "../ecosim-common-fmpy" },
+    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
     { name = "fmpy", specifier = "==0.3.30" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
