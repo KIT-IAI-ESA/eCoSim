@@ -15,7 +15,7 @@ def test_pickle_value_history_with_dask_variable(dask_client: distributed.Client
     history = InterfaceValueHistory(
         _repositories=repositories,
         _simulation_config=SimulationConfig.of_config_file_and_params(
-            resource_path_file("integration/models/houses/simulation.json"),
+            resource_path_file("fmu_v2/models/house/simulation.json"),
             steps=1,
         ),
         _entries=ESPMap.of_type(ESPStructureType.DASK_VARIABLE),
@@ -28,7 +28,7 @@ def test_pickle_value_history_with_dask_variable(dask_client: distributed.Client
 #     history = InterfaceValueHistory(
 #         _repositories=RepositoriesInMemory.for_communication_protocol(CommunicationProtocol.DASK),
 #         _simulation_config=SimulationConfig.of_config_file_and_params(
-#             resource_path_file("integration/models/houses/simulation.json"),
+#             resource_path_file("fmu_v2/models/house/simulation.json"),
 #             steps=1,
 #         ),
 #         _entries=ESPMap.of_type(ESPStructureType.DASK_ACTOR),
@@ -38,7 +38,7 @@ def test_pickle_value_history_with_dask_variable(dask_client: distributed.Client
 
 def test_simulation_config(dask_client: distributed.Client) -> None:
     config = SimulationConfig.of_config_file_and_params(
-        resource_path_file("integration/models/houses/simulation.json"),
+        resource_path_file("fmu_v2/models/house/simulation.json"),
         steps=1,
     )
     cloudpickle.dumps(config)

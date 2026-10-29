@@ -12,10 +12,10 @@ ExpectedResultEntry = dict[str, InterfaceValueType]
 class HouseSimulationData:
     """
     The houses scenario: a weather model drives a house, whose room temperature is fed back - delayed by one step -
-    into a heating and a ventilation controller. All four are FMI 2.0 FMUs (linux64 binaries only).
+    into a heating and a ventilation controller.
     """
 
-    RESOURCES: ClassVar[Path] = resource_path_file("integration/models/houses")
+    RESOURCES: ClassVar[Path] = resource_path_file("fmu_v2/models/house")
     SIMULATION_CONFIG_FILE: ClassVar[Path] = RESOURCES / "simulation.json"
     # the module names are used as keys and for building paths -> do not change them
     MODULES: ClassVar[tuple[str, ...]] = ("weather", "house", "heating", "ventilation")
@@ -24,7 +24,7 @@ class HouseSimulationData:
 
     @staticmethod
     def client_config_file(module: str) -> Path:
-        return HouseSimulationData.RESOURCES / f"{module}_preferences_linux.ini"
+        return HouseSimulationData.RESOURCES / "linux" / f"{module}_preferences_linux.ini"
 
     @staticmethod
     def expected_rows(module: str) -> list[ExpectedResultEntry]:
