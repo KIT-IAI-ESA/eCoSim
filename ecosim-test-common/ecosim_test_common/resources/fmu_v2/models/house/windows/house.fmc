@@ -1,0 +1,43 @@
+{
+    "fmu-file": "",
+    "modeldescription": "",
+    "inputs": [
+        {
+            "name": "T_out",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        },
+        {
+            "name": "dir_sol_iradiance",
+            "unit": "",
+            "description": "direct solar iradiance",
+            "required": "true"
+        },
+        {
+            "name": "ventilation_pressure_control_signal",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        },
+        {
+            "name": "heating_heatExchanger_control_signal",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        },
+        {
+            "name": "vetnilation_valve_control_signal",
+            "unit": "",
+            "description": "",
+            "required": "true"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "room_temperature",
+            "unit": "",
+            "description": ""
+        }
+    ]
+}
