@@ -6,6 +6,8 @@
 - type hints on every function signature and class attribute, including `-> None`; mypy runs with
   `disallow_untyped_defs`
 - meaningful names, no abbreviations
+- arguments passed by name, `repository.add(values=values, timestamp=timestamp)`, except for a
+  single obvious argument such as `Path(file)`
 - comments in English
 - short, clear docstrings for complex logic
 - composition over inheritance, early returns over nesting
