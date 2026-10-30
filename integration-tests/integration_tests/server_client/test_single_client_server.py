@@ -5,6 +5,7 @@ from typing import Tuple
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.tech.port_utils import get_free_port
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
@@ -12,7 +13,7 @@ from integration_tests.test_data.server_client.simple_test_server import SimpleT
 
 def test_client_server_single(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
-    server_port = 47189
+    server_port = get_free_port()
     steps = 100
     step_size_in_ms = 2_500
     simulation_start_date: datetime = datetime(

@@ -6,6 +6,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
@@ -14,7 +15,7 @@ from integration_tests.test_data.server_client.simple_test_server import SimpleT
 
 def test_three_clients_server(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
-    server_port = 39310
+    server_port = get_free_port()
     steps = 10
     step_size_in_ms = 2_500
     simulation_start_date: datetime = datetime(
