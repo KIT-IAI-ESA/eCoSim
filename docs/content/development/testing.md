@@ -41,8 +41,8 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 
 - `HouseSimulationData`: weather, house, heating and ventilation as FMI 2.0 FMUs, 200 steps. The
   resources are in `resources/fmu_v2/models/house/`, with one FMU build per platform (`linux/`,
-  `windows/`). Used by `integration-tests/integration_tests/server_client/house_simulation/`.
-  - `integration_tests/server_client/house_simulation/` already uses this data, so you can look it up for example usage.
+  `windows/`). `integration-tests/integration_tests/server_client/house_simulation/` runs it and
+  is the example to follow for a test of a whole simulation.
 
 ## Before a commit
 
