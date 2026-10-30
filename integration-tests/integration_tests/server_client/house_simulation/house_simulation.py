@@ -61,7 +61,7 @@ class HouseSimulation:
         server_thread.start()
         for client in self.clients.values():
             client.start()
-        server_thread.join(timeout_in_seconds)
+        server_thread.join(timeout=timeout_in_seconds)
         assert not server_thread.is_alive(), f"The simulation did not finish within {timeout_in_seconds}s"
 
     def recorded_rows(self, module: str) -> list[ExpectedResultEntry]:
