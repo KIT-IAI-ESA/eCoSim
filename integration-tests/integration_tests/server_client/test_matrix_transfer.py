@@ -15,6 +15,7 @@ from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
@@ -25,7 +26,7 @@ logger = ESPLogger("TEST_MATRIX_TRANSFER")
 
 def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
     server_host = "localhost"
-    server_port = 33771
+    server_port = get_free_port()
     steps = 100
     step_size_in_ms = 2_000
     simulation_start_date: datetime = datetime(
