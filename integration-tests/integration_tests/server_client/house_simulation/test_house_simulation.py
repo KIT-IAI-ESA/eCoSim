@@ -16,5 +16,5 @@ def test_the_house_simulation_reproduces_the_recorded_results(communication_prot
     for module in HouseSimulationData.MODULES:
         recorded, expected = simulation.recorded_rows(module), HouseSimulationData.expected_rows(module)
         assert len(recorded) == HouseSimulationData.STEPS, f"{module}: {len(recorded)} steps recorded"
-        for step, (recorded_row, expected_row) in enumerate(zip(recorded, expected), start=1):
+        for step, (recorded_row, expected_row) in enumerate(zip(recorded, expected, strict=True), start=1):
             assert recorded_row == pytest.approx(expected_row), f"{module}, step {step}"
