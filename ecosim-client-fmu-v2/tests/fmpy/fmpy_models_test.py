@@ -30,8 +30,6 @@ def get_os_name_lower_case() -> str:
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
 def test_sim() -> None:
     fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "Sub1_Linux.fmu")
-    # fmu_file = 'CoupledClutches.fmu'
-    # download_test_file('2.0', 'CoSimulation', 'MapleSim', '2016.2', 'CoupledClutches', fmu_file)
     model_description = read_model_description(f"{fmu_file}")
 
     unzipdir = extract(fmu_file)
@@ -165,57 +163,6 @@ def test_fmpy() -> None:
     print("=== RESULT")
     print(f"Pos2: {fmu_instance.getReal([output_value_references['pos2']])}")
     print(f"Speed2: {fmu_instance.getReal([output_value_references['speed2']])}")
-
-    shutil.rmtree(unzip_dir)
-
-
-@pytest.mark.skip(reason="manual test")
-def test_fmpy_coupled_clutches() -> None:
-    print("")
-    print("")
-
-    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "CoupledClutches.fmu")
-    unzip_dir = fmpy.extract(fmu_file)
-
-    step_size = 100000.0
-
-    model_description = fmpy.read_model_description(f"{fmu_file}")
-    input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
-    input_value_references = {var.name: var.valueReference for var in input_variables}
-    output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
-    output_value_references = {var.name: var.valueReference for var in output_variables}
-
-    fmu_instance = fmpy.fmi2.FMU2Slave(
-        guid=model_description.guid,
-        unzipDirectory=unzip_dir,
-        modelIdentifier=model_description.coSimulation.modelIdentifier,
-        instanceName=str(uuid4()),
-    )
-
-    fmu_instance.instantiate()
-    fmu_instance.setupExperiment(startTime=0.0)
-    fmu_instance.enterInitializationMode()
-    fmu_instance.exitInitializationMode()
-
-    fmu_instance.setReal(
-        [input_value_references["inputs"]],
-        [1.0],
-    )
-
-    print("=== INPUT")
-    print(f"Inputs: {fmu_instance.getReal([input_value_references['inputs']])}")
-    print(f"Step size: {step_size}")
-
-    fmu_instance.doStep(
-        currentCommunicationPoint=0.0,
-        communicationStepSize=step_size,
-    )
-
-    print("=== RESULT")
-    print(f"Outputs[1]: {fmu_instance.getReal([output_value_references['outputs[1]']])}")
-    print(f"Outputs[2]: {fmu_instance.getReal([output_value_references['outputs[2]']])}")
-    print(f"Outputs[3]: {fmu_instance.getReal([output_value_references['outputs[3]']])}")
-    print(f"Outputs[4]: {fmu_instance.getReal([output_value_references['outputs[4]']])}")
 
     shutil.rmtree(unzip_dir)
 
