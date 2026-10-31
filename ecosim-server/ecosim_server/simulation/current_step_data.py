@@ -52,7 +52,7 @@ class CurrentStepData:
         with self._logical_delays.transaction() as logical_delays:
             for logical_delay in self._simulation_config.logical_delays:
                 delayed_time_steps = logical_delay.delayed_time_steps
-                if delayed_time_steps not in self._logical_delays:
+                if delayed_time_steps not in logical_delays:
                     logical_delays[delayed_time_steps] = CurrentStepLogicalDelay(
                         delayed_time_steps=delayed_time_steps,
                         connections=[],
