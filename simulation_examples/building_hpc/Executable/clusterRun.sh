@@ -7,7 +7,7 @@
 module load devel/miniforge/25.3.1-python-3.12
 conda activate eCoSim
 
-ECOSIM_DIR = "$HOME/ecosim" #Change to location of eCoSim as need
+ECOSIM_DIR="$HOME/ecosim" #Change to location of eCoSim as need
 
 source $ECOSIM_DIR/simulation_examples/.venv/bin/activate
 
