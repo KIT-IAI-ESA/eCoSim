@@ -7,8 +7,7 @@ from ecosim_common.communication.message_type import MessageType
 HEADER_BYTES = 9
 # > = the data should be packed using big-endian byte order (big-endian = most significant byte is stored first)
 # L = unsigned long (4 bytes - 0 to 4.294.967.295)
-# B = unsigned char (1 byte - 0 to 7)
-# H = unsigned short (2 bytes - 0 to 255)
+# B = unsigned char (1 byte - 0 to 255)
 # => in bytes: 4-1-4
 # => the 'header' is 9 bytes
 # the current format is [CORRELATION_ID][MESSAGE_TYPE][LENGTH]

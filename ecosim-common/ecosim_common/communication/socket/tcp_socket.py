@@ -260,26 +260,37 @@ class TCPSocket(ESPChannel, ShutdownListener):
         if self._closed.is_set():
             TCPSocket._logger.warning("Socket is in the progress of closing or already closed.")
             return None
-        raw_header = self._internal_socket.recv(binary_message_header.HEADER_BYTES)
-        if not raw_header:
+        # no data at all between two messages is the closing signal, inside a message it is an error
+        first_header_bytes = self._internal_socket.recv(binary_message_header.HEADER_BYTES)
+        if not first_header_bytes:
             TCPSocket._logger.debug("Received no data")
             return None
-        message_header = BinaryMessageHeader(raw_header)
+        message_header = BinaryMessageHeader(
+            first_header_bytes + self._receive_exactly(byte_count=binary_message_header.HEADER_BYTES - len(first_header_bytes)),
+        )
         if not message_header:
             TCPSocket._logger.debug("Received no valid header")
             return None
 
-        data: bytes = b""
-        while len(data) < message_header.data_length:
-            chunk = self._internal_socket.recv(message_header.data_length - len(data))
-            if not chunk:
-                raise ConnectionError("Error while receiving junks.")
-            data += chunk
+        data = self._receive_exactly(byte_count=message_header.data_length)
         TCPSocket._logger.debug("Received message of type %s", message_header.message_type)
         return ReceivedBinaryMessage(
             _header=message_header,
             _data=data,
         )
+
+    def _receive_exactly(
+        self,
+        byte_count: int,
+    ) -> bytes:
+        # recv() returns whatever has arrived so far, which can be any part of a message
+        data = bytearray()
+        while len(data) < byte_count:
+            chunk = self._internal_socket.recv(byte_count - len(data))
+            if not chunk:
+                raise ConnectionError(f"Connection closed after {len(data)} of {byte_count} bytes.")
+            data += chunk
+        return bytes(data)
 
     def send(
         self,
@@ -289,14 +300,14 @@ class TCPSocket(ESPChannel, ShutdownListener):
             raise Exception("Socket is not connected.")
         raw_message = SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message()
         try:
-            self._internal_socket.send(raw_message)
+            self._internal_socket.sendall(raw_message)
         except Exception as e:
             connection_address = self._connection_address
             if not connection_address:
                 raise e
             TCPSocket._logger.debug("Sending message to server failed - recreating the socket and try again. Error: %s", e)
             self._internal_socket.connect((connection_address.ip, connection_address.port))
-            self._internal_socket.send(raw_message)
+            self._internal_socket.sendall(raw_message)
 
     @override
     def connect(self) -> None:
