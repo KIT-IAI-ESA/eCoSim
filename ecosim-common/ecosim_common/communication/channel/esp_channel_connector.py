@@ -23,18 +23,25 @@ class ESPChannelConnector:
     ) -> ESPChannel:
         start_time = time.time()
         connected: bool = False
+        transport = self._communication_protocol.serialized
         channel: ESPChannel = ESPChannel.for_protocol(self._communication_protocol, connection_address)
         while not connected and (time.time() - start_time) < timeout_in_seconds:
             try:
                 channel.connect()
                 connected = channel.is_connected()
             except Exception as e:
-                ESPChannelConnector._logger.warning("Cannot connect to Dask client - trying in sum for %ss. Error: %s", timeout_in_seconds, e)
+                ESPChannelConnector._logger.warning(
+                    "Cannot connect to %s via %s - trying in sum for %ss. Error: %s",
+                    connection_address,
+                    transport,
+                    timeout_in_seconds,
+                    e,
+                )
                 time.sleep(1)
 
         if not connected:
-            raise ConnectionError(f"Could not connect to Dask client {connection_address}")
-        ESPChannelConnector._logger.info("Connected to Dask client successfully: %s", connection_address)
+            raise ConnectionError(f"Could not connect to {connection_address} via {transport}")
+        ESPChannelConnector._logger.info("Connected to %s via %s successfully.", connection_address, transport)
         return channel
 
     def listener(
