@@ -80,6 +80,13 @@ class ESPLogger:
             stack_trace,
         )
 
+    def exception(
+        self,
+        message: str,
+        *args: object,
+    ) -> None:
+        self._logger.exception(message, *args)
+
     def warning(
         self,
         message: str,
