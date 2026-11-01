@@ -52,7 +52,6 @@ class ESPLogger:
     ):
         self._name = name
         self._logger = logging.getLogger(name)
-        self._logger.setLevel(logging.getLogger().level)
         self._overwrite_logger = logging.getLogger(name + _overwrite_suffix)
         self._overwrite_logger.handlers = [
             handler
