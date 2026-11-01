@@ -45,8 +45,7 @@ dev = [
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim-test-common", "../ecosim-server"]
-python_executable = ".venv/bin/python"
+mypy_path = ["../ecosim-test-common"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 

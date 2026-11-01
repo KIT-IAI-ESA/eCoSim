@@ -57,7 +57,6 @@ ecosim-hpc = { path = "../ecosim-hpc", editable = true }
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [tool.mypy]
-python_executable = ".venv/bin/python"
 mypy_path = [
     "../ecosim-common",
     "../ecosim-common-fmpy",
