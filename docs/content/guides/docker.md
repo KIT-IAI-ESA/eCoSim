@@ -131,7 +131,9 @@ results end up.
   together with the server.
 - The executable is the `ENTRYPOINT` of the images, so `command:` only lists arguments, which are
   appended to it. `docker run localhost/ecosim_server:latest --help` works the same way.
-- Both variants publish port `1234`, so they cannot run at the same time.
+- No service publishes a port: the clients reach the server over the compose network. So the variants
+  can run at the same time, and next to anything else on the host that uses `1234` or `5432`.
+- The FMUs are x86-64 only, so every service sets `platform: linux/amd64` and arm64 hosts run the images under emulation.
 - After rebuilding an image, run `docker compose down` before `up`. `up` reuses the existing
   containers and keeps running the old image.
 - `docker` may be Podman, where `podman compose` hands over to `podman-compose`. It should not make
