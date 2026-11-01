@@ -142,5 +142,5 @@ class ShutdownManager:
         ShutdownManager._init = False
         ShutdownManager._instance = None
         ShutdownManager._ignore_signals_until = 0.0
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGINT, signal.default_int_handler)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)

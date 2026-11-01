@@ -29,13 +29,15 @@ def remove_pytest_live_logger() -> None:
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_shutdown_manager() -> Generator[None, Any, None]:
-    pytest_fixture_logger.debug("Initializing shutdown manager")
-    ShutdownManager().init()
+    # created now, so it does not get a dask event from a client the test closes
+    ShutdownManager()
     yield None
-    pytest_fixture_logger.debug("Calling shutdown manager at application end...")
-    ShutdownManager().set_shutdown_at_application_end()
-    pytest_fixture_logger.debug("Calling shutdown manager at application end...done.")
-    ShutdownManager.reset_instance()
+    try:
+        pytest_fixture_logger.debug("Calling shutdown manager at application end...")
+        ShutdownManager().set_shutdown_at_application_end()
+        pytest_fixture_logger.debug("Calling shutdown manager at application end...done.")
+    finally:
+        ShutdownManager.reset_instance()
 
 
 @pytest.fixture(scope="function")
