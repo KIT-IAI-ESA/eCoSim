@@ -21,7 +21,7 @@ from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
-# how long a receive without an explicit timeout waits before it treats the connection as dead
+# a receive without an explicit timeout asks the scheduler again after this long
 _DEFAULT_RECEIVE_TIMEOUT_IN_SECONDS = 300
 
 
@@ -166,8 +166,11 @@ class DaskChannel(ESPChannel, ShutdownListener):
                 message = self.listen_blocking()
                 if message is not None:
                     on_message(message)
+        except Exception:
+            DaskChannel._logger.exception("Receive loop on %s failed -> closing the channel", self._inbox_name())
         finally:
             self._is_listening.clear()
+            self.close()
 
     @override
     def wait_for_finish(
@@ -183,12 +186,21 @@ class DaskChannel(ESPChannel, ShutdownListener):
     ) -> ESPChannelMessage | None:
         if self._closed.is_set():
             raise Exception("Dask client has already or is in the process of being disconnected.")
-        message: ReceivedBinaryMessage | None = self._receive(timeout_in_seconds or _DEFAULT_RECEIVE_TIMEOUT_IN_SECONDS)
+        message: ReceivedBinaryMessage | None = self._receive_until_closed() if timeout_in_seconds is None else self._receive(timeout_in_seconds)
         if not message:
             DaskChannel._logger.info("Received empty message -> closing connection")
             self._is_finished.set()
             return None
         return message.to_esp_channel_message()
+
+    def _receive_until_closed(self) -> ReceivedBinaryMessage | None:
+        # silence is no close signal, the peer may just be in a long step
+        while True:
+            try:
+                return self._receive(_DEFAULT_RECEIVE_TIMEOUT_IN_SECONDS)
+            except TimeoutError:
+                if self._is_finished.is_set():
+                    return None
 
     @override
     def send(
@@ -231,8 +243,8 @@ class DaskChannel(ESPChannel, ShutdownListener):
     ) -> ReceivedBinaryMessage | None:
         raw_message = self._next_inbox_entry(timeout_in_seconds)
         if not isinstance(raw_message, bytes) or not raw_message:
-            # anything that is not a raw message is '_CLOSED_SENTINEL' or nothing at all
-            DaskChannel._logger.debug("Received no data or the close signal on %s", self._inbox_name())
+            # anything that is not a raw message is '_CLOSED_SENTINEL'
+            DaskChannel._logger.debug("Received the close signal on %s", self._inbox_name())
             return None
         message_header = BinaryMessageHeader(raw_message[0 : binary_message_header.HEADER_BYTES])
         if not message_header:
@@ -245,13 +257,13 @@ class DaskChannel(ESPChannel, ShutdownListener):
     def _next_inbox_entry(
         self,
         timeout_in_seconds: int,
-    ) -> bytes | str | None:
+    ) -> bytes | str:
         """Blocks on the scheduler until the peer writes - no polling, so a busy peer costs nothing."""
         try:
             return cast(bytes | str, self._get_or_create_inbox().get(timeout=timeout_in_seconds))
         except TimeoutError:
             DaskChannel._logger.debug("Received no data on %s after %s seconds.", self._inbox_name(), timeout_in_seconds)
-            return None
+            raise
         except Exception as e:
             DaskChannel._logger.error("Received non-timeout error while waiting on %s: %s", self._inbox_name(), e)
             raise e
