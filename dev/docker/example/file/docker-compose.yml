@@ -15,6 +15,7 @@ name: ecosim-example-file
 
 x-client: &client
   image: localhost/ecosim_client_fmu_v2:latest
+  platform: linux/amd64
   restart: "no"
   depends_on:
     - server
@@ -26,9 +27,8 @@ services:
   server:
     container_name: ecosim-example-file-server
     image: localhost/ecosim_server:latest
+    platform: linux/amd64
     restart: "no"
-    ports:
-      - "1234:1234"
     volumes:
       - ./config:/config:ro,z
       - ./results:/results:z

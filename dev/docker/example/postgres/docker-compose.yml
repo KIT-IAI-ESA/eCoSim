@@ -12,6 +12,7 @@ name: ecosim-example
 
 x-client: &client
   image: localhost/ecosim_client_fmu_v2:latest
+  platform: linux/amd64
   restart: "no"
   depends_on:
     - server
@@ -23,14 +24,13 @@ services:
   db:
     container_name: ecosim-example-db
     image: timescale/timescaledb:latest-pg16
+    platform: linux/amd64
     restart: "no"
     shm_size: 128mb
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: ecosim_example
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
@@ -40,12 +40,11 @@ services:
   server:
     container_name: ecosim-example-server
     image: localhost/ecosim_server:latest
+    platform: linux/amd64
     restart: "no"
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "1234:1234"
     volumes:
       - ./config:/config:ro,z
     command:
