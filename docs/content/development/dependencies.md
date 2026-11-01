@@ -38,3 +38,12 @@ ignore_missing_imports = true
 
 - a subproject whose `mypy_path` includes another one needs that one's overrides too
 - add the override to the root `mypy.ini` as well, which the IDE uses
+
+## Update the pre-commit hooks
+
+`uv run pre-commit autoupdate` rewrites the versions in `.pre-commit-config.yaml`. It is a deliberate
+step for maintainers, `dev/init_dev.py` does not run it:
+
+- run it in the repository root, then `uv run pre-commit run --all-files`, because a new hook version
+  may rewrite or reject files
+- commit the result as its own change

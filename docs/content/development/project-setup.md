@@ -2,19 +2,17 @@
 
 - [PyCharm](https://www.jetbrains.com/pycharm/) is the recommended IDE, though it is not required
 - the following commands should be executed in the root directory of the project
+- install [uv](https://docs.astral.sh/uv/) with the [official installer](https://docs.astral.sh/uv/getting-started/installation/)
+    - `uv` is a modern drop-in replacement for `pip`
 - **either** run the `init_dev.py` script
     - `python dev/init_dev.py`
       - *troubleshooting*
-        - if you ran into an error like `.venv/bin/python: No module named pip` you have a custom `venv` enabled
-          -> you should run the script with your default python interpreter -> deactivate the custom venv
-          (execute `deactivate` in the terminal)
+        - `'uv' is not on PATH`: install `uv` as described above and open a new terminal
 - **or** do everything manually
-    - install [uv](https://docs.astral.sh/uv/)
-        - `pip install uv`
-        - `uv` is a modern drop-in replacement for `pip`
-    - create a Python virtual environment for each subproject and sync the project
-        - `ecosim-common`, `ecosim-server`, `integration-tests`, `ecosim-client-*`
-            - e.g. `cd ecosim-common && uv venv && uv sync`
+    - sync every subproject listed in `SUBPROJECTS` in `dev/config.py`, which also creates its `.venv`
+        - e.g. `cd ecosim-common && uv sync --extra dev`
+        - `integration-tests` and `ecosim-test-common` have no `dev` extra: `uv sync`
+        - `python dev/sync_projects.py` does this for all of them, including the project root
     - install general dependencies
       - (within project root folder) `uv sync --extra dev`
     - install pre-commit hook
