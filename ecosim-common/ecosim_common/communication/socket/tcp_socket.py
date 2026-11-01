@@ -221,11 +221,16 @@ class TCPSocket(ESPChannel, ShutdownListener):
     ) -> None:
         self._listening.set()
         self._start_listening_in_progress.clear()
-        while not self._closed.is_set():
-            message = self._listen_blocking()
-            if message is not None:
-                on_message(message)
-        self._listening.clear()
+        try:
+            while not self._closed.is_set():
+                message = self._listen_blocking()
+                if message is not None:
+                    on_message(message)
+        except Exception:
+            TCPSocket._logger.exception("Receive loop on %s failed -> closing the channel", self._connection_address)
+        finally:
+            self._listening.clear()
+            self.close()
 
     def listen_blocking(
         self,
@@ -238,9 +243,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
             TCPSocket._logger.warning("Socket already starts to listening to: %s. So nothing is done.", self._connection_address)
             return None
         self._listening.set()
-        message = self._listen_blocking(timeout_in_seconds)
-        self._listening.clear()
-        return message
+        try:
+            return self._listen_blocking(timeout_in_seconds)
+        finally:
+            self._listening.clear()
 
     def _listen_blocking(
         self,
@@ -248,8 +254,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
     ) -> ESPChannelMessage | None:
         timeout_buffer = self._internal_socket.gettimeout()
         self._internal_socket.settimeout(timeout_in_seconds)
-        message: ReceivedBinaryMessage | None = self.receive()
-        self._internal_socket.settimeout(timeout_buffer)
+        try:
+            message: ReceivedBinaryMessage | None = self.receive()
+        finally:
+            self._internal_socket.settimeout(timeout_buffer)
         if not message:
             TCPSocket._logger.info("Received empty message -> closing connection")
             self.close()

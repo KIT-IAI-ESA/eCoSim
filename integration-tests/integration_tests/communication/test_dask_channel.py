@@ -4,7 +4,6 @@ import dask.distributed as dd
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
-from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
@@ -29,12 +28,12 @@ def test_a_channel_does_not_receive_its_own_message(dask_client: dd.Client) -> N
         ),
     )
 
-    assert _listen_blocking_bounded(channel) is None
+    _assert_listen_blocking_times_out(channel)
 
 
-def test_listen_blocking_returns_after_the_given_timeout(dask_client: dd.Client) -> None:
+def test_listen_blocking_times_out_after_the_given_timeout(dask_client: dd.Client) -> None:
     """The caller decides how long it waits - the channel must not fall back to its own timeout."""
-    assert _listen_blocking_bounded(_connected_channel()) is None
+    _assert_listen_blocking_times_out(_connected_channel())
 
 
 def _connected_channel() -> ESPChannel:
@@ -43,15 +42,18 @@ def _connected_channel() -> ESPChannel:
     )
 
 
-def _listen_blocking_bounded(channel: ESPChannel) -> ESPChannelMessage | None:
+def _assert_listen_blocking_times_out(channel: ESPChannel) -> None:
     """Fails instead of hanging if 'listen_blocking' does not honour '_RECEIVE_TIMEOUT_IN_SECONDS'."""
-    received: list[ESPChannelMessage | None] = []
+    timeouts: list[TimeoutError] = []
 
     def receive() -> None:
-        received.append(channel.listen_blocking(timeout_in_seconds=_RECEIVE_TIMEOUT_IN_SECONDS))
+        try:
+            channel.listen_blocking(timeout_in_seconds=_RECEIVE_TIMEOUT_IN_SECONDS)
+        except TimeoutError as timeout:
+            timeouts.append(timeout)
 
     thread = threading.Thread(target=receive, daemon=True)
     thread.start()
     thread.join(timeout=_RECEIVE_TIMEOUT_IN_SECONDS + _TOLERANCE_IN_SECONDS)
     assert not thread.is_alive(), "'listen_blocking' did not return within its timeout"
-    return received[0]
+    assert timeouts, "'listen_blocking' returned instead of raising TimeoutError"

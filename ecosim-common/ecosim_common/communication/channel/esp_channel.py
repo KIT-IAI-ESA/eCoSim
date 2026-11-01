@@ -63,6 +63,7 @@ class ESPChannel(ABC):
     ) -> ESPChannelMessage | None:
         """
         :return ESPChannelMessage | None: The received message or None if the connection was closed.
+        :raises TimeoutError: If 'timeout_in_seconds' passed without a message. Without a timeout the wait has no limit.
         """
         pass
 
