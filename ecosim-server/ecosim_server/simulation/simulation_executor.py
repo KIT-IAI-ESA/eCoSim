@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
@@ -31,6 +31,7 @@ class SimulationExecutor:
     _START_RESPONSE_TIMEOUT_IN_SECONDS = 5
     _STOP_RESPONSE_TIMEOUT_IN_SECONDS = 1
     _RESTORE_RESPONSE_TIMEOUT_IN_SECONDS = 60 * 60
+    _RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS = 30
 
     def __init__(
         self,
@@ -146,8 +147,10 @@ class SimulationExecutor:
         store_default_values_in_history: bool,
     ) -> None:
         while not self._client_communication.have_all_clients_started_simulation():
-            if not self._client_communication.are_all_clients_connected_and_ready():
-                raise RuntimeError("A client was lost while waiting for all clients to start their simulation")
+            self._raise_if_clients_lost(
+                client_ids=self._client_communication.all_client_ids(),
+                waiting_for="all clients to start their simulation",
+            )
             message = subscription.next_message(
                 timeout_in_seconds=SimulationExecutor._START_RESPONSE_TIMEOUT_IN_SECONDS,
             )
@@ -168,6 +171,16 @@ class SimulationExecutor:
             client_id=message.client_id,
             client_sim_step_data=message.payload(ClientSimStepData),
         )
+
+    def _raise_if_clients_lost(
+        self,
+        client_ids: Iterable[ClientID],
+        waiting_for: str,
+    ) -> None:
+        # no ping here: a client handles its messages one by one, so during a long step it cannot answer one
+        lost_client_ids = self._client_communication.lost_client_ids(client_ids)
+        if len(lost_client_ids) > 0:
+            raise RuntimeError(f"Lost client {', '.join(str(client_id) for client_id in lost_client_ids)} while waiting for {waiting_for}")
 
     def _subscribe_to(
         self,
@@ -235,12 +248,24 @@ class SimulationExecutor:
         client_ids: Tuple[ClientID, ...],
     ) -> None:
         missing_client_ids = set(client_ids)
+        last_response_time = time.monotonic()
         while len(missing_client_ids) > 0:
-            message = subscription.next_message(timeout_in_seconds=SimulationExecutor._RESTORE_RESPONSE_TIMEOUT_IN_SECONDS)
+            message = subscription.next_message(timeout_in_seconds=SimulationExecutor._RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS)
             if message is None:
-                raise RuntimeError(f"Timeout while waiting for the restore response of the clients {missing_client_ids}")
+                self._check_restore_timeout(missing_client_ids=missing_client_ids, last_response_time=last_response_time)
+                continue
+            last_response_time = time.monotonic()
             if self._is_expected_restore_response(message):
                 missing_client_ids.discard(message.client_id)
+
+    def _check_restore_timeout(
+        self,
+        missing_client_ids: set[ClientID],
+        last_response_time: float,
+    ) -> None:
+        self._raise_if_clients_lost(client_ids=missing_client_ids, waiting_for="their restore response")
+        if time.monotonic() - last_response_time >= SimulationExecutor._RESTORE_RESPONSE_TIMEOUT_IN_SECONDS:
+            raise RuntimeError(f"Timeout while waiting for the restore response of the clients {missing_client_ids}")
 
     def _is_expected_restore_response(
         self,
@@ -339,10 +364,12 @@ class SimulationExecutor:
                 timeout_in_seconds=SimulationExecutor._STEP_RESPONSE_TIMEOUT_IN_SECONDS,
             )
             if received_message is None:
+                awaited_client_ids = tuple(client_id for client_id, handled in handled_clients.items() if not handled)
+                self._raise_if_clients_lost(client_ids=awaited_client_ids, waiting_for=f"the response of step {self._current_step}")
                 self.logger.warning(
                     "Step %s: still waiting for a response from %s",
                     self._current_step,
-                    ", ".join(str(client_id) for client_id, handled in handled_clients.items() if not handled),
+                    ", ".join(str(client_id) for client_id in awaited_client_ids),
                 )
                 continue
             self._handle_received_sim_step(

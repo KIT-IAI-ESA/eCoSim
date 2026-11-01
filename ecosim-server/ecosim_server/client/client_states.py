@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Tuple, assert_never, override
+from typing import Callable, Iterable, Tuple, assert_never, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
@@ -161,6 +161,13 @@ class ClientStates(ShutdownListener):
     def are_all_clients_connected_and_ready(self) -> bool:
         with self._client_states.transaction() as client_states:
             return all((state.connected and state.ready_for_simulation) for state in client_states.values())
+
+    def lost_client_ids(
+        self,
+        client_ids: Iterable[ClientID],
+    ) -> Tuple[ClientID, ...]:
+        states = self._client_states.get_snapshot()
+        return tuple(client_id for client_id in client_ids if not (states[client_id].connected and states[client_id].ready_for_simulation))
 
     def set_client_ready_for_simulation(
         self,

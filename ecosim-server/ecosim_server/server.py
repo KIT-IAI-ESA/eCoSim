@@ -165,8 +165,6 @@ class Server(ShutdownListener):
     ) -> None:
         connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
         message = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
-        if message is None:
-            raise Exception(f"No message received from client {client_id}")
         client_interfaces = message.payload(ModelInterfaceIds)
         if not simulation_config.validate_interfaces(
             client_id,
@@ -215,16 +213,13 @@ class Server(ShutdownListener):
         connection: ClientConnection,
     ) -> None:
         with connection:
+            client_id: ClientID | None = None
             try:
                 Server._logger.debug("Handling new client connection")
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
                 message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
-                if message is None:
-                    Server._logger.error("No message received from client %s for %s", connection.address, MessageType.CLIENT_META_DATA_REQUEST)
-                    connection.close()
-                    return
                 client_config: ClientMetaData = message.payload(ClientMetaData)
-                client_id: ClientID = client_config.client_id()
+                client_id = client_config.client_id()
                 if not client_communication.add_if_needed(client_config, connection):
                     Server._logger.warning(
                         "Client %s from %s was not expected to connect - it has no needed model/simulator.",
