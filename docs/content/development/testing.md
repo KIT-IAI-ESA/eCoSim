@@ -36,8 +36,7 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 
 - `cd integration-tests && uv run pytest --ignore=integration_tests/locally`
 - they import the other subprojects, so sync after changing one: `python dev/sync_projects.py`
-- some start a real server on port `1234` and PostgreSQL through `testcontainers`, so they cannot
-  run while a Docker example uses that port
+- some start PostgreSQL through `testcontainers`, so they need Docker
 - the tests in `integration_tests/locally/` need external models or an HPC environment, so the
   command above skips them, as CI does
 - `integration_tests/server_client/` runs a real server against real clients for every protocol and

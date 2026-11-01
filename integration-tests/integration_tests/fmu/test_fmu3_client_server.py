@@ -13,6 +13,7 @@ from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.config.model_interface_server import ConnectedToData, ModelInterfaceServer
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
@@ -32,7 +33,7 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
         ),
     )
     server_host = "localhost"
-    server_port = 23291
+    server_port = get_free_port()
     steps = 100
     start_date = datetime(2020, 1, 1)
     server = generate_simple_test_server(
@@ -162,6 +163,7 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
     mock_client.start()
 
     server_thread.join(timeout=60)
+    assert not server_thread.is_alive()
 
     fmu3_measurement_repo: MeasurementRepositoryInMemory = server.measurement_repository(fmu3_client.client_id)  # type: ignore
     fmu3_measurement_repo.assert_entry_count(steps)

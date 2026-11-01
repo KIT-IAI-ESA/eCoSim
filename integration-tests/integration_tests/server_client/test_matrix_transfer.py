@@ -201,7 +201,8 @@ def run_matrix_transfer(communication_protocol: CommunicationProtocol) -> Simple
     client_1.start()
     client_2.start()
 
-    server_thread.join()
+    server_thread.join(timeout=110)
+    assert not server_thread.is_alive()
     server.print_measurement_statistics()
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
