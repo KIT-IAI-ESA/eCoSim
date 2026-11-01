@@ -67,7 +67,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
             internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def _is_internal_socket_listening(self) -> bool:
-        return not self._internal_socket.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
+        try:
+            return not self._internal_socket.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
+        except socket.error:
+            return False
 
     def _has_internal_socket_peer(self) -> bool:
         try:
