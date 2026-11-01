@@ -13,6 +13,7 @@
     - subprojects without tests are reported as `no tests`, not as failures
     - limit the run: `python dev/run_tests.py ecosim-server ecosim-common`
     - forward arguments to pytest after `--`: `python dev/run_tests.py ecosim-server -- -k history --no-cov`
+- a test fails after 120 s (`timeout` in the subproject's `pyproject.toml`), switch that off in a debugger or for a long local run: `--timeout=0`
 
 | Subproject | Tests |
 | --- | --- |
