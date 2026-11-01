@@ -121,6 +121,7 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
     client_3.start()
 
     server_thread.join(120)
+    assert not server_thread.is_alive()
     server.print_measurement_statistics()
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)

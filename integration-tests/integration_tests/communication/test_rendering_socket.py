@@ -6,6 +6,7 @@ from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService, PreRenderedImageServiceConfig
 from ecosim_common.client.renderer.rendering_socket_client import RenderingSocketClient
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_common.simulation.renderer.rendering_messages import (
     ImagesAtTimeStep,
     RawRenderingMessageHandler,
@@ -17,11 +18,12 @@ from ecosim_test_common.resources.resource_utils import resource_path_file_str
 
 
 def test_local_test() -> None:
+    port = get_free_port()
     server_socket = RenderingSocket(
         host="localhost",
-        port=3336,
+        port=port,
     )
-    server_socket.start().wait()
+    assert server_socket.start().wait(timeout=10)
 
     mock_config = Mock(spec=ClientConfig)
     mock_config.client_id.return_value = ClientID(model_name="Model", simulator_name="Simulator")
@@ -33,11 +35,11 @@ def test_local_test() -> None:
         ),
     )
     client = RenderingSocketClient(
-        uri="ws://localhost:3336",
+        uri=f"ws://localhost:{port}",
         client_config=mock_config,
         renderer_service=renderer_service,
     )
-    client.start().wait()
+    assert client.start().wait(timeout=10)
 
     try:
         loop = asyncio.get_event_loop()
@@ -46,7 +48,7 @@ def test_local_test() -> None:
 
     image_receiver_connection = loop.run_until_complete(
         websockets.connect(
-            "ws://localhost:3336",
+            f"ws://localhost:{port}",
             additional_headers={
                 "client_id": "sim_control",
             },
