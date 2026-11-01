@@ -101,6 +101,7 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
     client.start()
 
     server_thread.join(timeout=60)
+    assert not server_thread.is_alive()
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
@@ -205,6 +206,7 @@ def test_db_persistence_matrix(
     client.start()
 
     server_thread.join(timeout=60)
+    assert not server_thread.is_alive()
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))

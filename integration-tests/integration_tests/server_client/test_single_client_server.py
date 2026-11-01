@@ -64,6 +64,7 @@ def run_client_server_single(communication_protocol: CommunicationProtocol) -> S
     client.start()
 
     server_thread.join(120)
+    assert not server_thread.is_alive()
     server.print_measurement_statistics()
 
     client_measurement_repository = server.measurement_repository(client_id=client.client_id)

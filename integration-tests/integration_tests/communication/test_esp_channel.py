@@ -9,6 +9,7 @@ from ecosim_common.communication.channel.esp_channel_message_json import ESPChan
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
+from ecosim_common.tech.port_utils import get_free_port
 from ecosim_common.tech.structures.esp_queue import ESPQueue
 
 _MESSAGE_COUNT = 20
@@ -17,12 +18,12 @@ _MESSAGE_COUNT = 20
 def test_happy_path(communication_protocol: CommunicationProtocol) -> None:
     server_address = ConnectionAddress(
         ip="localhost",
-        port=1234,
+        port=get_free_port(),
     )
     connector = ESPChannelConnector(communication_protocol)
     listening_channel = connector.listener(server_address)
     listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_message)
-    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+    assert listening_channel.is_listening_on_connection_event().wait(timeout=10)
 
     socket_channel = connector.connect(connection_address=server_address)
 
@@ -32,7 +33,7 @@ def test_happy_path(communication_protocol: CommunicationProtocol) -> None:
         message_queue.push(message)
 
     socket_channel.listen_on_message_async(on_message=handle_message)
-    socket_channel.is_listening_event().wait(timeout=1)
+    assert socket_channel.is_listening_event().wait(timeout=10)
 
     correlation_id = CorrelationId.of_int(7777)
     data = MessageDataForTest(
@@ -47,7 +48,7 @@ def test_happy_path(communication_protocol: CommunicationProtocol) -> None:
         ),
     )
 
-    received_data = message_queue.pop()
+    received_data = message_queue.pop(timeout=30)
 
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
@@ -57,12 +58,12 @@ def test_happy_path(communication_protocol: CommunicationProtocol) -> None:
 def test_big_data(communication_protocol: CommunicationProtocol) -> None:
     server_address = ConnectionAddress(
         ip="localhost",
-        port=1234,
+        port=get_free_port(),
     )
     connector = ESPChannelConnector(communication_protocol)
     listening_channel = connector.listener(server_address)
     listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_message)
-    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+    assert listening_channel.is_listening_on_connection_event().wait(timeout=10)
 
     socket_channel = connector.connect(connection_address=server_address)
 
@@ -97,7 +98,7 @@ def test_big_data(communication_protocol: CommunicationProtocol) -> None:
         ),
     )
 
-    received_data = message_queue.pop()
+    received_data = message_queue.pop(timeout=30)
     assert received_data.correlation_id() == correlation_id
     assert received_data.payload() == data.to_json()
     assert received_data.payload(MessageDataForTest) == data
@@ -113,12 +114,12 @@ def test_message_handler_stays_in_the_calling_process(communication_protocol: Co
     """
     server_address = ConnectionAddress(
         ip="localhost",
-        port=1234,
+        port=get_free_port(),
     )
     connector = ESPChannelConnector(communication_protocol)
     listening_channel = connector.listener(server_address)
     listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_message)
-    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+    assert listening_channel.is_listening_on_connection_event().wait(timeout=10)
 
     channel = connector.connect(connection_address=server_address)
 
@@ -132,7 +133,7 @@ def test_message_handler_stays_in_the_calling_process(communication_protocol: Co
         message_received.set()
 
     channel.listen_on_message_async(on_message=handle_message)
-    channel.is_listening_event().wait(timeout=10)
+    assert channel.is_listening_event().wait(timeout=10)
 
     correlation_id = CorrelationId.of_int(4242)
     data = MessageDataForTest(
@@ -157,18 +158,18 @@ def test_message_order_is_kept(communication_protocol: CommunicationProtocol) ->
     """A channel is a stream: what one side sends first has to arrive first."""
     server_address = ConnectionAddress(
         ip="localhost",
-        port=1234,
+        port=get_free_port(),
     )
     connector = ESPChannelConnector(communication_protocol)
     listening_channel = connector.listener(server_address)
     listening_channel.listen_on_connection_loop_async(channel_handler=_mirror_messages)
-    listening_channel.is_listening_on_connection_event().wait(timeout=10)
+    assert listening_channel.is_listening_on_connection_event().wait(timeout=10)
 
     channel = connector.connect(connection_address=server_address)
 
     message_queue: ESPQueue[ESPChannelMessage] = ESPQueue.of_communication_protocol(communication_protocol)
     channel.listen_on_message_async(on_message=message_queue.push)
-    channel.is_listening_event().wait(timeout=10)
+    assert channel.is_listening_event().wait(timeout=10)
 
     for step in range(_MESSAGE_COUNT):
         channel.send(

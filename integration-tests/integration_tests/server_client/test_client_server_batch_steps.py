@@ -54,7 +54,8 @@ def _run_with_completed_steps(
     server_thread = pre_set_two_clients.start_server_async()
     pre_set_two_clients.start_client_1_async()
     pre_set_two_clients.start_client_2_async()
-    server_thread.join()
+    server_thread.join(timeout=110)
+    assert not server_thread.is_alive()
     pre_set_two_clients.server.print_measurement_statistics()
     pre_set_two_clients.verify_successful_run()
     return pre_set_two_clients.server
