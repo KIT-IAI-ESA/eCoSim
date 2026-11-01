@@ -16,7 +16,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.2
       - name: Check that the generated reference pages are up to date
         run: |
-          uv run --project simulation_examples python dev/generate_cli_reference.py --check
+          uv run --locked --project simulation_examples python dev/generate_cli_reference.py --check
           uv run python dev/generate_config_reference.py --check
 
   build:
