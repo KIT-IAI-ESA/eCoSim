@@ -42,7 +42,6 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-test-common = "ecosim_test_common"
 
 [tool.mypy]
-python_executable = ".venv/bin/python"
 mypy_path = ["../ecosim-common"]
 check_untyped_defs = true
 disallow_untyped_defs = true
