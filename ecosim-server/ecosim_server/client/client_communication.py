@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Tuple
+from typing import Callable, ClassVar, Iterable, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
@@ -15,6 +15,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.client.client_connection import ClientConnection
+from ecosim_server.client.client_message import ClientMessage
 from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_states import ClientStates
@@ -51,7 +52,10 @@ class ClientCommunication:
             if not client_state.connection:
                 ClientCommunication._logger.warning("Cannot broadcast to %s because connection is not set.", client_state.client_id)
                 continue
-            client_state.connection.send(message)
+            try:
+                client_state.connection.send(message)
+            except Exception as error:
+                raise RuntimeError(self._send_failure_text(client_id=client_state.client_id, message_type=message.type(), error=error)) from error
 
     def subscribe(
         self,
@@ -76,12 +80,8 @@ class ClientCommunication:
         client_id: ClientID,
         values: List[ProtocolInterfaceValue],
     ) -> None:
-        def thread_task() -> None:
-            connection = self._client_states.get_connection_for(client_id)
-            if connection is None:
-                ClientCommunication._logger.warning("Cannot send simulation step to %s because connection is not set.", client_id)
-                return
-            connection.send(
+        def send() -> None:
+            self._connection_of(client_id).send(
                 ESPChannelMessageJson.create(
                     type=MessageType.SIMULATION_STEP,
                     correlation_id=CorrelationId.of_int(current_step),
@@ -92,20 +92,15 @@ class ClientCommunication:
                 ),
             )
 
-        thread = threading.Thread(target=thread_task)
-        thread.start()
+        self._send_async(client_id=client_id, message_type=MessageType.SIMULATION_STEP, send=send)
 
     def send_simulation_step_batch(
         self,
         client_id: ClientID,
         data: SimulationStepBatchRequest,
     ) -> None:
-        def thread_task() -> None:
-            connection = self._client_states.get_connection_for(client_id)
-            if connection is None:
-                ClientCommunication._logger.warning("Cannot send simulation step to %s because connection is not set.", client_id)
-                return
-            connection.send(
+        def send() -> None:
+            self._connection_of(client_id).send(
                 ESPChannelMessageJson.create(
                     type=MessageType.SIMULATION_STEP_BATCH,
                     correlation_id=CorrelationId.of_date_time(data.start_datetime),
@@ -113,8 +108,49 @@ class ClientCommunication:
                 ),
             )
 
+        self._send_async(client_id=client_id, message_type=MessageType.SIMULATION_STEP_BATCH, send=send)
+
+    def _connection_of(self, client_id: ClientID) -> ClientConnection:
+        connection = self._client_states.get_connection_for(client_id)
+        if connection is None:
+            raise ConnectionError("The connection is not set.")
+        return connection
+
+    def _send_async(
+        self,
+        client_id: ClientID,
+        message_type: MessageType,
+        send: Callable[[], None],
+    ) -> None:
+        def thread_task() -> None:
+            try:
+                send()
+            except Exception as error:
+                self._report_send_failure(client_id=client_id, message_type=message_type, error=error)
+
         thread = threading.Thread(target=thread_task)
         thread.start()
+
+    def _report_send_failure(
+        self,
+        client_id: ClientID,
+        message_type: MessageType,
+        error: Exception,
+    ) -> None:
+        failure = self._send_failure_text(client_id=client_id, message_type=message_type, error=error)
+        ClientCommunication._logger.error("%s", failure)
+        # it has the type of the failed message, so it lands in the queue of whoever waits for the answer
+        self._client_message_buffer.add_buffered(
+            ClientMessage(client_id=client_id, message=ESPChannelMessageJson.empty(type=message_type), send_failure=failure),
+        )
+
+    @staticmethod
+    def _send_failure_text(
+        client_id: ClientID,
+        message_type: MessageType,
+        error: Exception,
+    ) -> str:
+        return f"Sending {message_type.name} to client {client_id} failed: {error}"
 
     def check_client_connection_states(
         self,
@@ -200,6 +236,9 @@ class ClientCommunication:
 
     def reset_state(self, client_id: ClientID) -> None:
         self._client_states.reset_state(client_id)
+
+    def lost_client_ids(self, client_ids: Iterable[ClientID]) -> Tuple[ClientID, ...]:
+        return self._client_states.lost_client_ids(client_ids)
 
     def are_all_clients_connected_and_ready(self) -> bool:
         return self._client_states.are_all_clients_connected_and_ready()

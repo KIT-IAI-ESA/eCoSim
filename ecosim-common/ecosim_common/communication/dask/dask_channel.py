@@ -228,6 +228,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
             self._peer_inbox().put(SimpleBinaryMessage.of_esp_channel_message(message=message).raw_message())
         except Exception as e:
             DaskChannel._logger.error("Send messsage to server failed. Error: %s", e)
+            raise
 
     def is_listening_event(self) -> ParallelEvent:
         return self._is_listening

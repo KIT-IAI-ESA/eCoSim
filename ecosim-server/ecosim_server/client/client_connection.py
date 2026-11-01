@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, overload
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
@@ -18,6 +18,18 @@ class ClientConnection(AbstractContextManager["ClientConnection"]):
         message: ESPChannelMessage,
     ) -> None:
         self._channel.send(message)
+
+    @overload
+    def receive(
+        self,
+        expected_type: MessageType,
+    ) -> ESPChannelMessage: ...
+
+    @overload
+    def receive(
+        self,
+        expected_type: None = None,
+    ) -> ESPChannelMessage | None: ...
 
     def receive(
         self,

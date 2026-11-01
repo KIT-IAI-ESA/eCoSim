@@ -15,10 +15,13 @@ class ClientMessage:
         self,
         client_id: ClientID,
         message: ESPChannelMessage,
+        send_failure: str | None = None,
     ):
         self.time_stamp_ns = time.time_ns()
         self.client_id = client_id
         self.message = message
+        # set when this is no received message but tells whoever waits for the answer that the send failed
+        self.send_failure = send_failure
 
     def __eq__(
         self,
