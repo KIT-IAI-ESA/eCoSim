@@ -29,6 +29,11 @@ class SignalledWhileSettingEvent(threading.Event):
         super().set()
 
 
+@pytest.fixture(autouse=True)
+def signal_handlers() -> None:
+    ShutdownManager().init()
+
+
 @pytest.fixture
 def no_signal_grace(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(shutdown_manager, "SIGNAL_GRACE_IN_SECONDS", 0)
