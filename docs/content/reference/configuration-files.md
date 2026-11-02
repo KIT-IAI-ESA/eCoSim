@@ -17,6 +17,23 @@ After changing a config reader, run `uv run python dev/generate_config_reference
 The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.
 `ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.
 
+The database password comes from the first of these that has one:
+
+1. `--database-user-password`
+2. `password` in this file
+3. the environment variable `PGPASSWORD`
+4. the password file named by `PGPASSFILE`, by default `~/.pgpass`
+
+The password file has lines of the form `host:port:database:username:password`, and PostgreSQL ignores it unless only you
+can read it (mode `0600`). Write the database as `*`, because the server also connects to `postgres` to create a missing
+database. In a password, write `:` as `\:` and `\` as `\\`.
+
+:::warning
+
+Other users on a shared machine can see `--database-user-password` in the process list. Use the password file there.
+
+:::
+
 | Section | Key | Type | Default |
 | --- | --- | --- | --- |
 | `server` | `host` | string | `localhost` |
@@ -26,7 +43,7 @@ The ini file passed to `ecosim-server` with `--server-config`. Matching command-
 | `database` | `port` | string | required |
 | `database` | `ssl` | boolean | required |
 | `database` | `username` | string | required |
-| `database` | `password` | string | required |
+| `database` | `password` | string | empty |
 | `database` | `type` | string | `postgres` |
 | `database` | `directory` | string | `simulation_results` |
 

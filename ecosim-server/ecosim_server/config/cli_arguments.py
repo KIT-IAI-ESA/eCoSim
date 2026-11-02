@@ -80,7 +80,8 @@ class CLIArguments(AppConfig):
                 ),
                 AppConfigParameter(
                     name="database-user-password",
-                    help_text="The database user password",
+                    help_text="The database user password. WARNING: other users on a shared machine can see this option in the process list. "
+                    + "Without it, the password comes from the config file, PGPASSWORD or a password file.",
                 ),
                 AppConfigParameter(
                     name="database-name",

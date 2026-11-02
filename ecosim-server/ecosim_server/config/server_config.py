@@ -165,7 +165,7 @@ class DatabaseConfig:
                 default=config.get_string("database", "username"),
             ),
             password=db_overwrite.user_password(
-                default=config.get_string("database", "password"),
+                default=config.get_string("database", "password", default=""),
             ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
             type=db_overwrite.type(default=DatabaseType.of(config.get_string("database", "type", DatabaseType.POSTGRES.value))),
@@ -182,7 +182,8 @@ class DatabaseConfig:
         return URL.create(
             drivername="postgresql+psycopg",
             username=self.username,
-            password=self.password,
+            # without a password, libpq looks in PGPASSWORD and the password file
+            password=self.password or None,
             host=self.host,
             port=self.port,
             database=database,

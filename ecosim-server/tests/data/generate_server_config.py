@@ -64,12 +64,13 @@ def write_server_config_file(
     host: str = DEFAULT_HOST,
     port: int = DEFAULT_DATABASE_PORT,
     username: str = DEFAULT_DATABASE_USERNAME,
-    password: str = DEFAULT_DATABASE_PASSWORD,
+    password: str | None = DEFAULT_DATABASE_PASSWORD,
     ssl: bool = False,
 ) -> Path:
     file = directory / "server.ini"
+    password_line = "" if password is None else f"password={password}\n"
     file.write_text(
-        f"[server]\nport={DEFAULT_PORT}\n[database]\nserver={host}\nport={port}\nusername={username}\npassword={password}\nssl={ssl}\n",
+        f"[server]\nport={DEFAULT_PORT}\n[database]\nserver={host}\nport={port}\nusername={username}\n{password_line}ssl={ssl}\n",
         encoding="utf-8",
     )
     return file
