@@ -9,24 +9,12 @@ import distributed
 import pytest
 
 from ecosim_common.communication.channel.esp_channel import ESPChannel
-from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.socket.tcp_socket import TCPSocket
-from tests.communication.channel_test_setup import (
-    ADDRESS,
-    BOUND_IN_SECONDS,
-    SHORT_TIMEOUT_IN_SECONDS,
-    dask_channel_pair,
-    listen_blocking_bounded,
-    simple_message,
-)
+from ecosim_test_common.bounded_listen import BOUND_IN_SECONDS, listen_blocking_bounded
+from tests.communication.channel_test_setup import ADDRESS, SHORT_TIMEOUT_IN_SECONDS, RaisingMessageHandler, dask_channel_pair, simple_message
 
-_HANDLER_ERROR = "the handler failed"
 _EARLIER_TIMEOUT_IN_SECONDS = 7
-
-
-def _raise_handler_error(message: ESPChannelMessage) -> None:
-    raise RuntimeError(_HANDLER_ERROR)
 
 
 @contextmanager
@@ -58,16 +46,30 @@ def _finishes_in_time(channel: ESPChannel) -> bool:
     return not waiting.is_alive()
 
 
-def test_a_raising_handler_closes_the_channel(channel_and_peer: tuple[ESPChannel, ESPChannel], caplog: pytest.LogCaptureFixture) -> None:
+def test_a_raising_handler_closes_the_channel(channel_and_peer: tuple[ESPChannel, ESPChannel]) -> None:
     channel, peer = channel_and_peer
-    channel.listen_on_message_async(on_message=_raise_handler_error)
+    handler = RaisingMessageHandler()
+    channel.listen_on_message_async(on_message=handler)
 
     peer.send(simple_message())
 
     assert _finishes_in_time(channel), "the listener thread died and left the channel open"
+    assert handler.call_count == 1
     assert listen_blocking_bounded(channel=peer, timeout_in_seconds=BOUND_IN_SECONDS) is None, "the peer was not told that the channel closed"
-    assert _HANDLER_ERROR in caplog.text
+
+
+def test_the_swallowed_error_of_a_handler_is_logged_with_its_traceback(
+    channel_and_peer: tuple[ESPChannel, ESPChannel],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    channel, peer = channel_and_peer
+    channel.listen_on_message_async(on_message=RaisingMessageHandler())
+
+    peer.send(simple_message())
+
+    assert _finishes_in_time(channel), "the listener thread died and left the channel open"
     assert "Traceback" in caplog.text
+    assert RaisingMessageHandler.ERROR_MESSAGE in caplog.text
 
 
 def test_a_receive_timeout_raises_and_leaves_the_channel_usable(channel_and_peer: tuple[ESPChannel, ESPChannel]) -> None:
@@ -113,7 +115,7 @@ def test_a_receive_error_closes_the_tcp_channel() -> None:
 
 
 def test_a_receive_error_closes_the_dask_channel(dask_client: dd.Client, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(distributed.Queue, "get", Mock(side_effect=OSError("scheduler lost")))
+    monkeypatch.setattr(distributed.Queue, "get", Mock(side_effect=OSError("receive failed")))
     channel, _ = dask_channel_pair()
 
     channel.listen_on_message_async(on_message=Mock())

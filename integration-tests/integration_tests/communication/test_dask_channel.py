@@ -1,6 +1,7 @@
-import threading
+import time
 
 import dask.distributed as dd
+import pytest
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
@@ -8,11 +9,10 @@ from ecosim_common.communication.channel.esp_channel_message_json import ESPChan
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.correlation_id import CorrelationId
 from ecosim_common.communication.message_type import MessageType
+from ecosim_test_common.bounded_listen import listen_blocking_bounded
 from integration_tests.communication.message_data_for_test import MessageDataForTest
 
 _RECEIVE_TIMEOUT_IN_SECONDS = 3
-# how long a 'listen_blocking' may overshoot its timeout before the test declares the timeout ignored
-_TOLERANCE_IN_SECONDS = 10
 
 
 def test_a_channel_does_not_receive_its_own_message(dask_client: dd.Client) -> None:
@@ -28,32 +28,22 @@ def test_a_channel_does_not_receive_its_own_message(dask_client: dd.Client) -> N
         ),
     )
 
-    _assert_listen_blocking_times_out(channel)
+    with pytest.raises(TimeoutError):
+        listen_blocking_bounded(channel=channel, timeout_in_seconds=_RECEIVE_TIMEOUT_IN_SECONDS)
 
 
 def test_listen_blocking_times_out_after_the_given_timeout(dask_client: dd.Client) -> None:
     """The caller decides how long it waits - the channel must not fall back to its own timeout."""
-    _assert_listen_blocking_times_out(_connected_channel())
+    channel = _connected_channel()
+    started_at = time.monotonic()
+
+    with pytest.raises(TimeoutError):
+        listen_blocking_bounded(channel=channel, timeout_in_seconds=_RECEIVE_TIMEOUT_IN_SECONDS)
+
+    assert time.monotonic() - started_at >= _RECEIVE_TIMEOUT_IN_SECONDS, "'listen_blocking' gave up before its timeout"
 
 
 def _connected_channel() -> ESPChannel:
     return ESPChannelConnector(CommunicationProtocol.DASK).connect(
         connection_address=ConnectionAddress(ip="localhost", port=8786),
     )
-
-
-def _assert_listen_blocking_times_out(channel: ESPChannel) -> None:
-    """Fails instead of hanging if 'listen_blocking' does not honour '_RECEIVE_TIMEOUT_IN_SECONDS'."""
-    timeouts: list[TimeoutError] = []
-
-    def receive() -> None:
-        try:
-            channel.listen_blocking(timeout_in_seconds=_RECEIVE_TIMEOUT_IN_SECONDS)
-        except TimeoutError as timeout:
-            timeouts.append(timeout)
-
-    thread = threading.Thread(target=receive, daemon=True)
-    thread.start()
-    thread.join(timeout=_RECEIVE_TIMEOUT_IN_SECONDS + _TOLERANCE_IN_SECONDS)
-    assert not thread.is_alive(), "'listen_blocking' did not return within its timeout"
-    assert timeouts, "'listen_blocking' returned instead of raising TimeoutError"
