@@ -64,7 +64,8 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   counting from 0.
 - `logical_delays`: connections whose values arrive a number of steps (`delay`) later.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
-- `setup.start_date`: the simulated start time, by default `2024-01-01T00:00:00.000Z`.
+- `setup.start_date`: the simulated start time, by default `2024-01-01T00:00:00.000Z`. It needs a
+  time zone offset (`Z` or `+01:00`); a value without one is rejected when the config is loaded.
 
 The building example, shortened to its first simulator and two of its interfaces:
 """
