@@ -31,6 +31,7 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
+from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -263,8 +264,7 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
     client_1.start()
     client_2.start()
 
-    server_thread.join(timeout=110)
-    assert not server_thread.is_alive()
+    assert_server_finishes_in_time(server_thread)
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
 

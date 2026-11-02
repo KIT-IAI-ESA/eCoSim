@@ -11,6 +11,7 @@ from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.simulation.state.simulation_state import SimulationState
+from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -38,9 +39,8 @@ def test_the_predefined_client_server_run_is_stored_by_every_repository(
     server_thread = threading.Thread(target=server.start, daemon=True)
     server_thread.start()
     client.start()
-    server_thread.join(120)
 
-    assert not server_thread.is_alive(), "The server did not finish within 120 seconds"
+    assert_server_finishes_in_time(server_thread)
     _assert_measurements_of(server, client_data)
     assert server.simulation_state_repository().current() is SimulationState.FINISHED
 

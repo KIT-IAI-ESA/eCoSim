@@ -17,6 +17,7 @@ from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
+from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -100,8 +101,7 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
 
     client.start()
 
-    server_thread.join(timeout=60)
-    assert not server_thread.is_alive()
+    assert_server_finishes_in_time(server_thread)
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
@@ -205,8 +205,7 @@ def test_db_persistence_matrix(
 
     client.start()
 
-    server_thread.join(timeout=60)
-    assert not server_thread.is_alive()
+    assert_server_finishes_in_time(server_thread)
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))

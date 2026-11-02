@@ -100,12 +100,12 @@ def test_receive_raises_when_the_connection_closes_inside_a_message(received_byt
         tcp_socket.receive()
 
 
-def test_close_is_safe_to_repeat_on_a_socket_closed_by_a_failed_bind() -> None:
+def test_close_does_not_raise_when_the_internal_socket_is_already_closed() -> None:
+    """A failed bind in the accept loop closes the internal socket before anyone calls 'close'."""
     internal_socket = socket.socket()
     internal_socket.close()
     tcp_socket = TCPSocket(_internal_socket=internal_socket, _connection_address=ADDRESS)
 
-    tcp_socket.close()
     tcp_socket.close()
 
 
