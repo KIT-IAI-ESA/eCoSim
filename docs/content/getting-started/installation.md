@@ -33,7 +33,7 @@ there is no separate install step. The [quick start](quick-start.md) works this 
 | `ecosim-client-fmu-v3` | `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
 | `ecosim-client-matlab` | `ecosim-client-matlab` | Client for MATLAB models, see the [MATLAB client](../guides/matlab-client.md) |
 | `ecosim-client-pyro5` | `ecosim-client-pyro5` | Client for Python models served over Pyro5, see the [Pyro5 client](../guides/pyro5-client.md) |
-| `ecosim-hpc` | `python ecosim_hpc/main.py` | Runs server and clients on a Dask cluster |
+| `ecosim-hpc` | `mpirun python ecosim_hpc/main.py` | Runs server and clients on a Dask cluster, see the [HPC cluster](../guides/hpc-cluster.md) |
 | `ecosim-common`, `ecosim-common-fmpy` | | Shared code |
 
 `simulation_examples/` is a uv project that installs the server, the FMI 2.0 client and `ecosim-hpc`

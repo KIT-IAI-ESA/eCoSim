@@ -52,7 +52,8 @@ COMMANDS = [
     (
         "HPC",
         "python ecosim_hpc/main.py",
-        "Runs server and clients on a Dask cluster. The communication protocol is always `DASK`.",
+        "Runs server and clients on a Dask cluster. The communication protocol is always `DASK`. Batch mode, the default, needs `mpirun`; "
+        "`--interactive` connects to a running Dask scheduler. See the [HPC cluster](../guides/hpc-cluster.md) guide.",
         "ecosim_hpc.config.cli_arguments.HPCServerCliArguments",
     ),
 ]
