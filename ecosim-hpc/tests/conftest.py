@@ -1,5 +1,13 @@
 import _pytest.runner as pytest_runner
 import pytest
+from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
+
+
+@pytest.fixture
+def command_line(esp_monkey_patch: ESPMonkeyPatch) -> ESPMonkeyPatch:
+    esp_monkey_patch.remove_pytest_sys_args()
+    esp_monkey_patch.set_hpc_cli_sys_args()
+    return esp_monkey_patch
 
 
 @pytest.fixture

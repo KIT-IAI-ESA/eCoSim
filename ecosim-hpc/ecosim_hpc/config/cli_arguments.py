@@ -6,7 +6,7 @@ from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_server.config.cli_arguments import CLIArguments
 
 
-def _positive_threads_per_worker(value: str) -> int:
+def _parse_positive_thread_count(value: str) -> int:
     threads_per_worker = int(value)
     if threads_per_worker < 1:
         raise ValueError(f"--threads-per-worker must be at least 1, not {value}.")
@@ -14,6 +14,8 @@ def _positive_threads_per_worker(value: str) -> int:
 
 
 class HPCServerCliArguments(CLIArguments):
+    DEFAULT_SCHEDULER_FILE: str = "scheduler.json"
+
     def __init__(
         self,
         ignore_unknown_arguments: bool = False,
@@ -39,7 +41,7 @@ class HPCServerCliArguments(CLIArguments):
                 ),
                 AppConfigParameter(
                     name="scheduler-file",
-                    default_value="scheduler.json",
+                    default_value=self.DEFAULT_SCHEDULER_FILE,
                     help_text="Interactive mode only: the path to the file the Dask scheduler wrote. This must be relative to the call path or it "
                     + "can be an absolute path.",
                 ),
@@ -50,7 +52,7 @@ class HPCServerCliArguments(CLIArguments):
                 ),
                 AppConfigParameter(
                     name="threads-per-worker",
-                    transform=_positive_threads_per_worker,
+                    transform=_parse_positive_thread_count,
                     help_text="Batch mode only: the number of threads of each Dask worker. If not set, dask_mpi chooses.",
                 ),
             ],
