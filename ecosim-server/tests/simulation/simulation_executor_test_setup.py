@@ -3,6 +3,7 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import partial
 from typing import Callable, List
 from unittest.mock import MagicMock
 
@@ -21,6 +22,7 @@ from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
+from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
 from tests.data.generate_server_config import generate_server_config
 from tests.simulation.history_test_setup import RecordingRepositories, values
 
@@ -33,6 +35,7 @@ MessageReaction = Callable[["FakeClient", ESPChannelMessage], None]
 
 
 def answer(client: FakeClient, message: ESPChannelMessage) -> None:
+    client.answered_types.append(message.type())
     client.communication.add_message_from_client(
         client_id=client.client_id,
         received_message=ESPChannelMessageJson.answer_with_payload(request_message=message, payload=ClientSimStepData(interface_values=[])),
@@ -60,6 +63,7 @@ class FakeClient:
     communication: ClientCommunication
     reactions: dict[MessageType, MessageReaction]
     received_types: List[MessageType] = field(default_factory=list)
+    answered_types: List[MessageType] = field(default_factory=list)
 
     def on_send(self, message: ESPChannelMessage) -> None:
         self.received_types.append(message.type())
@@ -134,17 +138,7 @@ def _connect(fake_client: FakeClient) -> None:
 
 
 def error_of_bounded_run(executor: SimulationExecutor) -> Exception | None:
-    errors: List[Exception] = []
-
-    def run() -> None:
-        try:
-            executor.execute(rendering_socket=None)
-        except Exception as error:
-            errors.append(error)
-
-    # a daemon thread, so a run that hangs fails this test and not the whole test run
-    thread = threading.Thread(target=run, daemon=True)
-    thread.start()
-    thread.join(RUN_LIMIT_IN_SECONDS)
-    assert not thread.is_alive(), f"the run still hangs after {RUN_LIMIT_IN_SECONDS}s"
-    return errors[0] if errors else None
+    run = ErrorRecordingThread(target=partial(executor.execute, rendering_socket=None))
+    run.start()
+    run.assert_ends_within(limit_in_seconds=RUN_LIMIT_IN_SECONDS)
+    return run.error
