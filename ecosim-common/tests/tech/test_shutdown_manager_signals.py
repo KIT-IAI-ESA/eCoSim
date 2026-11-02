@@ -1,28 +1,25 @@
 import signal
 import threading
-from dataclasses import dataclass, field
 from typing import override
 
 import pytest
 
 from ecosim_common.tech import shutdown_manager
-from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
-from tests.tech.shutdown_listeners import CountingShutdownListener, RaisingShutdownListener
+from ecosim_common.tech.shutdown_manager import ShutdownManager
+from tests.tech.shutdown_listeners import (
+    CountingShutdownListener,
+    GraceEndingSignalRaisingShutdownListener,
+    RaisingShutdownListener,
+    SignalRaisingShutdownListener,
+)
 
-SIGNALS_AND_EXIT_CODES = [(signal.SIGINT, 333), (signal.SIGTERM, 444)]
-
-
-@dataclass
-class SignalledShutdownListener(ShutdownListener):
-    finished: bool = field(default=False)
-
-    @override
-    def on_app_shutdown(self) -> None:
-        signal.raise_signal(signal.SIGTERM)
-        self.finished = True
+SIGNALS_AND_EXIT_CODES = [
+    (signal.SIGINT, ShutdownManager.INTERRUPT_EXIT_CODE),
+    (signal.SIGTERM, ShutdownManager.TERMINATE_EXIT_CODE),
+]
 
 
-class SignalledWhileSettingEvent(threading.Event):
+class SignalRaisingWhileSettingEvent(threading.Event):
     @override
     def set(self) -> None:
         signal.raise_signal(signal.SIGTERM)
@@ -30,7 +27,7 @@ class SignalledWhileSettingEvent(threading.Event):
 
 
 @pytest.fixture(autouse=True)
-def signal_handlers() -> None:
+def auto_initialize_shutdown_manager() -> None:
     ShutdownManager().init()
 
 
@@ -59,65 +56,71 @@ def test_signal_exits_even_if_a_listener_raises() -> None:
     with pytest.raises(SystemExit) as exit_info:
         signal.raise_signal(signal.SIGTERM)
 
-    assert exit_info.value.code == 444
+    assert exit_info.value.code == ShutdownManager.TERMINATE_EXIT_CODE
     assert later_listener.notification_count == 1
 
 
 def test_second_signal_right_after_the_first_does_not_interrupt_the_shutdown() -> None:
-    signalled_listener = SignalledShutdownListener()
+    signal_raising_listener = SignalRaisingShutdownListener()
     later_listener = CountingShutdownListener()
-    ShutdownManager().register_listener(signalled_listener)
+    ShutdownManager().register_listener(signal_raising_listener)
     ShutdownManager().register_listener(later_listener)
 
     with pytest.raises(SystemExit) as exit_info:
         signal.raise_signal(signal.SIGINT)
 
-    assert exit_info.value.code == 333
-    assert signalled_listener.finished
+    assert exit_info.value.code == ShutdownManager.INTERRUPT_EXIT_CODE
+    assert signal_raising_listener.finished
     assert later_listener.notification_count == 1
 
 
 def test_signal_during_the_shutdown_at_application_end_does_not_interrupt_it() -> None:
-    signalled_listener = SignalledShutdownListener()
+    signal_raising_listener = SignalRaisingShutdownListener()
     later_listener = CountingShutdownListener()
-    ShutdownManager().register_listener(signalled_listener)
+    ShutdownManager().register_listener(signal_raising_listener)
     ShutdownManager().register_listener(later_listener)
 
     ShutdownManager().set_shutdown_at_application_end()
 
-    assert signalled_listener.finished
+    assert signal_raising_listener.finished
     assert later_listener.notification_count == 1
 
 
 def test_signal_while_the_shutdown_sets_the_event_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ShutdownManager(), "shutdown_event", SignalledWhileSettingEvent())
-    listener = CountingShutdownListener()
-    ShutdownManager().register_listener(listener)
+    exit_codes: list[int] = []
+    monkeypatch.setattr(shutdown_manager.sys, "exit", exit_codes.append)
+    monkeypatch.setattr(ShutdownManager(), "shutdown_event", SignalRaisingWhileSettingEvent())
 
     ShutdownManager().set_shutdown_at_application_end()
 
-    assert listener.notification_count == 1
+    assert exit_codes == []
 
 
-def test_copy_of_a_signal_after_the_grace_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
-    clock = [0.0]
+def test_signal_after_the_grace_starts_a_new_grace() -> None:
+    """
+    The first listener ends the grace and raises a signal, which interrupts it.
 
-    class LateSignalledShutdownListener(ShutdownListener):
-        @override
-        def on_app_shutdown(self) -> None:
-            clock[0] += shutdown_manager.SIGNAL_GRACE_IN_SECONDS + 1
-            signal.raise_signal(signal.SIGTERM)
-
-    monkeypatch.setattr(shutdown_manager.time, "monotonic", lambda: clock[0])
-    copy_receiving_listener = SignalledShutdownListener()
-    ShutdownManager().register_listener(LateSignalledShutdownListener())
-    ShutdownManager().register_listener(copy_receiving_listener)
+    That signal starts a new grace, so the signal the second listener raises right after it is ignored.
+    """
+    interrupted_listener = GraceEndingSignalRaisingShutdownListener()
+    later_listener = SignalRaisingShutdownListener()
+    ShutdownManager().register_listener(interrupted_listener)
+    ShutdownManager().register_listener(later_listener)
 
     with pytest.raises(SystemExit) as exit_info:
         signal.raise_signal(signal.SIGINT)
 
-    assert exit_info.value.code == 333
-    assert copy_receiving_listener.finished
+    assert exit_info.value.code == ShutdownManager.INTERRUPT_EXIT_CODE
+    assert not interrupted_listener.finished
+    assert later_listener.finished
+
+
+def test_second_init_keeps_the_installed_handlers() -> None:
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
+    ShutdownManager().init()
+
+    assert signal.getsignal(signal.SIGTERM) == signal.SIG_IGN
 
 
 @pytest.mark.usefixtures("no_signal_grace")
@@ -133,14 +136,14 @@ def test_signal_exits_after_the_grace(signal_number: signal.Signals, exit_code: 
 
 @pytest.mark.usefixtures("no_signal_grace")
 def test_signal_after_the_grace_interrupts_a_listener_and_the_later_ones_still_run() -> None:
-    signalled_listener = SignalledShutdownListener()
+    signal_raising_listener = SignalRaisingShutdownListener()
     later_listener = CountingShutdownListener()
-    ShutdownManager().register_listener(signalled_listener)
+    ShutdownManager().register_listener(signal_raising_listener)
     ShutdownManager().register_listener(later_listener)
 
     with pytest.raises(SystemExit) as exit_info:
         signal.raise_signal(signal.SIGINT)
 
-    assert exit_info.value.code == 333
-    assert not signalled_listener.finished
+    assert exit_info.value.code == ShutdownManager.INTERRUPT_EXIT_CODE
+    assert not signal_raising_listener.finished
     assert later_listener.notification_count == 1

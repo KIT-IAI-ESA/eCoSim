@@ -6,8 +6,8 @@ import sys
 
 import pytest
 
-# POSIX keeps only 8 bits of the exit status
-TERMINATE_EXIT_STATUS = 444 if sys.platform == "win32" else 444 % 256
+from ecosim_common.tech.shutdown_manager import ShutdownManager
+
 SCRIPT_START = """
 import ctypes
 import os
@@ -27,7 +27,7 @@ def _run_script(script: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_signal_exits_while_the_interrupted_code_holds_the_lock() -> None:
+def test_signal_does_not_deadlock_while_the_interrupted_code_holds_the_lock() -> None:
     result = _run_script(
         """
 with ShutdownManager._lock:
@@ -35,10 +35,10 @@ with ShutdownManager._lock:
 """,
     )
 
-    assert result.returncode == TERMINATE_EXIT_STATUS, result.stderr
+    assert result.returncode == ShutdownManager.TERMINATE_EXIT_CODE, result.stderr
 
 
-def test_listener_can_register_a_listener_during_shutdown() -> None:
+def test_listener_registered_during_a_running_shutdown_is_notified() -> None:
     result = _run_script(
         """
 class Late(ShutdownListener):

@@ -5,16 +5,11 @@ import pytest
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_connector import ESPChannelConnector
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-
-
-def _address_nobody_listens_on() -> ConnectionAddress:
-    with socket.create_server(("127.0.0.1", 0)) as server:
-        ip, port = server.getsockname()
-    return ConnectionAddress(ip=ip, port=port)
+from ecosim_test_common.test_data.generate_connection_address import generate_unused_connection_address
 
 
 def test_failed_tcp_connection_names_the_transport_and_the_address(caplog: pytest.LogCaptureFixture) -> None:
-    address = _address_nobody_listens_on()
+    address = generate_unused_connection_address()
     connector = ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET)
 
     with pytest.raises(ConnectionError) as error:

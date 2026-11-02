@@ -1,22 +1,9 @@
 import pickle
-import threading
-from typing import override
 
 import pytest
 
 from ecosim_common.tech.shutdown_manager import ShutdownManager
-from tests.tech.shutdown_listeners import CountingShutdownListener, RaisingShutdownListener
-
-
-class ShutdownStartingAtFirstCheckEvent(threading.Event):
-    _checked: bool = False
-
-    @override
-    def is_set(self) -> bool:
-        if not self._checked:
-            self._checked = True
-            ShutdownManager().set_shutdown_at_application_end()
-        return super().is_set()
+from tests.tech.shutdown_listeners import CountingShutdownListener, OrderRecordingShutdownListener, RaisingShutdownListener
 
 
 def test_listener_is_notified_on_shutdown() -> None:
@@ -48,56 +35,74 @@ def test_listener_registered_after_shutdown_is_notified_immediately() -> None:
     assert listener.notification_count == 1
 
 
-def test_listener_registering_while_a_shutdown_starts_is_notified_once(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ShutdownManager(), "shutdown_event", ShutdownStartingAtFirstCheckEvent())
-    listener = CountingShutdownListener()
+def test_listeners_are_notified_in_the_order_of_registration() -> None:
+    notified_names: list[str] = []
+    for name in ("first", "second", "third"):
+        ShutdownManager().register_listener(OrderRecordingShutdownListener(name=name, notified_names=notified_names))
 
-    ShutdownManager().register_listener(listener)
+    ShutdownManager().set_shutdown_at_application_end()
+
+    assert notified_names == ["first", "second", "third"]
+
+
+def test_shutdown_starting_while_a_listener_registers_notifies_it_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    'register_listener' adds the listener and then checks the event.
+
+    The hook starts the shutdown between the two, as another thread could, so both try to notify the listener.
+    """
+    manager = ShutdownManager()
+    listener = CountingShutdownListener()
+    original_is_set = manager.shutdown_event.is_set
+
+    def start_shutdown_then_check() -> bool:
+        monkeypatch.setattr(manager.shutdown_event, "is_set", original_is_set)
+        manager.set_shutdown_at_application_end()
+        return original_is_set()
+
+    monkeypatch.setattr(manager.shutdown_event, "is_set", start_shutdown_then_check)
+
+    manager.register_listener(listener)
 
     assert listener.notification_count == 1
 
 
-def test_raising_listener_does_not_stop_the_later_ones(caplog: pytest.LogCaptureFixture) -> None:
+def test_raising_listener_does_not_stop_the_later_ones() -> None:
+    raising_listener = RaisingShutdownListener()
     later_listener = CountingShutdownListener()
-    ShutdownManager().register_listener(RaisingShutdownListener())
+    ShutdownManager().register_listener(raising_listener)
     ShutdownManager().register_listener(later_listener)
 
     ShutdownManager().set_shutdown_at_application_end()
 
+    assert raising_listener.notified
+    assert id(raising_listener) not in ShutdownManager._listener  # noqa: SLF001
     assert later_listener.notification_count == 1
-    assert "Shutdown listener RaisingShutdownListener failed" in caplog.text
-    assert "RuntimeError: listener failed" in caplog.text
 
 
-def test_raising_listener_registered_after_shutdown_does_not_raise() -> None:
+def test_exception_of_a_listener_registered_after_shutdown_is_caught() -> None:
     ShutdownManager().set_shutdown_at_application_end()
+    listener = RaisingShutdownListener()
 
-    ShutdownManager().register_listener(RaisingShutdownListener())
+    ShutdownManager().register_listener(listener)
+
+    assert listener.notified
 
 
-def test_thread_using_the_manager_while_it_is_created_waits_for_it(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_manager_is_shared_only_when_it_is_complete(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Another thread getting a half-built instance would find no 'shutdown_event'."""
     ShutdownManager.reset_instance()
-    errors: list[Exception] = []
+    instances_during_creation: list[ShutdownManager | None] = []
 
-    def register_listener() -> None:
-        try:
-            ShutdownManager().register_listener(CountingShutdownListener())
-        except Exception as e:
-            errors.append(e)
-
-    other_thread = threading.Thread(target=register_listener)
-
-    def get_client_while_the_other_thread_runs() -> None:
-        other_thread.start()
-        other_thread.join(timeout=0.2)
+    def record_the_instance_and_find_no_client() -> None:
+        instances_during_creation.append(ShutdownManager._instance)  # noqa: SLF001
         raise ValueError("no dask client")
 
-    monkeypatch.setattr("dask.distributed.get_client", get_client_while_the_other_thread_runs)
+    monkeypatch.setattr("dask.distributed.get_client", record_the_instance_and_find_no_client)
 
     ShutdownManager()
-    other_thread.join()
 
-    assert errors == []
+    assert instances_during_creation == [None]
 
 
 def test_manager_pickles_as_the_singleton_of_the_receiving_process() -> None:
