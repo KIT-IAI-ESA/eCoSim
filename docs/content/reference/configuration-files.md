@@ -94,10 +94,8 @@ The building example, shortened to its first simulator and two of its interfaces
         {
           "name": "weatherBus_TDryBul",
           "type": "Input",
-          "report": "true",
           "required": "false",
           "unit": "",
-          "shortname": "weatherBus_TDryBul",
           "description": "",
           "connected_to": [
             {
@@ -109,10 +107,8 @@ The building example, shortened to its first simulator and two of its interfaces
         {
           "name": "weatherBus_HDifHor",
           "type": "Input",
-          "report": "true",
           "required": "false",
           "unit": "",
-          "shortname": "weatherBus_HDifHor",
           "description": "",
           "connected_to": [
             {
