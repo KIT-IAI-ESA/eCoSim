@@ -10,9 +10,11 @@ from typing import Any
 
 from config import REPO_ROOT, write_or_check
 from config_reference_keys import Enums, enum_members, extract_keys, render_keys
+from config_reference_sections import INTERFACE_KEYS_TEXT, client_type_values, render_client_sections
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "configuration-files.md"
 SIMULATION_EXAMPLE = REPO_ROOT / "simulation_examples" / "building" / "server" / "simulation.json"
+CLIENT_TYPE_FILE = REPO_ROOT / "ecosim-common" / "ecosim_common" / "client" / "config" / "client_type.py"
 GROUPS = [
     (
         "Server",
@@ -22,7 +24,8 @@ GROUPS = [
     ),
     (
         "All clients",
-        "The `preferences.ini` passed to a client with `--config-file`. `--server-host` and `--server-port` override the server keys.",
+        "The `preferences.ini` passed to a client with `--config-file`. `--server-host` and `--server-port` override the server keys. "
+        "See [client types](#client-types) for `type`, [lists](#lists) for `fmc_file` and [interface files](#interface-files) for the file it names.",
         "ecosim-common/ecosim_common/client/config/client_config.py",
     ),
     (
@@ -60,7 +63,7 @@ SIMULATION_TEXT = """## Simulation config
 The JSON file passed to `ecosim-server` with `--simulation-config` describes what is simulated:
 
 - `simulators`: one entry per client with its `name`, `model` and `interfaces`. `connected_to` links
-  an interface to an interface of another simulator, which is given by its position in `simulators`,
+  an interface to an interface of a simulator, which is given by its position in `simulators`,
   counting from 0.
 - `logical_delays`: connections whose values arrive a number of steps (`delay`) later.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
@@ -84,14 +87,19 @@ def all_enums() -> Enums:
     return enums
 
 
+def render_simulation_example() -> str:
+    example = trim_simulation(json.loads(SIMULATION_EXAMPLE.read_text(encoding="utf-8")))
+    return "\n".join([SIMULATION_TEXT, "```json", json.dumps(example, indent=2), "```", ""])
+
+
 def render_page() -> str:
     enums = all_enums()
     parts = [HEADER]
     for title, intro, file in GROUPS:
         keys = extract_keys((REPO_ROOT / file).read_text(encoding="utf-8"), enums)
         parts += [f"## {title}", "", intro, "", render_keys(keys), ""]
-    example = trim_simulation(json.loads(SIMULATION_EXAMPLE.read_text(encoding="utf-8")))
-    parts += [SIMULATION_TEXT, "```json", json.dumps(example, indent=2), "```", ""]
+    client_types = client_type_values(CLIENT_TYPE_FILE.read_text(encoding="utf-8"))
+    parts += [render_client_sections(client_types), render_simulation_example(), INTERFACE_KEYS_TEXT]
     return "\n".join(parts)
 
 

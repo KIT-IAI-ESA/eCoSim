@@ -1,6 +1,19 @@
-from config_reference_keys import Key, enum_members, extract_keys, render_keys
-from generate_config_reference import trim_simulation
+import importlib
 
+import pytest
+from config import REPO_ROOT
+from config_reference_keys import Key, enum_members, extract_keys, render_keys
+from config_reference_sections import client_type_values, render_client_types
+from generate_config_reference import CLIENT_TYPE_FILE, render_page, trim_simulation
+
+CLIENT_TYPE_SOURCE = """
+class ClientType(Enum):
+    FMU_2 = ("fmu_2", ("fmu", "fmu2"))
+    Matlab = "matlab"
+
+    def __init__(self, serialized, alternatives=None):
+        self.serialized = serialized
+"""
 SOURCE = """
 class DatabaseConfig:
     _default_directory: ClassVar[Path] = Path("simulation_results")
@@ -48,3 +61,40 @@ def test_trim_simulation_keeps_the_first_simulator_and_two_interfaces() -> None:
     config = {"simulators": [{"name": "a", "interfaces": [1, 2, 3]}, {"name": "b"}], "setup": {"delta_t": 60000}}
 
     assert trim_simulation(config) == {"simulators": [{"name": "a", "interfaces": [1, 2]}], "setup": {"delta_t": 60000}}
+
+
+def test_client_type_values_reads_every_member_with_its_alternatives() -> None:
+    assert client_type_values(CLIENT_TYPE_SOURCE) == [["fmu_2", "fmu", "fmu2"], ["matlab"]]
+
+
+def test_client_type_values_rejects_a_member_it_cannot_read() -> None:
+    with pytest.raises(ValueError):
+        client_type_values("class ClientType(Enum):\n    FMU_2 = build_member()\n")
+
+
+def test_client_type_values_agree_with_client_type(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.syspath_prepend(REPO_ROOT / "ecosim-common")
+    client_type = importlib.import_module("ecosim_common.client.config.client_type").ClientType
+
+    values = client_type_values(CLIENT_TYPE_FILE.read_text(encoding="utf-8"))
+
+    assert len(values) == len(client_type)
+    for member, accepted in zip(client_type, values):
+        assert accepted[0] == member.serialized
+        assert all(client_type.of_string(value) is member for value in accepted)
+
+
+def test_render_client_types_lists_the_alternatives() -> None:
+    table = render_client_types([["fmu_2", "fmu", "fmu2"], ["matlab"]])
+
+    assert "| `fmu_2` | `fmu`, `fmu2` |" in table
+    assert "| `matlab` |  |" in table
+
+
+def test_render_page_lists_the_client_types_of_the_code() -> None:
+    page = render_page()
+
+    assert "| `fmu_2` | `fmu`, `fmu2` |" in page
+    assert "| `fmu_3` | `fmu3` |" in page
+    assert "| `matlab` |  |" in page
+    assert "| `pyro5` | `pyro` |" in page
