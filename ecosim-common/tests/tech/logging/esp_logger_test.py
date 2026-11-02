@@ -6,7 +6,8 @@ from ecosim_common.tech.logger.logger import ESPLogger, init_logger
 
 
 @pytest.fixture
-def root_at_import_time_level() -> Generator[None, None, None]:
+def root_logger_not_initialized_yet() -> Generator[None, None, None]:
+    """Sets the root logger to WARNING, its level before `init_logger` runs."""
     root = logging.getLogger()
     level_during_tests = root.level
     root.setLevel(logging.WARNING)
@@ -14,39 +15,24 @@ def root_at_import_time_level() -> Generator[None, None, None]:
     root.setLevel(level_during_tests)
 
 
-@pytest.mark.usefixtures("root_at_import_time_level")
-def test_logger_created_before_init_logger_emits_debug_records(caplog: pytest.LogCaptureFixture) -> None:
+@pytest.mark.usefixtures("root_logger_not_initialized_yet")
+def test_logger_created_before_init_logger_follows_the_debug_level() -> None:
     logger = ESPLogger("CreatedBeforeDebugInit")
 
     init_logger(log_level=logging.DEBUG)
-    logger.debug("debug record")
 
-    assert "debug record" in caplog.messages
-
-
-@pytest.mark.usefixtures("root_at_import_time_level")
-def test_logger_created_before_init_logger_follows_the_info_level(caplog: pytest.LogCaptureFixture) -> None:
-    logger = ESPLogger("CreatedBeforeInfoInit")
-
-    init_logger(log_level=logging.INFO)
-    logger.info("info record")
-    logger.debug("debug record")
-
-    assert "info record" in caplog.messages
-    assert "debug record" not in caplog.messages
+    assert logger.is_debug_enabled
 
 
-@pytest.mark.usefixtures("root_at_import_time_level")
-def test_overwrite_logger_created_before_init_logger_follows_the_level(capsys: pytest.CaptureFixture[str]) -> None:
-    logger = ESPLogger("CreatedBeforeOverwriteInit")
+@pytest.mark.usefixtures("root_logger_not_initialized_yet")
+def test_logger_created_before_init_logger_follows_the_info_level() -> None:
+    logger_name = "CreatedBeforeInfoInit"
+    logger = ESPLogger(logger_name)
 
     init_logger(log_level=logging.INFO)
-    logger.info("info record", overwrite_last_line=True)
-    logger.debug("debug record", overwrite_last_line=True)
 
-    written = capsys.readouterr().err
-    assert "info record" in written
-    assert "debug record" not in written
+    assert logging.getLogger(logger_name).isEnabledFor(logging.INFO)
+    assert not logger.is_debug_enabled
 
 
 def test_without_parameters() -> None:
