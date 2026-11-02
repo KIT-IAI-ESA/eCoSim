@@ -311,6 +311,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
+    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = "==2.4.0" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.12.5" },
 ]
 provides-extras = ["dev", "r2024b"]
@@ -339,6 +340,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
+    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = "==2.4.0" },
     { name = "setuptools", specifier = "==83.0.0" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.12.5" },
 ]
@@ -391,6 +393,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
+    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = "==2.4.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.20" },
     { name = "setuptools", marker = "extra == 'dev'", specifier = "==83.0.0" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.12.5" },
