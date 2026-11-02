@@ -59,7 +59,7 @@ The database container is kept, so the results can be queried after the run:
 
 ```shell
 docker start ecosim-example-db
-docker exec ecosim-example-db psql -U postgres -d postgres \
+docker exec ecosim-example-db psql -U postgres -d sim_control \
   -c "SELECT state FROM ecosim_example.simulation_state;" \
   -c "SELECT * FROM ecosim_example.module_house LIMIT 5;"
 ```
@@ -143,9 +143,10 @@ results end up.
 
 ### postgres
 
-- The server writes into the database `postgres` and the schema `ecosim_example`. A dedicated
-  database is not used because the server connects to `--database-name` to create a missing
-  database, which only works for a database that already exists.
+- The server writes into the database `sim_control` and the schema `ecosim_example`. It connects to
+  the maintenance database `postgres` to create `sim_control` if it is missing.
+- `ssl=false` in `server_config.ini` connects with `sslmode=disable`, because TLS is off in the
+  container. `ssl=true` connects with `sslmode=require` and fails against a server without TLS.
 - `--database-drop-existing-schema` makes the example repeatable. Without it the server aborts when
   the schema of a previous run is still present.
 

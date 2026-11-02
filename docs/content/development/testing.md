@@ -20,6 +20,9 @@
 | `integration-tests` | `integration_tests/` |
 | `ecosim-client-pyro5`, `ecosim-test-common` | none |
 
+`ecosim-server/tests/tech/db/` starts its own throwaway PostgreSQL clusters on a free port if `initdb`
+is installed. Without `initdb`, and in CI, those tests are skipped.
+
 The applications parse `sys.argv` themselves and reject unknown arguments. A test that starts one
 calls `esp_monkey_patch.remove_pytest_sys_args()` from `ecosim-test-common` before it sets its own
 arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in an IDE.

@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.tech.db.db_types import DTO, GenericEntity, GenericId
-from sqlalchemy import Engine, Executable, create_engine, inspect
+from sqlalchemy import URL, Engine, Executable, create_engine, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 class DBConnection:
     _logger: ClassVar[ESPLogger] = ESPLogger("DBConnection")
 
-    _db_url: str = field()
+    _db_url: URL = field()
     _base_model: Any = field()
     _db_engine: Engine = field()
     default_schema: str = field()

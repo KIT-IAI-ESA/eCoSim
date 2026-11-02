@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
+
+from sqlalchemy import URL
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -134,13 +136,14 @@ class MainConfig:
 @dataclass(frozen=True)
 class DatabaseConfig:
     _default_directory: ClassVar[Path] = Path("simulation_results")
+    _maintenance_database: ClassVar[str] = "postgres"
 
     host: str
     port: int
     ssl: bool
     drop_existing_schema: bool
     username: str
-    password: str
+    password: str = field(repr=False)
     schema: str
     name: str = "sim_control"
     type: DatabaseType = DatabaseType.POSTGRES
@@ -169,8 +172,19 @@ class DatabaseConfig:
             directory=db_overwrite.directory(default=Path(config.get_string("database", "directory", DatabaseConfig._default_directory.name))),
         )
 
-    def generate_sqlalchemy_db_url(self) -> str:
-        return f"postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
+    def generate_sqlalchemy_db_url(self) -> URL:
+        return self._url_of(self.name)
 
-    def generate_sqlalchemy_root_url(self) -> str:
-        return f"postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
+    def generate_sqlalchemy_root_url(self) -> URL:
+        return self._url_of(DatabaseConfig._maintenance_database)
+
+    def _url_of(self, database: str) -> URL:
+        return URL.create(
+            drivername="postgresql+psycopg",
+            username=self.username,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            database=database,
+            query={"sslmode": "require" if self.ssl else "disable"},
+        )
