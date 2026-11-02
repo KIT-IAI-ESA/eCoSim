@@ -7,7 +7,7 @@ from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc import client_manager_config
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
-from ecosim_hpc.dask_connection import connect_dask_client
+from ecosim_hpc.dask_connection import connect_or_start_dask_cluster
 from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -16,7 +16,7 @@ from ecosim_server.data.repositories import create_repositories
 
 def main() -> None:
     cli_arguments = HPCServerCliArguments()
-    dask_client = connect_dask_client(cli_arguments)
+    dask_client = connect_or_start_dask_cluster(cli_arguments)
     tprint("eCoSimHPC", font="tarty1", chr_ignore=True)
     print(f"Server - {get_module_version(name='ecosim-server')}")
 

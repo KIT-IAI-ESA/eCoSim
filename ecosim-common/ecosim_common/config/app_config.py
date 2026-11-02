@@ -31,7 +31,7 @@ class AppConfig(object):
             environment_variables = dict(os.environ)
         if passed_arguments is None:
             passed_arguments = sys.argv[1:]
-        else:
+        elif "PYTEST_CURRENT_TEST" in os.environ:
             passed_arguments = AppConfig.clean_test_arguments(passed_arguments)  # not an ideal solution but it works for now
         self._parser = argparse.ArgumentParser(description=cli_description)
         for parameter in parameters:
