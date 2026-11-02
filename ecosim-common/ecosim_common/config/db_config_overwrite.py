@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from ecosim_common.config.database_type import DatabaseType
@@ -9,7 +9,7 @@ class DbConfigOverwrite:
     _host: str | None = None
     _port: str | None = None
     _user: str | None = None
-    _user_password: str | None = None
+    _user_password: str | None = field(default=None, repr=False)
     _name: str | None = None
     _schema: str | None = None
     _ssl: bool | None = None
@@ -57,7 +57,7 @@ class DbConfigOverwrite:
         self,
         default: bool,
     ) -> bool:
-        return self._ssl or default
+        return default if self._ssl is None else self._ssl
 
     def drop_existing_schema(
         self,

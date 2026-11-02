@@ -5,7 +5,7 @@ from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_test_common.resources.config_files import config_file_path, config_file_path_str
-from tests.data.generate_server_config import generate_server_config_from_file_and_cli_arguments
+from tests.data.generate_server_config import generate_server_config_from_file_and_cli_arguments, write_server_config_file
 
 
 def test_load_relative_paths() -> None:
@@ -32,7 +32,7 @@ def test_load_relative_paths() -> None:
     assert config.database.port == 5432
     assert config.database.username == "postgres"
     assert config.database.password == "integration_test"
-    assert config.database.ssl is True
+    assert config.database.ssl is False
 
 
 def test_load_absolute_paths() -> None:
@@ -59,6 +59,36 @@ def test_load_absolute_paths() -> None:
     assert config.database.port == 5432
     assert config.database.username == "postgres"
     assert config.database.password == "integration_test"
+    assert config.database.ssl is False
+
+
+@pytest.mark.parametrize("ssl", [True, False])
+def test_the_ssl_key_of_the_config_file_is_used_without_the_option(
+    tmp_path: Path,
+    ssl: bool,
+) -> None:
+    config_file = write_server_config_file(directory=tmp_path, ssl=ssl)
+
+    config = generate_server_config_from_file_and_cli_arguments(config_file=str(config_file))
+
+    assert config.database.ssl is ssl
+
+
+def test_the_option_false_overrides_a_config_file_that_says_true(tmp_path: Path) -> None:
+    config = generate_server_config_from_file_and_cli_arguments(
+        config_file=str(write_server_config_file(directory=tmp_path, ssl=True)),
+        database_ssl="false",
+    )
+
+    assert config.database.ssl is False
+
+
+def test_the_option_true_overrides_a_config_file_that_says_false(tmp_path: Path) -> None:
+    config = generate_server_config_from_file_and_cli_arguments(
+        config_file=str(write_server_config_file(directory=tmp_path, ssl=False)),
+        database_ssl="true",
+    )
+
     assert config.database.ssl is True
 
 

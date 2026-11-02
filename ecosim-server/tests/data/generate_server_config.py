@@ -46,7 +46,7 @@ def generate_server_config(
             host=database_host or DEFAULT_HOST,
             port=database_port or DEFAULT_DATABASE_PORT,
             # a bool cannot be defaulted with 'or', because that would turn an explicit 'False' into the default
-            ssl=database_ssl if database_ssl is not None else True,
+            ssl=database_ssl if database_ssl is not None else False,
             drop_existing_schema=database_drop_existing_schema if database_drop_existing_schema is not None else False,
             username=database_username or DEFAULT_DATABASE_USERNAME,
             password=database_password or DEFAULT_DATABASE_PASSWORD,
@@ -57,6 +57,22 @@ def generate_server_config(
             directory=database_directory or DatabaseConfig.directory,
         ),
     )
+
+
+def write_server_config_file(
+    directory: Path,
+    host: str = DEFAULT_HOST,
+    port: int = DEFAULT_DATABASE_PORT,
+    username: str = DEFAULT_DATABASE_USERNAME,
+    password: str = DEFAULT_DATABASE_PASSWORD,
+    ssl: bool = False,
+) -> Path:
+    file = directory / "server.ini"
+    file.write_text(
+        f"[server]\nport={DEFAULT_PORT}\n[database]\nserver={host}\nport={port}\nusername={username}\npassword={password}\nssl={ssl}\n",
+        encoding="utf-8",
+    )
+    return file
 
 
 def generate_server_config_from_file_and_cli_arguments(

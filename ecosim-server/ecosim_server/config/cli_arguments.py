@@ -92,9 +92,11 @@ class CLIArguments(AppConfig):
                 ),
                 AppConfigParameter(
                     name="database-ssl",
-                    default_value="False",
+                    # without a default, the ssl key of the config file decides unless the option is given
+                    default_value=None,
                     transform=lambda x: ConfigParser.config_string_to_bool(x),
-                    help_text="If SSL should be used when connecting to the DB",
+                    help_text="If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. "
+                    + "Note: this will override the ssl key in config files.",
                 ),
                 AppConfigParameter(
                     name="database-type",

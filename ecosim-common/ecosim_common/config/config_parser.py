@@ -17,7 +17,7 @@ class ConfigParser:
     ):
         ConfigParser.ensure_file_exists(path)
         self.config_file: Path = path
-        self._config: configparser.ConfigParser = configparser.ConfigParser()
+        self._config: configparser.ConfigParser = configparser.ConfigParser(interpolation=None)
         self._config.read(path)
 
     def get_bool(

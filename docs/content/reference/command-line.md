@@ -32,7 +32,7 @@ Starts the server, which owns the clock and the data flow of a simulation.
 | `--database-user-password` |  |  | The database user password |
 | `--database-name` |  |  | The name of the database |
 | `--database-schema` |  |  | The name of the database schema |
-| `--database-ssl` |  | `False` | If SSL should be used when connecting to the DB |
+| `--database-ssl` |  |  | If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. Note: this will override the ssl key in config files. |
 | `--database-type` |  |  | Where the simulation results are stored. Default: postgres. Possible: ['postgres', 'file']. Note: this will override the type in config files. |
 | `--database-directory` |  |  | The directory the simulation results are written to if the database type is 'file'. Note: this will override the directory in config files. |
 | `--database-drop-existing-schema` |  | flag | This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. |
@@ -96,7 +96,7 @@ Runs server and clients on a Dask cluster. The communication protocol is always 
 | `--database-user-password` |  |  | The database user password |
 | `--database-name` |  |  | The name of the database |
 | `--database-schema` |  |  | The name of the database schema |
-| `--database-ssl` |  | `False` | If SSL should be used when connecting to the DB |
+| `--database-ssl` |  |  | If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. Note: this will override the ssl key in config files. |
 | `--database-type` |  |  | Where the simulation results are stored. Default: postgres. Possible: ['postgres', 'file']. Note: this will override the type in config files. |
 | `--database-directory` |  |  | The directory the simulation results are written to if the database type is 'file'. Note: this will override the directory in config files. |
 | `--database-drop-existing-schema` |  | flag | This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. |

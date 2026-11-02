@@ -51,7 +51,6 @@ services:
       - --server-config=/config/server_config.ini
       - --simulation-config=/config/simulation.json
       - --steps=60
-      - --database-name=postgres
       - --database-schema=ecosim_example
       - --database-drop-existing-schema
       - --debug
