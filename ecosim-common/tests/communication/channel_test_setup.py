@@ -1,5 +1,6 @@
-import queue
-import threading
+import time
+from dataclasses import dataclass, field
+from typing import ClassVar
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
@@ -12,28 +13,31 @@ from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 
 ADDRESS = ConnectionAddress(ip="127.0.0.1", port=1234)
 SHORT_TIMEOUT_IN_SECONDS = 1
-BOUND_IN_SECONDS = 15
+
+
+@dataclass
+class RaisingMessageHandler:
+    ERROR_MESSAGE: ClassVar[str] = "the handler failed"
+
+    call_count: int = field(default=0)
+
+    def __call__(self, message: ESPChannelMessage) -> None:
+        self.call_count += 1
+        raise RuntimeError(RaisingMessageHandler.ERROR_MESSAGE)
+
+
+@dataclass
+class SlowEchoHandler:
+    channel: ESPChannel
+    delay_in_seconds: int
+
+    def __call__(self, message: ESPChannelMessage) -> None:
+        time.sleep(self.delay_in_seconds)
+        self.channel.send(message)
 
 
 def simple_message() -> ESPChannelMessage:
     return ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STEP)
-
-
-def listen_blocking_bounded(channel: ESPChannel, timeout_in_seconds: int | None = None) -> ESPChannelMessage | None:
-    outcome: queue.Queue[ESPChannelMessage | Exception | None] = queue.Queue()
-    threading.Thread(target=_listen_into, args=(outcome, channel, timeout_in_seconds), daemon=True).start()
-    # a hang raises queue.Empty, which pytest.raises(TimeoutError) does not accept
-    result = outcome.get(timeout=BOUND_IN_SECONDS)
-    if isinstance(result, Exception):
-        raise result
-    return result
-
-
-def _listen_into(outcome: queue.Queue[ESPChannelMessage | Exception | None], channel: ESPChannel, timeout_in_seconds: int | None) -> None:
-    try:
-        outcome.put(channel.listen_blocking(timeout_in_seconds=timeout_in_seconds))
-    except Exception as error:
-        outcome.put(error)
 
 
 def dask_channel_pair() -> tuple[DaskChannel, DaskChannel]:
