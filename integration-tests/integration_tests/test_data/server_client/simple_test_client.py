@@ -22,6 +22,10 @@ from ecosim_common.tech.atomic import AtomicFloat, AtomicInteger
 from integration_tests.test_data.test_client_data import TestClientData
 
 
+def answer_start(_client: SimpleTestClient) -> ClientSimStepData:
+    return ClientSimStepData(interface_values=[])
+
+
 class SimpleTestClient(Client):
     @staticmethod
     def generate(
@@ -101,6 +105,7 @@ class SimpleTestClient(Client):
             [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ],
+        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = answer_start,
     ):
         super().__init__(client_config)
         self._on_simulation_start_calls = AtomicInteger.for_protocol(client_config.communication_protocol(), 0)
@@ -112,15 +117,14 @@ class SimpleTestClient(Client):
             [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ] = on_simulation_step_return
+        self._on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = on_simulation_start_return
 
     def reset_accumulated_step_sizes(self) -> None:
         self.accumulated_step_sizes_in_seconds.set(0.0)
 
     def on_simulation_start(self) -> ClientSimStepData:
         self._on_simulation_start_calls.increment()
-        return ClientSimStepData(
-            interface_values=[],
-        )
+        return self._on_simulation_start_return(self)
 
     def on_simulation_step(
         self,

@@ -177,7 +177,7 @@ class SimulationExecutor:
         client_ids: Iterable[ClientID],
         waiting_for: str,
     ) -> None:
-        # no ping here: a client handles its messages one by one, so during a long step it cannot answer one
+        # uses the connection state, because a client busy with a step cannot answer a ping
         lost_client_ids = self._client_communication.lost_client_ids(client_ids)
         if len(lost_client_ids) > 0:
             raise RuntimeError(f"Lost client {', '.join(str(client_id) for client_id in lost_client_ids)} while waiting for {waiting_for}")
@@ -252,13 +252,13 @@ class SimulationExecutor:
         while len(missing_client_ids) > 0:
             message = subscription.next_message(timeout_in_seconds=SimulationExecutor._RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS)
             if message is None:
-                self._check_restore_timeout(missing_client_ids=missing_client_ids, last_response_time=last_response_time)
+                self._raise_if_clients_lost_or_restore_timed_out(missing_client_ids=missing_client_ids, last_response_time=last_response_time)
                 continue
             last_response_time = time.monotonic()
             if self._is_expected_restore_response(message):
                 missing_client_ids.discard(message.client_id)
 
-    def _check_restore_timeout(
+    def _raise_if_clients_lost_or_restore_timed_out(
         self,
         missing_client_ids: set[ClientID],
         last_response_time: float,

@@ -71,7 +71,7 @@ def test_missing_connection_reaches_whoever_waits_for_the_answer(
 
     with communication.subscribe(client_ids=(_CLIENT_ID,), message_types=(message_type,)) as subscription:
         send(communication)
-        with pytest.raises(RuntimeError, match=str(_CLIENT_ID)):
+        with pytest.raises(RuntimeError, match=f"{_CLIENT_ID}.*not set"):
             subscription.next_message(timeout_in_seconds=_WAIT_IN_SECONDS)
 
 
