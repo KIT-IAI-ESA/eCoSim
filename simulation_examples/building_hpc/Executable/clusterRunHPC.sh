@@ -10,7 +10,8 @@ conda activate eCoSim
 
 ECOSIM_DIR="$HOME/ecosim" #Change to location of eCoSim as need
 
-source $ECOSIM_DIR/simulation_examples/.venv/bin/activate
+# shellcheck disable=SC1091
+source "$ECOSIM_DIR/simulation_examples/.venv/bin/activate"
 
 #set ecosim location
 #create conda env and install uv and postgresql, perhaps seperate script
@@ -30,7 +31,7 @@ if ! psql -lqt | cut -d \| -f 1 | grep -wq sim_control; then
     createdb sim_control
 fi
 
-mpirun --bind-to core --map-by core uv run $ECOSIM_DIR/ecosim-hpc/ecosim_hpc/main.py --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --simulator-dir ../Modules/ --steps 100 --database-schema temp_schema --database-drop-existing-schema
+mpirun --bind-to core --map-by core uv run "$ECOSIM_DIR/ecosim-hpc/ecosim_hpc/main.py" --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --simulator-dir ../Modules/ --steps 100 --database-schema temp_schema --database-drop-existing-schema
 
 
 pg_ctl stop -D $PG_SERVER_DIR
