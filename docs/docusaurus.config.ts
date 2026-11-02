@@ -26,13 +26,6 @@ const config: Config = {
     },
   },
 
-  stylesheets: [
-    {
-      href: "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap",
-      type: "text/css",
-    },
-  ],
-
   themes: [
     "@docusaurus/theme-mermaid",
     [
