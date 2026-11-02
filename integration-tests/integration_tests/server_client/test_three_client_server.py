@@ -9,6 +9,7 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
+from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -120,8 +121,7 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
     client_2.start()
     client_3.start()
 
-    server_thread.join(120)
-    assert not server_thread.is_alive()
+    assert_server_finishes_in_time(server_thread)
     server.print_measurement_statistics()
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
