@@ -17,6 +17,7 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.config.client_id import ClientID
+from ecosim_server.config.connection_check import check_connections
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class SimulationConfig:
         restore: bool = False,
     ) -> SimulationConfig:
         config = SimulationConfig._load_config(simulation_config_file)
+        check_connections(raw_simulators=config["simulators"], raw_logical_delays=config["logical_delays"])
         clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(
             config,
         )
@@ -54,12 +56,19 @@ class SimulationConfig:
             steps=steps,
             step_size_in_ms=step_size_override if step_size_override else int(config["setup"]["delta_t"]),
             pace=pace,
-            start_date=datetime.fromisoformat(
+            start_date=SimulationConfig._parse_start_date(
                 config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),
             ),
             logical_delays=logical_delays,
             restore=restore,
         )
+
+    @staticmethod
+    def _parse_start_date(value: str) -> datetime:
+        start_date = datetime.fromisoformat(value)
+        if start_date.utcoffset() is None:
+            raise RuntimeError(f"setup.start_date '{value}' has no time zone offset. Add one, like 'Z' or '+01:00' after the time.")
+        return start_date
 
     def __post_init__(self) -> None:
         self._validate_clients(clients=self.clients)
