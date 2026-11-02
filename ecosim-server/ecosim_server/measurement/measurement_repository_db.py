@@ -81,7 +81,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
     ) -> dict[str, str]:
         interface_name_to_column_name: dict[str, str] = {}
         for interface in client_config.interfaces:
-            column_name = MeasurementRepositoryDB._column_name_of_server_interface(interface)
+            column_name = MeasurementRepositoryDB.column_name_of_server_interface(interface)
             interface_name_to_column_name[interface.name] = column_name
         return interface_name_to_column_name
 
@@ -91,16 +91,16 @@ class MeasurementRepositoryDB(MeasurementRepository):
     ) -> dict[str, str]:
         interface_name_to_json_column_name: dict[str, str] = {}
         for interface in client_config.interfaces:
-            column_name = MeasurementRepositoryDB._json_column_name_of_server_interface(interface)
+            column_name = MeasurementRepositoryDB.json_column_name_of_server_interface(interface)
             interface_name_to_json_column_name[interface.name] = column_name
         return interface_name_to_json_column_name
 
     @staticmethod
-    def _column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
+    def column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
         return f"{'i' if interface.type == InterfaceType.INPUT else 'o'}_{interface.name.lower()}"
 
     @staticmethod
-    def _json_column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
+    def json_column_name_of_server_interface(interface: ModelInterfaceServer) -> str:
         return f"{'i' if interface.type == InterfaceType.INPUT else 'o'}_{interface.name.lower()}_json"
 
     def _select_column(
