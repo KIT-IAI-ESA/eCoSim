@@ -12,6 +12,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.measurement.measurement_repository_db import MeasurementRepositoryDB
+from ecosim_server.measurement.postgres_name_check import check_names_fit_postgres_storage
 from ecosim_server.simulation.state.simulation_state_repository_db import SimulationStateRepositoryDB
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_tech_abstract import DbTechAbstract
@@ -31,6 +32,8 @@ class RepositoriesDB(Repositories):
         server_config: ServerConfig,
         simulation_config: SimulationConfig,
     ) -> RepositoriesDB:
+        # before 'init_db', which can drop the existing schema
+        check_names_fit_postgres_storage(simulation_config)
         db_tech = RepositoriesDB._get_db_tech(server_config)
         db_tech.init_db()
         db_connection = db_tech.db_connection()
