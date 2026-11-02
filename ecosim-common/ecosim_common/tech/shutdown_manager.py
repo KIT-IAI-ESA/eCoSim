@@ -20,11 +20,12 @@ SIGNAL_GRACE_IN_SECONDS = 3
 class ShutdownListener(ABC):
     @abstractmethod
     def on_app_shutdown(self) -> None:
-        """This method must be implemented by the subclass."""
         pass
 
 
 class ShutdownManager:
+    INTERRUPT_EXIT_CODE: int = 33
+    TERMINATE_EXIT_CODE: int = 44
     _instance = None
     _lock = threading.Lock()
     _logger = ESPLogger("ShutdownManager")
@@ -65,9 +66,9 @@ class ShutdownManager:
             return
         signal.signal(signal.SIGINT, self.__interrupt_signal_handler)
         signal.signal(signal.SIGTERM, self.__terminate_signal_handler)
-        # a Python handler for a native crash (SIGSEGV, SIGFPE, SIGABRT) would loop forever
         if not faulthandler.is_enabled():
             faulthandler.enable()
+        ShutdownManager._init = True
 
     # noinspection PyUnusedLocal
     def __interrupt_signal_handler(
@@ -75,7 +76,7 @@ class ShutdownManager:
         sig: int,
         frame: FrameType | None,
     ) -> None:
-        self.__exit_on_signal(signal_name="Interrupt", exit_code=333)
+        self.__exit_on_signal(signal_name="Interrupt", exit_code=self.INTERRUPT_EXIT_CODE)
 
     # noinspection PyUnusedLocal
     def __terminate_signal_handler(
@@ -83,7 +84,7 @@ class ShutdownManager:
         sig: int,
         frame: FrameType | None,
     ) -> None:
-        self.__exit_on_signal(signal_name="Terminate", exit_code=444)
+        self.__exit_on_signal(signal_name="Terminate", exit_code=self.TERMINATE_EXIT_CODE)
 
     def __exit_on_signal(
         self,
@@ -92,31 +93,29 @@ class ShutdownManager:
     ) -> None:
         if time.monotonic() < ShutdownManager._ignore_signals_until:
             return
-        ShutdownManager._ignore_signals_until = time.monotonic() + SIGNAL_GRACE_IN_SECONDS
         self._logger.info("%s signal received - shutting down.", signal_name)
         self.__trigger_shutdown()
         sys.exit(exit_code)
 
     def __trigger_shutdown(self) -> None:
+        ShutdownManager._ignore_signals_until = time.monotonic() + SIGNAL_GRACE_IN_SECONDS
         if self.shutdown_event.is_set():
             self._logger.debug("Shutdown was already triggered - listeners stay untouched.")
             return
-        ShutdownManager._ignore_signals_until = time.monotonic() + SIGNAL_GRACE_IN_SECONDS
         self.shutdown_event.set()
         for listener in list(self._listener.values()):
-            self.__notify(listener)
-        self._logger.debug("All listeners notified - resetting ShutdownManager itself.")
+            self.__pop_and_notify(listener)
+        self._logger.debug("All listeners notified.")
 
-    def __notify(
+    def __pop_and_notify(
         self,
         listener: ShutdownListener,
     ) -> None:
-        # no lock, a signal handler gets here too: the atomic pop() keeps it to one notification
         if self._listener.pop(id(listener), None) is None:
             return
+        # a further signal raises SystemExit inside the running listener: catching it skips a hanging listener, the next ones still run
         try:
             listener.on_app_shutdown()
-        # SystemExit: a signal interrupted a hanging listener
         except (Exception, SystemExit):
             self._logger.error("Shutdown listener %s failed:\n%s", type(listener).__name__, traceback.format_exc())
 
@@ -128,7 +127,7 @@ class ShutdownManager:
         self._listener[id(listener)] = listener
         if self.shutdown_event.is_set():
             self._logger.warning("Shutdown event already set - notifying listener.")
-            self.__notify(listener)
+            self.__pop_and_notify(listener)
 
     def is_shutdown(self) -> bool:
         return self.shutdown_event.is_set()
