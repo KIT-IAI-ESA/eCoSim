@@ -78,7 +78,7 @@ Connect a MATLAB model or a Python model served over Pyro5.
 
 `python ecosim_hpc/main.py`
 
-Runs server and clients on a Dask cluster. The communication protocol is always `DASK`.
+Runs server and clients on a Dask cluster. The communication protocol is always `DASK`. Batch mode, the default, needs `mpirun`; `--interactive` connects to a running Dask scheduler. See the [HPC cluster](../guides/hpc-cluster.md) guide.
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
@@ -105,4 +105,7 @@ Runs server and clients on a Dask cluster. The communication protocol is always 
 | `--restore-simulation-run` |  | flag | If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous simulation run, the simulation is executed normally. |
 | `--communication-protocol` |  |  | The communication protocol to use between client and server. Default: CommunicationProtocol.TCP_SOCKET. Possible: ['DASK', 'TCP_SOCKET'] |
 | `--simulator-dir` | yes |  | The path to the directory containing all simulators. This must be a relative to the call path or it can be an absolute path. |
-| `--interactive` |  | flag | Establishes interactive version of Dask-MPI. If not set, the simulation will run in batch mode. |
+| `--interactive` |  | flag | Connects to a running Dask scheduler through its scheduler file. If not set, the simulation runs in batch mode: started through mpirun, with the Dask cluster and the simulation in one MPI job. |
+| `--scheduler-file` |  | `scheduler.json` | Interactive mode only: the path to the file the Dask scheduler wrote. This must be relative to the call path or it can be an absolute path. |
+| `--network-interface` |  |  | Batch mode only: the network interface of the Dask scheduler and workers, like enp3s0, eno1, eth0 or ib0. If not set, dask_mpi chooses. |
+| `--threads-per-worker` |  |  | Batch mode only: the number of threads of each Dask worker. If not set, dask_mpi chooses. |
