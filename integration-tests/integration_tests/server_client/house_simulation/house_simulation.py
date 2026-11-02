@@ -10,6 +10,7 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources.simulations.house_simulation_data import ExpectedResultEntry, HouseSimulationData
 
+from integration_tests.test_data.server_client.server_thread import SERVER_FINISH_TIMEOUT_IN_SECONDS
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
     SimpleTestServerParameters,
@@ -57,7 +58,7 @@ class HouseSimulation:
         }
         return HouseSimulation(server=server, clients=clients)
 
-    def run(self, timeout_in_seconds: float = 120) -> None:
+    def run(self, timeout_in_seconds: float = SERVER_FINISH_TIMEOUT_IN_SECONDS) -> None:
         server_thread = threading.Thread(target=self.server.start, daemon=True)
         server_thread.start()
         for client in self.clients.values():
