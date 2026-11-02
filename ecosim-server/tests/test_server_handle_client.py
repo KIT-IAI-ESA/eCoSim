@@ -25,7 +25,7 @@ def _handle_client(
     )
 
 
-def test_failed_send_before_the_client_is_known_raises_the_real_cause() -> None:
+def test_failed_send_before_the_client_is_known_raises_the_connection_error() -> None:
     channel = MagicMock(spec=ESPChannel)
     channel.send.side_effect = ConnectionError("client is gone")
     client_communication = MagicMock(spec=ClientCommunication)
@@ -36,7 +36,7 @@ def test_failed_send_before_the_client_is_known_raises_the_real_cause() -> None:
     client_communication.reset_state.assert_not_called()
 
 
-def test_closed_connection_before_the_client_is_known_raises_the_real_cause() -> None:
+def test_closed_connection_before_the_client_is_known_raises_a_type_error() -> None:
     channel = MagicMock(spec=ESPChannel)
     channel.listen_blocking.return_value = None
     client_communication = MagicMock(spec=ClientCommunication)

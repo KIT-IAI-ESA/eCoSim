@@ -9,7 +9,7 @@ from ecosim_common.config.client_id import ClientID
 
 
 class ClientMessage:
-    """A message together with the client it came from and the moment it arrived."""
+    """A message together with the client it came from and the moment it arrived, or a stand-in that reports a failed send to that client."""
 
     def __init__(
         self,
