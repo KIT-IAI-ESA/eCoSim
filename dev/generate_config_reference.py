@@ -15,11 +15,29 @@ from config_reference_sections import INTERFACE_KEYS_TEXT, client_type_values, r
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "configuration-files.md"
 SIMULATION_EXAMPLE = REPO_ROOT / "simulation_examples" / "building" / "server" / "simulation.json"
 CLIENT_TYPE_FILE = REPO_ROOT / "ecosim-common" / "ecosim_common" / "client" / "config" / "client_type.py"
+SERVER_INTRO = r"""The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.
+`ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.
+
+The database password comes from the first of these that has one:
+
+1. `--database-user-password`
+2. `password` in this file
+3. the environment variable `PGPASSWORD`
+4. the password file named by `PGPASSFILE`, by default `~/.pgpass`
+
+The password file has lines of the form `host:port:database:username:password`, and PostgreSQL ignores it unless only you
+can read it (mode `0600`). Write the database as `*`, because the server also connects to `postgres` to create a missing
+database. In a password, write `:` as `\:` and `\` as `\\`.
+
+:::warning
+
+Other users on a shared machine can see `--database-user-password` in the process list. Use the password file there.
+
+:::"""
 GROUPS = [
     (
         "Server",
-        "The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.\n"
-        "`ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.",
+        SERVER_INTRO,
         "ecosim-server/ecosim_server/config/server_config.py",
     ),
     (

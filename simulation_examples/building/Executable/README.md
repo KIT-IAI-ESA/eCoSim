@@ -29,11 +29,11 @@ createdb --host localhost --username postgres --encoding UTF8 --template templat
 ## 3. Start the server
 
 ```shell
-./serverRun.sh --database-host localhost --database-user postgres --database-user-password <password>
+PGPASSWORD=<password> ./serverRun.sh --database-host localhost --database-user postgres
 ```
 
 The first run creates the environment, which takes a moment. The server then waits for the clients.
-Instead of these options you can fill in the `[database]` section of `../server/preferences.ini`.
+Instead of these settings you can fill in the `[database]` section of `../server/preferences.ini`.
 
 ## 4. Start the clients
 

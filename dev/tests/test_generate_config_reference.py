@@ -57,6 +57,12 @@ def test_render_keys_marks_required_keys() -> None:
     assert "| `server` | `port` | integer | required |" in table
 
 
+def test_render_keys_writes_out_an_empty_default() -> None:
+    key = Key(section="database", key="password", type="string", default="")
+
+    assert "| `database` | `password` | string | empty |" in render_keys([key])
+
+
 def test_trim_simulation_keeps_the_first_simulator_and_two_interfaces() -> None:
     config = {"simulators": [{"name": "a", "interfaces": [1, 2, 3]}, {"name": "b"}], "setup": {"delta_t": 60000}}
 

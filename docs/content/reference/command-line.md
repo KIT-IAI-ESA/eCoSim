@@ -29,7 +29,7 @@ Starts the server, which owns the clock and the data flow of a simulation.
 | `--database-host` |  |  | The database host |
 | `--database-port` |  |  | The database port |
 | `--database-user` |  |  | The database user |
-| `--database-user-password` |  |  | The database user password |
+| `--database-user-password` |  |  | The database user password. WARNING: other users on a shared machine can see this option in the process list. Without it, the password comes from the config file, PGPASSWORD or a password file. |
 | `--database-name` |  |  | The name of the database |
 | `--database-schema` |  |  | The name of the database schema |
 | `--database-ssl` |  |  | If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. Note: this will override the ssl key in config files. |
@@ -93,7 +93,7 @@ Runs server and clients on a Dask cluster. The communication protocol is always 
 | `--database-host` |  |  | The database host |
 | `--database-port` |  |  | The database port |
 | `--database-user` |  |  | The database user |
-| `--database-user-password` |  |  | The database user password |
+| `--database-user-password` |  |  | The database user password. WARNING: other users on a shared machine can see this option in the process list. Without it, the password comes from the config file, PGPASSWORD or a password file. |
 | `--database-name` |  |  | The name of the database |
 | `--database-schema` |  |  | The name of the database schema |
 | `--database-ssl` |  |  | If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. Note: this will override the ssl key in config files. |

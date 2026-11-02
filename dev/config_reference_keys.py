@@ -133,9 +133,14 @@ def extract_keys(source: str, enums: Enums) -> list[Key]:
     return list(keys.values())
 
 
+def default_cell(default: str | None) -> str:
+    if default is None:
+        return "required"
+    return f"`{default}`" if default else "empty"
+
+
 def render_keys(keys: list[Key]) -> str:
     lines = ["| Section | Key | Type | Default |", "| --- | --- | --- | --- |"]
     for key in keys:
-        default = "required" if key.default is None else f"`{key.default}`"
-        lines.append(f"| `{key.section}` | `{key.key}` | {key.type} | {default} |")
+        lines.append(f"| `{key.section}` | `{key.key}` | {key.type} | {default_cell(key.default)} |")
     return "\n".join(lines)

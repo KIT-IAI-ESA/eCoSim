@@ -4,7 +4,12 @@ from typing import Callable
 import pytest
 from ecosim_server.config.server_config import DatabaseConfig, ServerConfig
 from sqlalchemy import URL, make_url
-from tests.data.generate_server_config import generate_server_config, generate_server_config_from_file_and_cli_arguments, write_server_config_file
+from tests.data.generate_server_config import (
+    DEFAULT_DATABASE_PASSWORD,
+    generate_server_config,
+    generate_server_config_from_file_and_cli_arguments,
+    write_server_config_file,
+)
 from tests.tech.db.special_passwords import SPECIAL_PASSWORDS
 
 UrlGenerator = Callable[[DatabaseConfig], URL]
@@ -88,3 +93,29 @@ def test_a_password_from_the_command_line_reaches_the_url_unchanged(password: st
     config = generate_server_config_from_file_and_cli_arguments(database_user_password=password)
 
     assert make_url(config.database.generate_sqlalchemy_db_url()).password == password
+
+
+@pytest.mark.parametrize("password", [None, ""])
+@pytest.mark.parametrize("generate_url", URL_GENERATORS)
+def test_a_config_file_without_a_password_builds_a_url_without_one(
+    generate_url: UrlGenerator,
+    tmp_path: Path,
+    password: str | None,
+) -> None:
+    config = ServerConfig.of_file(write_server_config_file(directory=tmp_path, password=password))
+
+    assert generate_url(config.database).password is None
+
+
+def test_a_password_on_the_command_line_does_not_need_the_key_in_the_config_file(tmp_path: Path) -> None:
+    file = write_server_config_file(directory=tmp_path, password=None)
+
+    config = generate_server_config_from_file_and_cli_arguments(config_file=str(file), database_user_password="hunter7")
+
+    assert config.database.generate_sqlalchemy_db_url().password == "hunter7"
+
+
+def test_an_empty_password_on_the_command_line_keeps_the_one_of_the_config_file() -> None:
+    config = generate_server_config_from_file_and_cli_arguments(database_user_password="")
+
+    assert config.database.generate_sqlalchemy_db_url().password == DEFAULT_DATABASE_PASSWORD
