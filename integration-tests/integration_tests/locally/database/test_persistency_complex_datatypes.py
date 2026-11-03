@@ -1,5 +1,4 @@
 import os
-import threading
 
 from psycopg import Connection, sql
 from psycopg.rows import DictRow
@@ -17,7 +16,6 @@ from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -95,13 +93,11 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
         ),
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     client.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))
@@ -199,13 +195,11 @@ def test_db_persistence_matrix(
         ),
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     client.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
 
     cursor = db_connection.cursor()
     cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier("postgres")))

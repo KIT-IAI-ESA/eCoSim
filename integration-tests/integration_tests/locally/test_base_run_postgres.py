@@ -3,7 +3,6 @@ from __future__ import annotations
 # Disable Testcontainers Ryuk reaper to avoid connection issues in restricted CI/Docker environments.
 # This must be set BEFORE importing testcontainers.
 import os
-import threading
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -31,7 +30,6 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -257,14 +255,12 @@ def test_postgres_integration(postgres_container: PostgresFixture) -> None:
         on_simulation_step_return=handle_client_2_sim_step,
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     client_1.start()
     client_2.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)
 

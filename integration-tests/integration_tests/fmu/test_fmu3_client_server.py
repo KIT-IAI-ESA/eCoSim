@@ -1,4 +1,3 @@
-import threading
 from datetime import datetime
 from typing import Tuple
 
@@ -19,7 +18,6 @@ from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from ecosim_test_common.resources.resource_utils import config_parser_for_resource, fmu3_model_path
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
@@ -156,14 +154,12 @@ def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> No
         ),
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     fmu3_client.start()
     mock_client.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
 
     fmu3_measurement_repo: MeasurementRepositoryInMemory = server.measurement_repository(fmu3_client.client_id)  # type: ignore
     fmu3_measurement_repo.assert_entry_count(steps)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from dataclasses import dataclass
 
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
@@ -10,8 +9,8 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources.simulations.house_simulation_data import ExpectedResultEntry, HouseSimulationData
 
-from integration_tests.test_data.server_client.server_thread import SERVER_FINISH_TIMEOUT_IN_SECONDS
 from integration_tests.test_data.server_client.simple_test_server import (
+    SERVER_FINISH_TIMEOUT_IN_SECONDS,
     SimpleTestServer,
     SimpleTestServerParameters,
     generate_simple_test_server,
@@ -59,12 +58,10 @@ class HouseSimulation:
         return HouseSimulation(server=server, clients=clients)
 
     def run(self, timeout_in_seconds: float = SERVER_FINISH_TIMEOUT_IN_SECONDS) -> None:
-        server_thread = threading.Thread(target=self.server.start, daemon=True)
-        server_thread.start()
+        self.server.start_in_thread()
         for client in self.clients.values():
             client.start()
-        server_thread.join(timeout=timeout_in_seconds)
-        assert not server_thread.is_alive(), f"The simulation did not finish within {timeout_in_seconds}s"
+        self.server.assert_finishing_in_time(timeout_in_seconds=timeout_in_seconds)
 
     def recorded_rows(self, module: str) -> list[ExpectedResultEntry]:
         entries = sorted(self.server.measurement_repository(self.clients[module].client_id).all(), key=lambda entry: entry.timestamp)
