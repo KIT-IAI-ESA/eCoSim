@@ -1,5 +1,7 @@
 # Coding guidelines
 
+More conventions, with examples from the code: [Development tips](tips.md).
+
 ## Code
 
 - concise, readable code that follows PEP 8 and the existing patterns
