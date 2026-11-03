@@ -1,11 +1,12 @@
 from pathlib import Path
 
-from dask import distributed
+from dask_mpi import initialize
+from distributed import Client
 from distributed.utils import get_ip_interface
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 
 
-def connect_or_start_dask_cluster(cli_arguments: HPCServerCliArguments) -> distributed.Client:
+def connect_or_start_dask_cluster(cli_arguments: HPCServerCliArguments) -> Client:
     """In batch mode only MPI rank 1 returns: the scheduler and worker ranks block in 'initialize' and then exit."""
     if cli_arguments.interactive():
         return _connect_to_running_scheduler(cli_arguments.scheduler_file())
@@ -15,21 +16,19 @@ def connect_or_start_dask_cluster(cli_arguments: HPCServerCliArguments) -> distr
     )
 
 
-def _connect_to_running_scheduler(scheduler_file: Path) -> distributed.Client:
+def _connect_to_running_scheduler(scheduler_file: Path) -> Client:
     # the Dask client would wait forever for a missing file
     if not scheduler_file.is_file():
         raise SystemExit(f"The scheduler file '{scheduler_file}' does not exist. Start the Dask scheduler first or set --scheduler-file.")
-    return distributed.Client(scheduler_file=str(scheduler_file))
+    return Client(scheduler_file=str(scheduler_file))
 
 
-def _start_mpi_cluster(network_interface: str | None, threads_per_worker: int | None) -> distributed.Client:
-    from dask_mpi import initialize
-
+def _start_mpi_cluster(network_interface: str | None, threads_per_worker: int | None) -> Client:
     _reject_unknown_network_interface(network_interface)
     options = {"interface": network_interface, "nthreads": threads_per_worker}
     # an explicit nthreads=None is not the default of dask_mpi, it gives every worker all CPUs
     initialize(**{name: value for name, value in options.items() if value is not None})
-    return distributed.Client()
+    return Client()
 
 
 def _reject_unknown_network_interface(network_interface: str | None) -> None:

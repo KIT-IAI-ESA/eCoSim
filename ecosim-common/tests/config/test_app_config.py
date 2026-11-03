@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pytest
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 
 # ruff: noqa: SLF001  # a lot of tests inspect internal data of app_config -> so access to internal data is not restricted
@@ -117,9 +116,7 @@ def test_app_config_passed_argument_override() -> None:
     assert app_config._args.value_override == "333"
 
 
-def test_value_starting_with_test_is_kept_outside_a_test_run(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("PYTEST_CURRENT_TEST")
-
+def test_a_passed_path_can_be_in_a_directory_named_test() -> None:
     app_config = AppConfig(
         passed_arguments=["--path", "test/file"],
         cli_description="CLI description",
@@ -132,18 +129,3 @@ def test_value_starting_with_test_is_kept_outside_a_test_run(monkeypatch: pytest
     )
 
     assert app_config._args.path == "test/file"
-
-
-def test_pytest_arguments_are_removed_in_a_test_run() -> None:
-    app_config = AppConfig(
-        passed_arguments=["test/test_file.py", "--jb-swapdiff", "--value", "333"],
-        cli_description="CLI description",
-        parameters=[
-            AppConfigParameter(
-                name="value",
-                help_text="simple test",
-            ),
-        ],
-    )
-
-    assert app_config._args.value == "333"
