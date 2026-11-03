@@ -5,6 +5,7 @@ from datetime import datetime
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from integration_tests.test_data.server_client.lost_client_setup import (
@@ -12,7 +13,6 @@ from integration_tests.test_data.server_client.lost_client_setup import (
     LOST,
     RUN_LIMIT_IN_SECONDS,
     SHORT_TIMEOUT_IN_SECONDS,
-    SLOW,
     answer_slowly,
     assert_failed_naming_the_lost_client,
     crash,
@@ -27,7 +27,7 @@ from integration_tests.test_data.server_client.lost_client_setup import (
 @pytest.fixture(autouse=True)
 def _short_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("_STEP_RESPONSE_TIMEOUT_IN_SECONDS", "_START_RESPONSE_TIMEOUT_IN_SECONDS", "_RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS"):
-        monkeypatch.setattr(SimulationExecutor, name, SHORT_TIMEOUT_IN_SECONDS)
+        monkeypatch.setattr(target=SimulationExecutor, name=name, value=SHORT_TIMEOUT_IN_SECONDS)
 
 
 def test_client_lost_mid_step_fails_the_run(communication_protocol: CommunicationProtocol) -> None:
@@ -80,9 +80,10 @@ def test_client_lost_during_restore_fails_the_run(communication_protocol: Commun
 
 def test_slow_client_does_not_fail_the_run(communication_protocol: CommunicationProtocol) -> None:
     port = get_free_port()
-    server_run = start_server(two_client_server(protocol=communication_protocol, port=port, second_client_id=SLOW))
+    slow_client_id = ClientID(model_name="slow_model", simulator_name="slow_simulator")
+    server_run = start_server(two_client_server(protocol=communication_protocol, port=port, second_client_id=slow_client_id))
     new_client(protocol=communication_protocol, port=port, client_id=HEALTHY).start()
-    new_client(protocol=communication_protocol, port=port, client_id=SLOW, on_step=answer_slowly).start()
+    new_client(protocol=communication_protocol, port=port, client_id=slow_client_id, on_step=answer_slowly).start()
 
     server_run.assert_ends_within(limit_in_seconds=RUN_LIMIT_IN_SECONDS)
     assert server_run.error is None

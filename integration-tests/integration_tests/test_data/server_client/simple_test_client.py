@@ -39,6 +39,7 @@ class SimpleTestClient(Client):
         model_name: str = "TestModel",
         simulator_name: str = "TestSimulator",
         interface_config: ClientInterfaceConfig = ClientInterfaceConfig(interfaces=[]),
+        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = answer_start,
     ) -> SimpleTestClient:
         return SimpleTestClient(
             client_config=TestClientConfig(
@@ -50,6 +51,7 @@ class SimpleTestClient(Client):
                 communication_protocol=communication_protocol,
             ),
             on_simulation_step_return=on_simulation_step_return,
+            on_simulation_start_return=on_simulation_start_return,
         )
 
     @staticmethod

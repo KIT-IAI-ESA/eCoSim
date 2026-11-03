@@ -1,9 +1,9 @@
 import pytest
 from ecosim_common.communication.message_type import MessageType
+from ecosim_common.config.client_id import ClientID
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from tests.simulation.simulation_executor_test_setup import (
     CLIENT_ID,
-    SECOND_CLIENT_ID,
     answer_after,
     error_of_bounded_run,
     executor_with_client,
@@ -13,8 +13,6 @@ from tests.simulation.simulation_executor_test_setup import (
 )
 
 _SHORT_TIMEOUT_IN_SECONDS = 0.1
-_RESTORE_LIMIT_IN_SECONDS = 3.0
-_GAP_BETWEEN_ANSWERS_IN_SECONDS = 2.0
 
 
 @pytest.fixture
@@ -23,7 +21,7 @@ def short_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
         "_STEP_RESPONSE_TIMEOUT_IN_SECONDS",
         "_RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS",
     ):
-        monkeypatch.setattr(SimulationExecutor, name, _SHORT_TIMEOUT_IN_SECONDS)
+        monkeypatch.setattr(target=SimulationExecutor, name=name, value=_SHORT_TIMEOUT_IN_SECONDS)
 
 
 def _assert_names_the_client(error: Exception | None) -> None:
@@ -40,7 +38,9 @@ def test_step_timeout_with_a_lost_client_fails_the_run() -> None:
 
 @pytest.mark.usefixtures("short_timeouts")
 def test_slow_client_is_waited_for_and_not_pinged() -> None:
-    executor, fake_client = executor_with_client(reactions={MessageType.SIMULATION_STEP: answer_after(_SHORT_TIMEOUT_IN_SECONDS * 5)})
+    executor, fake_client = executor_with_client(
+        reactions={MessageType.SIMULATION_STEP: answer_after(delay_in_seconds=_SHORT_TIMEOUT_IN_SECONDS * 5)},
+    )
 
     assert error_of_bounded_run(executor) is None
     assert MessageType.SIMULATION_STEP in fake_client.answered_types
@@ -81,7 +81,7 @@ def test_failed_restore_send_fails_the_run_without_waiting_for_the_timeout() -> 
 @pytest.mark.usefixtures("short_timeouts")
 def test_slow_restore_of_a_connected_client_is_waited_for() -> None:
     executor, fake_client = executor_with_client(
-        reactions={MessageType.SIMULATION_STEP_BATCH: answer_after(_SHORT_TIMEOUT_IN_SECONDS * 5)},
+        reactions={MessageType.SIMULATION_STEP_BATCH: answer_after(delay_in_seconds=_SHORT_TIMEOUT_IN_SECONDS * 5)},
         restore=True,
     )
 
@@ -91,7 +91,7 @@ def test_slow_restore_of_a_connected_client_is_waited_for() -> None:
 
 @pytest.mark.usefixtures("short_timeouts")
 def test_restore_of_a_connected_client_still_ends_at_the_restore_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(SimulationExecutor, "_RESTORE_RESPONSE_TIMEOUT_IN_SECONDS", _SHORT_TIMEOUT_IN_SECONDS * 3)
+    monkeypatch.setattr(target=SimulationExecutor, name="_RESTORE_RESPONSE_TIMEOUT_IN_SECONDS", value=_SHORT_TIMEOUT_IN_SECONDS * 3)
     executor, _ = executor_with_client(reactions={MessageType.SIMULATION_STEP_BATCH: lambda _client, _message: None}, restore=True)
 
     error = error_of_bounded_run(executor)
@@ -103,11 +103,14 @@ def test_restore_of_a_connected_client_still_ends_at_the_restore_timeout(monkeyp
 @pytest.mark.usefixtures("short_timeouts")
 def test_restore_limit_restarts_after_each_response(monkeypatch: pytest.MonkeyPatch) -> None:
     """Both gaps between the answers are under the limit, while the total is over it."""
-    monkeypatch.setattr(SimulationExecutor, "_RESTORE_RESPONSE_TIMEOUT_IN_SECONDS", _RESTORE_LIMIT_IN_SECONDS)
+    restore_limit_in_seconds = 3.0
+    gap_between_answers_in_seconds = 2.0
+    second_client_id = ClientID(model_name="second_model", simulator_name="simulator")
+    monkeypatch.setattr(target=SimulationExecutor, name="_RESTORE_RESPONSE_TIMEOUT_IN_SECONDS", value=restore_limit_in_seconds)
     executor, fake_clients = executor_with_clients(
         reactions_by_client={
-            CLIENT_ID: {MessageType.SIMULATION_STEP_BATCH: answer_after(_GAP_BETWEEN_ANSWERS_IN_SECONDS)},
-            SECOND_CLIENT_ID: {MessageType.SIMULATION_STEP_BATCH: answer_after(_GAP_BETWEEN_ANSWERS_IN_SECONDS * 2)},
+            CLIENT_ID: {MessageType.SIMULATION_STEP_BATCH: answer_after(delay_in_seconds=gap_between_answers_in_seconds)},
+            second_client_id: {MessageType.SIMULATION_STEP_BATCH: answer_after(delay_in_seconds=gap_between_answers_in_seconds * 2)},
         },
         restore=True,
     )

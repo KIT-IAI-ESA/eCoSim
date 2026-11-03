@@ -27,8 +27,6 @@ from tests.data.generate_server_config import generate_server_config
 from tests.simulation.history_test_setup import RecordingRepositories, values
 
 CLIENT_ID = ClientID(model_name="model", simulator_name="simulator")
-SECOND_CLIENT_ID = ClientID(model_name="second_model", simulator_name="simulator")
-RUN_LIMIT_IN_SECONDS = 10.0
 _START_DATE = datetime(year=2025, month=1, day=1)
 
 MessageReaction = Callable[["FakeClient", ESPChannelMessage], None]
@@ -64,6 +62,15 @@ class FakeClient:
     reactions: dict[MessageType, MessageReaction]
     received_types: List[MessageType] = field(default_factory=list)
     answered_types: List[MessageType] = field(default_factory=list)
+
+    def connect(self) -> None:
+        channel = MagicMock(spec=ESPChannel)
+        channel.send.side_effect = self.on_send
+        self.communication.add_if_needed(
+            client_config=ClientMetaData(version="1", simulator_name=self.client_id.simulator_name, model_name=self.client_id.model_name),
+            connection=ClientConnection(_channel=channel, address=ConnectionAddress(ip="127.0.0.1", port=1)),
+        )
+        self.communication.set_client_ready_for_simulation(client_id=self.client_id)
 
     def on_send(self, message: ESPChannelMessage) -> None:
         self.received_types.append(message.type())
@@ -107,7 +114,7 @@ def executor_with_clients(
         FakeClient(client_id=client_id, communication=communication, reactions=reactions) for client_id, reactions in reactions_by_client.items()
     ]
     for fake_client in fake_clients:
-        _connect(fake_client)
+        fake_client.connect()
     executor = SimulationExecutor(
         simulation_config=simulation_config,
         server_config=server_config,
@@ -127,18 +134,8 @@ def executor_with_client(
     return executor, fake_clients[0]
 
 
-def _connect(fake_client: FakeClient) -> None:
-    channel = MagicMock(spec=ESPChannel)
-    channel.send.side_effect = fake_client.on_send
-    fake_client.communication.add_if_needed(
-        client_config=ClientMetaData(version="1", simulator_name=fake_client.client_id.simulator_name, model_name=fake_client.client_id.model_name),
-        connection=ClientConnection(_channel=channel, address=ConnectionAddress(ip="127.0.0.1", port=1)),
-    )
-    fake_client.communication.set_client_ready_for_simulation(fake_client.client_id)
-
-
 def error_of_bounded_run(executor: SimulationExecutor) -> Exception | None:
     run = ErrorRecordingThread(target=partial(executor.execute, rendering_socket=None))
     run.start()
-    run.assert_ends_within(limit_in_seconds=RUN_LIMIT_IN_SECONDS)
+    run.assert_ends_within(limit_in_seconds=10.0)
     return run.error
