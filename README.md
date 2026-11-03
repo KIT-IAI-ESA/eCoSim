@@ -93,6 +93,7 @@ To work on eCoSim itself, start with the project setup.
 - [Dependencies](docs/content/development/dependencies.md)
 - [Adding a subproject](docs/content/development/adding-a-subproject.md)
 - [Coding guidelines](docs/content/development/coding-guidelines.md)
+- [Development tips](docs/content/development/tips.md)
 - [Release history](docs/content/development/release-history.md)
 
 ## Credits
