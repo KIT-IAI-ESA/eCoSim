@@ -4,7 +4,6 @@ import time
 from typing import Callable, NoReturn
 
 from ecosim_common.client.client import Client
-from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
@@ -12,15 +11,13 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
-from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient, TestClientConfig, answer_start
+from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient, answer_start
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer, SimpleTestServerParameters, generate_simple_test_server
 
 HEALTHY = ClientID(model_name="healthy_model", simulator_name="healthy_simulator")
 LOST = ClientID(model_name="lost_model", simulator_name="lost_simulator")
-SLOW = ClientID(model_name="slow_model", simulator_name="slow_simulator")
 RUN_LIMIT_IN_SECONDS = 30
 SHORT_TIMEOUT_IN_SECONDS = 1
-_SLOW_ANSWER_IN_SECONDS = SHORT_TIMEOUT_IN_SECONDS * 1.5
 _HOST = "localhost"
 
 Inputs = dict[InterfaceId, InterfaceValue]
@@ -57,7 +54,7 @@ def answer(_client: SimpleTestClient, _inputs: Inputs, _step_size: float) -> Cli
 
 
 def answer_slowly(_client: SimpleTestClient, _inputs: Inputs, _step_size: float) -> ClientSimStepData:
-    time.sleep(_SLOW_ANSWER_IN_SECONDS)
+    time.sleep(SHORT_TIMEOUT_IN_SECONDS * 1.5)
     return ClientSimStepData(interface_values=[])
 
 
@@ -89,12 +86,12 @@ def new_client(
     on_step: StepHandler = answer,
     on_start: StartHandler = answer_start,
 ) -> SimpleTestClient:
-    config = TestClientConfig(
+    return SimpleTestClient.generate(
+        communication_protocol=protocol,
         server_host=_HOST,
         server_port=port,
-        simulator_name=client_id.simulator_name,
+        on_simulation_step_return=on_step,
         model_name=client_id.model_name,
-        interface_config=ClientInterfaceConfig(interfaces=[]),
-        communication_protocol=protocol,
+        simulator_name=client_id.simulator_name,
+        on_simulation_start_return=on_start,
     )
-    return SimpleTestClient(client_config=config, on_simulation_step_return=on_step, on_simulation_start_return=on_start)
