@@ -12,7 +12,6 @@ from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 def test_send_raises_when_the_message_cannot_be_delivered(monkeypatch: pytest.MonkeyPatch) -> None:
     peer_inbox = MagicMock()
     peer_inbox.put.side_effect = ConnectionError("scheduler is gone")
-    monkeypatch.setattr(DaskChannel, "_peer_inbox", lambda _channel: peer_inbox)
     channel = DaskChannel(
         _connection_address=ConnectionAddress(ip="localhost", port=1),
         _is_finished=ParallelEvent.thread(),
@@ -20,6 +19,7 @@ def test_send_raises_when_the_message_cannot_be_delivered(monkeypatch: pytest.Mo
         _closed=ParallelEvent.thread(),
         _connected=ParallelEvent.thread(init_set=True),
     )
+    monkeypatch.setattr(target=channel, name="_peer_inbox_queue", value=peer_inbox)
 
     with pytest.raises(ConnectionError, match="scheduler is gone"):
         channel.send(ESPChannelMessageJson.empty(type=MessageType.PING))
