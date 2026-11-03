@@ -9,29 +9,26 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.port_utils import get_free_port
+from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
-_SHORT_RECEIVE_RETRY_INTERVAL_IN_SECONDS = 1
-_STEP_IN_SECONDS = 3
-_STEPS = 2
-_RUN_BOUND_IN_SECONDS = 60
-
 
 def _shorten_receive_retry_interval() -> None:
-    DaskChannel._RECEIVE_RETRY_INTERVAL_IN_SECONDS = _SHORT_RECEIVE_RETRY_INTERVAL_IN_SECONDS  # noqa: SLF001
+    DaskChannel._RECEIVE_RETRY_INTERVAL_IN_SECONDS = SHORT_TIMEOUT_IN_SECONDS  # noqa: SLF001
 
 
 def _slow_step(_client: SimpleTestClient, _received_inputs: dict[InterfaceId, InterfaceValue], _step_size: float) -> ClientSimStepData:
-    sleep(_STEP_IN_SECONDS)
+    sleep(3)
     return ClientSimStepData(interface_values=[])
 
 
 def test_a_step_longer_than_the_receive_retry_interval_does_not_end_the_run(dask_client: dd.Client, monkeypatch: pytest.MonkeyPatch) -> None:
     # the server reads its connections on the workers and the client reads here
     dask_client.run(_shorten_receive_retry_interval)
-    monkeypatch.setattr(DaskChannel, "_RECEIVE_RETRY_INTERVAL_IN_SECONDS", _SHORT_RECEIVE_RETRY_INTERVAL_IN_SECONDS)
+    monkeypatch.setattr(DaskChannel, "_RECEIVE_RETRY_INTERVAL_IN_SECONDS", SHORT_TIMEOUT_IN_SECONDS)
+    steps = 2
     server_host = "localhost"
     server_port = get_free_port()
     server = generate_simple_test_server(
@@ -39,7 +36,7 @@ def test_a_step_longer_than_the_receive_retry_interval_does_not_end_the_run(dask
             communication_protocol=CommunicationProtocol.DASK,
             host=server_host,
             port=server_port,
-            steps=_STEPS,
+            steps=steps,
         ),
     )
     client = SimpleTestClient.generate(
@@ -52,9 +49,9 @@ def test_a_step_longer_than_the_receive_retry_interval_does_not_end_the_run(dask
     server_thread = threading.Thread(target=server.start, daemon=True)
     server_thread.start()
     client.start()
-    server_thread.join(timeout=_RUN_BOUND_IN_SECONDS)
+    server_thread.join(timeout=60)
 
     assert not server_thread.is_alive(), "the run did not finish"
     measurement_repository = server.measurement_repository(client_id=client.client_id)
     assert isinstance(measurement_repository, MeasurementRepositoryInMemory)
-    measurement_repository.assert_entry_count(_STEPS)
+    measurement_repository.assert_entry_count(entry_count=steps)
