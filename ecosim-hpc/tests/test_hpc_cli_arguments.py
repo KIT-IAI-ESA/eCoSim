@@ -59,7 +59,6 @@ def test_absolute_scheduler_file_overrides_the_call_path(
 
 
 def test_scheduler_file_can_be_in_a_directory_named_test(
-    remove_pytest_variables: None,
     command_line: ESPMonkeyPatch,
 ) -> None:
     command_line.set_sys_arg("--scheduler-file", "test/scheduler.json")

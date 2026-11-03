@@ -31,8 +31,6 @@ class AppConfig(object):
             environment_variables = dict(os.environ)
         if passed_arguments is None:
             passed_arguments = sys.argv[1:]
-        elif "PYTEST_CURRENT_TEST" in os.environ:
-            passed_arguments = AppConfig.clean_test_arguments(passed_arguments)  # not an ideal solution but it works for now
         self._parser = argparse.ArgumentParser(description=cli_description)
         for parameter in parameters:
             if parameter.is_flag is False:
@@ -88,10 +86,6 @@ class AppConfig(object):
             default=default_value,
             action="store_true",
         )
-
-    @staticmethod
-    def clean_test_arguments(passed_arguments: List[Any]) -> List[Any]:
-        return [arg for arg in passed_arguments if type(arg) is not str or (not arg.startswith("test/") and arg != "--jb-swapdiff")]
 
 
 @dataclass

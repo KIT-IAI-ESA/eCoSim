@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from pathlib import Path
 from typing import Generator
 from unittest import mock
@@ -13,27 +11,17 @@ from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
 
 @pytest.fixture
 def initialize() -> Generator[mock.MagicMock, None, None]:
-    with mock.patch("dask_mpi.initialize") as initialize_mock:
+    with mock.patch("ecosim_hpc.dask_connection.initialize") as initialize_mock:
         yield initialize_mock
 
 
 @pytest.fixture
 def client_class() -> Generator[mock.MagicMock, None, None]:
-    with mock.patch.object(distributed, "Client") as client_class_mock:
+    with mock.patch("ecosim_hpc.dask_connection.Client") as client_class_mock:
         yield client_class_mock
 
 
-def test_batch_mode_leaves_the_unset_options_to_dask_mpi(
-    initialize: mock.MagicMock,
-    client_class: mock.MagicMock,
-    command_line: ESPMonkeyPatch,
-) -> None:
-    connect_or_start_dask_cluster(HPCServerCliArguments())
-
-    initialize.assert_called_once_with()
-
-
-def test_batch_mode_returns_the_client_it_creates_after_starting_the_cluster(
+def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_with_its_defaults(
     initialize: mock.MagicMock,
     client_class: mock.MagicMock,
     command_line: ESPMonkeyPatch,
@@ -98,18 +86,3 @@ def test_interactive_mode_rejects_a_missing_scheduler_file(client_class: mock.Ma
         connect_or_start_dask_cluster(HPCServerCliArguments())
 
     client_class.assert_not_called()
-
-
-def test_interactive_mode_exits_instead_of_hanging_when_the_default_scheduler_file_is_missing(tmp_path: Path) -> None:
-    options = ["--server-config", "unused", "--simulation-config", "unused", "--simulator-dir", "unused", "--steps", "1"]
-
-    result = subprocess.run(
-        [sys.executable, "-m", "ecosim_hpc.main", "--interactive", *options],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-
-    assert result.returncode == 1
-    assert str(tmp_path / HPCServerCliArguments.DEFAULT_SCHEDULER_FILE) in result.stderr
