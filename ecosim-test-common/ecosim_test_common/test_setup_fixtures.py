@@ -29,7 +29,7 @@ def remove_pytest_live_logger() -> None:
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_shutdown_manager() -> Generator[None, Any, None]:
-    # the manager picks its event on creation: do it before the dask client, as a dask event fails once its client is closed
+    # created before the dask client, so its event still works after a test closes that client
     ShutdownManager()
     yield None
     try:

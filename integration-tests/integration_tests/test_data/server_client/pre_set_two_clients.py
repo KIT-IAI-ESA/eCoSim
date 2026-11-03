@@ -79,12 +79,6 @@ class PreSetTwoClientsData:
     def step_size_in_seconds(self) -> float:
         return self.step_size_in_ms / 1000
 
-    def start_server_async(self) -> threading.Thread:
-        server_thread = threading.Thread(target=self.server.start)
-        server_thread.daemon = True
-        server_thread.start()
-        return server_thread
-
     def start_server_and_wait_for_all_clients_connected_and_ready(self) -> threading.Thread:
         server_thread = threading.Thread(target=self.server.start_and_wait_for_all_clients_connected_and_ready)
         server_thread.daemon = True

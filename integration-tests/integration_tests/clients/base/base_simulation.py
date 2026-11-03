@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -59,12 +58,10 @@ class BaseSimulation:
         )
 
     def run(self, timeout_in_seconds: float = 60) -> None:
-        server_thread = threading.Thread(target=self.server.start, daemon=True)
-        server_thread.start()
+        self.server.start_in_thread()
         self.client.start()
         self.driver.start()
-        server_thread.join(timeout_in_seconds)
-        assert not server_thread.is_alive(), f"The simulation did not finish within {timeout_in_seconds}s"
+        self.server.assert_finishing_in_time(timeout_in_seconds=timeout_in_seconds)
 
     def client_measurements(self) -> ClientMeasurementRecords:
         repository = self.server.measurement_repository(self.client.client_id)
