@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import threading
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Callable, cast, override
+from typing import Any, Callable, Iterator, cast, override
 
 import dask.distributed as distributed
 
@@ -99,16 +100,27 @@ class DaskChannel(ESPChannel, ShutdownListener):
 
     @override
     def close(self) -> None:
-        self._is_finished.set()
         DaskChannel._logger.debug("Closing connections to Dask client %s...", self._connection_address)
         if not self._is_internal_dask_client_running():
             DaskChannel._logger.warning("Dask client is not running: %s. So nothing is done", self._connection_address)
             return
+        with self._tolerating_a_lost_scheduler():
+            self._close_on_scheduler()
+
+    def _close_on_scheduler(self) -> None:
+        self._is_finished.set()
         if self._started_listening:
             self._channel_registry().stop_listening()
         if self._connected.is_set():
             self._signal_close()
         DaskChannel._logger.info("Connection to Dask client %s closed.", self._connection_address)
+
+    @contextmanager
+    def _tolerating_a_lost_scheduler(self) -> Iterator[None]:
+        try:
+            yield
+        except OSError as error:
+            DaskChannel._logger.warning("Lost the Dask scheduler, so the channel to %s cannot close: %s", self._connection_address, error)
 
     def _signal_close(self) -> None:
         """
@@ -170,12 +182,12 @@ class DaskChannel(ESPChannel, ShutdownListener):
             self._stop_listening_and_close()
 
     def _stop_listening_and_close(self) -> None:
-        try:
+        if not self._is_internal_dask_client_running():
+            self.close()
+            return
+        with self._tolerating_a_lost_scheduler():
             self._is_listening.clear()
             self.close()
-        except Exception:
-            # the events live on the scheduler, so without it nothing is left to close
-            DaskChannel._logger.exception("Could not close the channel on %s", self._inbox_name())
 
     @override
     def wait_for_finish(

@@ -1,6 +1,9 @@
+import threading
 import time
 from dataclasses import dataclass, field
-from typing import ClassVar
+from typing import ClassVar, override
+
+import dask.distributed as distributed
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
@@ -12,7 +15,6 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 
 ADDRESS = ConnectionAddress(ip="127.0.0.1", port=1234)
-SHORT_TIMEOUT_IN_SECONDS = 1
 
 
 @dataclass
@@ -34,6 +36,13 @@ class SlowEchoHandler:
     def __call__(self, message: ESPChannelMessage) -> None:
         time.sleep(self.delay_in_seconds)
         self.channel.send(message)
+
+
+@dataclass(frozen=True)
+class LostSchedulerEvent(ParallelEvent):
+    @override
+    def _event(self) -> threading.Event | distributed.Event:
+        raise OSError("the Dask scheduler is lost")
 
 
 def simple_message() -> ESPChannelMessage:
