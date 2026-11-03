@@ -1,7 +1,6 @@
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 from integration_tests.test_data.server_client.pre_set_two_clients_fixture import create_pre_set_two_clients
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer
 
 
@@ -52,10 +51,10 @@ def _run_with_completed_steps(
         )
     for step in range(client_2_completed_steps):
         pre_set_two_clients.add_client_2_measurement(step=step, output_value=pre_set_two_clients.client_2_output_value_at_step(step))
-    server_thread = pre_set_two_clients.start_server_async()
+    pre_set_two_clients.server.start_in_thread()
     pre_set_two_clients.start_client_1_async()
     pre_set_two_clients.start_client_2_async()
-    assert_server_finishes_in_time(server_thread)
+    pre_set_two_clients.server.assert_finishing_in_time()
     pre_set_two_clients.server.print_measurement_statistics()
     pre_set_two_clients.verify_successful_run()
     return pre_set_two_clients.server

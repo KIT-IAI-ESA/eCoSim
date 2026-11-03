@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from datetime import datetime
 from typing import List
 
@@ -11,7 +10,6 @@ from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.simulation.state.simulation_state import SimulationState
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -36,11 +34,10 @@ def test_the_predefined_client_server_run_is_stored_by_every_repository(
     server = _server(database_config, communication_protocol, client_data, server_port)
     client = _client(communication_protocol, server_port, client_data)
 
-    server_thread = threading.Thread(target=server.start, daemon=True)
-    server_thread.start()
+    server.start_in_thread()
     client.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
     _assert_measurements_of(server, client_data)
     assert server.simulation_state_repository().current() is SimulationState.FINISHED
 

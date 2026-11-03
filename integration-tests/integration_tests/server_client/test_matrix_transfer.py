@@ -1,4 +1,3 @@
-import threading
 from datetime import datetime
 from decimal import Decimal
 from typing import Tuple, cast
@@ -18,7 +17,6 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -195,14 +193,12 @@ def run_matrix_transfer(communication_protocol: CommunicationProtocol) -> Simple
         on_simulation_step_return=handle_client_2_sim_step,
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     client_1.start()
     client_2.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
     server.print_measurement_statistics()
 
     client_1_measurement_repository = server.measurement_repository(client_id=client_1.client_id)

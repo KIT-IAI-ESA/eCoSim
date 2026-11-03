@@ -1,4 +1,3 @@
-import threading
 from datetime import datetime
 from typing import Tuple
 
@@ -7,7 +6,6 @@ from ecosim_common.communication.data.client_sim_step_data import ClientSimStepD
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.tech.port_utils import get_free_port
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from integration_tests.test_data.server_client.server_thread import assert_server_finishes_in_time
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServer,
@@ -58,13 +56,11 @@ def run_client_server_single(communication_protocol: CommunicationProtocol) -> S
         ),
     )
 
-    server_thread = threading.Thread(target=server.start)
-    server_thread.daemon = True
-    server_thread.start()
+    server.start_in_thread()
 
     client.start()
 
-    assert_server_finishes_in_time(server_thread)
+    server.assert_finishing_in_time()
     server.print_measurement_statistics()
 
     client_measurement_repository = server.measurement_repository(client_id=client.client_id)
