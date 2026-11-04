@@ -87,10 +87,10 @@ class ServerTimeMeasurement:
     def _run_time_in_seconds(
         self,
         type: ServerTimeMeasurementType,
-    ) -> int:
+    ) -> float:
         start_time = self._start_times[type]
         end_time = self._end_times[type]
-        return int((end_time - start_time).total_seconds())
+        return (end_time - start_time).total_seconds()
 
     def was_measured(
         self,
@@ -111,12 +111,21 @@ class ServerTimeMeasurement:
             run_time_in_seconds=self._run_time_in_seconds(type),
         )
 
+    def get_runtime_in_seconds(
+        self,
+        type: ServerTimeMeasurementType,
+    ) -> float | None:
+        measurement = self.get_or_none(type)
+        if measurement is None:
+            return None
+        return measurement.run_time_in_seconds
+
     @dataclass(frozen=True)
     class Entry:
         type: ServerTimeMeasurementType
         start_time: datetime
         end_time: datetime
-        run_time_in_seconds: int
+        run_time_in_seconds: float
 
 
 @unique
