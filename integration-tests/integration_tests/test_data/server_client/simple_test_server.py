@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
-from ecosim_server.config.simulation_config import ClientSimulatorConfig, LogicalDelay, SimulationConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
+
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
+from integration_tests.test_data.server_client.simple_test_server_parameters import SimpleTestServerParameters
 
 
 @dataclass
@@ -43,51 +44,6 @@ class SimpleTestServer(Server):
 
     def communication_protocol(self) -> CommunicationProtocol:
         return self._server_config.server.communication_protocol  # noqa: SLF001
-
-
-@dataclass
-class SimpleTestServerParameters:
-    communication_protocol: CommunicationProtocol
-    host: str
-    port: int
-    pace: float = field(default=1.0)
-    steps: int = field(default=100)
-    step_size_in_ms: int = field(default=1_000)
-    simulation_start_date: datetime = field(
-        default_factory=lambda: datetime(
-            year=2025,
-            month=1,
-            day=1,
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-        ),
-    )
-    clients: List[ClientSimulatorConfig] | None = field(default=None)
-    database_config: DatabaseConfig | None = field(default=None)
-    restore_simulation_run: bool = field(default=False)
-    logical_delays: List[LogicalDelay] = field(default_factory=list)
-
-    @staticmethod
-    def of_simulation_config(
-        communication_protocol: CommunicationProtocol,
-        host: str,
-        port: int,
-        simulation_config: SimulationConfig,
-    ) -> SimpleTestServerParameters:
-        return SimpleTestServerParameters(
-            communication_protocol=communication_protocol,
-            host=host,
-            port=port,
-            pace=simulation_config.pace,
-            steps=simulation_config.steps,
-            step_size_in_ms=simulation_config.step_size_in_ms,
-            simulation_start_date=simulation_config.start_date,
-            clients=simulation_config.clients,
-            restore_simulation_run=simulation_config.restore,
-            logical_delays=simulation_config.logical_delays,
-        )
 
 
 def generate_simple_test_server(parameters: SimpleTestServerParameters) -> SimpleTestServer:
