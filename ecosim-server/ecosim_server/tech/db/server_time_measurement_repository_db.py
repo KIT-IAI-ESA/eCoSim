@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, override
 
+from sqlalchemy import Column, DateTime, Enum, Integer
+
 from ecosim_server.data.server_statistics_repository import ServerTimeMeasurementRepository
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.db_types import DTO
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
-from sqlalchemy import Column, DateTime, Enum, Integer
 
 
 class ServerTimeMeasurementRepositoryDB(ServerTimeMeasurementRepository):
@@ -82,5 +83,5 @@ class ServerTimeMeasurementDBEntry(SimControlDB_Base, DTO[ServerTimeMeasurementT
             time_measurement_type=time_measurement.type,
             start_time=time_measurement.start_time,
             end_time=time_measurement.end_time,
-            run_time_in_seconds=time_measurement.run_time_in_seconds,
+            run_time_in_seconds=int(time_measurement.run_time_in_seconds),
         )
