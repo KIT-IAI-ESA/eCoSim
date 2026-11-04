@@ -7,6 +7,8 @@ from enum import Enum
 from types import UnionType
 from typing import Any, ClassVar, Protocol, Union, get_args, get_origin, get_type_hints
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
+
 _DATE_TIME_TYPES = (datetime.datetime, datetime.date, datetime.time)
 
 
@@ -26,6 +28,8 @@ class DataclassJsonConverter:
     @staticmethod
     def _json_default_converter(value: Any) -> Any:
         """Converts the values that 'json.dumps' cannot serialize on its own."""
+        if isinstance(value, CommunicationProtocol):
+            return value.serialized
         if isinstance(value, Enum):
             return value.value
         if isinstance(value, _DATE_TIME_TYPES):
@@ -62,6 +66,8 @@ class DataclassJsonConverter:
             return container_type(DataclassJsonConverter._of_value(get_args(value_type)[0], element) for element in value)
         if isinstance(value_type, type) and dataclasses.is_dataclass(value_type):
             return DataclassJsonConverter.of_dictionary(value_type, value)
+        if isinstance(value_type, type) and issubclass(value_type, CommunicationProtocol):
+            return CommunicationProtocol.of(value)
         if isinstance(value_type, type) and issubclass(value_type, Enum):
             return value_type(value)
         if value_type in _DATE_TIME_TYPES:

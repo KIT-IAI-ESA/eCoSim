@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Set, Tuple
 
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.json.dataclass_json_converter import DataclassJsonConverter
 
 TIMESTAMP = datetime.datetime(2026, 8, 26, 10, 0, 0, tzinfo=datetime.timezone.utc)
@@ -52,6 +53,11 @@ class SetEntry:
 @dataclass
 class OptionalEntry:
     timestamp: datetime.datetime | None = None
+
+
+@dataclass
+class ProtocolEntry:
+    protocol: CommunicationProtocol
 
 
 def create_entry() -> Entry:
