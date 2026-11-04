@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import pytest
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.json.dataclass_json_converter import DataclassJsonConverter
+
 from tests.tech.json.json_converter_test_setup import (
     TIMESTAMP,
     Entry,
     FlatEntry,
     OptionalEntry,
+    ProtocolEntry,
     Quality,
     Reading,
     SetEntry,
@@ -47,6 +50,10 @@ def test_writing_a_value_that_json_does_not_support_fails() -> None:
         DataclassJsonConverter.to_json_string(SetEntry(values={"house"}))
 
 
+def test_a_communication_protocol_is_written_as_its_serialized_name() -> None:
+    assert to_json_string_then_json_loads(ProtocolEntry(protocol=CommunicationProtocol.TCP_SOCKET)) == {"protocol": "tcp_socket"}
+
+
 # --- reading a dataclass back ---
 
 
@@ -82,6 +89,12 @@ def test_a_datetime_field_is_restored_as_a_datetime() -> None:
 
 def test_an_enum_field_is_restored_as_an_enum() -> None:
     assert round_tripped_to_and_of_json_string(Entry, create_entry()).quality is Quality.GOOD
+
+
+def test_a_communication_protocol_field_is_restored_as_a_communication_protocol(communication_protocol: CommunicationProtocol) -> None:
+    restored = round_tripped_to_and_of_json_string(ProtocolEntry, ProtocolEntry(protocol=communication_protocol))
+
+    assert restored.protocol is communication_protocol
 
 
 def test_a_nested_dataclass_field_is_restored_as_a_dataclass() -> None:
