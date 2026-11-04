@@ -68,13 +68,18 @@ class PerformanceRepository(FileRepository[PerformanceResult]):
         measurement: ServerTimeMeasurement,
         test_name: str,
         total_time: float,
-    ) -> None:
+    ) -> PerformanceResult:
         entry = self._create_result(
             measurement=measurement,
             test_name=test_name,
             total_time=total_time,
         )
         self.add(entry)
+        return entry
+
+    def latest_of(self, test_name: str) -> PerformanceResult | None:
+        results = [result for result in self.all() if result.test_name == test_name]
+        return max(results, key=lambda result: result.date, default=None)
 
     def _create_result(
         self,
