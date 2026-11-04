@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
+
 from integration_tests.server_client.performance.tooling.performance_repository import PerformanceRepository
 
 
@@ -36,3 +37,13 @@ def test_write_stores_the_measurement_with_protocol_and_machine_of_the_file(tmp_
     assert (result.communication_protocol, result.machine) == (CommunicationProtocol.DASK, "local_my_laptop")
     assert result.execution_time_in_seconds is not None
     assert result.start_time_in_seconds is None
+
+
+def test_the_latest_result_of_a_test_is_the_latest_one_added(tmp_path: Path) -> None:
+    repository = PerformanceRepository.of(tmp_path / f"2026-11-04_090507_{CommunicationProtocol.DASK.serialized}_local_my_laptop.jsonl")
+    for test_name in ("test_a", "test_a", "test_b"):
+        repository.write(measurement=ServerTimeMeasurement(protocol=CommunicationProtocol.TCP_SOCKET), test_name=test_name, total_time=1.0)
+    latest_test_a = repository.all()[1]
+
+    assert repository.latest_of("test_a") == latest_test_a
+    assert repository.latest_of("test_c") is None
