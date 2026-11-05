@@ -41,7 +41,7 @@ class PerformanceStatistics:
     def grouped_for_output(self) -> Dict[str, List[str]]:
         values: Dict[str, List[str]] = {}
         for statistic in self.statistics:
-            values.setdefault(f"{statistic.test_name} ({statistic.communication_protocol.serialized})", []).append(statistic.describe())
+            values.setdefault(f"{statistic.test_name} ({statistic.communication_protocol.serialized})", []).append(statistic.describe_with_result())
         return values
 
     def as_table(self) -> List[str]:
