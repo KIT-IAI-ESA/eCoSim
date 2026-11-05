@@ -11,6 +11,7 @@ def create_statistic(expected: float | None, current: float | None) -> TimeStati
         measurement_name="total_time_in_seconds",
         expected=expected,
         current=current,
+        tolerance=0.2,
     )
 
 
