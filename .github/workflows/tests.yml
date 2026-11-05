@@ -81,10 +81,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
-      # the tests under locally/ need external models or an HPC environment
+      # the tests under locally/ need external models or an HPC environment;
+      # the performance tests run in performance-tests.yml (their tooling/ unit tests stay here)
       - name: Test
         working-directory: integration-tests
-        run: uv run --locked pytest --ignore=integration_tests/locally
+        run: >-
+          uv run --locked pytest --ignore=integration_tests/locally
+          --ignore-glob='integration_tests/server_client/performance/test_*.py'
       - uses: actions/upload-artifact@v7
         if: always()
         with:

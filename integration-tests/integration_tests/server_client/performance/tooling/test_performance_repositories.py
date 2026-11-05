@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from integration_tests.server_client.performance.tooling.performance_setup import current_machine
 
 from integration_tests.server_client.performance.tooling.performance_repositories import PerformanceRepositories
+from integration_tests.server_client.performance.tooling.performance_setup import current_machine
 from integration_tests.tech.files.create_files import create_files
 
 
@@ -44,10 +44,16 @@ def test_without_a_matching_file_there_is_no_current_repository(tmp_path: Path) 
     )
 
 
-def test_the_current_run_writes_to_one_repository_per_protocol_on_this_machine(tmp_path: Path) -> None:
+def test_the_current_run_uses_the_same_repository_for_everything(tmp_path: Path) -> None:
     repositories = PerformanceRepositories.create(tmp_path)
 
     repository = repositories.get_repository_for_current_run(CommunicationProtocol.DASK)
 
     assert repositories.get_repository_for_current_run(CommunicationProtocol.DASK) is repository
     assert (repository.communication_protocol, repository.machine_name) == (CommunicationProtocol.DASK, current_machine())
+
+
+def test_actual_and_expected_paths(tmp_path: Path) -> None:
+    repositories = PerformanceRepositories.create(tmp_path)
+    assert repositories._expected_folder == tmp_path  # noqa: SLF001
+    assert repositories._actual_folder == tmp_path / "actual"  # noqa: SLF001
