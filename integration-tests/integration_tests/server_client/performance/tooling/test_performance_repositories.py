@@ -47,9 +47,18 @@ def test_without_a_matching_file_there_is_no_current_repository(tmp_path: Path) 
 def test_the_current_run_uses_the_same_repository_for_everything(tmp_path: Path) -> None:
     repositories = PerformanceRepositories.create(tmp_path)
 
-    repository = repositories.get_repository_for_current_run(CommunicationProtocol.DASK)
+    repository = repositories.get_repository_for_current_run(
+        communication_protocol=CommunicationProtocol.DASK,
+        machine_name=current_machine(),
+    )
 
-    assert repositories.get_repository_for_current_run(CommunicationProtocol.DASK) is repository
+    assert (
+        repositories.get_repository_for_current_run(
+            communication_protocol=CommunicationProtocol.DASK,
+            machine_name=current_machine(),
+        )
+        is repository
+    )
     assert (repository.communication_protocol, repository.machine_name) == (CommunicationProtocol.DASK, current_machine())
 
 
@@ -66,3 +75,11 @@ def test_the_summary_file_of_the_current_run_is_next_to_its_results(tmp_path: Pa
     summary_path = repositories.summary_file_path("local_my_laptop")
 
     assert summary_path.parent == result_path.parent
+
+
+def test_the_summary_file_ends_with_the_correct_suffix(tmp_path: Path) -> None:
+    repositories = PerformanceRepositories.create(tmp_path)
+
+    summary_path = repositories.summary_file_path("local_my_laptop")
+
+    assert summary_path.name.endswith("_results.log")
