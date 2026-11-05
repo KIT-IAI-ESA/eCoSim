@@ -98,7 +98,7 @@ class PerformanceRepositories:
         )
 
     def summary_file_path(self, machine_name: str) -> Path:
-        return self._actual_folder / (f"{self.DATETIME_OF_TEST_RUN.strftime(FILE_NAME_DATE_TIME_FORMAT)}_{machine_name}.jsonl")
+        return self._actual_folder / (f"{self.DATETIME_OF_TEST_RUN.strftime(FILE_NAME_DATE_TIME_FORMAT)}_{machine_name}_results.log")
 
     @classmethod
     def _repositories_of_folder(cls, folder: Path) -> ESPMap[Path, PerformanceRepository]:
