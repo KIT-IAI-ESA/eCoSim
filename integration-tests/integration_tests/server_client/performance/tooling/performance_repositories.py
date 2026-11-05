@@ -10,7 +10,6 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
-from server_client.performance.tooling.performance_setup import is_local_machine
 
 from integration_tests.server_client.performance.tooling.performance_repository import PerformanceRepository
 from integration_tests.server_client.performance.tooling.performance_result import PerformanceResult
@@ -18,6 +17,7 @@ from integration_tests.server_client.performance.tooling.performance_run_statist
 from integration_tests.server_client.performance.tooling.performance_setup import (
     current_machine,
     fallback_machine_name_for_local_repository,
+    is_local_machine,
 )
 from integration_tests.server_client.performance.tooling.performance_statistics import PerformanceStatistics
 from integration_tests.tech.integration_test_resource_utils import performance_data_resource_path
