@@ -1,0 +1,1 @@
+{"test_name": "test_client_server_batch_steps", "start_time_in_seconds": 0.036259, "execution_time_in_seconds": 0.384144, "stop_time_in_seconds": 0.004274, "server_uptime_in_seconds": null, "total_time_in_seconds": 1.1713324709999995, "tags": [], "communication_protocol": "dask", "date": "2026-11-05T10:26:43.589085", "machine": "github_ci_default"}
