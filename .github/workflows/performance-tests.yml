@@ -1,0 +1,38 @@
+name: performance tests
+
+on:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  performance-tests:
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+      # the results are compared with the latest committed result of this machine
+      ECOSIM_PERFORMANCE_MACHINE: github_ci_default
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Sync
+        working-directory: integration-tests
+        run: uv sync --locked
+      - name: Test
+        run: uv run --no-project python dev/run_performance_tests.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: performance-tests
+          path: |
+            integration-tests/report.xml
+            integration-tests/integration_tests/resources/performance/actual/*_github_ci_default.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
