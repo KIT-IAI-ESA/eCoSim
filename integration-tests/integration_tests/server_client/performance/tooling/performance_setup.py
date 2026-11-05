@@ -32,6 +32,10 @@ def current_test_name() -> str | None:
     return current_test.split("::")[-1].split(" ")[0].split("[")[0]
 
 
+def is_local_machine(machine_name: str) -> bool:
+    return machine_name != GITHUB_CI_MACHINE and machine_name.startswith("local_")
+
+
 def primary_tolerance_for(machine_name: str) -> float:
     return CI_TOLERANCE_PRIMARY if machine_name == GITHUB_CI_MACHINE else LOCAL_TOLERANCE_PRIMARY
 
