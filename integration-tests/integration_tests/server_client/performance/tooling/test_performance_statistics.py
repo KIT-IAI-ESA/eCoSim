@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 from integration_tests.server_client.performance.tooling.performance_statistics import PerformanceStatistics
@@ -39,3 +41,14 @@ def test_statistics_can_be_combined() -> None:
 def test_empty_and_none_empty_behave_like_lists() -> None:
     assert not PerformanceStatistics.of([])
     assert PerformanceStatistics.of([create_statistic("total", 1.0, 1.0)])
+
+
+def test_the_summary_is_written_to_the_file(tmp_path: Path) -> None:
+    statistic = create_statistic("total_time_in_seconds", expected=2.0, current=2.5)
+    file_path = tmp_path / "actual" / "results.log"
+
+    PerformanceStatistics.of([statistic]).print_summary_to_log_and_file(file_path)
+
+    lines = file_path.read_text(encoding="utf-8")
+    assert "test_a" in lines
+    assert statistic.describe() in lines

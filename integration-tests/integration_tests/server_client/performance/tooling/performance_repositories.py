@@ -15,7 +15,7 @@ from integration_tests.server_client.performance.tooling.performance_repository 
 from integration_tests.server_client.performance.tooling.performance_result import PerformanceResult
 from integration_tests.server_client.performance.tooling.performance_run_statistics import add_performance_statistics
 from integration_tests.server_client.performance.tooling.performance_setup import (
-    current_machine,
+    FILE_NAME_DATE_TIME_FORMAT,
     fallback_machine_name_for_local_repository,
     is_local_machine,
 )
@@ -37,8 +37,9 @@ class PerformanceRepositories:
     of `DEFAULT_MACHINE_NAME_FOR_FALLBACK_LOCAL_REPOSITORY`.
     """
 
+    ACTUAL_FOLDER_NAME: ClassVar[str] = "actual"
+    DATETIME_OF_TEST_RUN: ClassVar[datetime] = datetime.now()
     _DEFAULT_EXPECTED_FOLDER: ClassVar[Path] = performance_data_resource_path()
-    _DATETIME_OF_TEST_RUN: ClassVar[datetime] = datetime.now()
 
     _expected_repositories: ESPMap[Path, PerformanceRepository]
     _actual_repositories: ESPMap[Path, PerformanceRepository]
@@ -48,7 +49,7 @@ class PerformanceRepositories:
     @classmethod
     def create(cls, data_folder: Path | None = None) -> PerformanceRepositories:
         expected_folder = data_folder or cls._DEFAULT_EXPECTED_FOLDER
-        actual_folder = expected_folder / "actual"
+        actual_folder = expected_folder / cls.ACTUAL_FOLDER_NAME
         return PerformanceRepositories(
             _expected_repositories=cls._repositories_of_folder(expected_folder),
             _actual_repositories=cls._repositories_of_folder(actual_folder),
@@ -59,7 +60,7 @@ class PerformanceRepositories:
     def get_expected_for(
         self,
         communication_protocol: CommunicationProtocol,
-        machine_name: str | None = None,
+        machine_name: str,
     ) -> PerformanceRepository | None:
         """Local machines have a fallback - all others not."""
         result: PerformanceRepository | None = None
@@ -79,9 +80,9 @@ class PerformanceRepositories:
     def get_repository_for_current_run(
         self,
         communication_protocol: CommunicationProtocol,
-        machine_name: str | None = None,
+        machine_name: str,
     ) -> PerformanceRepository:
-        path = self._get_path_for_repository_for_current_run(communication_protocol, machine_name or current_machine())
+        path = self._get_path_for_repository_for_current_run(communication_protocol, machine_name)
         with self._actual_repositories.transaction() as history_repositories:
             if path not in history_repositories.keys():
                 history_repositories[path] = PerformanceRepository.of(path)
@@ -92,9 +93,12 @@ class PerformanceRepositories:
         communication_protocol: CommunicationProtocol,
         machine_name: str,
     ) -> Path:
-        datetime_string = PerformanceRepositories._DATETIME_OF_TEST_RUN.strftime(PerformanceRepository.FILE_NAME_DATE_TIME_FORMAT)
-        file_name = f"{datetime_string}_{communication_protocol.serialized}_{machine_name}.jsonl"
-        return self._actual_folder / file_name
+        return self._actual_folder / (
+            f"{self.DATETIME_OF_TEST_RUN.strftime(FILE_NAME_DATE_TIME_FORMAT)}_{communication_protocol.serialized}_{machine_name}.jsonl"
+        )
+
+    def summary_file_path(self, machine_name: str) -> Path:
+        return self._actual_folder / (f"{self.DATETIME_OF_TEST_RUN.strftime(FILE_NAME_DATE_TIME_FORMAT)}_{machine_name}.jsonl")
 
     @classmethod
     def _repositories_of_folder(cls, folder: Path) -> ESPMap[Path, PerformanceRepository]:

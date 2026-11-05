@@ -3,19 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Tuple, override
+from typing import Tuple, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.tech.db.file_repository import FileRepository
+
 from integration_tests.server_client.performance.tooling.performance_result import PerformanceResult
+from integration_tests.server_client.performance.tooling.performance_setup import FILE_NAME_DATE_TIME_FORMAT
 
 
 @dataclass(frozen=True)
 class PerformanceRepository(FileRepository[PerformanceResult]):
-    FILE_NAME_DATE_TIME_FORMAT: ClassVar[str] = "%Y-%m-%d_%H%M%S"
-
     communication_protocol: CommunicationProtocol
     date_of_test_run: datetime
     machine_name: str
@@ -42,7 +42,7 @@ class PerformanceRepository(FileRepository[PerformanceResult]):
     @staticmethod
     def _extract_date_of_test_run(file_path: Path) -> datetime:
         date, time, _, _ = PerformanceRepository._file_name_parts(file_path)
-        return datetime.strptime(f"{date}_{time}", PerformanceRepository.FILE_NAME_DATE_TIME_FORMAT)
+        return datetime.strptime(f"{date}_{time}", FILE_NAME_DATE_TIME_FORMAT)
 
     @staticmethod
     def _extract_machine_name(file_path: Path) -> str:
