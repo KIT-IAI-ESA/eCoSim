@@ -1,6 +1,9 @@
 report.xml
 ecosim_roegling_log.txt
 
+# results of local performance test runs, see docs/content/development/testing.md
+integration-tests/integration_tests/resources/performance/actual/
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
 # Byte-compiled / optimized / DLL files
@@ -193,7 +196,3 @@ fabric.properties
 
 # idea folder, uncomment if you don't need it
 # .idea
-
-
-# test.py file for Grafana testing
-sim-control/server/app/tech/grafana/test.py
