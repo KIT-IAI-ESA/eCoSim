@@ -1,6 +1,6 @@
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
-from integration_tests.server_client.performance.tooling.run_performance_test import assert_performance
+from integration_tests.server_client.performance.tooling.assert_performance import assert_performance
 from integration_tests.test_data.server_client.pre_set_two_clients import PreSetTwoClientsData
 
 
