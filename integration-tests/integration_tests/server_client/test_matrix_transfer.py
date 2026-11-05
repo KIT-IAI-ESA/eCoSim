@@ -19,12 +19,20 @@ from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
-from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import (
+    SimpleTestServer,
+    SimpleTestServerParameters,
+    generate_simple_test_server,
+)
 
 logger = ESPLogger("TEST_MATRIX_TRANSFER")
 
 
 def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
+    run_matrix_transfer(communication_protocol)
+
+
+def run_matrix_transfer(communication_protocol: CommunicationProtocol) -> SimpleTestServer:
     server_host = "localhost"
     server_port = get_free_port()
     steps = 100
@@ -228,6 +236,8 @@ def test_matrix_transfer(communication_protocol: CommunicationProtocol) -> None:
         return actual == expected
 
     (client_2_measurement_repository.assert_entry_count(steps).assert_for_each_record(client_2_asserts))
+
+    return server
 
 
 def get_decimal_part(value: float) -> float:

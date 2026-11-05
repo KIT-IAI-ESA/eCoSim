@@ -16,10 +16,18 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
-from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import (
+    SimpleTestServer,
+    SimpleTestServerParameters,
+    generate_simple_test_server,
+)
 
 
 def test_codependent_clients_server(communication_protocol: CommunicationProtocol) -> None:
+    run_codependent_clients_server(communication_protocol)
+
+
+def run_codependent_clients_server(communication_protocol: CommunicationProtocol) -> SimpleTestServer:
     server_host = "localhost"
     server_port = 23921
     steps = 100
@@ -331,6 +339,8 @@ def test_codependent_clients_server(communication_protocol: CommunicationProtoco
         return add_floats((timestamp - simulation_start_date).total_seconds(), 0.33, 0.33) == values[0].value
 
     (client_3_measurement_repository.assert_entry_count(steps).assert_for_each_record(assert_client_3_records))
+
+    return server
 
 
 def get_decimal_part(value: float) -> float:

@@ -20,6 +20,11 @@ from integration_tests.test_data.test_client_data import TestClientData
     autouse=False,
 )
 def pre_set_two_clients(communication_protocol: CommunicationProtocol) -> Generator[PreSetTwoClientsData, Any, None]:
+    yield create_pre_set_two_clients(communication_protocol)
+
+
+def create_pre_set_two_clients(communication_protocol: CommunicationProtocol) -> PreSetTwoClientsData:
+    """Two clients and a server with 10 steps, where client 2 sends its output to the input of client 1."""
     server_host = "localhost"
     server_port = get_free_port()
     steps = 10
@@ -122,7 +127,7 @@ def pre_set_two_clients(communication_protocol: CommunicationProtocol) -> Genera
         ),
     )
 
-    yield PreSetTwoClientsData(
+    return PreSetTwoClientsData(
         client_1=client_1,
         client_2=client_2,
         server=server,
