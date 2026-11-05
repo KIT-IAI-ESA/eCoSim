@@ -28,7 +28,7 @@ jobs:
         working-directory: integration-tests
         run: uv sync --locked
       - name: Create test data
-        run: uv run --no-project python dev/create_performance_test_data.py --repetitions "${{ inputs.repetitions }}"
+        run: uv run --no-project python dev/create_performance_test_data.py --repetitions "${{ inputs.repetitions || 10 }}"
       # the created files are the only untracked ones in the performance folder (`actual/` is git-ignored)
       - name: Collect test data
         run: |
