@@ -4,6 +4,7 @@ import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
 from integration_tests.server_client import test_client_server_batch_steps as batch_steps
+from integration_tests.server_client.performance.long_running_test import run_long_running_simulation_for_performance
 from integration_tests.server_client.performance.tooling.assert_performance import assert_performance
 from integration_tests.server_client.test_codependent_clients_server import run_codependent_clients_server
 from integration_tests.server_client.test_matrix_transfer import run_matrix_transfer
@@ -31,6 +32,7 @@ RunTest = Callable[[CommunicationProtocol], SimpleTestServer]
             "test_client_server_batch_steps_different_completed_steps_step1_step5",
             batch_steps.run_client_server_batch_steps_different_completed_steps_step1_step5,
         ),
+        ("test_long_running_simulation", run_long_running_simulation_for_performance),
     ],
     ids=lambda value: value.removeprefix("test_") if isinstance(value, str) else "",
 )
