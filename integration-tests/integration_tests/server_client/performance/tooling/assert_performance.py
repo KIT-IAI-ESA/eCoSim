@@ -12,7 +12,7 @@ from integration_tests.server_client.performance.tooling.performance_repositorie
 T = TypeVar("T")
 
 
-def run_performance_test(
+def assert_performance(
     test: Callable[[T], None],
     test_argument: T,
     server_measurement: ServerTimeMeasurement,
@@ -23,7 +23,7 @@ def run_performance_test(
     Runs `test(test_argument)`, writes its times to the history of the current test run and compares them with
     the latest current result of the same test, machine and protocol.
 
-    The result is stored under the name of `test`; `machine_name` defaults to `current_machine()`.
+    The result is stored under the `__name__` of `test` and in addition to a global list, which is printed in the end.
     """
     machine_name = machine_name or current_machine()
     repositories = PerformanceRepositories.create()
