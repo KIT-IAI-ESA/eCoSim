@@ -27,7 +27,8 @@ class RepositoriesInMemory(Repositories):
     def for_communication_protocol(protocol: CommunicationProtocol) -> "RepositoriesInMemory":
         return RepositoriesInMemory(
             _client_id_to_measurement_repository=ESPMap.of_type(
-                map_type=ESPStructureType.THREAD if protocol == CommunicationProtocol.TCP_SOCKET else ESPStructureType.DASK_VARIABLE,
+                # the repositories are only used in the test process, so a thread map suffices for dask as well
+                map_type=ESPStructureType.THREAD,
             ),
             simulation_state_repository=SimulationStateRepositoryInMemory.for_communication_protocol(protocol),
             server_time_measurement_repository=ServerTimeMeasurementRepositoryInMemory.for_communication_protocol(protocol),
