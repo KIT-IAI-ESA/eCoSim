@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, List
+from typing import ClassVar
 
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -15,9 +15,8 @@ from server_client.performance.tooling.performance_run_statistics import add_per
 from server_client.performance.tooling.performance_setup import (
     current_machine,
     fallback_machine_name_for_local_repository,
-    filter_slower_then_expected_times,
 )
-from server_client.performance.tooling.time_statistic import TimeStatistic, transform_statistics_for_output
+from server_client.performance.tooling.performance_statistics import PerformanceStatistics
 from tech.integration_test_resource_utils import performance_data_resource_path
 
 from integration_tests.server_client.performance.tooling.performance_repository import PerformanceRepository
@@ -113,14 +112,13 @@ class PerformanceRepositories:
                 f"No current result of '{result.test_name}' for machine '{result.machine}' and protocol '{result.communication_protocol.serialized}'."
             )
             pytest.fail(message)
-        deviations = [statistic.describe() for statistic in filter_slower_then_expected_times(statistics)]
-        if deviations:
-            pytest.fail(f"'{result.test_name}' ({result.communication_protocol.serialized}) is slower than tolerance: " + "; ".join(deviations))
+        too_slow = statistics.filter_slower_than_expected()
+        if too_slow:
+            pytest.fail(f"'{result.test_name}' ({result.communication_protocol.serialized}) is slower than tolerance: {too_slow.describe()}")
 
     @staticmethod
-    def _add_to_logs_and_global_statistic(result: PerformanceResult, statistics: List[TimeStatistic]) -> None:
-        GlobalLogger.print_values(
-            header=f"Performance of '{result.test_name}' ({result.communication_protocol.serialized})",
-            value_pairs=transform_statistics_for_output(statistics),
-        )
+    def _add_to_logs_and_global_statistic(result: PerformanceResult, statistics: PerformanceStatistics) -> None:
+        GlobalLogger.logger.info("Performance of '%s' (%s)", result.test_name, result.communication_protocol.serialized)
+        for line in statistics.as_table():
+            GlobalLogger.logger.info("%s", line)
         add_performance_statistics(statistics)

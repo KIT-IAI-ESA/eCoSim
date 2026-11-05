@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Sequence
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+
+from integration_tests.server_client.performance.tooling.performance_setup import format_seconds
 
 
 @dataclass(frozen=True)
@@ -29,23 +30,4 @@ class TimeStatistic:
 
     def describe(self) -> str:
         deviation = "-" if self.deviation is None else f"{self.deviation:+.1%}"
-        return (
-            f"{self.measurement_name}: "
-            f"expected {TimeStatistic._format_second_to_string(self.expected)} | "
-            f"current {TimeStatistic._format_second_to_string(self.current)} | "
-            f"deviation {deviation}"
-        )
-
-    @staticmethod
-    def _format_second_to_string(
-        time: float | None,
-    ) -> str:
-        return "-" if time is None else f"{time:.3f}s"
-
-
-def transform_statistics_for_output(statistics: Sequence[TimeStatistic]) -> Dict[str, List[str]]:
-    """The statistics grouped by test and protocol, as the value pairs of `GlobalLogger.print_values`."""
-    values: Dict[str, List[str]] = {}
-    for statistic in statistics:
-        values.setdefault(f"{statistic.test_name} ({statistic.communication_protocol.serialized})", []).append(statistic.describe())
-    return values
+        return f"{self.measurement_name}: expected {format_seconds(self.expected)} | current {format_seconds(self.current)} | deviation {deviation}"
