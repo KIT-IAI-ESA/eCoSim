@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from server_client.performance.tooling.performance_setup import current_machine
+from integration_tests.server_client.performance.tooling.performance_setup import current_machine
 
 from integration_tests.server_client.performance.tooling.performance_repositories import PerformanceRepositories
 from integration_tests.tech.files.create_files import create_files

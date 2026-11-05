@@ -1,5 +1,5 @@
 import pytest
-from server_client.performance.tooling.performance_setup import GITHUB_CI_MACHINE, primary_tolerance_for
+from integration_tests.server_client.performance.tooling.performance_setup import GITHUB_CI_MACHINE, primary_tolerance_for
 
 ALL_TIMES = ["start_time_in_seconds", "execution_time_in_seconds", "stop_time_in_seconds", "server_uptime_in_seconds", "total_time_in_seconds"]
 
