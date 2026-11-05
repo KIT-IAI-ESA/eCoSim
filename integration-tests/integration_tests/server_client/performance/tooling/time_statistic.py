@@ -31,3 +31,6 @@ class TimeStatistic:
     def describe(self) -> str:
         deviation = "-" if self.deviation is None else f"{self.deviation:+.1%}"
         return f"{self.measurement_name}: expected {format_seconds(self.expected)} | current {format_seconds(self.current)} | deviation {deviation}"
+
+    def describe_with_result(self) -> str:
+        return f"!FAILED! {self.describe()}" if self.is_too_slow() else self.describe()
