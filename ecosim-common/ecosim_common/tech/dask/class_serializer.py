@@ -30,16 +30,16 @@ def serialize_clientid(client_id: ClientID) -> Tuple[dict, List[bytes]]:
     return {}, [client_id.model_name.encode(), client_id.simulator_name.encode()]
 
 
-def deserialize_clientid(header: dict, frames: List[bytes]) -> ClientID:
-    return ClientID(frames[0].decode(), frames[1].decode())
+def deserialize_clientid(header: dict, frames: List[bytes | memoryview]) -> ClientID:
+    return ClientID(str(frames[0], "utf-8"), str(frames[1], "utf-8"))
 
 
 def serialize_protocolinterfacevalue(protocol_interface_value: ProtocolInterfaceValue) -> Tuple[dict, List[bytes]]:
     return {}, [protocol_interface_value.name.encode(), pickle.dumps(protocol_interface_value.value)]
 
 
-def deserialize_protocolinterfacevalue(header: dict, frames: List[bytes]) -> ProtocolInterfaceValue:
-    return ProtocolInterfaceValue(frames[0].decode(), pickle.loads(frames[1]))
+def deserialize_protocolinterfacevalue(header: dict, frames: List[bytes | memoryview]) -> ProtocolInterfaceValue:
+    return ProtocolInterfaceValue(str(frames[0], "utf-8"), pickle.loads(frames[1]))
 
 
 def serialize_classes() -> None:
