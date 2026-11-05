@@ -3,9 +3,6 @@ from __future__ import annotations
 import os
 import re
 import socket
-from typing import List, Sequence
-
-from server_client.performance.tooling.time_statistic import TimeStatistic
 
 GITHUB_CI_MACHINE = "github_ci_default"
 DEFAULT_MACHINE_NAME_FOR_FALLBACK_LOCAL_REPOSITORY = "local_tuxedo_infinity_book_pro_15_gen9_amd"
@@ -43,5 +40,7 @@ def secondary_tolerance_for(machine_name: str) -> float:
     return CI_TOLERANCE_SECONDARY if machine_name == GITHUB_CI_MACHINE else LOCAL_TOLERANCE_SECONDARY
 
 
-def filter_slower_then_expected_times(statistics: Sequence[TimeStatistic]) -> List[TimeStatistic]:
-    return [statistic for statistic in statistics if statistic.is_too_slow()]
+def format_seconds(
+    time: float | None,
+) -> str:
+    return "-" if time is None else f"{time:.3f}s"
