@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -83,3 +84,19 @@ def test_the_summary_file_ends_with_the_correct_suffix(tmp_path: Path) -> None:
     summary_path = repositories.summary_file_path("local_my_laptop")
 
     assert summary_path.name.endswith("_results.log")
+
+
+def test_the_actual_repositories_since_a_date(tmp_path: Path) -> None:
+    create_files(
+        tmp_path / PerformanceRepositories.ACTUAL_FOLDER_NAME,
+        "2026-07-28_115959_dask_local_my_laptop.jsonl",
+        "2026-07-28_120100_tcp_socket_local_my_laptop.jsonl",
+        "2026-07-28_120000_dask_local_my_laptop.jsonl",
+    )
+
+    repositories = PerformanceRepositories.create(tmp_path).actual_repositories(since=datetime(2026, 7, 28, 12, 0, 0))
+
+    assert [repository.file_path().name for repository in repositories] == [
+        "2026-07-28_120000_dask_local_my_laptop.jsonl",
+        "2026-07-28_120100_tcp_socket_local_my_laptop.jsonl",
+    ]
