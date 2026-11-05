@@ -1,4 +1,4 @@
-from server_client.performance.tooling.performance_setup import current_machine
+from integration_tests.server_client.performance.tooling.performance_setup import current_machine
 
 from integration_tests.server_client.performance.tooling.performance_repositories import PerformanceRepositories
 from integration_tests.server_client.performance.tooling.performance_run_statistics import collected_performance_statistics
