@@ -46,13 +46,13 @@ class PerformanceRepositories:
 
     @classmethod
     def create(cls, data_folder: Path | None = None) -> PerformanceRepositories:
-        data_folder = data_folder or cls._DEFAULT_EXPECTED_FOLDER
-        expected_folder = data_folder / "actual"
+        expected_folder = data_folder or cls._DEFAULT_EXPECTED_FOLDER
+        actual_folder = expected_folder / "actual"
         return PerformanceRepositories(
-            _expected_repositories=cls._repositories_of_folder(data_folder),
-            _actual_repositories=cls._repositories_of_folder(expected_folder),
-            _actual_folder=data_folder,
+            _expected_repositories=cls._repositories_of_folder(expected_folder),
+            _actual_repositories=cls._repositories_of_folder(actual_folder),
             _expected_folder=expected_folder,
+            _actual_folder=actual_folder,
         )
 
     def get_expected_for(
