@@ -16,7 +16,6 @@ from server_client.performance.tooling.performance_setup import (
     current_machine,
     fallback_machine_name_for_local_repository,
     filter_slower_then_expected_times,
-    tolerance_for,
 )
 from server_client.performance.tooling.time_statistic import TimeStatistic, transform_statistics_for_output
 from tech.integration_test_resource_utils import performance_data_resource_path
@@ -114,12 +113,14 @@ class PerformanceRepositories:
                 f"No current result of '{result.test_name}' for machine '{result.machine}' and protocol '{result.communication_protocol.serialized}'."
             )
             pytest.fail(message)
-        tolerance = tolerance_for(result.machine)
-        deviations = [statistic.describe() for statistic in filter_slower_then_expected_times(statistics, tolerance)]
+        deviations = [statistic.describe() for statistic in filter_slower_then_expected_times(statistics)]
         if deviations:
-            pytest.fail(f"'{result.test_name}' ({result.communication_protocol.serialized}) is slower than {tolerance:.0%}: " + "; ".join(deviations))
+            pytest.fail(f"'{result.test_name}' ({result.communication_protocol.serialized}) is slower than tolerance: " + "; ".join(deviations))
 
     @staticmethod
     def _add_to_logs_and_global_statistic(result: PerformanceResult, statistics: List[TimeStatistic]) -> None:
-        GlobalLogger.print_values(header=f"Performance of '{result.test_name}'", value_pairs=transform_statistics_for_output(statistics))
+        GlobalLogger.print_values(
+            header=f"Performance of '{result.test_name}' ({result.communication_protocol.serialized})",
+            value_pairs=transform_statistics_for_output(statistics),
+        )
         add_performance_statistics(statistics)
