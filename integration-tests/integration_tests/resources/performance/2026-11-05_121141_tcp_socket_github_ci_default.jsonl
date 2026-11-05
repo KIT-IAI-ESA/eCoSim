@@ -1,0 +1,1 @@
+{"test_name": "test_client_server_batch_steps", "start_time_in_seconds": 0.002338, "execution_time_in_seconds": 0.03766, "stop_time_in_seconds": 0.000123, "server_uptime_in_seconds": null, "total_time_in_seconds": 1.0573667219999976, "tags": [], "communication_protocol": "tcp_socket", "date": "2026-11-05T12:11:42.256107", "machine": "github_ci_default"}
