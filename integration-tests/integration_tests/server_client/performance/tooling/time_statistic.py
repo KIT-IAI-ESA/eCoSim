@@ -15,6 +15,7 @@ class TimeStatistic:
     measurement_name: str
     expected: float | None
     current: float | None
+    tolerance: float
 
     @property
     def deviation(self) -> float | None:
@@ -23,8 +24,8 @@ class TimeStatistic:
             return None
         return (self.current - self.expected) / self.expected
 
-    def is_slower_than(self, tolerance: float) -> bool:
-        return self.deviation is not None and self.deviation > tolerance
+    def is_too_slow(self) -> bool:
+        return self.deviation is not None and self.deviation > self.tolerance
 
     def describe(self) -> str:
         deviation = "-" if self.deviation is None else f"{self.deviation:+.1%}"

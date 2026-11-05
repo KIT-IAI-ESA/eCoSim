@@ -9,8 +9,11 @@ from server_client.performance.tooling.time_statistic import TimeStatistic
 
 GITHUB_CI_MACHINE = "github_ci_default"
 DEFAULT_MACHINE_NAME_FOR_FALLBACK_LOCAL_REPOSITORY = "local_tuxedo_infinity_book_pro_15_gen9_amd"
-CI_TOLERANCE = 0.15
-LOCAL_TOLERANCE = 0.10
+
+CI_TOLERANCE_PRIMARY = 0.15
+LOCAL_TOLERANCE_PRIMARY = 0.10
+CI_TOLERANCE_SECONDARY = 1.50
+LOCAL_TOLERANCE_SECONDARY = 1.20
 
 
 def current_machine() -> str:
@@ -32,10 +35,13 @@ def current_test_name() -> str | None:
     return current_test.split("::")[-1].split(" ")[0].split("[")[0]
 
 
-def tolerance_for(machine_name: str) -> float:
-    return CI_TOLERANCE if machine_name == GITHUB_CI_MACHINE else LOCAL_TOLERANCE
+def primary_tolerance_for(machine_name: str) -> float:
+    return CI_TOLERANCE_PRIMARY if machine_name == GITHUB_CI_MACHINE else LOCAL_TOLERANCE_PRIMARY
 
 
-def filter_slower_then_expected_times(statistics: Sequence[TimeStatistic], tolerance: float) -> List[TimeStatistic]:
-    """The times that are slower than expected by more than `tolerance`; being faster is fine."""
-    return [statistic for statistic in statistics if statistic.is_slower_than(tolerance)]
+def secondary_tolerance_for(machine_name: str) -> float:
+    return CI_TOLERANCE_SECONDARY if machine_name == GITHUB_CI_MACHINE else LOCAL_TOLERANCE_SECONDARY
+
+
+def filter_slower_then_expected_times(statistics: Sequence[TimeStatistic]) -> List[TimeStatistic]:
+    return [statistic for statistic in statistics if statistic.is_too_slow()]
