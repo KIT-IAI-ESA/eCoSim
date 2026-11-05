@@ -29,10 +29,11 @@ class HouseSimulation:
         communication_protocol: CommunicationProtocol,
         host: str,
         port: int,
+        steps: int = HouseSimulationData.STEPS,
     ) -> HouseSimulation:
         simulation_config = SimulationConfig.of_config_file_and_params(
             simulation_config_file=HouseSimulationData.SIMULATION_CONFIG_FILE,
-            steps=HouseSimulationData.STEPS,
+            steps=steps,
         )
         server = generate_simple_test_server(
             SimpleTestServerParameters.of_simulation_config(
