@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import ClassVar, Dict, Iterable, Iterator, List, Tuple
 
-from integration_tests.server_client.performance.tooling.performance_setup import format_seconds
+from ecosim_common.tech.logger.global_logger import GlobalLogger
+
+from integration_tests.server_client.performance.tooling.performance_setup import (
+    format_seconds,
+)
 from integration_tests.server_client.performance.tooling.time_statistic import TimeStatistic
 
 
@@ -45,6 +50,16 @@ class PerformanceStatistics:
         lines = [self._line_of(row, widths) for row in rows]
         lines.insert(1, "-+-".join("-" * width for width in widths))
         return lines
+
+    def print_summary_to_log_and_file(self, file_path: Path) -> None:
+        lines = GlobalLogger.format_values_to_lines(
+            header="Performance Statistics",
+            value_pairs=self.grouped_for_output(),
+        )
+        for line in lines:
+            GlobalLogger.logger.info("%s", line)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     @staticmethod
     def _row_of(statistic: TimeStatistic) -> Tuple[str, ...]:

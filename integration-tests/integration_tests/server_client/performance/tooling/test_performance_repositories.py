@@ -57,3 +57,12 @@ def test_actual_and_expected_paths(tmp_path: Path) -> None:
     repositories = PerformanceRepositories.create(tmp_path)
     assert repositories._expected_folder == tmp_path  # noqa: SLF001
     assert repositories._actual_folder == tmp_path / "actual"  # noqa: SLF001
+
+
+def test_the_summary_file_of_the_current_run_is_next_to_its_results(tmp_path: Path) -> None:
+    repositories = PerformanceRepositories.create(tmp_path)
+
+    result_path = repositories.get_repository_for_current_run(CommunicationProtocol.DASK, "local_my_laptop").file_path()
+    summary_path = repositories.summary_file_path("local_my_laptop")
+
+    assert summary_path.parent == result_path.parent
