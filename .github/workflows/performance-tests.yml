@@ -27,6 +27,17 @@ jobs:
         run: uv sync --locked
       - name: Test
         run: uv run --no-project python dev/run_performance_tests.py
+      # shows the performance summary on the page of the workflow run
+      - name: Summary
+        if: always()
+        run: |
+          shopt -s nullglob
+          summaries=(integration-tests/integration_tests/resources/performance/actual/*_github_ci_default_results.log)
+          if [ ${#summaries[@]} -eq 0 ]; then
+            echo "No performance summary was written, see the log of the step 'Test'." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          { echo '```'; cat "${summaries[@]}"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -34,5 +45,6 @@ jobs:
           path: |
             integration-tests/report.xml
             integration-tests/integration_tests/resources/performance/actual/*_github_ci_default.jsonl
+            integration-tests/integration_tests/resources/performance/actual/*_github_ci_default_results.log
           if-no-files-found: ignore
           retention-days: 30
