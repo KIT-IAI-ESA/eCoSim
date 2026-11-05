@@ -23,7 +23,7 @@ def test_the_latest_current_repository_of_protocol_and_machine_is_returned(tmp_p
     )
     create_files(tmp_path / "history", f"2026-07-30_120000_dask_{machine_name}.jsonl")
 
-    repository = PerformanceRepositories.create(data_folder=tmp_path).get_current_for(
+    repository = PerformanceRepositories.create(data_folder=tmp_path).get_expected_for(
         communication_protocol=CommunicationProtocol.DASK,
         machine_name=machine_name,
     )
@@ -36,7 +36,7 @@ def test_without_a_matching_file_there_is_no_current_repository(tmp_path: Path) 
     machine_name = "local_my_laptop"
     create_files(tmp_path, f"2026-07-28_120000_tcp_socket_{machine_name}.jsonl")
     assert (
-        PerformanceRepositories.create(tmp_path).get_current_for(
+        PerformanceRepositories.create(tmp_path).get_expected_for(
             communication_protocol=CommunicationProtocol.DASK,
             machine_name=machine_name,
         )
