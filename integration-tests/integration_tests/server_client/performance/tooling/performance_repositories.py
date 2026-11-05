@@ -10,6 +10,9 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
+from server_client.performance.tooling.performance_setup import is_local_machine
+
+from integration_tests.server_client.performance.tooling.performance_repository import PerformanceRepository
 from integration_tests.server_client.performance.tooling.performance_result import PerformanceResult
 from integration_tests.server_client.performance.tooling.performance_run_statistics import add_performance_statistics
 from integration_tests.server_client.performance.tooling.performance_setup import (
@@ -18,8 +21,6 @@ from integration_tests.server_client.performance.tooling.performance_setup impor
 )
 from integration_tests.server_client.performance.tooling.performance_statistics import PerformanceStatistics
 from integration_tests.tech.integration_test_resource_utils import performance_data_resource_path
-
-from integration_tests.server_client.performance.tooling.performance_repository import PerformanceRepository
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,11 @@ class PerformanceRepositories:
         for repository in self._expected_repositories.values():
             if repository.communication_protocol == communication_protocol and repository.machine_name == machine_name:
                 result = repository if (result is None or result.date_of_test_run < repository.date_of_test_run) else result
-            if repository.communication_protocol == communication_protocol and repository.machine_name == fallback_machine_name:
+            if (
+                is_local_machine(machine_name)
+                and repository.communication_protocol == communication_protocol
+                and repository.machine_name == fallback_machine_name
+            ):
                 fallback = repository if (fallback is None or fallback.date_of_test_run < repository.date_of_test_run) else fallback
         return result or fallback
 
