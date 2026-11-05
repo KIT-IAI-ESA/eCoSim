@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, List
 
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -99,6 +99,12 @@ class PerformanceRepositories:
 
     def summary_file_path(self, machine_name: str) -> Path:
         return self._actual_folder / (f"{self.DATETIME_OF_TEST_RUN.strftime(FILE_NAME_DATE_TIME_FORMAT)}_{machine_name}_results.log")
+
+    def actual_repositories(
+        self,
+        since: datetime,
+    ) -> List[PerformanceRepository]:
+        return [repository for repository in self._actual_repositories.values() if repository.date_of_test_run >= since]
 
     @classmethod
     def _repositories_of_folder(cls, folder: Path) -> ESPMap[Path, PerformanceRepository]:
