@@ -5,7 +5,7 @@ from typing import Callable, TypeVar
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
-from server_client.performance.tooling.performance_setup import current_machine
+from integration_tests.server_client.performance.tooling.performance_setup import current_machine
 
 from integration_tests.server_client.performance.tooling.performance_repositories import PerformanceRepositories
 

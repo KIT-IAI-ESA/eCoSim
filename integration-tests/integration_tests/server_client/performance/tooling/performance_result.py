@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from server_client.performance.tooling.performance_setup import primary_tolerance_for, secondary_tolerance_for
-from server_client.performance.tooling.performance_statistics import PerformanceStatistics
-from server_client.performance.tooling.time_statistic import TimeStatistic
+from integration_tests.server_client.performance.tooling.performance_setup import primary_tolerance_for, secondary_tolerance_for
+from integration_tests.server_client.performance.tooling.performance_statistics import PerformanceStatistics
+from integration_tests.server_client.performance.tooling.time_statistic import TimeStatistic
 
 
 @dataclass(frozen=True)
