@@ -6,9 +6,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import MISSING
-from typing import Any, Generator, Generic, ItemsView, KeysView, MutableMapping, TypeVar, ValuesView, assert_never, cast, overload, override
+from typing import Any, Generator, Generic, ItemsView, KeysView, MutableMapping, TypeVar, ValuesView, assert_never, overload, override
 
-from distributed import Actor, Client, Variable, fire_and_forget, get_client
+from distributed import Client, Variable
+
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.structures.dask_variable_initializer import DaskVariableInitializer
@@ -237,40 +238,3 @@ class ThreadESPMap(ESPMap[K, V]):
             current = self.get_snapshot()
             yield current
             self._internal_map = current
-
-
-class DaskActorESPMap(ESPMap[K, V]):
-    def __init__(
-        self,
-        data: dict[K, V] | None = None,
-        dask_client: Client | None = None,
-    ) -> None:
-        dask_client = dask_client or get_client()
-        self._future = dask_client.submit(
-            SimpleESPMap,
-            data=data,
-            ignore_thread_safety_logs_regarding_transactions_and_yes_this_name_is_extra_long_on_purpose=True,
-            actors=True,
-        )
-        # submitted with 'actors=True', so the result is an Actor proxy and not a SimpleESPMap - every call on it
-        # returns an ActorFuture instead of the value itself
-        self._actor: Actor = cast(Actor, self._future.result())
-        # An actor only lives as long as some client holds a reference to its future.
-        # Without pinning the future, the last dropped copy destroys
-        # the actor and every further call fails with 'KeyError: SimpleESPMap-<uuid>' on the worker.
-        fire_and_forget(self._future)
-        self._lock = ParallelLock.dask(f"espmap_lock_{self._actor.key}")
-
-    @override
-    def get_snapshot(self) -> dict[K, V]:
-        return self._actor.get_snapshot().result()
-
-    @contextmanager
-    @override
-    def transaction(self) -> Generator[dict[K, V], Any, None]:
-        with self._lock:
-            current = self.get_snapshot()
-            yield current
-            # Actor calls are asynchronous: without waiting for the result, the write can land after the lock was
-            # released again, which silently loses updates.
-            self._actor._overwrite_internal(current).result()  # noqa: SLF001
