@@ -1,0 +1,42 @@
+name: create performance test data
+
+on:
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: "number of runs of the performance tests the mean is calculated of"
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+
+jobs:
+  create-performance-test-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      UV_PYTHON: "3.12"
+      # the same machine as in performance-tests.yml, so the data can be used as its baseline
+      ECOSIM_PERFORMANCE_MACHINE: github_ci_default
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Sync
+        working-directory: integration-tests
+        run: uv sync --locked
+      - name: Create test data
+        run: uv run --no-project python dev/create_performance_test_data.py --repetitions "${{ inputs.repetitions }}"
+      # the created files are the only untracked ones in the performance folder (`actual/` is git-ignored)
+      - name: Collect test data
+        run: |
+          mkdir performance-test-data
+          git ls-files --others --exclude-standard -- 'integration-tests/integration_tests/resources/performance/*.jsonl' \
+            | xargs --no-run-if-empty mv --target-directory=performance-test-data
+          ls performance-test-data | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: performance-test-data
+          path: performance-test-data/
+          if-no-files-found: error
+          retention-days: 30
