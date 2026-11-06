@@ -47,6 +47,35 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
   `windows/`). `integration-tests/integration_tests/server_client/house_simulation/` runs it and
   is the example to follow for a test of a whole simulation.
 
+## Performance tests
+
+The performance tests in `integration-tests/integration_tests/server_client/performance/` are not sophisticated
+performance tests. They run the integration tests of `server_client/` and a long running house simulation, and compare
+the times of each run with the expected times of the same test, machine and protocol. So they only show bigger
+deviations; the tolerances are in `tooling/performance_setup.py`. A summary of all times is printed at the end of the
+run.
+
+- run them: `python dev/run_performance_tests.py` (arguments are forwarded to pytest, e.g. `-k batch_steps`)
+- create new expected data (locally): `python dev/create_performance_test_data.py` runs them several times (`--repetitions N`)
+  and writes the mean of each time as new expected data
+- create new expected data (GitHub): `.github/workflows/performance-tests.yml` runs them and `.github/workflows/create-performance-test-data.yml`
+  (manual trigger) creates new expected data; both upload their results as artifacts, commit them to make them
+  the expected data of later runs
+
+The results are stored as JSON lines in `integration-tests/integration_tests/resources/performance/`, one file per
+date, protocol and machine (`DATE_TIME_PROTOCOL_MACHINE.jsonl`). The files in the folder itself are the expected data,
+every run writes its results and its summary to `actual/` (git-ignored). Historical data is available in `historical/`.
+
+Environment variables:
+
+- `ECOSIM_PERFORMANCE_MACHINE`: overwrite the machine name that's running the tests; `local_*` are local machines, `github_ci_*` runs on
+  GitHub (the workflows use `github_ci_default`); default `local_<host name>`
+  - the machine name is also used to match with the expected data
+  - the specs of the machines are in [Performance Machines](performance/performance-machines.md)
+- `ECOSIM_MACHINE_NAME_FOR_FALLBACK_LOCAL_REPOSITORY`: a local machine without expected data of its own is compared
+  with the expected data of this machine; default `local_tuxedo_infinity_book_pro_15_gen9_amd`
+
+
 ## Before a commit
 
 1. pre-commit on the changed files: `uv run pre-commit run --files $(git diff --name-only --diff-filter=d HEAD)`
