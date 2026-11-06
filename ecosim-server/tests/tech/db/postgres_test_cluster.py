@@ -59,6 +59,7 @@ class PostgresTestCluster:
         password: str = SUPERUSER_PASSWORD,
         ssl: bool | None = None,
         drop_existing_schema: bool = False,
+        schema: str | None = None,
     ) -> ServerConfig:
         return generate_server_config(
             database_host=HOST,
@@ -68,6 +69,7 @@ class PostgresTestCluster:
             database_name=database_name,
             database_ssl=self.tls if ssl is None else ssl,
             database_drop_existing_schema=drop_existing_schema,
+            database_schema=schema,
         )
 
     def _connect(self, database: str) -> psycopg.Connection[Any]:
@@ -147,3 +149,11 @@ class PostgresTestCluster:
     ) -> bool:
         query = "SELECT 1 FROM information_schema.schemata WHERE schema_name = %s"
         return self.fetch_value(query=query, parameter=schema, database=database) is not None
+
+    def table_exists(
+        self,
+        database: str,
+        schema: str,
+        table: str,
+    ) -> bool:
+        return self.fetch_value(query="SELECT to_regclass(%s)", parameter=f"{schema}.{table}", database=database) is not None

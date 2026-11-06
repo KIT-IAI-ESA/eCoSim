@@ -12,8 +12,6 @@ from sqlalchemy import JSON, Float
 
 
 class _RecordingDBConnection:
-    default_schema = "postgres"
-
     def __init__(self) -> None:
         self.created_tables: List[Any] = []
 

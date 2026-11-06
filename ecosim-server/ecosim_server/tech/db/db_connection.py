@@ -27,7 +27,7 @@ class DBConnection:
     ) -> DBConnection:
         db_url = db_config.generate_sqlalchemy_db_url()
         schema = db_config.schema
-        db_engine = create_engine(db_url).execution_options(schema_translate_map={"": schema})
+        db_engine = create_engine(db_url).execution_options(schema_translate_map={None: schema})
         return DBConnection(
             _db_url=db_url,
             _base_model=base_model,
@@ -55,7 +55,7 @@ class DBConnection:
     ) -> bool:
         try:
             inspector = inspect(self._db_engine)
-            return inspector.has_table(table_name)
+            return inspector.has_table(table_name=table_name, schema=self.default_schema)
         except OperationalError as e:
             DBConnection._logger.error("An error occurred while checking if table exists: %s", e)
             return False
