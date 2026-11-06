@@ -24,7 +24,6 @@ def client_class() -> Generator[mock.MagicMock, None, None]:
 def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_with_its_defaults(
     initialize: mock.MagicMock,
     client_class: mock.MagicMock,
-    command_line: ESPMonkeyPatch,
 ) -> None:
     """'Client()' finds the scheduler through the address that 'initialize' sets in the Dask config."""
     calls = mock.Mock()
@@ -37,8 +36,8 @@ def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_
     assert dask_client is client_class.return_value
 
 
-def test_batch_mode_passes_the_network_interface(initialize: mock.MagicMock, client_class: mock.MagicMock, command_line: ESPMonkeyPatch) -> None:
-    command_line.set_sys_arg("--network-interface", "enp3s0")
+def test_batch_mode_passes_the_network_interface(initialize: mock.MagicMock, client_class: mock.MagicMock, esp_monkey_patch: ESPMonkeyPatch) -> None:
+    esp_monkey_patch.set_sys_arg("--network-interface", "enp3s0")
 
     with mock.patch("ecosim_hpc.dask_connection.get_ip_interface"):
         connect_or_start_dask_cluster(HPCServerCliArguments())
@@ -49,9 +48,9 @@ def test_batch_mode_passes_the_network_interface(initialize: mock.MagicMock, cli
 def test_batch_mode_rejects_an_unknown_network_interface_before_mpi_starts(
     initialize: mock.MagicMock,
     client_class: mock.MagicMock,
-    command_line: ESPMonkeyPatch,
+    esp_monkey_patch: ESPMonkeyPatch,
 ) -> None:
-    command_line.set_sys_arg("--network-interface", "does_not_exist")
+    esp_monkey_patch.set_sys_arg("--network-interface", "does_not_exist")
 
     with pytest.raises(ValueError, match="does_not_exist"):
         connect_or_start_dask_cluster(HPCServerCliArguments())
@@ -59,28 +58,28 @@ def test_batch_mode_rejects_an_unknown_network_interface_before_mpi_starts(
     initialize.assert_not_called()
 
 
-def test_batch_mode_passes_the_thread_count(initialize: mock.MagicMock, client_class: mock.MagicMock, command_line: ESPMonkeyPatch) -> None:
-    command_line.set_sys_arg("--threads-per-worker", "4")
+def test_batch_mode_passes_the_thread_count(initialize: mock.MagicMock, client_class: mock.MagicMock, esp_monkey_patch: ESPMonkeyPatch) -> None:
+    esp_monkey_patch.set_sys_arg("--threads-per-worker", "4")
 
     connect_or_start_dask_cluster(HPCServerCliArguments())
 
     initialize.assert_called_once_with(nthreads=4)
 
 
-def test_interactive_mode_connects_through_the_given_scheduler_file(command_line: ESPMonkeyPatch, tmp_path: Path) -> None:
+def test_interactive_mode_connects_through_the_given_scheduler_file(esp_monkey_patch: ESPMonkeyPatch, tmp_path: Path) -> None:
     scheduler_file = tmp_path / "custom_scheduler.json"
-    command_line.set_sys_arg("--interactive")
-    command_line.set_sys_arg("--scheduler-file", str(scheduler_file))
+    esp_monkey_patch.set_sys_arg("--interactive")
+    esp_monkey_patch.set_sys_arg("--scheduler-file", str(scheduler_file))
 
     with distributed.LocalCluster(n_workers=0, dashboard_address=None, scheduler_kwargs={"scheduler_file": str(scheduler_file)}) as cluster:
         with connect_or_start_dask_cluster(HPCServerCliArguments()) as dask_client:
             assert dask_client.scheduler_info()["address"] == cluster.scheduler_address
 
 
-def test_interactive_mode_rejects_a_missing_scheduler_file(client_class: mock.MagicMock, command_line: ESPMonkeyPatch, tmp_path: Path) -> None:
+def test_interactive_mode_rejects_a_missing_scheduler_file(client_class: mock.MagicMock, esp_monkey_patch: ESPMonkeyPatch, tmp_path: Path) -> None:
     scheduler_file = tmp_path / "missing.json"
-    command_line.set_sys_arg("--interactive")
-    command_line.set_sys_arg("--scheduler-file", str(scheduler_file))
+    esp_monkey_patch.set_sys_arg("--interactive")
+    esp_monkey_patch.set_sys_arg("--scheduler-file", str(scheduler_file))
 
     with pytest.raises(SystemExit, match=str(scheduler_file)):
         connect_or_start_dask_cluster(HPCServerCliArguments())
