@@ -30,7 +30,7 @@ class ShutdownManager:
     _lock = threading.Lock()
     _logger = ESPLogger("ShutdownManager")
     _listener: Dict[int, ShutdownListener] = {}
-    _init: bool = False
+    _signal_handlers_installed: bool = False
     _ignore_signals_until: float = 0.0
     shutdown_event: threading.Event | dd.Event
 
@@ -61,14 +61,18 @@ class ShutdownManager:
         """
         return (ShutdownManager, ())
 
-    def init(self) -> None:
-        if ShutdownManager._init:
+    def init(self, install_signal_handlers: bool = True) -> None:
+        if install_signal_handlers:
+            self.__install_signal_handlers_once()
+        if not faulthandler.is_enabled():
+            faulthandler.enable()
+
+    def __install_signal_handlers_once(self) -> None:
+        if ShutdownManager._signal_handlers_installed:
             return
         signal.signal(signal.SIGINT, self.__interrupt_signal_handler)
         signal.signal(signal.SIGTERM, self.__terminate_signal_handler)
-        if not faulthandler.is_enabled():
-            faulthandler.enable()
-        ShutdownManager._init = True
+        ShutdownManager._signal_handlers_installed = True
 
     # noinspection PyUnusedLocal
     def __interrupt_signal_handler(
@@ -139,7 +143,7 @@ class ShutdownManager:
     @staticmethod
     def reset_instance() -> None:
         ShutdownManager._listener.clear()
-        ShutdownManager._init = False
+        ShutdownManager._signal_handlers_installed = False
         ShutdownManager._instance = None
         ShutdownManager._ignore_signals_until = 0.0
         signal.signal(signal.SIGINT, signal.default_int_handler)
