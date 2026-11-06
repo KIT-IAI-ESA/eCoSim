@@ -108,4 +108,4 @@ Runs server and clients on a Dask cluster. The communication protocol is always 
 | `--interactive` |  | flag | Connects to a running Dask scheduler through its scheduler file. If not set, the simulation runs in batch mode: started through mpirun, with the Dask cluster and the simulation in one MPI job. |
 | `--scheduler-file` |  | `scheduler.json` | Interactive mode only: the path to the file the Dask scheduler wrote. This must be relative to the call path or it can be an absolute path. |
 | `--network-interface` |  |  | Batch mode only: the network interface of the Dask scheduler and workers, like enp3s0, eno1, eth0 or ib0. If not set, dask_mpi chooses. |
-| `--threads-per-worker` |  |  | Batch mode only: the number of threads of each Dask worker. If not set, dask_mpi chooses. |
+| `--threads-per-worker` |  | `2` | Batch mode only: the number of threads of each Dask worker. A job with only one worker needs at least 2. |

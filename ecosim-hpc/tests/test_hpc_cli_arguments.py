@@ -25,11 +25,11 @@ def test_cli_arguments_within_sql_alchemy(
     assert logs.out == ""
 
 
-def test_unset_dask_options_are_none_and_the_scheduler_file_is_in_the_call_path() -> None:
+def test_unset_dask_options_take_their_defaults() -> None:
     cli_arguments = HPCServerCliArguments()
 
     assert cli_arguments.network_interface() is None
-    assert cli_arguments.threads_per_worker() is None
+    assert cli_arguments.threads_per_worker() == HPCServerCliArguments.DEFAULT_THREADS_PER_WORKER
     assert cli_arguments.scheduler_file() == Path.cwd() / HPCServerCliArguments.DEFAULT_SCHEDULER_FILE
 
 
