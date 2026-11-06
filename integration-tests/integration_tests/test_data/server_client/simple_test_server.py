@@ -3,7 +3,9 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Tuple
 
+from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_communication import ClientCommunication
@@ -13,9 +15,12 @@ from ecosim_server.config.simulation_config import ClientSimulatorConfig, Simula
 from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
+from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
 from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 
+from integration_tests.clients.base.client_server_configs import client_simulator_config
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 from integration_tests.test_data.server_client.simple_test_server_parameters import SimpleTestServerParameters
 
@@ -26,6 +31,36 @@ SERVER_FINISH_TIMEOUT_IN_SECONDS = 110
 @dataclass
 class SimpleTestServer(Server):
     _thread: threading.Thread | None = field(init=False, default=None)
+
+    @staticmethod
+    def for_client_ids(
+        communication_protocol: CommunicationProtocol,
+        host: str,
+        port: int,
+        client_ids: Tuple[ClientID, ...],
+        steps: int,
+        restore_simulation_run: bool = False,
+        response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+    ) -> SimpleTestServer:
+        """A server for clients without interfaces."""
+        return generate_simple_test_server(
+            SimpleTestServerParameters(
+                communication_protocol=communication_protocol,
+                host=host,
+                port=port,
+                steps=steps,
+                restore_simulation_run=restore_simulation_run,
+                clients=[
+                    client_simulator_config(client_id=client_id, client_interfaces=ClientInterfaceConfig(interfaces=[])) for client_id in client_ids
+                ],
+                response_timeouts=response_timeouts,
+            ),
+        )
+
+    def start_with_error_recording(self) -> ErrorRecordingThread:
+        server_run = ErrorRecordingThread(target=self.start)
+        server_run.start()
+        return server_run
 
     def measurement_repository(self, client_id: ClientID) -> MeasurementRepository:
         return self._repositories.measurement_repository(client_id=client_id)

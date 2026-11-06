@@ -17,12 +17,17 @@ from ecosim_common.communication.channel.connection_address import ConnectionAdd
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.atomic import AtomicFloat, AtomicInteger
 from integration_tests.test_data.test_client_data import TestClientData
 
 
-def answer_start(_client: SimpleTestClient) -> ClientSimStepData:
+def default_simulation_start_answer(_client: SimpleTestClient) -> ClientSimStepData:
+    return ClientSimStepData(interface_values=[])
+
+
+def default_simulation_step_answer(_client: SimpleTestClient, _inputs: dict[InterfaceId, InterfaceValue], _step_size: float) -> ClientSimStepData:
     return ClientSimStepData(interface_values=[])
 
 
@@ -39,7 +44,7 @@ class SimpleTestClient(Client):
         model_name: str = "TestModel",
         simulator_name: str = "TestSimulator",
         interface_config: ClientInterfaceConfig = ClientInterfaceConfig(interfaces=[]),
-        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = answer_start,
+        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = default_simulation_start_answer,
     ) -> SimpleTestClient:
         return SimpleTestClient(
             client_config=TestClientConfig(
@@ -51,6 +56,28 @@ class SimpleTestClient(Client):
                 communication_protocol=communication_protocol,
             ),
             on_simulation_step_return=on_simulation_step_return,
+            on_simulation_start_return=on_simulation_start_return,
+        )
+
+    @staticmethod
+    def of_client_id(
+        communication_protocol: CommunicationProtocol,
+        server_host: str,
+        server_port: int,
+        client_id: ClientID,
+        on_simulation_step_return: Callable[
+            [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
+            ClientSimStepData,
+        ] = default_simulation_step_answer,
+        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = default_simulation_start_answer,
+    ) -> SimpleTestClient:
+        return SimpleTestClient.generate(
+            communication_protocol=communication_protocol,
+            server_host=server_host,
+            server_port=server_port,
+            on_simulation_step_return=on_simulation_step_return,
+            model_name=client_id.model_name,
+            simulator_name=client_id.simulator_name,
             on_simulation_start_return=on_simulation_start_return,
         )
 
@@ -107,7 +134,7 @@ class SimpleTestClient(Client):
             [SimpleTestClient, dict[InterfaceId, InterfaceValue], float],
             ClientSimStepData,
         ],
-        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = answer_start,
+        on_simulation_start_return: Callable[[SimpleTestClient], ClientSimStepData] = default_simulation_start_answer,
     ):
         super().__init__(client_config)
         self._on_simulation_start_calls = AtomicInteger.for_protocol(client_config.communication_protocol(), 0)

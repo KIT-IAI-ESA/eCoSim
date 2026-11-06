@@ -17,13 +17,15 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_connection import ClientConnection
-from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
+from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
+from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
+from tests.data.generate_postgres_name_config import generate_client_simulator_config
 from tests.data.generate_server_config import generate_server_config
 from tests.simulation.history_test_setup import RecordingRepositories, values
 
@@ -34,7 +36,6 @@ MessageReaction = Callable[["FakeClient", ESPChannelMessage], None]
 
 
 def answer(client: FakeClient, message: ESPChannelMessage) -> None:
-    client.answered_types.append(message.type())
     client.communication.add_message_from_client(
         client_id=client.client_id,
         received_message=ESPChannelMessageJson.answer_with_payload(request_message=message, payload=ClientSimStepData(interface_values=[])),
@@ -57,8 +58,7 @@ class FakeClient:
     client_id: ClientID
     communication: ClientCommunication
     reactions: dict[MessageType, MessageReaction]
-    received_types: List[MessageType] = field(default_factory=list)
-    answered_types: List[MessageType] = field(default_factory=list)
+    received_messages: List[ESPChannelMessage] = field(default_factory=list)
 
     def connect(self) -> None:
         channel = MagicMock(spec=ESPChannel)
@@ -70,32 +70,35 @@ class FakeClient:
         self.communication.set_client_ready_for_simulation(client_id=self.client_id)
 
     def on_send(self, message: ESPChannelMessage) -> None:
-        self.received_types.append(message.type())
+        self.received_messages.append(message)
         self.reactions.get(message.type(), answer)(self, message)
+
+    def received_steps(self) -> List[int]:
+        return [message.correlation_id().to_int() for message in self.received_messages if message.type() == MessageType.SIMULATION_STEP]
 
 
 def _simulation_config(client_ids: tuple[ClientID, ...], restore: bool) -> SimulationConfig:
     return SimulationConfig(
         clients=[
-            ClientSimulatorConfig(simulator_name=client_id.simulator_name, model_name=client_id.model_name, interfaces=[], client_id=client_id)
-            for client_id in client_ids
+            generate_client_simulator_config(simulator_name=client_id.simulator_name, model_name=client_id.model_name) for client_id in client_ids
         ],
         start_date=_START_DATE,
         logical_delays=[],
         pace=1.0,
-        steps=1,
+        steps=2,
         step_size_in_ms=1_000,
         restore=restore,
     )
 
 
-def _repositories(client_ids: tuple[ClientID, ...], restore: bool) -> RecordingRepositories:
+def _repositories(simulation_config: SimulationConfig) -> RecordingRepositories:
     repositories = RecordingRepositories()
-    for client_id in client_ids:
+    for client_id in simulation_config.client_ids():
         measurements = repositories.measurement_repository(client_id)
         measurements.blocker.set()
-        if restore:
-            measurements.entries.append(MeasurementEntry(values=values(), timestamp=_START_DATE))
+        if simulation_config.restore:
+            # step -1 holds the default values
+            measurements.entries.extend(MeasurementEntry(values=values(), timestamp=simulation_config.date_time_for_step(step)) for step in (-1, 0))
     return repositories
 
 
@@ -117,7 +120,7 @@ def executor_with_clients(
         simulation_config=simulation_config,
         server_config=server_config,
         server_state=MagicMock(spec=ServerState),
-        repositories=_repositories(client_ids=client_ids, restore=restore),
+        repositories=_repositories(simulation_config),
         server_measurement=MagicMock(spec=ServerTimeMeasurement),
         client_communication=communication,
         response_timeouts=response_timeouts,
@@ -137,5 +140,5 @@ def executor_with_client(
 def error_of_bounded_run(executor: SimulationExecutor) -> Exception | None:
     run = ErrorRecordingThread(target=partial(executor.execute, rendering_socket=None))
     run.start()
-    run.assert_ends_within(limit_in_seconds=10.0)
+    run.assert_ends_within(limit_in_seconds=WAIT_TIMEOUT_IN_SECONDS)
     return run.error
