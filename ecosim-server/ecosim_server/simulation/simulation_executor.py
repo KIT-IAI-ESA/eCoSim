@@ -22,16 +22,13 @@ from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory, RestoreData
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 
 
 class SimulationExecutor:
     logger = ESPLogger("SimulationExecutor")
 
-    _STEP_RESPONSE_TIMEOUT_IN_SECONDS = 30
-    _START_RESPONSE_TIMEOUT_IN_SECONDS = 5
     _STOP_RESPONSE_TIMEOUT_IN_SECONDS = 1
-    _RESTORE_RESPONSE_TIMEOUT_IN_SECONDS = 60 * 60
-    _RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS = 30
 
     def __init__(
         self,
@@ -41,6 +38,7 @@ class SimulationExecutor:
         repositories: Repositories,
         server_measurement: ServerTimeMeasurement,
         client_communication: ClientCommunication,
+        response_timeouts: ResponseTimeouts = ResponseTimeouts(),
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -57,6 +55,7 @@ class SimulationExecutor:
             simulation_config=simulation_config,
         )
         self._server_measurement = server_measurement
+        self._response_timeouts = response_timeouts
         self._pace_sleep = 4 - (4 * simulation_config.pace)
         if self._pace_sleep != 0:
             SimulationExecutor.logger.info(
@@ -152,7 +151,7 @@ class SimulationExecutor:
                 waiting_for="all clients to start their simulation",
             )
             message = subscription.next_message(
-                timeout_in_seconds=SimulationExecutor._START_RESPONSE_TIMEOUT_IN_SECONDS,
+                timeout_in_seconds=self._response_timeouts.start_response_timeout_in_seconds,
             )
             if message is None:
                 SimulationExecutor.logger.info("Still waiting for all clients to start their simulation")
@@ -250,7 +249,7 @@ class SimulationExecutor:
         missing_client_ids = set(client_ids)
         last_response_time = time.monotonic()
         while len(missing_client_ids) > 0:
-            message = subscription.next_message(timeout_in_seconds=SimulationExecutor._RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS)
+            message = subscription.next_message(timeout_in_seconds=self._response_timeouts.restore_connection_check_interval_in_seconds)
             if message is None:
                 self._raise_if_clients_lost_or_restore_timed_out(missing_client_ids=missing_client_ids, last_response_time=last_response_time)
                 continue
@@ -264,7 +263,7 @@ class SimulationExecutor:
         last_response_time: float,
     ) -> None:
         self._raise_if_clients_lost(client_ids=missing_client_ids, waiting_for="their restore response")
-        if time.monotonic() - last_response_time >= SimulationExecutor._RESTORE_RESPONSE_TIMEOUT_IN_SECONDS:
+        if time.monotonic() - last_response_time >= self._response_timeouts.restore_response_timeout_in_seconds:
             raise RuntimeError(f"Timeout while waiting for the restore response of the clients {missing_client_ids}")
 
     def _is_expected_restore_response(
@@ -361,7 +360,7 @@ class SimulationExecutor:
 
         while not all(handled_clients.values()):
             received_message = subscription.next_message(
-                timeout_in_seconds=SimulationExecutor._STEP_RESPONSE_TIMEOUT_IN_SECONDS,
+                timeout_in_seconds=self._response_timeouts.step_response_timeout_in_seconds,
             )
             if received_message is None:
                 awaited_client_ids = tuple(client_id for client_id, handled in handled_clients.items() if not handled)

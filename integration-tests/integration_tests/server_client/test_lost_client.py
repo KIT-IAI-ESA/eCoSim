@@ -2,17 +2,14 @@ import multiprocessing
 import signal
 from datetime import datetime
 
-import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.port_utils import get_free_port
-from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from integration_tests.test_data.server_client.lost_client_setup import (
     HEALTHY,
     LOST,
     RUN_LIMIT_IN_SECONDS,
-    SHORT_TIMEOUT_IN_SECONDS,
     answer_slowly,
     assert_failed_naming_the_lost_client,
     crash,
@@ -22,12 +19,6 @@ from integration_tests.test_data.server_client.lost_client_setup import (
     start_server,
     two_client_server,
 )
-
-
-@pytest.fixture(autouse=True)
-def _short_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("_STEP_RESPONSE_TIMEOUT_IN_SECONDS", "_START_RESPONSE_TIMEOUT_IN_SECONDS", "_RESTORE_CONNECTION_CHECK_INTERVAL_IN_SECONDS"):
-        monkeypatch.setattr(target=SimulationExecutor, name=name, value=SHORT_TIMEOUT_IN_SECONDS)
 
 
 def test_client_lost_mid_step_fails_the_run(communication_protocol: CommunicationProtocol) -> None:
