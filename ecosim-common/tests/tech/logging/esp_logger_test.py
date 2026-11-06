@@ -35,25 +35,54 @@ def test_logger_created_before_init_logger_follows_the_info_level() -> None:
     assert not logger.is_debug_enabled
 
 
-def test_without_parameters() -> None:
+def _messages_of_test_logger(caplog: pytest.LogCaptureFixture) -> list[str]:
+    # an error appends the stack trace below the message
+    return [record.getMessage().splitlines()[0] for record in caplog.records if record.name == "TestLogger"]
+
+
+def test_a_message_without_parameters_is_not_formatted(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     logger = ESPLogger("TestLogger")
-    logger.error("error - without parameters")
-    logger.warning("warning - without parameters")
-    logger.info("info - without parameters")
-    logger.debug("debug - without parameters")
+    logger.error("error - 100% without parameters")
+    logger.warning("warning - 100% without parameters")
+    logger.info("info - 100% without parameters")
+    logger.debug("debug - 100% without parameters")
+
+    assert _messages_of_test_logger(caplog=caplog) == [
+        "error - 100% without parameters",
+        "warning - 100% without parameters",
+        "info - 100% without parameters",
+        "debug - 100% without parameters",
+    ]
 
 
-def test_with_one_parameter() -> None:
+def test_one_parameter_is_inserted_into_the_message(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     logger = ESPLogger("TestLogger")
     logger.error("error - with %s parameters", "111")
     logger.warning("warning - with %s parameters", "222")
     logger.info("info - with %s parameters", "333")
     logger.debug("debug - with %s parameters", "444")
 
+    assert _messages_of_test_logger(caplog=caplog) == [
+        "error - with 111 parameters",
+        "warning - with 222 parameters",
+        "info - with 333 parameters",
+        "debug - with 444 parameters",
+    ]
 
-def test_with_two_parameter() -> None:
+
+def test_two_parameters_are_inserted_into_the_message(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     logger = ESPLogger("TestLogger")
     logger.error("error - with %s %s parameters", "111", "aaa")
     logger.warning("warning - with %s %s parameters", "222", "bbb")
     logger.info("info - with %s %s parameters", "333", "ccc")
     logger.debug("debug - with %s %s parameters", "444", "ddd")
+
+    assert _messages_of_test_logger(caplog=caplog) == [
+        "error - with 111 aaa parameters",
+        "warning - with 222 bbb parameters",
+        "info - with 333 ccc parameters",
+        "debug - with 444 ddd parameters",
+    ]
