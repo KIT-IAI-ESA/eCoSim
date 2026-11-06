@@ -1,13 +1,8 @@
 import logging
-import sys
 import traceback
-from logging import StreamHandler
-from typing import Any
 
 default_log_format = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
 default_handlers = [logging.StreamHandler()]
-
-_overwrite_suffix = "_overwrite"
 
 
 def init_logger(log_level: int = logging.INFO) -> None:
@@ -34,17 +29,6 @@ def init_logger(log_level: int = logging.INFO) -> None:
     logging.getLogger("distributed.worker").setLevel(logging.ERROR)
 
 
-class _StripOverwriteSuffixFilter(logging.Filter):
-    """Hides the internal '_overwrite' logger suffix from the rendered '%(name)s'."""
-
-    def filter(
-        self,
-        record: logging.LogRecord,
-    ) -> bool:
-        record.name = record.name.removesuffix(_overwrite_suffix)
-        return True
-
-
 class ESPLogger:
     def __init__(
         self,
@@ -52,14 +36,6 @@ class ESPLogger:
     ):
         self._name = name
         self._logger = logging.getLogger(name)
-        self._overwrite_logger = logging.getLogger(name + _overwrite_suffix)
-        self._overwrite_logger.handlers = [
-            handler
-            for handler in default_handlers
-            if not isinstance(handler, StreamHandler)  # type: ignore
-        ] + [OverwriteStreamHandler(logging.Formatter(default_log_format))]
-        self._overwrite_logger.propagate = False
-        self._overwrite_logger.addFilter(_StripOverwriteSuffixFilter())
 
     @property
     def is_debug_enabled(self) -> bool:
@@ -99,37 +75,16 @@ class ESPLogger:
         self,
         message: str,
         *args: object,
-        overwrite_last_line: bool = False,
     ) -> None:
-        logger = self._overwrite_logger if overwrite_last_line else self._logger
-        if not logger.isEnabledFor(logging.INFO):
+        if not self._logger.isEnabledFor(logging.INFO):
             return
-        logger.info(message, *args)
+        self._logger.info(message, *args)
 
     def debug(
         self,
         message: str,
         *args: object,
-        overwrite_last_line: bool = False,
     ) -> None:
-        logger = self._overwrite_logger if overwrite_last_line else self._logger
-        if not logger.isEnabledFor(logging.DEBUG):
+        if not self._logger.isEnabledFor(logging.DEBUG):
             return
-        logger.debug(message, *args)
-
-
-class OverwriteStreamHandler(logging.StreamHandler[Any]):
-    def __init__(
-        self,
-        formatter: logging.Formatter,
-    ):
-        super().__init__()
-        self.formatter = formatter
-
-    def emit(
-        self,
-        record: logging.LogRecord,
-    ) -> None:
-        msg = self.format(record)
-        sys.stderr.write("\r" + msg)  # Use carriage return to overwrite the line
-        sys.stderr.flush()
+        self._logger.debug(message, *args)
