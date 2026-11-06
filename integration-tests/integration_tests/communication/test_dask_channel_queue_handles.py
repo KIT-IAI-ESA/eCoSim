@@ -25,9 +25,9 @@ def test_sending_reuses_one_queue_handle(dask_client: dd.Client) -> None:
     created_queues: list[str] = []
     original_init = distributed.Queue.__init__
 
-    def counting_init(queue: distributed.Queue, *args: object, **kwargs: object) -> None:
-        original_init(queue, *args, **kwargs)  # type: ignore[arg-type]
-        created_queues.append(str(queue.name))
+    def counting_init(self: distributed.Queue, *args: object, **kwargs: object) -> None:
+        original_init(self, *args, **kwargs)
+        created_queues.append(str(self.name))
 
     distributed.Queue.__init__ = counting_init  # type: ignore[method-assign]
     try:

@@ -2,12 +2,13 @@ import os
 import threading
 
 from psycopg import Connection, sql
+from psycopg.rows import DictRow
 from testcontainers.postgres import PostgresContainer
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -17,51 +18,54 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
-from integration_tests.test_data.server_client.simple_test_server import generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 
-def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: Connection) -> None:
+def test_db_persistence_float(postgres_container: PostgresContainer, db_connection: Connection[DictRow]) -> None:
     simulator_name = "TestSimulator_PersistenceFloat"
     server = generate_simple_test_server(
-        host="localhost",
-        port=6543,
-        steps=10,
-        database_config=DatabaseConfig(
-            host=postgres_container.get_container_host_ip(),
-            port=postgres_container.get_exposed_port(5432),
-            ssl=False,
-            drop_existing_schema=True,
-            username=postgres_container.username,
-            password=postgres_container.password,
-            schema="postgres",
-            name=postgres_container.dbname,
-        ),
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name=simulator_name,
-                model_name="TestModel",
-                client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name=simulator_name,
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel",
-                                interface="TestInterface",
-                            ),
-                        ),
-                        name="TestInterface",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
+        SimpleTestServerParameters(
+            communication_protocol=CommunicationProtocol.TCP_SOCKET,
+            host="localhost",
+            port=6543,
+            steps=10,
+            database_config=DatabaseConfig(
+                host=postgres_container.get_container_host_ip(),
+                port=postgres_container.get_exposed_port(5432),
+                ssl=False,
+                drop_existing_schema=True,
+                username=postgres_container.username,
+                password=postgres_container.password,
+                schema="postgres",
+                name=postgres_container.dbname,
             ),
-        ],
+            clients=[
+                ClientSimulatorConfig(
+                    simulator_name=simulator_name,
+                    model_name="TestModel",
+                    client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name=simulator_name,
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel",
+                                    interface="TestInterface",
+                                ),
+                            ),
+                            name="TestInterface",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
+                        ),
+                    ],
+                ),
+            ],
+        ),
     )
 
     client = SimpleTestClient.generate(
@@ -116,9 +120,9 @@ def test_db_persistence_float(postgres_container: PostgresContainer, db_connecti
 
 def test_db_persistence_matrix(
     postgres_container: PostgresContainer,
-    db_connection: Connection,
+    db_connection: Connection[DictRow],
 ) -> None:
-    matrix: InterfaceValue = [
+    matrix: list[FloatMatrix] = [
         [1.1, 2.2, 3.3],
         [4.4, 5.5, 6.6],
         [7.7, 8.8, 9.9],
@@ -126,43 +130,46 @@ def test_db_persistence_matrix(
 
     simulator_name = "TestSimulator_PersistenceMatrix"
     server = generate_simple_test_server(
-        host="localhost",
-        port=6543,
-        steps=10,
-        database_config=DatabaseConfig(
-            host=postgres_container.get_container_host_ip(),
-            port=postgres_container.get_exposed_port(5432),
-            ssl=False,
-            drop_existing_schema=True,
-            username=postgres_container.username,
-            password=postgres_container.password,
-            schema="postgres",
-            name=postgres_container.dbname,
-        ),
-        clients=[
-            ClientSimulatorConfig(
-                simulator_name=simulator_name,
-                model_name="TestModel",
-                client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
-                interfaces=[
-                    ModelInterfaceServer(
-                        SimulatorInterfaceId(
-                            simulator_name="TestSimulator",
-                            model_interface_id=ModelInterfaceId(
-                                model_name="TestModel",
-                                interface="TestInterface",
-                            ),
-                        ),
-                        name="TestInterface",
-                        unit="TestUnit",
-                        description=None,
-                        interface_type=InterfaceType.OUTPUT,
-                        required=True,
-                        connected_to=[],
-                    ),
-                ],
+        SimpleTestServerParameters(
+            communication_protocol=CommunicationProtocol.TCP_SOCKET,
+            host="localhost",
+            port=6543,
+            steps=10,
+            database_config=DatabaseConfig(
+                host=postgres_container.get_container_host_ip(),
+                port=postgres_container.get_exposed_port(5432),
+                ssl=False,
+                drop_existing_schema=True,
+                username=postgres_container.username,
+                password=postgres_container.password,
+                schema="postgres",
+                name=postgres_container.dbname,
             ),
-        ],
+            clients=[
+                ClientSimulatorConfig(
+                    simulator_name=simulator_name,
+                    model_name="TestModel",
+                    client_id=ClientID(model_name="TestModel", simulator_name=simulator_name),
+                    interfaces=[
+                        ModelInterfaceServer(
+                            SimulatorInterfaceId(
+                                simulator_name="TestSimulator",
+                                model_interface_id=ModelInterfaceId(
+                                    model_name="TestModel",
+                                    interface="TestInterface",
+                                ),
+                            ),
+                            name="TestInterface",
+                            unit="TestUnit",
+                            description=None,
+                            interface_type=InterfaceType.OUTPUT,
+                            required=True,
+                            connected_to=[],
+                        ),
+                    ],
+                ),
+            ],
+        ),
     )
 
     client = SimpleTestClient.generate(

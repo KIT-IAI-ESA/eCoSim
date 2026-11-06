@@ -3,7 +3,7 @@ from typing import Generator, Any
 import psycopg
 import pytest
 from psycopg import Connection
-from psycopg.rows import dict_row
+from psycopg.rows import DictRow, dict_row
 from testcontainers.postgres import PostgresContainer
 
 
@@ -21,7 +21,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
 
 
 @pytest.fixture(scope="function", autouse=True)
-def db_connection(postgres_container: PostgresContainer) -> Generator[Connection, Any, None]:
+def db_connection(postgres_container: PostgresContainer) -> Generator[Connection[DictRow], Any, None]:
     conn = psycopg.connect(
         host=postgres_container.get_container_host_ip(),
         port=postgres_container.get_exposed_port(5432),

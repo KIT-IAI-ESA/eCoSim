@@ -8,7 +8,7 @@ from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Callable, Generator, Iterator, Tuple
+from typing import Callable, Generator, Iterator, Tuple, cast
 
 import psycopg
 import pytest
@@ -18,7 +18,7 @@ from testcontainers.postgres import PostgresContainer
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.interface_type import InterfaceType
@@ -312,7 +312,7 @@ def add_floats(*floats: float) -> float:
     return float(sum([Decimal(str(f)) for f in floats]))
 
 
-def generate_matrix(input: float) -> InterfaceValue:
+def generate_matrix(input: float) -> list[FloatMatrix]:
     return [
         [input, add_floats(input, 1.0), add_floats(input, 2.0)],
         [add_floats(input, 3.0), add_floats(input, 4.0), add_floats(input, 5.0)],
@@ -341,8 +341,7 @@ def handle_client_2_sim_step(
     )
 
 
-def square_each_element(matrix: InterfaceValue) -> InterfaceValue:
-    return [
-        [value * value for value in inner_list]
-        for inner_list in matrix  # type: ignore
-    ]
+def square_each_element(matrix: FloatMatrix) -> list[FloatMatrix]:
+    # the test sends 3x3 matrices of floats only
+    rows = cast(list[list[float]], matrix)
+    return [[value * value for value in row] for row in rows]
