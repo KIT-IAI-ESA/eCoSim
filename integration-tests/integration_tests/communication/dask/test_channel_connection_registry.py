@@ -45,7 +45,7 @@ def test_stopping_ten_times_queues_only_one_sentinel(dask_client: dd.Client) -> 
     registry.start_listening(MagicMock())
     registry.is_listening_event().wait(2)
 
-    for _ in [0 - 9]:
+    for _ in range(10):
         registry.stop_listening()
 
     assert registry._connection_queue.pop_all() == [registry._closed_sentinel]  # noqa: SLF001
