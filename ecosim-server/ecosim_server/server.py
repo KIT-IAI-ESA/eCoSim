@@ -22,6 +22,7 @@ from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_server.simulation.state.simulation_state import SimulationState
 
@@ -35,6 +36,7 @@ class Server(ShutdownListener):
     _simulation_config: SimulationConfig = field()
     _server_config: ServerConfig = field()
     _repositories: Repositories = field()
+    _response_timeouts: ResponseTimeouts = field(default_factory=ResponseTimeouts)
 
     _client_communication: ClientCommunication = field(init=False)
     _server_state: ServerState = field(init=False)
@@ -59,6 +61,7 @@ class Server(ShutdownListener):
             repositories=self._repositories,
             server_measurement=self.server_measurements,
             client_communication=self._client_communication,
+            response_timeouts=self._response_timeouts,
         )
         self._channel: ESPChannel = ESPChannel.for_protocol(
             communication_protocol=self._server_config.server.communication_protocol,

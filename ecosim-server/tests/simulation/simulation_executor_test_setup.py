@@ -21,6 +21,7 @@ from ecosim_server.config.simulation_config import ClientSimulatorConfig, Simula
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement
 from ecosim_server.server_state import ServerState
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
 from tests.data.generate_server_config import generate_server_config
@@ -101,6 +102,7 @@ def _repositories(client_ids: tuple[ClientID, ...], restore: bool) -> RecordingR
 def executor_with_clients(
     reactions_by_client: dict[ClientID, dict[MessageType, MessageReaction]],
     restore: bool = False,
+    response_timeouts: ResponseTimeouts = ResponseTimeouts(),
 ) -> tuple[SimulationExecutor, List[FakeClient]]:
     client_ids = tuple(reactions_by_client)
     simulation_config = _simulation_config(client_ids=client_ids, restore=restore)
@@ -118,6 +120,7 @@ def executor_with_clients(
         repositories=_repositories(client_ids=client_ids, restore=restore),
         server_measurement=MagicMock(spec=ServerTimeMeasurement),
         client_communication=communication,
+        response_timeouts=response_timeouts,
     )
     return executor, fake_clients
 
@@ -125,8 +128,9 @@ def executor_with_clients(
 def executor_with_client(
     reactions: dict[MessageType, MessageReaction],
     restore: bool = False,
+    response_timeouts: ResponseTimeouts = ResponseTimeouts(),
 ) -> tuple[SimulationExecutor, FakeClient]:
-    executor, fake_clients = executor_with_clients(reactions_by_client={CLIENT_ID: reactions}, restore=restore)
+    executor, fake_clients = executor_with_clients(reactions_by_client={CLIENT_ID: reactions}, restore=restore, response_timeouts=response_timeouts)
     return executor, fake_clients[0]
 
 

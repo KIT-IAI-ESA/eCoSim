@@ -114,4 +114,5 @@ def generate_simple_test_server(parameters: SimpleTestServerParameters) -> Simpl
         _server_config=server_config,
         _simulation_config=simulation_config,
         _repositories=repositories,
+        _response_timeouts=parameters.response_timeouts,
     )
