@@ -44,10 +44,6 @@ def lose_connection(client: FakeClient, _message: ESPChannelMessage) -> None:
     client.communication.set_client_connected_state(client_id=client.client_id, connected=False)
 
 
-def fail_send(_client: FakeClient, _message: ESPChannelMessage) -> None:
-    raise ConnectionError("broken pipe")
-
-
 def answer_after(delay_in_seconds: float) -> MessageReaction:
     def reaction(client: FakeClient, message: ESPChannelMessage) -> None:
         threading.Timer(interval=delay_in_seconds, function=answer, args=(client, message)).start()
