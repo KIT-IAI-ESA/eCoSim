@@ -6,7 +6,7 @@ from typing import Tuple
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
@@ -343,7 +343,8 @@ def run_codependent_clients_server(communication_protocol: CommunicationProtocol
     return server
 
 
-def get_decimal_part(value: float) -> float:
+def get_decimal_part(value: InterfaceValue) -> float:
+    assert isinstance(value, float)
     return float(Decimal(str(value)) % 1)
 
 

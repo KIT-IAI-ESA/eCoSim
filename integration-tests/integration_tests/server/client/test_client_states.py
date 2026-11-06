@@ -27,10 +27,10 @@ def test_all_client_ids_does_not_read_the_shared_map(communication_protocol: Com
     reads = 0
     original_get_snapshot = type(shared_map).get_snapshot
 
-    def counting_get_snapshot(counted_map: ESPMap[ClientID, ClientState]) -> dict[ClientID, ClientState]:
+    def counting_get_snapshot(self: ESPMap[ClientID, ClientState]) -> dict[ClientID, ClientState]:
         nonlocal reads
         reads += 1
-        return original_get_snapshot(counted_map)
+        return original_get_snapshot(self)
 
     type(shared_map).get_snapshot = counting_get_snapshot  # type: ignore[method-assign]
     try:

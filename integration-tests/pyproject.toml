@@ -76,6 +76,11 @@ module = [
     # Pyro5 is not typed
     "Pyro5",
     "Pyro5.*",
+    # cloudpickle and testcontainers are not typed
+    "cloudpickle",
+    "cloudpickle.*",
+    "testcontainers",
+    "testcontainers.*",
 ]
 ignore_missing_imports = true
 

@@ -63,8 +63,7 @@ def test_local_test() -> None:
     )
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP
-    message = message.cast(ImagesAtTimeStep)
-    assert message.time_step == 100
+    assert message.cast(ImagesAtTimeStep).time_step == 100
 
     loop.run_until_complete(
         image_receiver_connection.send(
@@ -75,18 +74,15 @@ def test_local_test() -> None:
     )
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP
-    message = message.cast(ImagesAtTimeStep)
-    assert message.time_step == 200
+    assert message.cast(ImagesAtTimeStep).time_step == 200
 
     # test trigger by calling the method directly
     server_socket.request_and_send_images(100).wait(timeout=8)
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP
-    message = message.cast(ImagesAtTimeStep)
-    assert message.time_step == 100
+    assert message.cast(ImagesAtTimeStep).time_step == 100
 
     server_socket.request_and_send_images(200).wait(timeout=4)
     message = RawRenderingMessageHandler(loop.run_until_complete(image_receiver_connection.recv()))
     assert message.message_type() == RenderingMessageType.IMAGES_AT_TIME_STEP
-    message = message.cast(ImagesAtTimeStep)
-    assert message.time_step == 200
+    assert message.cast(ImagesAtTimeStep).time_step == 200
