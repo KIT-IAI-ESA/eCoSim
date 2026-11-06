@@ -13,14 +13,12 @@ class HPCServerCliArguments(CLIArguments):
 
     def __init__(
         self,
-        ignore_unknown_arguments: bool = False,
     ) -> None:
         args = sys.argv[1:]
         args.append("--communication-protocol")
         args.append(CommunicationProtocol.DASK.name)
         super().__init__(
             passed_arguments=args,
-            ignore_unknown_arguments=ignore_unknown_arguments,
             additional_parameters=[
                 AppConfigParameter(
                     name="simulator-dir",
