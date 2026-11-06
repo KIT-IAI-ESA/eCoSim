@@ -7,6 +7,7 @@ from typing import List
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, LogicalDelay, SimulationConfig
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 
 
 @dataclass
@@ -32,6 +33,7 @@ class SimpleTestServerParameters:
     database_config: DatabaseConfig | None = field(default=None)
     restore_simulation_run: bool = field(default=False)
     logical_delays: List[LogicalDelay] = field(default_factory=list)
+    response_timeouts: ResponseTimeouts = field(default_factory=ResponseTimeouts)
 
     @staticmethod
     def of_simulation_config(

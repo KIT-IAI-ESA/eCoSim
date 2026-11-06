@@ -10,14 +10,16 @@ from ecosim_common.communication.data.protocol_interface_value import InterfaceV
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
+from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
+from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient, answer_start
-from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer, SimpleTestServerParameters, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer, generate_simple_test_server
+from integration_tests.test_data.server_client.simple_test_server_parameters import SimpleTestServerParameters
 
 HEALTHY = ClientID(model_name="healthy_model", simulator_name="healthy_simulator")
 LOST = ClientID(model_name="lost_model", simulator_name="lost_simulator")
 RUN_LIMIT_IN_SECONDS = 30
-SHORT_TIMEOUT_IN_SECONDS = 1
 _HOST = "localhost"
 
 Inputs = dict[InterfaceId, InterfaceValue]
@@ -31,7 +33,19 @@ def two_client_server(protocol: CommunicationProtocol, port: int, second_client_
         for client_id in (HEALTHY, second_client_id)
     ]
     return generate_simple_test_server(
-        SimpleTestServerParameters(communication_protocol=protocol, host=_HOST, port=port, steps=3, restore_simulation_run=restore, clients=clients),
+        SimpleTestServerParameters(
+            communication_protocol=protocol,
+            host=_HOST,
+            port=port,
+            steps=3,
+            restore_simulation_run=restore,
+            clients=clients,
+            response_timeouts=ResponseTimeouts(
+                step_response_timeout_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
+                start_response_timeout_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
+                restore_connection_check_interval_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
+            ),
+        ),
     )
 
 
