@@ -21,7 +21,7 @@ def client_class() -> Generator[mock.MagicMock, None, None]:
         yield client_class_mock
 
 
-def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_with_its_defaults(
+def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_with_the_default_options(
     initialize: mock.MagicMock,
     client_class: mock.MagicMock,
 ) -> None:
@@ -32,7 +32,10 @@ def test_batch_mode_returns_a_client_created_after_dask_mpi_started_the_cluster_
 
     dask_client = connect_or_start_dask_cluster(HPCServerCliArguments())
 
-    assert calls.mock_calls == [mock.call.initialize(), mock.call.client_class()]
+    assert calls.mock_calls == [
+        mock.call.initialize(interface=None, nthreads=HPCServerCliArguments.DEFAULT_THREADS_PER_WORKER),
+        mock.call.client_class(),
+    ]
     assert dask_client is client_class.return_value
 
 
@@ -42,7 +45,7 @@ def test_batch_mode_passes_the_network_interface(initialize: mock.MagicMock, cli
     with mock.patch("ecosim_hpc.dask_connection.get_ip_interface"):
         connect_or_start_dask_cluster(HPCServerCliArguments())
 
-    initialize.assert_called_once_with(interface="enp3s0")
+    assert initialize.call_args.kwargs["interface"] == "enp3s0"
 
 
 def test_batch_mode_rejects_an_unknown_network_interface_before_mpi_starts(
@@ -63,7 +66,7 @@ def test_batch_mode_passes_the_thread_count(initialize: mock.MagicMock, client_c
 
     connect_or_start_dask_cluster(HPCServerCliArguments())
 
-    initialize.assert_called_once_with(nthreads=4)
+    assert initialize.call_args.kwargs["nthreads"] == 4
 
 
 def test_interactive_mode_connects_through_the_given_scheduler_file(esp_monkey_patch: ESPMonkeyPatch, tmp_path: Path) -> None:

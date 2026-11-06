@@ -23,11 +23,9 @@ def _connect_to_running_scheduler(scheduler_file: Path) -> Client:
     return Client(scheduler_file=str(scheduler_file))
 
 
-def _start_mpi_cluster(network_interface: str | None, threads_per_worker: int | None) -> Client:
+def _start_mpi_cluster(network_interface: str | None, threads_per_worker: int) -> Client:
     _reject_unknown_network_interface(network_interface)
-    options = {"interface": network_interface, "nthreads": threads_per_worker}
-    # an explicit nthreads=None is not the default of dask_mpi, it gives every worker all CPUs
-    initialize(**{name: value for name, value in options.items() if value is not None})
+    initialize(interface=network_interface, nthreads=threads_per_worker)
     return Client()
 
 
