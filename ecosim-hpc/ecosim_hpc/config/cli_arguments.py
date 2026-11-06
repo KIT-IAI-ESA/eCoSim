@@ -6,13 +6,6 @@ from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_server.config.cli_arguments import CLIArguments
 
 
-def _parse_positive_thread_count(value: str) -> int:
-    threads_per_worker = int(value)
-    if threads_per_worker < 1:
-        raise ValueError(f"--threads-per-worker must be at least 1, not {value}.")
-    return threads_per_worker
-
-
 class HPCServerCliArguments(CLIArguments):
     DEFAULT_SCHEDULER_FILE: str = "scheduler.json"
 
@@ -52,7 +45,7 @@ class HPCServerCliArguments(CLIArguments):
                 ),
                 AppConfigParameter(
                     name="threads-per-worker",
-                    transform=_parse_positive_thread_count,
+                    transform=self._parse_positive_thread_count,
                     help_text="Batch mode only: the number of threads of each Dask worker. If not set, dask_mpi chooses.",
                 ),
             ],
@@ -72,3 +65,10 @@ class HPCServerCliArguments(CLIArguments):
 
     def threads_per_worker(self) -> int | None:
         return self._args.threads_per_worker
+
+    @staticmethod
+    def _parse_positive_thread_count(value: str) -> int:
+        threads_per_worker = int(value)
+        if threads_per_worker < 1:
+            raise ValueError(f"--threads-per-worker must be at least 1, not {value}.")
+        return threads_per_worker
