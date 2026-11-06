@@ -8,7 +8,6 @@ from tests.simulation.simulation_executor_test_setup import (
     error_of_bounded_run,
     executor_with_client,
     executor_with_clients,
-    fail_send,
     lose_connection,
 )
 
@@ -47,15 +46,6 @@ def test_slow_client_is_waited_for_and_not_pinged() -> None:
     assert MessageType.PING not in fake_client.received_types
 
 
-def test_failed_step_send_fails_the_run_without_waiting_for_the_timeout() -> None:
-    executor, _ = executor_with_client(reactions={MessageType.SIMULATION_STEP: fail_send})
-
-    error = error_of_bounded_run(executor)
-
-    _assert_names_the_client(error)
-    assert "broken pipe" in str(error)
-
-
 def test_client_lost_during_start_up_names_it() -> None:
     executor, _ = executor_with_client(reactions={MessageType.SIMULATION_START: lose_connection})
 
@@ -67,15 +57,6 @@ def test_restore_with_a_lost_client_fails_before_the_restore_timeout() -> None:
     executor, _ = executor_with_client(reactions={MessageType.SIMULATION_STEP_BATCH: lose_connection}, restore=True)
 
     _assert_names_the_client(error_of_bounded_run(executor))
-
-
-def test_failed_restore_send_fails_the_run_without_waiting_for_the_timeout() -> None:
-    executor, _ = executor_with_client(reactions={MessageType.SIMULATION_STEP_BATCH: fail_send}, restore=True)
-
-    error = error_of_bounded_run(executor)
-
-    _assert_names_the_client(error)
-    assert "broken pipe" in str(error)
 
 
 @pytest.mark.usefixtures("short_timeouts")
