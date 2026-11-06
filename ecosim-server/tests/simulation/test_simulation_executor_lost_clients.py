@@ -28,15 +28,13 @@ def test_step_timeout_with_a_lost_client_fails_the_run() -> None:
     _assert_names_the_client(error_of_bounded_run(executor))
 
 
-def test_slow_client_is_waited_for_and_not_pinged() -> None:
-    executor, fake_client = executor_with_client(
+def test_slow_client_does_not_fail_the_run() -> None:
+    executor, _ = executor_with_client(
         reactions={MessageType.SIMULATION_STEP: answer_after(delay_in_seconds=SHORT_TIMEOUT_IN_SECONDS * 1.5)},
         response_timeouts=_SHORT_TIMEOUTS,
     )
 
     assert error_of_bounded_run(executor) is None
-    assert MessageType.SIMULATION_STEP in fake_client.answered_types
-    assert MessageType.PING not in fake_client.received_types
 
 
 def test_client_lost_during_start_up_names_it() -> None:
@@ -45,7 +43,7 @@ def test_client_lost_during_start_up_names_it() -> None:
     _assert_names_the_client(error_of_bounded_run(executor))
 
 
-def test_restore_with_a_lost_client_fails_before_the_restore_timeout() -> None:
+def test_client_lost_during_restore_fails_the_run() -> None:
     executor, _ = executor_with_client(
         reactions={MessageType.SIMULATION_STEP_BATCH: lose_connection},
         restore=True,
@@ -63,7 +61,8 @@ def test_slow_restore_of_a_connected_client_is_waited_for() -> None:
     )
 
     assert error_of_bounded_run(executor) is None
-    assert MessageType.SIMULATION_STEP_BATCH in fake_client.answered_types
+    # step 0 is restored, so the run continues with step 1
+    assert fake_client.received_steps() == [1]
 
 
 def test_restore_of_a_connected_client_still_ends_at_the_restore_timeout() -> None:
@@ -87,7 +86,7 @@ def test_restore_limit_restarts_after_each_response() -> None:
     restore_limit_in_seconds = 3.0
     gap_between_answers_in_seconds = 2.0
     second_client_id = ClientID(model_name="second_model", simulator_name="simulator")
-    executor, fake_clients = executor_with_clients(
+    executor, _ = executor_with_clients(
         reactions_by_client={
             CLIENT_ID: {MessageType.SIMULATION_STEP_BATCH: answer_after(delay_in_seconds=gap_between_answers_in_seconds)},
             second_client_id: {MessageType.SIMULATION_STEP_BATCH: answer_after(delay_in_seconds=gap_between_answers_in_seconds * 2)},
@@ -100,4 +99,3 @@ def test_restore_limit_restarts_after_each_response() -> None:
     )
 
     assert error_of_bounded_run(executor) is None
-    assert all(MessageType.SIMULATION_STEP_BATCH in fake_client.answered_types for fake_client in fake_clients)

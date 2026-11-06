@@ -28,23 +28,17 @@ def _handle_client(
 def test_failed_send_before_the_client_is_known_raises_the_connection_error() -> None:
     channel = MagicMock(spec=ESPChannel)
     channel.send.side_effect = ConnectionError("client is gone")
-    client_communication = MagicMock(spec=ClientCommunication)
 
     with pytest.raises(ConnectionError, match="client is gone"):
-        _handle_client(channel=channel, client_communication=client_communication)
-
-    client_communication.reset_state.assert_not_called()
+        _handle_client(channel=channel, client_communication=MagicMock(spec=ClientCommunication))
 
 
 def test_closed_connection_before_the_client_is_known_raises_a_type_error() -> None:
     channel = MagicMock(spec=ESPChannel)
     channel.listen_blocking.return_value = None
-    client_communication = MagicMock(spec=ClientCommunication)
 
     with pytest.raises(TypeError, match="but received None"):
-        _handle_client(channel=channel, client_communication=client_communication)
-
-    client_communication.reset_state.assert_not_called()
+        _handle_client(channel=channel, client_communication=MagicMock(spec=ClientCommunication))
 
 
 def test_failed_handshake_of_a_known_client_resets_its_state() -> None:

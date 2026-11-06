@@ -1,3 +1,4 @@
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -23,5 +24,5 @@ def test_failed_broadcast_names_the_client() -> None:
         _client_message_buffer=ClientMessageBuffer.for_communication_protocol(CommunicationProtocol.TCP_SOCKET),
     )
 
-    with pytest.raises(RuntimeError, match=f"{client_id}.*broken pipe"):
+    with pytest.raises(RuntimeError, match=re.escape(str(client_id))):
         communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_START))

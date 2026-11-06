@@ -76,6 +76,18 @@ def test_lost_client_is_not_ready_anymore(communication_protocol: CommunicationP
     assert not client_states._all_clients_ready_for_simulation.is_set()  # noqa: SLF001
 
 
+def test_client_whose_connection_closed_counts_as_lost(communication_protocol: CommunicationProtocol) -> None:
+    lost_client_id = generate_random_client_id()
+    connected_client_id = generate_random_client_id()
+    client_states = _connected_client_states(communication_protocol=communication_protocol, client_ids=(lost_client_id, connected_client_id))
+    for client_id in (lost_client_id, connected_client_id):
+        client_states.set_client_ready_for_simulation(client_id=client_id)
+
+    client_states.set_client_connected_state(client_id=lost_client_id, connected=False)
+
+    assert client_states.lost_client_ids(client_ids=(lost_client_id, connected_client_id)) == (lost_client_id,)
+
+
 def test_reconnected_client_is_not_stopped_anymore(communication_protocol: CommunicationProtocol) -> None:
     client_id = generate_random_client_id()
     client_states = _connected_client_states(communication_protocol, (client_id,))
