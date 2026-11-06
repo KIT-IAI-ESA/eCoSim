@@ -39,6 +39,7 @@ const sidebars: SidebarsConfig = {
           items: [
             'development/tech/hpc-cheat-sheet',
             'development/tech/multi-threading-fmpy',
+            'development/performance/performance-machines',
             {
               type: 'category',
               label: 'Performance 2026-07-28',
