@@ -5,7 +5,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_test_common.resources.simulations.house_simulation_data import HouseSimulationData
 
 from integration_tests.server_client import test_client_server_batch_steps as batch_steps
-from integration_tests.server_client.performance.long_running_test import run_long_running_simulation_for_performance
+from integration_tests.server_client.performance.long_running_test import TIMEOUT_IN_SECONDS, run_long_running_simulation_for_performance
 from integration_tests.server_client.performance.tooling.assert_performance import assert_performance
 from integration_tests.server_client.test_codependent_clients_server import run_codependent_clients_server
 from integration_tests.server_client.test_matrix_transfer import run_matrix_transfer
@@ -36,7 +36,8 @@ RunTest = Callable[[CommunicationProtocol], SimpleTestServer]
         pytest.param(
             "test_long_running_simulation",
             run_long_running_simulation_for_performance,
-            marks=HouseSimulationData.skip_unless_fmpy_loads_the_fmus(),
+            # above the time the simulation is given, so a hang fails with its message and not at this limit
+            marks=[HouseSimulationData.skip_unless_fmpy_loads_the_fmus(), pytest.mark.timeout(TIMEOUT_IN_SECONDS + 10)],
         ),
     ],
     ids=lambda value: value.removeprefix("test_") if isinstance(value, str) else "",
