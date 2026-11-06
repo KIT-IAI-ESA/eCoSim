@@ -99,6 +99,13 @@ repos:
         files: ^ecosim-test-common/
         pass_filenames: false
         types: [ python ]
+      - id: mypy
+        name: mypy (integration-tests)
+        entry: python dev/run_mypy.py integration-tests
+        language: system
+        files: ^integration-tests/
+        pass_filenames: false
+        types: [ python ]
       - id: check-py-filenames
         name: Check Python filenames are snake_case
         entry: python dev/validate_file_name.py
