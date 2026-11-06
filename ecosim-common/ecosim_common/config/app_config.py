@@ -25,7 +25,6 @@ class AppConfig(object):
         parameters: List[AppConfigParameter],
         environment_variables: dict[str, str] | None = None,
         passed_arguments: List[Any] | None = None,
-        ignore_unknown_arguments: bool = False,
     ):
         if environment_variables is None:
             environment_variables = dict(os.environ)
@@ -37,11 +36,7 @@ class AppConfig(object):
                 self._add_string(environment_variables, parameter)
             else:
                 self._add_flag(environment_variables, parameter)
-        self._args: Any
-        if ignore_unknown_arguments:
-            self._args = self._parser.parse_known_args(passed_arguments)[0]
-        else:
-            self._args = self._parser.parse_args(passed_arguments)
+        self._args = self._parser.parse_args(passed_arguments)
         for parameter in parameters:
             if not parameter.transform or getattr(self._args, parameter.to_parsed_arg_name()) is None:
                 continue
