@@ -41,11 +41,7 @@ class MessageSubscription:
         self,
         timeout_in_seconds: float | None = None,
     ) -> ClientMessage | None:
-        """Returns None on a timeout and raises a RuntimeError if the next message reports a failed send."""
-        message = self._queue.pop_or_none(timeout=timeout_in_seconds)
-        if message is not None and message.send_failure is not None:
-            raise RuntimeError(message.send_failure)
-        return message
+        return self._queue.pop_or_none(timeout=timeout_in_seconds)
 
     def pending_messages(self) -> List[ClientMessage]:
         """Returns every message that is already queued, without waiting for more."""
