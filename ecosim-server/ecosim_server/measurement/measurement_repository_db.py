@@ -40,8 +40,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
         interface_name_to_column_name = MeasurementRepositoryDB._create_interface_name_to_column_name(client_config)
         interface_name_to_json_column_name = MeasurementRepositoryDB._create_interface_name_to_json_column_name(client_config)
         dynamic_table = MeasurementRepositoryDB._create_dynamic_class(
-            db_connection,
-            client_config,
+            client_config=client_config,
             interface_name_to_column_name=interface_name_to_column_name,
             interface_name_to_json_column_name=interface_name_to_json_column_name,
         )
@@ -55,7 +54,6 @@ class MeasurementRepositoryDB(MeasurementRepository):
 
     @staticmethod
     def _create_dynamic_class(
-        db_connection: DBConnection,
         client_config: ClientSimulatorConfig,
         interface_name_to_column_name: dict[str, str],
         interface_name_to_json_column_name: dict[str, str],
@@ -64,7 +62,6 @@ class MeasurementRepositoryDB(MeasurementRepository):
 
         attributes = {
             "__tablename__": table_name,
-            "__table_args__": {"schema": db_connection.default_schema},
             "timestamp": Column(DateTime(timezone=True), primary_key=True),
         }
         for column_name in interface_name_to_column_name.values():

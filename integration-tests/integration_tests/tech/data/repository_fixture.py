@@ -79,7 +79,7 @@ def _postgres_database_config(container: PostgresContainer) -> DatabaseConfig:
         username=container.username,
         password=container.password,
         ssl=False,
-        schema="postgres",  # the DTO metadata is bound to this schema whenever it is imported under pytest
+        schema="postgres",
         drop_existing_schema=True,
         type=DatabaseType.POSTGRES,
     )
