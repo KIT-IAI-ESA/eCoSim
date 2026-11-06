@@ -50,14 +50,16 @@ The example has these scripts in `building_hpc/Executable/`:
 
 ## Choose the network and the threads
 
-By default `dask_mpi` chooses: Dask uses the address of the network with the default route, and every
-worker has 1 thread. Add these options to the `mpirun` line of `clusterRunHPC.sh` to change that:
+By default Dask uses the address of the network with the default route, and every worker has 2 threads.
+Add these options to the `mpirun` line of `clusterRunHPC.sh` to change that:
 
 - `--network-interface ib0` uses this network interface, for example InfiniBand instead of Ethernet.
   The job stops right away if a node does not have it. Common names are `enp3s0`, `eno1`, `eth0` and
   `ib0`; `ip link` lists them.
-- `--threads-per-worker 2` gives every worker 2 threads. The script binds each rank to one core with
-  `--bind-to core`, so those threads share that core unless you change the binding.
+- `--threads-per-worker 4` gives every worker 4 threads. The script binds each rank to one core with
+  `--bind-to core`, so those threads share that core unless you change the binding. Keep at least 2
+  threads when the job has only one worker: the server waits for new connections in a task that keeps
+  one thread busy for the whole run, and with a single thread the clients never start.
 
 ## Look at the results
 

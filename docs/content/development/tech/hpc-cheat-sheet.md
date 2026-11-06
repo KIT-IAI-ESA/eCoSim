@@ -31,7 +31,7 @@ mpirun -np 4 uv run ../../../ecosim-hpc/ecosim_hpc/main.py \
   --simulator-dir ../Modules/ --steps 100 --database-type file
 ```
 
-`--network-interface` and `--threads-per-worker` override the choice of `dask_mpi`, see the
+`--network-interface` and `--threads-per-worker` choose the network and the threads per worker, see the
 [command-line options](../../reference/command-line.md#hpc).
 
 ### Interactive Mode

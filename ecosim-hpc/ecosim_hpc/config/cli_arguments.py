@@ -8,6 +8,8 @@ from ecosim_server.config.cli_arguments import CLIArguments
 
 class HPCServerCliArguments(CLIArguments):
     DEFAULT_SCHEDULER_FILE: str = "scheduler.json"
+    # the accept loop holds one thread for the whole run, so a single worker needs a second one
+    DEFAULT_THREADS_PER_WORKER: int = 2
 
     def __init__(
         self,
@@ -45,8 +47,9 @@ class HPCServerCliArguments(CLIArguments):
                 ),
                 AppConfigParameter(
                     name="threads-per-worker",
+                    default_value=str(self.DEFAULT_THREADS_PER_WORKER),
                     transform=self._parse_positive_thread_count,
-                    help_text="Batch mode only: the number of threads of each Dask worker. If not set, dask_mpi chooses.",
+                    help_text="Batch mode only: the number of threads of each Dask worker. A job with only one worker needs at least 2.",
                 ),
             ],
         )
@@ -63,7 +66,7 @@ class HPCServerCliArguments(CLIArguments):
     def network_interface(self) -> str | None:
         return self._args.network_interface
 
-    def threads_per_worker(self) -> int | None:
+    def threads_per_worker(self) -> int:
         return self._args.threads_per_worker
 
     @staticmethod
