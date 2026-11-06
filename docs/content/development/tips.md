@@ -1,86 +1,48 @@
 # Development tips
 
-Conventions for code and tests that come up in reviews, beyond
-[Coding guidelines](coding-guidelines.md). How to run the tests is in [Testing](testing.md).
+We look for these in reviews, on top of the [coding guidelines](coding-guidelines.md) and the [testing](testing.md) page.
+
+These points also serve as instructions for coding assistants, so they go into more detail than a person needs. For
+day-to-day work, the main points are enough.
 
 ## Names
 
-- a name says what the code does, side effects included: `__pop_and_notify`, because nobody
-  expects a method called `__notify` to remove the listener
-- the code base's own words are reused: the ends of a channel are `listener` and `connector`, not
-  a new "waiting side", since a made-up word has the reader look for a difference that is not there
-- related names follow one pattern, as the listener doubles do with `<Behaviour>ShutdownListener`;
-  a long one such as `GraceEndingSignalRaisingShutdownListener` is fine when it shows the intention
-- fixtures are named after what they do, such as `auto_initialize_shutdown_manager` rather than
-  `signal_handlers`, since an autouse fixture never appears in the tests it runs for
+- Stick to the words the code already uses, like `listener` and `connector`; made-up ones are harder to follow.
+- Drop words from a name that don't match the code, like `step` on a delay or `copy` on a test that copies nothing.
+- Name a side effect nobody would expect: `__pop_and_notify` rather than `__notify`, since it also removes the listener.
+- Give related names one pattern, like `<Behaviour>ShutdownListener`. A long name is fine if it shows the intent.
 
 ## Comments and log messages
 
-- a comment states the intention, not the mechanics, which the code already shows:
-  `# add before checking, so a shutdown starting right now cannot miss it` keeps the next reader
-  from swapping the two statements below it and bringing the race back
-- comments that repeat the code are deleted, such as "must be implemented by the subclass" on an
-  `@abstractmethod`, which already says so
-- comments that only make sense next to the previous version of the code are deleted too, since the
-  reader sees only the current one
-- when the code changes, its comments and log messages change with it: once the reset was gone,
-  `"All listeners notified - resetting ShutdownManager itself."` became `"All listeners notified."`,
-  because a log line about something that no longer happens misleads whoever debugs with it
+- Use comments to say why, as in `# add before checking, so a shutdown starting right now cannot miss it`.
+- Delete (or rewrite) comments that repeat the code or only made sense for an older version of it.
+- Update comments and log messages along with the code, or they'll mislead the next person who debugs with them.
 
 ## Tests
 
-- the name states what the test guarantees, not the steps it takes, so a failure says which
-  guarantee broke: `test_signal_does_not_deadlock_while_the_interrupted_code_holds_the_lock`, not
-  `test_signal_exits_while_the_interrupted_code_holds_the_lock`
-- names that point the wrong way are fixed too: `..._does_not_raise` read as if the listener must
-  not raise, so it became `test_exception_of_a_listener_registered_after_shutdown_is_caught`
-- behaviour that other tests or code rely on gets its own test: several shutdown tests depend on the
-  order of notification, so `test_listeners_are_notified_in_the_order_of_registration` pins it
-- complex tests get the short docstring the [coding guidelines](coding-guidelines.md#code) ask for,
-  written for whoever reads the test after it fails
-- what a test depends on is visible in its body, or in a double whose name says what it does:
-  implicit behaviour makes a test hard to follow and lets it fail on refactorings that change
-  nothing it checks. When only a hook reaches the moment under test, the hook sits in the test
-  body with a docstring, as in `test_shutdown_starting_while_a_listener_registers_notifies_it_once`
-- pytest and its plugins are not tested here, such as whether the timeout plugin fails a hanging
-  test: they have their own tests, and a check that a shared fixture is used would have to be
-  repeated in every subproject
-- fragile tests with side effects beyond their subject, such as one that patches
-  `distributed.Queue.get` for every queue, are deleted when another test covers the same behaviour
-
-### What a test asserts
-
-An assert has to fail when the behaviour in the title breaks. In the first version of
-`test_signal_while_the_shutdown_sets_the_event_is_ignored`, the assert held either way, and a
-signal that got through showed only as a `SystemExit` the test did not check:
+Name a test after what it guarantees, not the steps it takes, and make sure the assert fails when that behaviour
+breaks. For an important feature, check the result, not only that no error came up.
 
 ```python
-# before: notification_count is 1 whether or not the signal is ignored
+# test_signal_while_the_shutdown_sets_the_event_is_ignored
+# before: holds whether or not the signal is ignored
 assert listener.notification_count == 1
-# after: exit_codes records the calls of sys.exit
+# after: fails if the signal reaches sys.exit
 assert exit_codes == []
 ```
 
-A test checks state, not log output: the wording of a log line changes while the behaviour stays the
-same. A double records that it was reached, and the object under test shows the result in its
-fields. `caplog` is for a log line that is itself the behaviour, as in
-`test_failed_tcp_connection_names_the_transport_and_the_address`. When private state is the only
-place the result shows, a test may read it despite the
-[SLF001 rule](coding-guidelines.md#enforced-by-pre-commit), marked with `# noqa: SLF001`:
+- Assert only what the test is about: match the client id in an error message, and skip asserts on side effects.
+- Check state on the object or a test double; asserts on log output with `caplog` are the exception.
+- Give behaviour that other tests rely on its own test, such as the order in which listeners are notified.
+- Skip tests of unimportant details, of odd cases whose cause is fixed for good, and of pytest and its plugins
+  themselves. Lots of small tests like these make refactoring harder and add maintenance and review time.
+- Keep what a test depends on visible: pass a timeout to a helper as an argument, so the call shows it.
+- Add a type annotation where it lets mypy catch a regression, such as a value that must not become `None` again.
 
-```python
-# before: depends on the wording of the log line
-assert "Shutdown listener RaisingShutdownListener failed" in caplog.text
-# after: the double was reached, and the manager dropped it
-assert raising_listener.notified
-assert id(raising_listener) not in ShutdownManager._listener  # noqa: SLF001
-```
+## Test doubles and helpers
 
-## Test doubles and shared test code
-
-Doubles are `@dataclass` subclasses of the real interface. They record what happened in fields
-(`notified`, `finished`, `notification_count`, `calls`) for the test to assert on. pytest prints
-those fields when an assert fails, and mypy checks each override against the interface:
+We write test doubles as `@dataclass` subclasses of the real interface, with fields that record what happened.
+When an assert fails, pytest prints those fields, and mypy checks every override:
 
 ```python
 @dataclass
@@ -93,47 +55,36 @@ class RaisingShutdownListener(ShutdownListener):
         raise RuntimeError("listener failed")
 ```
 
-- doubles go into the shared module of their kind, such as
-  `ecosim-common/tests/tech/shutdown_listeners.py`, rather than into the test that first needs
-  them, so the next test reuses them
-- creation logic for common objects lives in `ecosim_test_common/test_data/`, such as
-  `generate_unused_connection_address()`, so no test writes its own
+- Put test doubles in a shared module, like `ecosim-common/tests/tech/shutdown_listeners.py`, and code that builds
+  common test objects in a shared place such as `ecosim_test_common/test_data/`, so other tests can reuse them.
+- Integration-test setups that other tests can use belong in `SimpleTestServer` or `SimpleTestClient`.
+- Name a fixture after what it does. If every test needs it, make it `autouse` with a docstring saying what it's for.
+- Please use `monkeypatch` sparingly. It patches by name, so tests break easily and an IDE rename misses it.
+  Pass things in, like a timeout as a constructor parameter that defaults to the old value.
+- If tests need to skip part of a setup method, keep calling the method and give it a parameter that switches that
+  part off, so code added to it later still runs in tests.
 
 ## Constants
 
-- tests use the production constant instead of repeating its value, such as
-  `ShutdownManager.TERMINATE_EXIT_CODE` or `binary_message_header.HEADER_BYTES - 1`: the value then
-  changes without touching the test, and a boundary case stays on the boundary
-- a constant used at one place is written inline or as a local variable, since a module-level name
-  sends the reader looking for other uses
-- test-wide constants, such as a wait timeout, go into a common module in `ecosim_test_common`, so
-  the import does not tie a test to the helper that happened to need them first
-- exit codes stay below 256, because POSIX keeps only the lowest 8 bits: 444 arrives as 188
+- In tests, reference production constants like `ShutdownManager.TERMINATE_EXIT_CODE`, so the value can change
+  without touching the test.
+- Keep a constant that is used in one place inline or as a local variable.
+- Constants that many tests share, like a wait timeout, go in a common module such as `ecosim_test_common/timeouts.py`.
 
 ## Fixing the cause
 
-- bugs found in code under refactoring, such as the `_init` flag of `ShutdownManager` that was
-  never set, are fixed in the same change, while the code is open and under test anyway
-- a structural problem is fixed in the production code, since a workaround in a test leaves
-  production with it. For a lost Dask scheduler, a `DaskChannel.close()` that logs a warning and
-  goes on is enough for now; a fixture that resets the `ShutdownManager` would only hide the problem
-- components close only what they created, because a shared resource such as the Dask client may
-  still be needed by other shutdown listeners
-- a sleep that guesses how long the work takes gives way to a completion signal where one is
-  possible, such as all shutdown listeners having run
+- If you find a bug in code you're refactoring, fix it in the same change, while the code is open and under test.
+- Fix structural problems in the production code. A workaround in a test leaves production with the problem.
+- Wait for a completion signal where there is one; a sleep only guesses how long the work takes.
 
-## Changes and tooling
+## Changes
 
-- of two approaches whose consequences are hard to estimate, the less invasive one is chosen, since
-  less can go wrong with it
-- a change that may cost performance, such as a timeout on a socket that accepts in a loop, waits
-  for the automated performance test, so a regression shows in numbers instead of being guessed
-- code that looks unused is removed in a pull request: if it was still used, a test breaks, and the
-  review can spot a concept that is not finished yet
-- legacy code too costly to refactor can be removed once its hard-to-produce expected data is in
-  `ecosim_test_common/resources/` and a test of a real model takes its place, as the house
-  simulation under [Simulations](testing.md#simulations) shows
-- the docs change in the same pull request as the behaviour they describe, so `main` never
-  documents behaviour it no longer has
-- recurring developer tasks are Python scripts in `dev/`, so every task starts the same way whatever
-  runs underneath; `dev/build_docs.py` can build in Docker, so nobody installs npm just for the docs
+- When you can't tell what an approach might break, go with the less invasive one.
+- If a fix turns into a bigger behaviour change, open an issue so we can discuss it first.
+- Run the [performance tests](testing.md#performance-tests) before merging a change that may cost performance,
+  such as one in the main loop, so we can measure instead of guessing.
+- Remove code that looks unused in a pull request, so the review can spot an unfinished concept. If something
+  still needs it, a test should break.
+- Legacy code that's too costly to refactor can go once its hard-to-produce expected data is kept in
+  `ecosim_test_common/resources/` and a test with a real model uses it (see [Simulations](testing.md#simulations)).
+- Update the docs in the same pull request as the behaviour they describe.
