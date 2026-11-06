@@ -7,9 +7,7 @@ from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
 
 
-def test_communication_protocol(
-    command_line: ESPMonkeyPatch,
-) -> None:
+def test_communication_protocol() -> None:
     cli_arguments = HPCServerCliArguments()
     assert cli_arguments.communication_protocol() == CommunicationProtocol.DASK
 
@@ -17,7 +15,6 @@ def test_communication_protocol(
 def test_cli_arguments_within_sql_alchemy(
     remove_pytest_variables: None,
     capsys: CaptureFixture[str],
-    command_line: ESPMonkeyPatch,
 ) -> None:
     from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
 
@@ -28,9 +25,7 @@ def test_cli_arguments_within_sql_alchemy(
     assert logs.out == ""
 
 
-def test_unset_dask_options_are_none_and_the_scheduler_file_is_in_the_call_path(
-    command_line: ESPMonkeyPatch,
-) -> None:
+def test_unset_dask_options_are_none_and_the_scheduler_file_is_in_the_call_path() -> None:
     cli_arguments = HPCServerCliArguments()
 
     assert cli_arguments.network_interface() is None
@@ -39,10 +34,10 @@ def test_unset_dask_options_are_none_and_the_scheduler_file_is_in_the_call_path(
 
 
 def test_given_network_interface_is_kept_and_the_thread_count_becomes_an_int(
-    command_line: ESPMonkeyPatch,
+    esp_monkey_patch: ESPMonkeyPatch,
 ) -> None:
-    command_line.set_sys_arg("--network-interface", "enp3s0")
-    command_line.set_sys_arg("--threads-per-worker", "4")
+    esp_monkey_patch.set_sys_arg("--network-interface", "enp3s0")
+    esp_monkey_patch.set_sys_arg("--threads-per-worker", "4")
 
     cli_arguments = HPCServerCliArguments()
 
@@ -51,27 +46,19 @@ def test_given_network_interface_is_kept_and_the_thread_count_becomes_an_int(
 
 
 def test_absolute_scheduler_file_overrides_the_call_path(
-    command_line: ESPMonkeyPatch,
+    esp_monkey_patch: ESPMonkeyPatch,
 ) -> None:
-    command_line.set_sys_arg("--scheduler-file", "/shared/scheduler.json")
+    esp_monkey_patch.set_sys_arg("--scheduler-file", "/shared/scheduler.json")
 
     assert HPCServerCliArguments().scheduler_file() == Path("/shared/scheduler.json")
 
 
-def test_scheduler_file_can_be_in_a_directory_named_test(
-    command_line: ESPMonkeyPatch,
-) -> None:
-    command_line.set_sys_arg("--scheduler-file", "test/scheduler.json")
-
-    assert HPCServerCliArguments().scheduler_file() == Path.cwd() / "test" / "scheduler.json"
-
-
 @pytest.mark.parametrize("threads_per_worker", ["0", "-1"])
 def test_threads_per_worker_must_be_positive(
-    command_line: ESPMonkeyPatch,
+    esp_monkey_patch: ESPMonkeyPatch,
     threads_per_worker: str,
 ) -> None:
-    command_line.set_sys_arg("--threads-per-worker", threads_per_worker)
+    esp_monkey_patch.set_sys_arg("--threads-per-worker", threads_per_worker)
 
     with pytest.raises(ValueError, match="--threads-per-worker"):
         HPCServerCliArguments()

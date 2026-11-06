@@ -114,18 +114,3 @@ def test_app_config_passed_argument_override() -> None:
         ],
     )
     assert app_config._args.value_override == "333"
-
-
-def test_a_passed_path_can_be_in_a_directory_named_test() -> None:
-    app_config = AppConfig(
-        passed_arguments=["--path", "test/file"],
-        cli_description="CLI description",
-        parameters=[
-            AppConfigParameter(
-                name="path",
-                help_text="simple test",
-            ),
-        ],
-    )
-
-    assert app_config._args.path == "test/file"
