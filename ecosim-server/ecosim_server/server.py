@@ -5,6 +5,7 @@ from functools import partial
 from typing import ClassVar, override
 
 from ecosim_common.communication.channel.esp_channel import ConnectionData, ESPChannel
+from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
@@ -167,7 +168,7 @@ class Server(ShutdownListener):
         connection: ClientConnection,
     ) -> None:
         connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
-        message = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
+        message: ESPChannelMessage = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
         client_interfaces = message.payload(ModelInterfaceIds)
         if not simulation_config.validate_interfaces(
             client_id,
@@ -220,7 +221,7 @@ class Server(ShutdownListener):
             try:
                 Server._logger.debug("Handling new client connection")
                 connection.send(ESPChannelMessageJson.empty(type=MessageType.CLIENT_META_DATA_REQUEST))
-                message = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
+                message: ESPChannelMessage = connection.receive(expected_type=MessageType.CLIENT_META_DATA_REQUEST)
                 client_config: ClientMetaData = message.payload(ClientMetaData)
                 client_id = client_config.client_id()
                 if not client_communication.add_if_needed(client_config, connection):
