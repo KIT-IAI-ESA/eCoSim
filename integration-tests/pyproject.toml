@@ -9,14 +9,15 @@ description = "Integration tests for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
-readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Topic :: eCoSim :: Integration Tests",
+    "Topic :: Software Development :: Testing",
     #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+    "Private :: Do Not Upload",
 ]
 dependencies = [
     "dask[distributed]==2026.7.0",

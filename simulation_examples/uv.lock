@@ -1655,7 +1655,7 @@ wheels = [
 ]
 
 [[package]]
-name = "simulation-example"
+name = "simulation-examples"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
