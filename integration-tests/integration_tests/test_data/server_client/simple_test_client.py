@@ -71,6 +71,29 @@ class SimpleTestClient(Client):
             on_simulation_step_return=on_simulation_step_return,
         )
 
+    @staticmethod
+    def sending_accumulated_step_sizes(
+        communication_protocol: CommunicationProtocol,
+        server_host: str,
+        server_port: int,
+        test_client_data: TestClientData,
+        interface_name: str,
+    ) -> SimpleTestClient:
+        return SimpleTestClient.of_test_data(
+            communication_protocol=communication_protocol,
+            server_host=server_host,
+            server_port=server_port,
+            test_client_data=test_client_data,
+            on_simulation_step_return=lambda client, _received_inputs, _step_size_in_seconds: ClientSimStepData(
+                interface_values=[
+                    test_client_data.interface_protocol_value_of(
+                        interface_name=interface_name,
+                        value=client.accumulated_step_sizes_in_seconds.value,
+                    ),
+                ],
+            ),
+        )
+
     def __init__(
         self,
         client_config: ClientConfig,

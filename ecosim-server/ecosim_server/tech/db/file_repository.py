@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Generic, List, TypeVar
+from typing import Callable, ClassVar, Generic, List, TypeVar
 
 from ecosim_common.tech.json.dataclass_json_converter import DataclassInstance, DataclassJsonConverter
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -14,7 +14,7 @@ GenericEntry = TypeVar("GenericEntry", bound=DataclassInstance)
 
 @dataclass(frozen=True)
 class FileRepository(ABC, Generic[GenericEntry]):
-    """Append-only repository that stores dataclass entries as JSON lines. NOTE: the dataclass must be serializable by `DataclassJsonConverter`.
+    """Repository that appends dataclass entries as JSON lines. NOTE: the dataclass must be serializable by `DataclassJsonConverter`.
 
     The repository uses the `jsonl` standard (https://jsonl.co/guide/what-is-jsonl).
 
@@ -44,6 +44,17 @@ class FileRepository(ABC, Generic[GenericEntry]):
     def all(self) -> List[GenericEntry]:
         with self._write_lock:
             return [self._entry_of_line(line) for line in self._read_lines()]
+
+    def remove_where(
+        self,
+        condition: Callable[[GenericEntry], bool],
+    ) -> None:
+        with self._write_lock:
+            kept_lines = [line for line in self._read_lines() if not condition(self._entry_of_line(line))]
+            rewritten_file_path = self._file_path.with_suffix(".rewritten")
+            rewritten_file_path.write_text("".join(kept_lines), encoding="utf-8")
+            # replaced in one step, so an abort while writing cannot lose the kept entries
+            rewritten_file_path.replace(self._file_path)
 
     def file_path(self) -> Path:
         return self._file_path

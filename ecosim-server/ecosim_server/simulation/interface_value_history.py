@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, List, Tuple
+from typing import Any, Tuple
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -13,7 +13,7 @@ from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_queue import ESPQueue
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.config.server_config import ServerConfig
-from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.simulation.interface_value_history_thread import (
     DEFAULT_VALUES_MARKER,
@@ -157,44 +157,28 @@ class InterfaceValueHistory:
     def calculate_restore_data_or_exception(self) -> RestoreData:
         InterfaceValueHistory.logger.debug("Calculating current execution step...")
         self.flush()  # the entries and (through 'RestoreData') the repositories are read below
-        latest_completed_step_by_client: dict[ClientID, int] = dict[ClientID, int]()
-        latest_step: int = self._get_latest_timestep()
-        clients_with_missing_steps: List[ClientID] = []
-        for client in self._simulation_config.clients:
-            if len(self._entries.keys()) == 0:
-                InterfaceValueHistory.logger.debug("No entries in self._entries -> skipping any calculation")
-                latest_completed_step_by_client[client.client_id] = -1
-                continue
-            latest_step_for_client = latest_step
-            if client.client_id not in self._entries[latest_step].keys():
-                found_latest_step_for_client: bool = False
-                while latest_step_for_client > 0 and not found_latest_step_for_client:
-                    latest_step_for_client -= 1
-                    if client.client_id not in self._entries[latest_step_for_client].keys():
-                        continue
-                    found_latest_step_for_client = True
-                if not found_latest_step_for_client:
-                    clients_with_missing_steps.append(client.client_id)
-                    continue
-            client_interfaces = [interface.name for interface in self._entries[latest_step_for_client][client.client_id]]
-            latest_completed_step_by_client[client.client_id] = latest_step_for_client
-            # check if all interfaces are present -> otherwise it is an uncompleted step
-            for interface in client.interfaces:
-                if interface.name not in client_interfaces:
-                    latest_completed_step_by_client[client.client_id] = latest_step_for_client - 1
-                    break
-        if len(clients_with_missing_steps) > 0:
-            raise RuntimeError(
-                f"Cannot calculate current execution step because some clients are missing steps: {clients_with_missing_steps}",
-            )
         restore_data = RestoreData.of(
-            latest_completed_step_by_client=latest_completed_step_by_client,
+            latest_completed_step_by_client={client.client_id: self._latest_completed_step(client) for client in self._simulation_config.clients},
             repositories=self._repositories,
+            simulation_config=self._simulation_config,
         )
         InterfaceValueHistory.logger.debug("Calculating current execution step... finished. restore_data=%s", restore_data)
         return restore_data
 
-    def _get_latest_timestep(self) -> int:
-        if not self._entries:
-            return 0
-        return max(self._entries.keys())  # the keys are the steps, so they range from 0 to the latest step
+    def _latest_completed_step(self, client: ClientSimulatorConfig) -> int:
+        """The last step whose row has every interface of the client, -1 if there is none."""
+        interface_names = {interface.name for interface in client.interfaces}
+        completed_steps = [
+            step
+            for step, values_by_client in self._entries.items()
+            if client.client_id in values_by_client and interface_names <= {value.name for value in values_by_client[client.client_id]}
+        ]
+        return max(completed_steps, default=-1)
+
+    def remove_steps_starting_at(self, step: int) -> None:
+        """Removes the stored rows of every client from this step on, so a step that runs again is not stored twice."""
+        # a write still on its way would bring a removed row back
+        self.flush()
+        timestamp = self._simulation_config.date_time_for_step(step)
+        for client in self._simulation_config.clients:
+            self._repositories.measurement_repository(client_id=client.client_id).remove_starting_at(timestamp=timestamp)

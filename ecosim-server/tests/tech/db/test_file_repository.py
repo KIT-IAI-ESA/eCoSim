@@ -128,3 +128,14 @@ def test_a_repository_with_a_dask_lock_can_be_pickled(tmp_path: Path) -> None:
     restored = pickle.loads(pickle.dumps(repository))
 
     assert restored.file_path() == repository.file_path()
+
+
+def test_remove_where_keeps_only_the_entries_the_condition_does_not_match(tmp_path: Path) -> None:
+    repository = create_repository(tmp_path / "measurements.jsonl")
+    entries = [create_measurement(minute) for minute in range(4)]
+    for entry in entries:
+        repository.add(entry)
+
+    repository.remove_where(condition=lambda entry: entry.timestamp >= entries[2].timestamp)
+
+    assert repository.all() == entries[:2]
