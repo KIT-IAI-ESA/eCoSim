@@ -130,7 +130,9 @@ On the client side `Client._handle_message` dispatches over the same enum with a
 default, so `mypy` rejects a new `MessageType` until the client handles it. The server has no such
 single dispatch point: it sends and awaits each type where it needs it.
 
-`SIMULATION_STEP_BATCH` exists for restoring aborted runs.
+`SIMULATION_STEP_BATCH` exists for restoring aborted runs. A restore continues after the last step that every
+client completed: each client gets its stored steps up to that step as one batch, and the stored rows after it
+are removed, because those steps run again.
 
 ## Storage
 

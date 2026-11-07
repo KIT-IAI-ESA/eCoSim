@@ -148,3 +148,10 @@ class MeasurementRepositoryDB(MeasurementRepository):
                 values_list.sort(key=lambda v: str(v.name))
                 result.append(MeasurementEntry(values=tuple(values_list), timestamp=row.timestamp))
         return result
+
+    @override
+    def remove_starting_at(self, timestamp: datetime.datetime) -> None:
+        with self._db_connection.session() as session:
+            timestamp_column = getattr(self._dynamic_table, "timestamp")
+            session.query(self._dynamic_table).filter(timestamp_column >= timestamp).delete()
+            session.commit()
