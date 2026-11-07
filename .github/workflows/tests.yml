@@ -10,7 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.ref }}
+  # every run on main has a group of its own, so it is never cancelled
+  group: tests-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,8 +24,11 @@ jobs:
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: pre-commit
+      # --locked also checks ecosim-test-common/uv.lock, which no other job syncs
       - name: Sync every subproject
-        run: python dev/sync_projects.py
+        run: python dev/sync_projects.py --locked
       - uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
@@ -58,6 +62,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: ${{ matrix.project }}-py${{ matrix.python }}
       - name: Sync
         working-directory: ${{ matrix.project }}
         run: uv sync --locked --extra dev
@@ -81,6 +87,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       # the tests under locally/ need external models or an HPC environment;
       # the performance tests run in performance-tests.yml (their tooling/ unit tests stay here)
       - name: Test
@@ -101,6 +109,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: dev-scripts
       - name: Test
         run: uv run --locked --extra dev pytest dev/tests
 

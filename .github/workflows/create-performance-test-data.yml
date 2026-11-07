@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       - name: Sync
         working-directory: integration-tests
         run: uv sync --locked

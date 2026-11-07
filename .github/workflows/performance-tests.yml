@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: performance-tests-${{ github.ref }}
+  # every run on main has a group of its own, so it is never cancelled
+  group: performance-tests-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       - name: Sync
         working-directory: integration-tests
         run: uv sync --locked
