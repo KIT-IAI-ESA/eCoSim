@@ -16,7 +16,7 @@ from config import REPO_ROOT, error_print, run
 DOCS_DIRECTORY = REPO_ROOT / "docs"
 CONTAINER_DIRECTORY = "/docs"
 # keep major version in step with .github/workflows/docs.yml
-NODE_IMAGE = "node:20.20.2-bookworm-slim"
+NODE_IMAGE = "node:24.22.2-bookworm-slim"
 SERVE_PORT = 3000
 INTERRUPTED_EXIT_CODE = 130
 
@@ -32,7 +32,7 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
 
 def choose_tool(requested: str | None, available: list[str]) -> str | None:
     if not available:
-        error_print("Neither npm nor docker is on PATH. Install Node.js 20 or Docker to build the documentation.")
+        error_print("Neither npm nor docker is on PATH. Install Node.js 24 or Docker to build the documentation.")
         return None
     if requested is None or requested in available:
         return requested or available[0]

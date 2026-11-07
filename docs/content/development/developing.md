@@ -13,13 +13,14 @@
 - types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 - summary in the imperative: `add`, not `added`
 - `!` marks a breaking change
-- the check runs as a `commit-msg` hook after `uv run pre-commit install`, and on GitHub for every new commit
+- the check runs as a `commit-msg` hook after `uv run pre-commit install`, and on GitHub for every pull request
+  and every push to `main`
 
 ## Documentation
 
 The documentation is a [Docusaurus](https://docusaurus.io/) site in `docs/`. The pages are
 Markdown files in `docs/content/`, the sidebar is defined in `docs/sidebars.ts`. It needs
-Node.js 20 or newer, or Docker with the script below.
+Node.js 24 or newer, or Docker with the script below.
 
 - install the dependencies once: `cd docs && npm ci`
 - serve it locally with live reload: `npm start`
@@ -27,7 +28,7 @@ Node.js 20 or newer, or Docker with the script below.
     - the build fails on a broken link, so run it before handing the work back
     - the output goes to `docs/build/`, which is gitignored
 - or install and build in one step from the repository root: `python dev/build_docs.py`
-    - it uses npm, or a pinned `node:20` image in Docker if npm is not installed
+    - it uses npm, or a pinned `node:24` image in Docker if npm is not installed
     - `--npm` or `--docker` picks one; the files in `docs/` stay yours with either
     - `--serve` serves it with live reload on `http://localhost:3000/ecosim-os/` instead of building
 - a new page has to be added to `docs/sidebars.ts`
@@ -44,5 +45,5 @@ With `--check`, both scripts only compare and fail if the page is out of date. C
 
 ### Publishing
 
-The workflow `.github/workflows/docs.yml` builds the site for every push and pull request, and
-publishes `main` to GitHub Pages.
+The workflow `.github/workflows/docs.yml` builds the site for every pull request and every push to
+`main`, and publishes `main` to GitHub Pages.
