@@ -9,12 +9,14 @@ repos:
         exclude: .*\.iml$
       - id: end-of-file-fixer
         types: [ text ]
-        exclude: ^(/windows/.*\.ini|.*\.iml)$
+        exclude: ^(.*/windows/.*\.ini|.*\.iml)$
       - id: check-yaml
       - id: check-json
       - id: check-toml
       - id: check-merge-conflict
       - id: debug-statements
+      - id: check-added-large-files
+        args: [ '--maxkb=4096', '--enforce-all' ]
 
   - repo: https://github.com/asottile/add-trailing-comma
     rev: v4.0.0
@@ -104,6 +106,13 @@ repos:
         entry: python dev/run_mypy.py integration-tests
         language: system
         files: ^integration-tests/
+        pass_filenames: false
+        types: [ python ]
+      - id: mypy
+        name: mypy (dev)
+        entry: uv run --directory dev mypy --strict --ignore-missing-imports .
+        language: system
+        files: ^dev/
         pass_filenames: false
         types: [ python ]
       - id: check-py-filenames

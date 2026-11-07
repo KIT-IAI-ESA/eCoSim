@@ -32,6 +32,7 @@
 - a trailing comma in multi-line calls and signatures, added by `add-trailing-comma`
 - a newline at the end of every file
 - no leftover `breakpoint()` or `pdb`
+- no file larger than 4 MB (`check-added-large-files`)
 - no f-strings in log calls (ruff `G004`): `logger.debug("x %s", value)`
 - no access to private members of other objects (ruff `SLF001`)
 - shell scripts pass `shellcheck`
