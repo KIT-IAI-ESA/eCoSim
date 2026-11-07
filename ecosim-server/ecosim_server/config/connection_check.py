@@ -21,6 +21,8 @@ def _problems_of_interface(interface: dict[str, Any], own_index: int, simulators
     connections = interface.get("connected_to") or []
     if not isinstance(connections, list):
         return [f"connected_to must be a list, not {type(connections).__name__}"]
+    if not connections and _is_input(interface):
+        return ["the input has no connection in connected_to, so it would never get a value"]
     problems = [f"connected_to has {len(connections)} connections, only one is possible"] if len(connections) > 1 else []
     for connection in connections:
         problems += _problems_of_connection(connection=connection, own_interface=interface, own_index=own_index, simulators=simulators, delays=delays)

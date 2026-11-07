@@ -72,11 +72,10 @@ The interface files and `simulators` in the simulation config describe an interf
 - `required` in the `.fmc` file only counts for inputs: the client logs a mismatch error if
   `simulation.json` does not list the input.
 - `connected_to` holds `simulator`, the position of the output's simulator in `simulators`, counting
-  from 0, and `interface`, the `name` of the output. Without `connected_to`, an input never gets a
-  value and the run fails in its first step with `no client is ready for execution`.
+  from 0, and `interface`, the `name` of the output.
 - The run only uses the interfaces in `simulation.json`, so the `.fmc` file may list more.
-- At load, the server lists every bad `connected_to`: the target has to exist and be an output, and
-  an output of the same simulator needs a logical delay.
+- At load, the server lists every bad `connected_to`: every input needs one, the target has to
+  exist and be an output, and an output of the same simulator needs a logical delay.
 - With PostgreSQL storage, names stop the server at start-up if they are too long (`name` over 60
   bytes, simulator name over 56) or would share a column or table.
 

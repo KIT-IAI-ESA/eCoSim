@@ -87,9 +87,9 @@ def test_an_output_feeding_the_input_of_the_same_name_through_a_delay_is_accepte
 
 
 def test_an_output_naming_the_input_of_the_same_name_is_accepted(tmp_path: Path) -> None:
-    house = a_simulator("house", an_output_naming("T", simulator="0", interface="T"), {"name": "T", "type": "Input"})
+    house = a_simulator("house", an_output_naming("T", simulator="1", interface="T"), an_input("T", simulator="0", interface="T_out"))
 
-    assert load_config(tmp_path, house).clients
+    assert load_config(tmp_path, WEATHER, house).clients
 
 
 def test_an_input_naming_the_output_of_the_same_name_still_needs_a_delay(tmp_path: Path) -> None:
