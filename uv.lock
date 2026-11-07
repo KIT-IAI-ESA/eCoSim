@@ -85,6 +85,7 @@ dev = [
     { name = "pip" },
     { name = "pre-commit" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
     { name = "uv" },
 ]
@@ -95,6 +96,7 @@ requires-dist = [
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = "==6.0.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.14.4" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.12.5" },
 ]

@@ -18,6 +18,8 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 
 @dataclasses.dataclass
 class TestModelInterface:
+    __test__ = False
+
     simulator_name: str
     model_name: str
     interface_name: str

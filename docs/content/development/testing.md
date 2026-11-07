@@ -16,9 +16,9 @@
 
 | Subproject | Tests |
 | --- | --- |
-| `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-hpc` | `tests/` |
+| `ecosim-common`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-hpc` | `tests/` |
 | `integration-tests` | `integration_tests/` |
-| `ecosim-client-pyro5`, `ecosim-test-common` | none |
+| `ecosim-common-fmpy`, `ecosim-client-pyro5`, `ecosim-test-common` | none |
 
 `ecosim-server/tests/tech/db/` starts its own throwaway PostgreSQL clusters on a free port if `initdb`
 is installed. Without `initdb`, and in CI, those tests are skipped.

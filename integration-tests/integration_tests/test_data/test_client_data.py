@@ -16,6 +16,8 @@ from ecosim_test_common.test_data.test_model_interface import TestModelInterface
 
 @dataclasses.dataclass
 class TestClientData:
+    __test__ = False
+
     simulator_name: str
     model_name: str
     interfaces: List[TestModelInterface]
