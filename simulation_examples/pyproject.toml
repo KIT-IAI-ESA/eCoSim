@@ -3,7 +3,7 @@ requires = ["setuptools==83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "simulation_example"
+name = "simulation-examples"
 version = "0.0.1"
 description = "For setting python environment for simulation examples"
 authors = [
@@ -11,6 +11,7 @@ authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu"}
 ]
 requires-python = ">=3.12"
+classifiers = ["Private :: Do Not Upload"]
 
 dependencies = [
     "ecosim-client-fmu-v2==0.14.0",

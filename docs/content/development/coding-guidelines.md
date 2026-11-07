@@ -35,5 +35,6 @@
 - no f-strings in log calls (ruff `G004`): `logger.debug("x %s", value)`
 - no access to private members of other objects (ruff `SLF001`)
 - shell scripts pass `shellcheck`
+- `pyproject.toml` files pass `validate-pyproject`, which also rejects unknown classifiers
 
 Run it before every commit, see [Testing](testing.md#before-a-commit).

@@ -130,3 +130,12 @@ repos:
     rev: v0.11.0.1
     hooks:
       - id: shellcheck
+
+  # its default dependencies include trove-classifiers, so unknown classifiers fail
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.27
+    hooks:
+      - id: validate-pyproject
+        files: (^|/)pyproject\.toml$
+        # the client classifiers are fixed with the client rework
+        exclude: ^ecosim-client-

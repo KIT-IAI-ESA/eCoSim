@@ -7,6 +7,14 @@ authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
 ]
 requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Distributed Computing",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
 dependencies = [
     "dask[distributed]==2026.7.0",
     "dask-mpi==2026.3.0",
@@ -42,6 +50,12 @@ dev = [
     "dask-pyspy==0.4.0",
     "ecosim-test-common==0.14.0",
 ]
+
+[project.urls]
+Documentation = "https://mekkyz.github.io/ecosim-os/"
+Source = "https://github.com/mekkyz/ecosim-os"
+Issues = "https://github.com/mekkyz/ecosim-os/issues"
+Changelog = "https://mekkyz.github.io/ecosim-os/development/release-history"
 
 
 [tool.pytest.ini_options]
