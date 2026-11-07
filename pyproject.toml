@@ -20,6 +20,8 @@ dev = [
     "pre-commit==4.6.0",
     "mypy==2.3.0",
     "pytest==9.1.1",
+    # dev/tests read the workflow and the pre-commit config
+    "pyyaml==6.0.3",
     "pip==26.1.2", # PyCharm mypy plugin needs pip
     "ruff==0.14.4",
     "uv==0.12.5",

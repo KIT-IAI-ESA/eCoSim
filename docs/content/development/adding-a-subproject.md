@@ -1,7 +1,8 @@
 # Adding a subproject
 
-A new subproject is not picked up automatically. Three places change together; if one is missing,
-the package is never synced or type checked, and nothing reports it.
+A new subproject is not picked up automatically. Four places change together; if one is missing,
+the package is never synced, tested or type checked. `uv run pytest dev/tests` reports a subproject
+that is in `dev/config.py` but missing from the mypy hooks or the test matrix.
 
 ## 1. The package
 
@@ -41,6 +42,17 @@ mypy runs once per subproject. Add a hook next to the others:
         files: ^ecosim-<name>/
         pass_filenames: false
         types: [ python ]
+```
+
+## 4. `.github/workflows/tests.yml`
+
+The `unit-tests` job runs `dev/run_tests.py` for each subproject in its matrix. Add the new one,
+unless it is one of the `EXCLUDED_PROJECTS` in `dev/run_tests.py`:
+
+```yaml
+      matrix:
+        project:
+          - ecosim-<name>
 ```
 
 ## Finally
