@@ -14,9 +14,12 @@ requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Topic :: eCoSim :: Common Code",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
     #    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 dependencies = [
     "art==6.5",
@@ -40,6 +43,12 @@ dev = [
     "setuptools==83.0.0",
     "uv==0.12.5",
 ]
+
+[project.urls]
+Documentation = "https://mekkyz.github.io/ecosim-os/"
+Source = "https://github.com/mekkyz/ecosim-os"
+Issues = "https://github.com/mekkyz/ecosim-os/issues"
+Changelog = "https://mekkyz.github.io/ecosim-os/development/release-history"
 
 [tool.uv.sources]
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
