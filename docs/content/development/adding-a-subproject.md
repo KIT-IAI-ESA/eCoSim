@@ -27,7 +27,7 @@ Add it to `SUBPROJECTS`, with the extras to sync:
 (REPO_ROOT / "ecosim-<name>", ["dev"]),
 ```
 
-`dev/sync_projects.py`, `dev/init_dev.py` and `dev/run_tests.py` go through this list.
+`dev/sync_projects.py`, `dev/init_dev.py`, `dev/run_tests.py` and `dev/bump_version.py` go through this list.
 
 ## 3. `.pre-commit-config.yaml`
 
