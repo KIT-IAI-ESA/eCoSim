@@ -72,7 +72,7 @@ The interface files and `simulators` in the simulation config describe an interf
 - `required` in the `.fmc` file only counts for inputs: the client logs a mismatch error if
   `simulation.json` does not list the input.
 - `connected_to` holds `simulator`, the position of the output's simulator in `simulators`, counting
-  from 0, and `interface`, the `name` of the output.
+  from 0, and `interface`, the `name` of the output. `simulator` can be a number or a string.
 - The run only uses the interfaces in `simulation.json`, so the `.fmc` file may list more.
 - At load, the server lists every bad `connected_to`: every input needs one, the target has to
   exist and be an output, and an output of the same simulator needs a logical delay.
@@ -81,9 +81,9 @@ The interface files and `simulators` in the simulation config describe an interf
 
 :::note
 
-Write `required` and `simulator` as JSON strings, as in the example below. `"required": true` raises
-`AttributeError`, `"required": false` fails with `Input is empty` and `"simulator": 0` fails with
-`Simulator index is required`.
+In `simulation.json`, `required` can also be `true` or `false`. The `.fmc` file only takes a string,
+as in the `house.fmc` example: `"required": true` raises `AttributeError` there and
+`"required": false` fails with `Input is empty`.
 
 :::
 

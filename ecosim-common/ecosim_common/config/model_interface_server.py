@@ -39,8 +39,8 @@ class ModelInterfaceServer:
             unit=raw_interface.get("unit"),
             description=raw_interface.get("description"),
             interface_type=InterfaceType.of(interface_type),
-            required=config_parser.ConfigParser.config_string_to_bool(
-                raw_interface.setdefault(
+            required=ModelInterfaceServer._parse_required(
+                raw_required=raw_interface.setdefault(
                     "required",
                     "false",
                 ),
@@ -77,8 +77,14 @@ class ModelInterfaceServer:
         return self.simulator_interface_id.model_interface_id.interface
 
     @staticmethod
+    def _parse_required(raw_required: bool | str) -> bool:
+        if isinstance(raw_required, bool):
+            return raw_required
+        return config_parser.ConfigParser.config_string_to_bool(raw_required)
+
+    @staticmethod
     def _get_connected_to(
-        raw_connected_to: List[dict[str, str]] | None,
+        raw_connected_to: List[dict[str, Any]] | None,
         raw_simulators: List[dict[str, str]],
     ) -> List[ConnectedToData]:
         if not raw_connected_to:
@@ -87,11 +93,10 @@ class ModelInterfaceServer:
         if len(raw_connected_to) != 1:
             raise RuntimeError(f"Expected 1 connected_to, got {len(raw_connected_to)}")
         connection = raw_connected_to[0]
-        simulator_index_string = connection.get("simulator")
-        if not simulator_index_string:
+        raw_simulator_index = connection.get("simulator")
+        if raw_simulator_index is None:
             raise RuntimeError(f"Simulator index is required: {connection}")
-        simulator_index = int(simulator_index_string)
-        simulator = raw_simulators[simulator_index]
+        simulator = raw_simulators[int(raw_simulator_index)]
         simulator_name = simulator.get("name")
         if not simulator_name:
             raise RuntimeError(f"Simulator name is required: {connection}")
@@ -110,7 +115,7 @@ class ModelInterfaceServer:
                         interface=model_interface_name,
                     ),
                 ),
-                delay_path=connection.get("delay_path", []),  # type: ignore
+                delay_path=connection.get("delay_path", []),
             ),
         )
         return result
