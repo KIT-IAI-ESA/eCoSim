@@ -60,7 +60,7 @@ has to happen in every `pyproject.toml` at once.
 | `communication/data` | The payloads: meta data, interface settings, step requests |
 | `config` | `AppConfig` (CLI parsing), `ConfigParser` (ini files), `DatabaseType`, interface ids |
 | `client` | `Client` — the base class every client subproject specialises |
-| `simulation` | Interface identity: `InterfaceID`, `ModelInterfaceID`, `SimulatorInterfaceID` |
+| `simulation` | Interface identity: `InterfaceId`, `ModelInterfaceId`, `SimulatorInterfaceId` |
 | `tech` | Infrastructure without domain knowledge: logging, threading, json, datetime |
 | `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |
 
@@ -83,8 +83,7 @@ Every client subproject follows the same shape, so a new client is easy to place
 
 ```
 main.py               the console script
-<name>_client.py      the Client subclass: talks to the server
-<name>_simulator.py   drives the actual model
+<name>_client.py      the Client subclass: talks to the server and drives the model
 <name>_config.py      the model specific configuration
 ```
 
