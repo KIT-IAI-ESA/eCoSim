@@ -28,8 +28,10 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 
 ## Libraries without type hints
 
-mypy runs strict, so a library without type hints fails with `import-not-found`. Add an override to
-the subproject's `[tool.mypy]` instead of loosening the settings:
+mypy uses the settings in each subproject's `[tool.mypy]` (`check_untyped_defs` and
+`disallow_untyped_defs`), not `--strict`. Only the scripts in `dev/` are checked with `--strict`.
+A library without type hints fails with `import-untyped`, or with `import-not-found` if it is not
+installed. Add an override to the subproject's `[tool.mypy]` instead of loosening the settings:
 
 ```toml
 [[tool.mypy.overrides]]

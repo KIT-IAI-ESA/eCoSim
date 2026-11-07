@@ -85,7 +85,7 @@ Environment variables:
       subproject and takes minutes
 2. mypy for each changed subproject: `python dev/run_mypy.py ecosim-server`
     - each subproject has its own `[tool.mypy]`; the root `mypy.ini` is only for the IDE
-    - the mypy hooks do not cover `dev/`, check a changed script with
+    - the hook `mypy (dev)` checks the scripts in `dev/` with `--strict`; to check one by hand:
       `MYPYPATH=dev uv run mypy --strict --ignore-missing-imports dev/<script>.py`
 3. the tests of each changed subproject; after a change to `ecosim-common`, all of them
 4. a quick end-to-end run: `cd integration-tests && uv run pytest integration_tests/server_client/test_three_client_server.py`

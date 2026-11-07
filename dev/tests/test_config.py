@@ -44,6 +44,6 @@ def test_no_subproject_is_left_out_of_the_unit_tests_in_ci() -> None:
 
 def test_every_subproject_is_type_checked_by_its_own_mypy_hook() -> None:
     hooks = [hook for repository in read_yaml(REPO_ROOT / ".pre-commit-config.yaml")["repos"] for hook in repository["hooks"]]
-    mypy_hooks = {hook["entry"]: hook["files"] for hook in hooks if hook["id"] == "mypy"}
+    subproject_hooks = {hook["entry"]: hook["files"] for hook in hooks if hook.get("entry", "").startswith("python dev/run_mypy.py ")}
 
-    assert mypy_hooks == {f"python dev/run_mypy.py {path.name}": f"^{path.name}/" for path, _ in SUBPROJECTS}
+    assert subproject_hooks == {f"python dev/run_mypy.py {path.name}": f"^{path.name}/" for path, _ in SUBPROJECTS}
