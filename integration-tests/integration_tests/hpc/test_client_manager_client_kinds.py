@@ -15,12 +15,12 @@ from integration_tests.hpc.hpc_client_modules import ClientKind, write_client_mo
 _FMU_FILES = {ClientKind.FMU2: fmu2_model_path(), ClientKind.FMU3: fmu3_model_path()}
 
 
-def _simulation_config(model_name: str) -> SimulationConfig:
+def _simulation_config(client_id: ClientID) -> SimulationConfig:
     client = ClientSimulatorConfig(
-        simulator_name=model_name,
-        model_name=model_name,
+        simulator_name=client_id.simulator_name,
+        model_name=client_id.model_name,
         interfaces=[],
-        client_id=ClientID(model_name=model_name, simulator_name=model_name),
+        client_id=client_id,
     )
     return SimulationConfig(
         clients=[client],
@@ -43,12 +43,12 @@ def test_client_manager_starts_every_client_kind(
     tmp_path: Path,
     kind: ClientKind,
 ) -> None:
-    model_name = write_client_module(tmp_path, kind)
+    client_id = write_client_module(tmp_path, kind)
     manager = ClientManager(ClientManagerConfig(host="localhost", port=9090, simulator_dir=tmp_path))
 
-    manager.clients_start(_simulation_config(model_name))
+    manager.clients_start(_simulation_config(client_id))
 
-    state = manager.client_dict[model_name]
+    state = manager.client_dict[client_id]
     # the client is created on a dask worker - if that fails, the bootstrapping never ends
     assert state.is_boot_strapping_done.wait(timeout=30), f"the {kind.value} client was not created"
-    assert manager.client_dict[model_name].was_started_event.wait(timeout=10)  # type: ignore[union-attr] # set with the bootstrapping
+    assert manager.client_dict[client_id].was_started_event.wait(timeout=10)  # type: ignore[union-attr] # set with the bootstrapping

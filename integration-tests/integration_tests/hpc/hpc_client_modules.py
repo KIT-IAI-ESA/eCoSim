@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Iterable
 
 from ecosim_client_matlab.matlab_config import MatlabConfig
+from ecosim_common.config.client_id import ClientID
 from ecosim_test_common.resources.resource_utils import fmu2_fmc_path, fmu2_model_path, fmu3_fmc_path, fmu3_model_path
 
 from integration_tests.test_data.write_ini import Sections, write_client_ini, write_fmc
@@ -28,7 +29,7 @@ def _script_module(directory: Path, client_type: str, scripts: Iterable[str], ex
     write_client_ini(directory, client_type, directory.name, write_fmc(directory, inputs=["u"], outputs=["y"]), extra_sections)
 
 
-def write_client_module(simulator_dir: Path, kind: ClientKind) -> str:
+def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
     directory = simulator_dir / f"{kind.value}_model"
     directory.mkdir()
     match kind:
@@ -52,4 +53,5 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> str:
                 scripts=MatlabConfig.SCRIPT_NAMES,
                 extra_sections={"matlab": {"scriptfolder": str(directory)}},
             )
-    return directory.name
+    # 'write_client_ini' names the simulator after its client type, which is the kind's value
+    return ClientID(model_name=directory.name, simulator_name=kind.value)
