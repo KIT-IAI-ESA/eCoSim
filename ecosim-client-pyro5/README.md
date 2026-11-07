@@ -1,6 +1,6 @@
 # Usage of the Pyro Client
 - The Pyro Client can be used to simulate with external Python files, which provide a pyro object
-- In the new Pyro Config [Pyro] inside the preferences.ini of a Pyro client three values have to be entered
+- In the new Pyro Config [pyro] inside the preferences.ini of a Pyro client three values have to be entered
   - pyro_host: Name of the host or IP-address, where the Python file with the active Pyro object is running
   - pyro_port: Port that pyro uses for connection. This should be a different to the database and server port
   - pyro_object_name: The name of the provided Pyro-Object
