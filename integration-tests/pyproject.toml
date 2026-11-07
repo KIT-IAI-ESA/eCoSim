@@ -95,7 +95,7 @@ addopts = [
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",
-    "--ignore=locally"
+    "--ignore=integration_tests/locally"
 ]
 log_cli = true
 log_cli_level = "DEBUG"
