@@ -57,6 +57,11 @@ class RecordingMeasurementRepository(MeasurementRepository):
         with self._lock:
             return list(self.entries)
 
+    @override
+    def remove_starting_at(self, timestamp: datetime.datetime) -> None:
+        with self._lock:
+            self.entries = [entry for entry in self.entries if entry.timestamp < timestamp]
+
 
 @dataclass(frozen=True)
 class RecordingRepositories(Repositories):

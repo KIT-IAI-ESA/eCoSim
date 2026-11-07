@@ -182,6 +182,7 @@ class SimulationExecutor:
         SimulationExecutor.logger.info("[Restore simulation] Starting restore for all clients and waiting for successful start.")
         self._value_history.init_from_repositories()
         restore_data = self._value_history.calculate_restore_data_or_exception()
+        self._value_history.remove_steps_starting_at(step=restore_data.current_step)
         self._current_step = restore_data.current_step
         SimulationExecutor.logger.debug("[Restore simulation] the latest completed step is: %s -> restoring until this step.", self._current_step)
         save_defaults = False

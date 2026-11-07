@@ -18,3 +18,7 @@ class MeasurementRepository(ABC):
     @abstractmethod
     def all(self) -> List[MeasurementEntry]:
         pass
+
+    @abstractmethod
+    def remove_starting_at(self, timestamp: datetime.datetime) -> None:
+        """Removes the measurements at and after the timestamp."""

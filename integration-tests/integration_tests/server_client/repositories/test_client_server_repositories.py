@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import DatabaseConfig
@@ -32,7 +31,13 @@ def test_the_predefined_client_server_run_is_stored_by_every_repository(
     client_data = _client_data(database_config, communication_protocol)
     server_port = get_free_port()
     server = _server(database_config, communication_protocol, client_data, server_port)
-    client = _client(communication_protocol, server_port, client_data)
+    client = SimpleTestClient.sending_accumulated_step_sizes(
+        communication_protocol=communication_protocol,
+        server_host="localhost",
+        server_port=server_port,
+        test_client_data=client_data,
+        interface_name=OUTPUT_INTERFACE,
+    )
 
     server.start_in_thread()
     server.wait_until_listening()
@@ -76,27 +81,6 @@ def _server(
             simulation_start_date=SIMULATION_START_DATE,
             clients=[client_data.to_client_simulator_config()],
             database_config=database_config,
-        ),
-    )
-
-
-def _client(
-    communication_protocol: CommunicationProtocol,
-    server_port: int,
-    client_data: TestClientData,
-) -> SimpleTestClient:
-    return SimpleTestClient.of_test_data(
-        communication_protocol=communication_protocol,
-        server_host="localhost",
-        server_port=server_port,
-        test_client_data=client_data,
-        on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(
-            interface_values=[
-                client_data.interface_protocol_value_of(
-                    interface_name=OUTPUT_INTERFACE,
-                    value=_self.accumulated_step_sizes_in_seconds.value,
-                ),
-            ],
         ),
     )
 

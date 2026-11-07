@@ -37,6 +37,12 @@ class MeasurementRepositoryInMemory(MeasurementRepository):
             for timestamp, values in self._records.items()
         ]
 
+    @override
+    def remove_starting_at(self, timestamp: datetime) -> None:
+        with self._records.transaction() as records:
+            for removed_timestamp in [record_timestamp for record_timestamp in records if record_timestamp >= timestamp]:
+                del records[removed_timestamp]
+
     def assert_entry_count(
         self,
         entry_count: int,

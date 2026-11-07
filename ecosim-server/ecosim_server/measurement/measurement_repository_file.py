@@ -56,5 +56,9 @@ class MeasurementRepositoryFile(MeasurementRepository):
     def all(self) -> List[MeasurementEntry]:
         return self._entries.all()
 
+    @override
+    def remove_starting_at(self, timestamp: datetime.datetime) -> None:
+        self._entries.remove_where(condition=lambda entry: entry.timestamp >= timestamp)
+
     def file_path(self) -> Path:
         return self._entries.file_path()
