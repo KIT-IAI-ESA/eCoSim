@@ -2,7 +2,9 @@ from uuid import uuid4
 
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.data.repositories_db import RepositoriesDB
+from ecosim_server.simulation.state.simulation_state_repository_db import SimulationStateDTO
 from ecosim_server.tech.db.postgres_tech import PostgresTech
+from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementDBEntry
 from psycopg import sql
 from tests.data.generate_postgres_name_config import a_config, a_simulator
 from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
@@ -23,7 +25,7 @@ def test_the_tables_of_a_run_are_created_in_the_configured_schema(plain_cluster:
 
     repositories.measurement_repository(simulator.client_id)
 
-    for table in ["simulation_state", "server_time_measurement", "module_schema_test"]:
+    for table in [SimulationStateDTO.__tablename__, ServerTimeMeasurementDBEntry.__tablename__, "module_schema_test"]:
         assert plain_cluster.table_exists(database=config.database.name, schema=SCHEMA, table=table)
 
 
