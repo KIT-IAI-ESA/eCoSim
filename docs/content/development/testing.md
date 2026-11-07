@@ -91,3 +91,4 @@ Environment variables:
 4. a quick end-to-end run: `cd integration-tests && uv run pytest integration_tests/server_client/test_three_client_server.py`
 
 The workflow `.github/workflows/tests.yml` runs these checks on GitHub for every pull request and every push to `main`.
+A pull request can only be merged when `tests-passed`, `docs-reference`, `docs-build` and `commit-messages` pass.

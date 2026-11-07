@@ -103,3 +103,13 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.2
       - name: Test
         run: uv run --locked --extra dev pytest dev/tests
+
+  # the ruleset requires only this job, so new jobs just go into its needs
+  tests-passed:
+    if: always()
+    needs: [ pre-commit, unit-tests, integration-tests, dev-scripts ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: re-actors/alls-green@v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
