@@ -21,8 +21,11 @@ from tests.data.generate_connection_config import (
 )
 
 
-def test_a_connection_to_an_output_of_another_simulator_is_accepted(tmp_path: Path) -> None:
-    config = load_config(tmp_path, a_simulator("weather", an_output("T_out")), a_simulator("house", an_input("T", simulator="0", interface="T_out")))
+@pytest.mark.parametrize("index", ["0", 0], ids=["text", "number"])
+def test_a_connection_to_an_output_of_another_simulator_is_accepted(tmp_path: Path, index: Any) -> None:
+    house = a_simulator("house", an_input("T", simulator=index, interface="T_out"))
+
+    config = load_config(tmp_path, a_simulator("weather", an_output("T_out")), house)
 
     assert config.clients[1].interfaces[0].connected_to[0].simulator_interface_id.simulator_name == "weather"
 
