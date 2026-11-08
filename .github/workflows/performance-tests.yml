@@ -22,7 +22,7 @@ jobs:
       ECOSIM_PERFORMANCE_MACHINE: github_ci_default
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       - name: Sync

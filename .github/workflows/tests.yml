@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-suffix: pre-commit
       # --locked also checks ecosim-test-common/uv.lock, which no other job syncs
@@ -61,7 +61,7 @@ jobs:
       UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-suffix: ${{ matrix.project }}-py${{ matrix.python }}
       - name: Sync
@@ -86,7 +86,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       # the tests under locally/ need external models or an HPC environment;
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-suffix: dev-scripts
       - name: Test
