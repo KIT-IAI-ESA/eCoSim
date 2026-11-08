@@ -44,9 +44,9 @@ ignore_missing_imports = true
 
 ## Updates from Dependabot
 
-Dependabot opens grouped pull requests every week for the GitHub Actions and for the Python packages of
-every subproject, as set in `.github/dependabot.yml`. It leaves the eCoSim packages alone, which
-`dev/bump_version.py` bumps together.
+Dependabot opens one grouped pull request a week for the GitHub Actions, as set in `.github/dependabot.yml`.
+The Python packages are updated by hand for now: the same exact pins appear in several subprojects, and
+Dependabot updates one directory at a time, so its updates can't be resolved.
 
 ## Update the pre-commit hooks
 
