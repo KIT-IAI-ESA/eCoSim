@@ -8,7 +8,7 @@ Ten independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.
 | Subproject | Import package | Purpose |
 | --- | --- | --- |
 | `ecosim-common` | `ecosim_common` | Shared abstractions: config, communication, simulation primitives |
-| `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for both FMU clients |
+| `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for the FMU clients and `ecosim-hpc` |
 | `ecosim-server` | `ecosim_server` | The simulation server: state, repositories, measurements |
 | `ecosim-client-fmu-v2` | `ecosim_client_fmu_v2` | Client for FMI 2.0 models |
 | `ecosim-client-fmu-v3` | `ecosim_client_fmu_v3` | Client for FMI 3.0 models |
@@ -32,12 +32,13 @@ flowchart TD
   hpc --> fmu3[ecosim-client-fmu-v3]
   hpc --> matlab[ecosim-client-matlab]
   hpc --> pyro[ecosim-client-pyro5]
-  fmu2 --> fmpy[ecosim-common-fmpy]
+  hpc --> fmpy[ecosim-common-fmpy]
+  fmu2 --> fmpy
   fmu3 --> fmpy
 ```
 
 - `ecosim-common` depends on no other subproject; everything else depends on it
-- only the two FMU clients use `ecosim-common-fmpy`
+- the two FMU clients use `ecosim-common-fmpy`, and `ecosim-hpc` reads the model descriptions of its FMUs with it
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster

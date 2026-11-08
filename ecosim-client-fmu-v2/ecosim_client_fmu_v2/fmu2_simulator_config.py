@@ -11,6 +11,7 @@ from uuid import uuid4
 import fmpy
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_common_fmpy.tech.read_model_description import read_model_description
 from fmpy.fmi2 import FMU2Slave
 from fmpy.model_description import ModelDescription
 
@@ -49,7 +50,7 @@ class FMU2SimulatorConfig:
     @classmethod
     def read_model_description(cls, fmu_config: FMUBaseConfig) -> ModelDescription:
         try:
-            return fmpy.read_model_description(str(fmu_config.fmu_file), validate=False)
+            return read_model_description(file=fmu_config.fmu_file)
         except Exception as first_exception:
             nano_seconds = time.time_ns()
             today = datetime.now()
@@ -59,13 +60,13 @@ class FMU2SimulatorConfig:
             for i in range(2):
                 try:
                     importlib.reload(fmpy)
-                    return fmpy.read_model_description(str(fmu_config.fmu_file))
+                    return read_model_description(file=fmu_config.fmu_file)
                 except Exception as inner_exception:
                     unzip_dir = fmpy.extract(str(fmu_config.fmu_file), unzipdir=f"./failed_fmus/{temp_dir_name}")
                     FMU2SimulatorConfig._logger.debug("Reading modelDescription.xml directly from %s", unzip_dir)
                     try:
                         importlib.reload(fmpy)
-                        return fmpy.read_model_description(f"./failed_fmus/{temp_dir_name}/modelDescription.xml")
+                        return read_model_description(file=f"./failed_fmus/{temp_dir_name}/modelDescription.xml")
                     except Exception:
                         FMU2SimulatorConfig._logger.warning("Failed to read modelDescription.xml on %s. Exception: %s", i + 1, inner_exception)
             raise first_exception
