@@ -28,6 +28,7 @@ dependencies = [
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [tool.setuptools.package-data]
 ecosim_common_fmpy = ["py.typed"]
@@ -43,6 +44,7 @@ dev = [
     "uv==0.12.5",
     "pip==26.1.2",
     "ruff==0.15.20",
+    "ecosim-test-common==0.14.0",
 ]
 
 [project.urls]
@@ -52,7 +54,7 @@ Issues = "https://github.com/mekkyz/ecosim-os/issues"
 Changelog = "https://mekkyz.github.io/ecosim-os/development/release-history"
 
 [tool.mypy]
-mypy_path = ["../ecosim-common"]
+mypy_path = ["../ecosim-common", "../ecosim-test-common"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 

@@ -8,6 +8,7 @@ import fmpy
 from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_common_fmpy.tech.read_model_description import read_model_description
 from fmpy.fmi3 import FMU3Slave
 from fmpy.model_description import ModelDescription, ScalarVariable
 
@@ -28,7 +29,7 @@ class FMU3SimulatorConfig:
         simulator_name: str,
         fmu_config: FMUBaseConfig,
     ) -> FMU3SimulatorConfig:
-        model_description = fmpy.read_model_description(str(fmu_config.fmu_file))
+        model_description = read_model_description(file=fmu_config.fmu_file)
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
