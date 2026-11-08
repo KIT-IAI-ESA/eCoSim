@@ -22,6 +22,9 @@
       - that means, users need to manually check it with this functionality and can then assume, that everything
         regarding `fmpy` should work as expected
   - this is only a best-effort and best-guess solution -> the long-term consequences are unknown
+- every model description is read with `ecosim_common_fmpy.tech.read_model_description`
+  - it calls `xmlSchemaInitTypes` once per process before the first read, also on the HPC Dask workers
+  - it reads without validation, only `--validate-fmu-file-only` validates
 
 ## Example
 

@@ -615,6 +615,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
     { name = "fmpy", specifier = "==0.3.30" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==26.1.2" },
@@ -640,8 +641,8 @@ dependencies = [
     { name = "ecosim-client-matlab" },
     { name = "ecosim-client-pyro5" },
     { name = "ecosim-common" },
+    { name = "ecosim-common-fmpy" },
     { name = "ecosim-server" },
-    { name = "fmpy" },
 ]
 
 [package.optional-dependencies]
@@ -665,9 +666,9 @@ requires-dist = [
     { name = "ecosim-client-matlab", editable = "../ecosim-client-matlab" },
     { name = "ecosim-client-pyro5", editable = "../ecosim-client-pyro5" },
     { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-common-fmpy", editable = "../ecosim-common-fmpy" },
     { name = "ecosim-server", editable = "../ecosim-server" },
     { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
-    { name = "fmpy", specifier = "==0.3.30" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },

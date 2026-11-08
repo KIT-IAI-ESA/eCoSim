@@ -22,9 +22,9 @@ dependencies = [
     "ecosim-client-fmu-v3==0.14.0",
     "ecosim-client-matlab==0.14.0",
     "ecosim-common==0.14.0",
+    "ecosim-common-fmpy==0.14.0",
     "ecosim-server==0.14.0",
     "ecosim-client-pyro5==0.14.0",
-    "fmpy==0.3.30",
 ]
 
 [build-system]
@@ -33,6 +33,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }

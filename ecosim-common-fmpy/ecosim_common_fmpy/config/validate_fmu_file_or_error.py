@@ -1,8 +1,8 @@
 import logging
 
-import fmpy
 from ecosim_common.config import config_parser
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_common_fmpy.tech.read_model_description import read_model_description
 
 
 def validate_fmu_file_or_error(
@@ -13,7 +13,7 @@ def validate_fmu_file_or_error(
     logger.debug("validate-fmu-file-only flag set -> only checking FMU file and then exiting")
     logger.info("Validating FMU file...")
     try:
-        fmpy.read_model_description(fmu2_config.fmu_file, validate=True)
+        read_model_description(file=fmu2_config.fmu_file, validate=True)
     except Exception as e:
         logger.error("Checking FMU file failed: %s", e)
         raise e

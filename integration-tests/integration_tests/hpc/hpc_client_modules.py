@@ -6,6 +6,7 @@ from typing import Iterable
 from ecosim_client_matlab.matlab_config import MatlabConfig
 from ecosim_common.config.client_id import ClientID
 from ecosim_test_common.resources.resource_utils import fmu2_fmc_path, fmu2_model_path, fmu3_fmc_path, fmu3_model_path
+from ecosim_test_common.test_data.generate_broken_fmu import generate_broken_fmu
 
 from integration_tests.test_data.write_ini import Sections, write_client_ini, write_fmc
 
@@ -55,3 +56,11 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
             )
     # 'write_client_ini' names the simulator after its client type, which is the kind's value
     return ClientID(model_name=directory.name, simulator_name=kind.value)
+
+
+def write_broken_fmu2_module(simulator_dir: Path) -> ClientID:
+    directory = simulator_dir / "broken_fmu2_model"
+    directory.mkdir()
+    broken_fmu_file = generate_broken_fmu(fmu_file=fmu2_model_path(), directory=simulator_dir)
+    _fmu_module(directory=directory, client_type="fmu2", fmu_file=broken_fmu_file, fmc_file=fmu2_fmc_path())
+    return ClientID(model_name=directory.name, simulator_name=ClientKind.FMU2.value)

@@ -12,8 +12,8 @@ from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common_fmpy.tech.read_model_description import read_model_description
 from ecosim_server.config.simulation_config import SimulationConfig
-from fmpy import read_model_description
 
 from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_hpc.hpc_client_state import HPCClientState
@@ -68,7 +68,7 @@ class ClientManager(ShutdownListener):
                 )
 
             for fmu_file in simulator_path.glob("*.fmu"):
-                fmu_description = read_model_description(fmu_file)
+                fmu_description = read_model_description(file=fmu_file)
                 if fmu_description.fmiVersion == "3.0":
                     if client_id in self.client_dict.keys():
                         dask_client.sync(
