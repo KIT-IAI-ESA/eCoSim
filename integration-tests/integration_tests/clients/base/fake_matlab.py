@@ -1,9 +1,10 @@
+import io
 from dataclasses import dataclass, field
-from types import SimpleNamespace
-from typing import Any
+from typing import Any, ClassVar
 
-import pytest
-from ecosim_client_matlab import matlab_client
+
+class FakeMatlabExecutionError(Exception):
+    """Raised like 'matlab.engine.MatlabExecutionError' when a script fails."""
 
 
 @dataclass
@@ -15,6 +16,11 @@ class FakeMatlabEngine:
     so a test can see which simulation time the client hands to its model.
     """
 
+    STEP_OUTPUT: ClassVar[str] = "printed by step.m"
+    STEP_ERROR_OUTPUT: ClassVar[str] = "warned by step.m"
+    FINISHING_ERROR_OUTPUT: ClassVar[str] = "error reported by finishing.m"
+
+    fails_on_finishing: bool = False
     workspace: dict[str, Any] = field(default_factory=dict)
     paths: list[str] = field(default_factory=list)
     is_shut_down: bool = False
@@ -22,33 +28,29 @@ class FakeMatlabEngine:
     def addpath(self, path: str) -> None:
         self.paths.append(path)
 
-    def setup(self, nargout: int = 0) -> None:
+    def setup(self, nargout: int, stdout: io.StringIO, stderr: io.StringIO) -> None:
         self.workspace.update(y=0.0, time=0.0)
 
-    def step(self, nargout: int = 0, stdout: Any = None) -> None:
+    def step(self, nargout: int, stdout: io.StringIO, stderr: io.StringIO) -> None:
         self.workspace.update(y=2 * self.workspace["u"], time=self.workspace["client_time"])
+        stdout.write(f"{FakeMatlabEngine.STEP_OUTPUT}\n")
+        stderr.write(f"{FakeMatlabEngine.STEP_ERROR_OUTPUT}\n")
 
-    def finishing(self, nargout: int = 0, stdout: Any = None) -> None:
-        pass
+    def finishing(self, nargout: int, stdout: io.StringIO, stderr: io.StringIO) -> None:
+        if self.fails_on_finishing:
+            stderr.write(f"{FakeMatlabEngine.FINISHING_ERROR_OUTPUT}\n")
+            raise FakeMatlabExecutionError("finishing.m failed")
 
-    def shutdown(self, nargout: int = 0) -> None:
+    def quit(self) -> None:
         self.is_shut_down = True
 
 
 @dataclass
 class FakeMatlab:
+    fails_on_finishing: bool = False
     started: list[FakeMatlabEngine] = field(default_factory=list)
 
     def start_matlab(self) -> FakeMatlabEngine:
-        engine = FakeMatlabEngine()
+        engine = FakeMatlabEngine(fails_on_finishing=self.fails_on_finishing)
         self.started.append(engine)
         return engine
-
-
-@pytest.fixture
-def fake_matlab(monkeypatch: pytest.MonkeyPatch) -> FakeMatlab:
-    """Lets 'MatlabClient' start its engines from a new fake, for the current test only."""
-    fake = FakeMatlab()
-    # without a Matlab installation the module never bound 'matlab', hence 'raising=False'
-    monkeypatch.setattr(matlab_client, "matlab", SimpleNamespace(engine=fake), raising=False)
-    return fake

@@ -71,7 +71,7 @@ Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file
 
 ## MATLAB client
 
-Read in addition by `ecosim-client-matlab`.
+Read in addition by `ecosim-client-matlab`. `scriptfolder` is relative to the ini file and has to hold `setup.m`, `step.m` and `finishing.m`.
 
 | Section | Key | Type | Default |
 | --- | --- | --- | --- |
