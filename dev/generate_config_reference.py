@@ -53,7 +53,8 @@ GROUPS = [
     ),
     (
         "MATLAB client",
-        "Read in addition by `ecosim-client-matlab`.",
+        "Read in addition by `ecosim-client-matlab`. "
+        "`scriptfolder` is relative to the ini file and has to hold `setup.m`, `step.m` and `finishing.m`.",
         "ecosim-client-matlab/ecosim_client_matlab/matlab_config.py",
     ),
     (

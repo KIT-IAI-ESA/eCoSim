@@ -23,10 +23,12 @@ The model is split into three scripts in one folder:
 - The current simulated time is available as `client_time`, in seconds. Calculate timestamps from it.
 - Input and output variables use Python's snake_case names.
 - Every output that other simulators use has to be initialized in the MATLAB workspace in `setup.m`.
+- What the scripts print goes to the client's log, their error output as warnings.
 
 ## Configuration
 
-The client's `preferences.ini` names the folder with the scripts:
+The client's `preferences.ini` names the folder with the scripts, relative to the ini file. The client
+does not start if one of the three scripts is missing.
 
 ```ini
 [matlab]
@@ -44,3 +46,5 @@ example `R2024b`:
 cd ecosim-client-matlab
 uv sync --extra R2024b
 ```
+
+Without it, the simulation start fails with an `ImportError` that names the extra.

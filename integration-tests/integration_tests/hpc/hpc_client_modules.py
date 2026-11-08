@@ -1,7 +1,9 @@
 import shutil
 from enum import Enum
 from pathlib import Path
+from typing import Iterable
 
+from ecosim_client_matlab.matlab_config import MatlabConfig
 from ecosim_test_common.resources.resource_utils import fmu2_fmc_path, fmu2_model_path, fmu3_fmc_path, fmu3_model_path
 
 from integration_tests.test_data.write_ini import Sections, write_client_ini, write_fmc
@@ -20,8 +22,9 @@ def _fmu_module(directory: Path, client_type: str, fmu_file: Path, fmc_file: Pat
     write_client_ini(directory, client_type, directory.name, fmc_file.name, {"fmu": {"fmu_file": f"[{fmu_file.name}]"}})
 
 
-def _script_module(directory: Path, client_type: str, script: str, extra_sections: Sections) -> None:
-    (directory / script).write_text("")
+def _script_module(directory: Path, client_type: str, scripts: Iterable[str], extra_sections: Sections) -> None:
+    for script in scripts:
+        (directory / script).write_text("")
     write_client_ini(directory, client_type, directory.name, write_fmc(directory, inputs=["u"], outputs=["y"]), extra_sections)
 
 
@@ -35,8 +38,18 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> str:
             _fmu_module(directory, "fmu3", fmu3_model_path(), fmu3_fmc_path())
         case ClientKind.PYRO5:
             # the Pyro5 proxy connects lazily, starting the client needs no running Pyro5 daemon
-            _script_module(directory, "pyro5", "model.py", {"pyro": {"pyro_host": "localhost", "pyro_port": "9091", "pyro_object_name": "model"}})
+            _script_module(
+                directory=directory,
+                client_type="pyro5",
+                scripts=["model.py"],
+                extra_sections={"pyro": {"pyro_host": "localhost", "pyro_port": "9091", "pyro_object_name": "model"}},
+            )
         case ClientKind.MATLAB:
             # the Matlab engine starts with the simulation, starting the client needs no Matlab installation
-            _script_module(directory, "matlab", "step.m", {"matlab": {"scriptfolder": str(directory)}})
+            _script_module(
+                directory=directory,
+                client_type="matlab",
+                scripts=MatlabConfig.SCRIPT_NAMES,
+                extra_sections={"matlab": {"scriptfolder": str(directory)}},
+            )
     return directory.name
