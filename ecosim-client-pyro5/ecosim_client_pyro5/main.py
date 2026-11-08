@@ -1,4 +1,5 @@
 import logging
+import sys
 from time import sleep
 
 from art import tprint
@@ -29,6 +30,7 @@ def main() -> None:
     client.wait_until_finished()
 
     ShutdownManager().set_shutdown_at_application_end()
+    sys.exit(client.exit_code())
 
 
 if __name__ == "__main__":

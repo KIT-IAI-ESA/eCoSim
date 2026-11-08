@@ -24,6 +24,9 @@ class ShutdownListener(ABC):
 
 
 class ShutdownManager:
+    SUCCESS_EXIT_CODE: int = 0
+    # the same code Python exits with on an uncaught exception
+    FAILED_RUN_EXIT_CODE: int = 1
     INTERRUPT_EXIT_CODE: int = 33
     TERMINATE_EXIT_CODE: int = 44
     _instance = None
