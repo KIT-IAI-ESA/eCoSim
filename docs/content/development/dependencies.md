@@ -42,6 +42,12 @@ ignore_missing_imports = true
 - a subproject whose `mypy_path` includes another one needs that one's overrides too
 - add the override to the root `mypy.ini` as well, which the IDE uses
 
+## Updates from Dependabot
+
+Dependabot opens grouped pull requests every week for the GitHub Actions and for the Python packages of
+every subproject, as set in `.github/dependabot.yml`. It leaves the eCoSim packages alone, which
+`dev/bump_version.py` bumps together.
+
 ## Update the pre-commit hooks
 
 `uv run pre-commit autoupdate` rewrites the versions in `.pre-commit-config.yaml`. It is a deliberate

@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: uv
+    directories:
+      - /
+      - /ecosim-common
+      - /ecosim-common-fmpy
+      - /ecosim-server
+      - /ecosim-client-fmu-v2
+      - /ecosim-client-fmu-v3
+      - /ecosim-client-matlab
+      - /ecosim-client-pyro5
+      - /ecosim-hpc
+      - /ecosim-test-common
+      - /integration-tests
+      - /simulation_examples
+    schedule:
+      interval: weekly
+    ignore:
+      # dev/bump_version.py bumps the eCoSim packages together
+      - dependency-name: "ecosim*"
+    groups:
+      python:
+        patterns: ["*"]
