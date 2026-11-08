@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -23,9 +23,9 @@ classifiers = [
 dependencies = [
     "ecosim-common==0.14.0",
     "art==6.5",
-    "pydantic==2.13.4",
-    "sqlalchemy==2.0.51",
-    "psycopg[binary]==3.3.4",
+    "pydantic==2.14.3",
+    "sqlalchemy==2.1.8",
+    "psycopg[binary]==3.3.8",
 ]
 
 [project.scripts]
@@ -46,7 +46,7 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
     "pytest==9.1.1",
-    "setuptools==83.0.0",
+    "setuptools==84.2.1",
     "uv==0.12.5",
 ]
 

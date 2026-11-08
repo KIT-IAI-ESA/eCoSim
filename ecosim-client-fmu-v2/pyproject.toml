@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,7 @@ dependencies = [
     "art==6.5",
     "ecosim-common==0.14.0",
     "ecosim-common-fmpy==0.14.0",
-    "setuptools==83.0.0",
+    "setuptools==84.2.1",
     "fmpy==0.3.30",
     "pydantic==2.13.4",
     "pip==26.1.2",

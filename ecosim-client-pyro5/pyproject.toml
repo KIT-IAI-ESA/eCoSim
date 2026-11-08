@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
     "art==6.5",
     "ecosim-common==0.14.0",
-    "setuptools==83.0.0",
+    "setuptools==84.2.1",
     "pydantic==2.13.4",
     "Pyro5==5.15",
     "pandapower>=3.4.0",
@@ -35,11 +35,11 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 
 [project.optional-dependencies]
 dev = [
-    "pytest==9.1.1",
+    "pytest==9.2.0",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
-    "mypy==2.3.0",
-    "uv==0.12.5",
+    "mypy==2.4.1",
+    "uv==0.13.7",
 ]
 
 [tool.mypy]

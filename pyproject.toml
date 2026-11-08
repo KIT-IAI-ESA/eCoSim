@@ -17,12 +17,12 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit==4.6.0",
-    "mypy==2.3.0",
-    "pytest==9.1.1",
+    "pre-commit==4.7.0",
+    "mypy==2.4.1",
+    "pytest==9.2.0",
     # dev/tests read the workflow and the pre-commit config
     "pyyaml==6.0.3",
-    "pip==26.1.2", # PyCharm mypy plugin needs pip
-    "ruff==0.15.20",
-    "uv==0.12.5",
+    "pip==26.3", # PyCharm mypy plugin needs pip
+    "ruff==0.17.3",
+    "uv==0.13.7",
 ]
