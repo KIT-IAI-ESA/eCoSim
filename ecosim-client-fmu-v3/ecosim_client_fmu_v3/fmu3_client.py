@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import shutil
-from dataclasses import dataclass
+import weakref
+from dataclasses import dataclass, field
 from typing import Any, List, Tuple
 
 import fmpy
@@ -21,6 +22,14 @@ from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
 class FMU3Client(SimulatorClient):
     _simulation_config: FMU3SimulatorConfig
     _fmu_instance: fmpy.fmi3.FMU3Slave
+    # also called when the process ends, for a client that is never cleared
+    _remove_extracted_files: weakref.finalize[..., FMU3Client] = field(init=False)
+
+    @override
+    def __post_init__(self) -> None:
+        # set first: registering the client clears it at once if a shutdown already started
+        self._remove_extracted_files = weakref.finalize(self, shutil.rmtree, self._simulation_config.unzip_dir)
+        super().__post_init__()
 
     @staticmethod
     def of(
@@ -143,11 +152,20 @@ class FMU3Client(SimulatorClient):
 
     @override
     def _on_clear_simulator(self) -> None:
+        try:
+            self._free_fmu_instance()
+        finally:
+            self.logger.debug("        ->> removing extracted files...")
+            self._remove_extracted_files()
+
+    def _free_fmu_instance(self) -> None:
         # the FMU is extracted on creation, but only instantiated when the simulation starts
-        if self._is_initialized:
-            self.logger.debug("        ->> terminating instance...")
-            self._fmu_instance.terminate()
+        if self._fmu_instance.component is None:
+            return
+        try:
+            if self._is_initialized:
+                self.logger.debug("        ->> terminating instance...")
+                self._fmu_instance.terminate()
+        finally:
             self.logger.debug("        ->> freeing instance...")
             self._fmu_instance.freeInstance()
-        self.logger.debug("        ->> removing extracted files...")
-        shutil.rmtree(self._simulation_config.unzip_dir)

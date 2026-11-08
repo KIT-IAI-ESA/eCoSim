@@ -123,6 +123,14 @@ class Client(ShutdownListener):
 
     def wait_until_finished(self) -> None:
         self._channel.wait_for_finish()
+        if not self._is_finished:
+            Client.logger.error("The connection to the server ended before the simulation was stopped.")
+
+    def exit_code(self) -> int:
+        # only a fully handled SIMULATION_STOP sets it
+        if self._is_finished:
+            return ShutdownManager.SUCCESS_EXIT_CODE
+        return ShutdownManager.FAILED_RUN_EXIT_CODE
 
     def _connect_channel(
         self,
