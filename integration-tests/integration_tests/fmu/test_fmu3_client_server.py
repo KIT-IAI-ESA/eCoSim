@@ -1,9 +1,7 @@
-import sys
 import threading
 from datetime import datetime
 from typing import Tuple
 
-import pytest
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_common.client.config.client_config import ClientConfigOverride, ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -18,12 +16,13 @@ from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
-from ecosim_test_common.resources.resource_utils import config_parser_for_resource
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.resources.resource_utils import config_parser_for_resource, fmu3_model_path
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServerParameters, generate_simple_test_server
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+@skip_unless_fmpy_loads(fmu3_model_path())
 def test_fmu3_client_server(communication_protocol: CommunicationProtocol) -> None:
     mock_client_interface = SimulatorInterfaceId(
         simulator_name="Mock_1",

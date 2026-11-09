@@ -32,6 +32,10 @@ dependencies = [
     "pip==26.1.2"
 ]
 
+[project.optional-dependencies]
+# an extra, so that the subprojects without FMUs do not install fmpy
+fmpy = ["fmpy==0.3.30"]
+
 [tool.setuptools.packages.find]
 include = ["ecosim_test_common*"]
 
@@ -58,5 +62,8 @@ module = [
     "dask.*",
     "cloudpickle",
     "cloudpickle.*",
+    # fmpy is not typed, and the environment of ecosim-test-common is synced without the fmpy extra
+    "fmpy",
+    "fmpy.*",
 ]
 ignore_missing_imports = true

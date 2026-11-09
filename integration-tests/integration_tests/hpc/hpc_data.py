@@ -1,9 +1,15 @@
+from pathlib import Path
+
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_server.config.cli_arguments import ServerConfigOverride
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources import resource_utils
+
+
+def fmu_files() -> list[Path]:
+    return sorted(resource_utils.resource_path_file("hpc/modules").glob("*/*.fmu"))
 
 
 def simulation_config() -> SimulationConfig:

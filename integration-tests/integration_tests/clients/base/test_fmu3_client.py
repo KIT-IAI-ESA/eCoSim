@@ -1,21 +1,19 @@
 from pathlib import Path
 from typing import override
 
-import pytest
-import sys
-
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
-from ecosim_test_common.resources.resource_utils import config_parser_for_resource
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.resources.resource_utils import config_parser_for_resource, fmu3_model_path
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
 from integration_tests.fmu.fmu3_state_space_model import state_space_outputs
 
 _INPUT_FACTORS = (1.0, 1_000.0, 100_000.0)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+@skip_unless_fmpy_loads(fmu3_model_path())
 class TestFMU3ClientBase(ClientBaseTest):
     @override
     def create_client(self, config_override: ClientConfigOverride) -> SimulatorClient:

@@ -23,6 +23,10 @@
 `ecosim-server/tests/tech/db/` starts its own throwaway PostgreSQL clusters on a free port if `initdb`
 is installed. Without `initdb`, and in CI, those tests are skipped.
 
+Mark a test that loads an FMU with `@skip_unless_fmpy_loads(fmu_file)` from `ecosim_test_common/fmpy_platform.py`,
+so it is skipped where fmpy cannot load the FMU's binary. For the house FMUs, use
+`@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()`, which also skips the platforms that have no build of them.
+
 The applications parse `sys.argv` themselves and reject unknown arguments. A test that starts one
 calls `esp_monkey_patch.remove_pytest_sys_args()` from `ecosim-test-common` before it sets its own
 arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in an IDE.

@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-import os
-import platform
 import shutil
-import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List
 from uuid import uuid4
 
 import fmpy
-import pytest
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave
 
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from ecosim_test_common.resources.resource_utils import resource_path
+from ecosim_test_common.resources.simulations.house_simulation_data import HouseSimulationData
+
+_SUB1_FMU_FILE = resource_path() / "fmu_v2" / "test_fmus" / "Sub1_Linux.fmu"
+_SUB2_FMU_FILE = resource_path() / "fmu_v2" / "test_fmus" / "Sub2_Linux.fmu"
 
 
 @dataclass
@@ -23,16 +25,11 @@ class FMUInput:
     increase_by_step: float
 
 
-def get_os_name_lower_case() -> str:
-    return str.lower(platform.system())
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+@skip_unless_fmpy_loads(_SUB1_FMU_FILE)
 def test_sim() -> None:
-    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "Sub1_Linux.fmu")
-    model_description = read_model_description(f"{fmu_file}")
+    model_description = read_model_description(f"{_SUB1_FMU_FILE}")
 
-    unzipdir = extract(fmu_file)
+    unzipdir = extract(_SUB1_FMU_FILE)
 
     if model_description.fmiVersion == "2.0":
         fmu_instance = FMU2Slave(
@@ -113,17 +110,16 @@ def test_sim() -> None:
     shutil.rmtree(unzipdir)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+@skip_unless_fmpy_loads(_SUB2_FMU_FILE)
 def test_fmpy() -> None:
     print("")
     print("")
 
-    fmu_file = os.path.join(resource_path(), "fmu_v2", "test_fmus", "Sub2_Linux.fmu")
-    unzip_dir = fmpy.extract(fmu_file)
+    unzip_dir = fmpy.extract(_SUB2_FMU_FILE)
 
     step_size = 1.0
 
-    model_description = fmpy.read_model_description(f"{fmu_file}")
+    model_description = fmpy.read_model_description(f"{_SUB2_FMU_FILE}")
     input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
     input_value_references = {var.name: var.valueReference for var in input_variables}
     output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
@@ -167,9 +163,10 @@ def test_fmpy() -> None:
     shutil.rmtree(unzip_dir)
 
 
+@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()
 def test_fmpy_houses_weather() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "weather.fmu"),
+        fmu_file=HouseSimulationData.fmu_file("weather"),
         steps=12,
         step_size=60000,
         inputs=[],
@@ -177,9 +174,10 @@ def test_fmpy_houses_weather() -> None:
     )
 
 
+@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()
 def test_fmpy_houses_house() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "house.fmu"),
+        fmu_file=HouseSimulationData.fmu_file("house"),
         steps=10,
         step_size=100,
         inputs=[
@@ -213,9 +211,10 @@ def test_fmpy_houses_house() -> None:
     )
 
 
+@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()
 def test_fmpy_houses_heating() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "heating.fmu"),
+        fmu_file=HouseSimulationData.fmu_file("heating"),
         steps=10,
         step_size=60,
         inputs=[
@@ -229,9 +228,10 @@ def test_fmpy_houses_heating() -> None:
     )
 
 
+@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()
 def test_fmpy_houses_ventilation() -> None:
     _execute_fmu(
-        fmu_file=os.path.join("fmu_v2", "models", "house", get_os_name_lower_case(), "ventilation.fmu"),
+        fmu_file=HouseSimulationData.fmu_file("ventilation"),
         steps=10,
         step_size=60,
         inputs=[
@@ -246,7 +246,7 @@ def test_fmpy_houses_ventilation() -> None:
 
 
 def _execute_fmu(
-    fmu_file: str,
+    fmu_file: Path,
     steps: int,
     step_size: float,
     inputs: List[FMUInput],
@@ -254,9 +254,8 @@ def _execute_fmu(
 ) -> None:
     print("")
     print("")
-    full_path = os.path.join(resource_path(), fmu_file)
-    unzip_dir = fmpy.extract(full_path)
-    model_description = fmpy.read_model_description(full_path)
+    unzip_dir = fmpy.extract(fmu_file)
+    model_description = fmpy.read_model_description(fmu_file)
 
     fmu_instance = fmpy.fmi2.FMU2Slave(
         guid=model_description.guid,

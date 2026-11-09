@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-import os.path
 import shutil
 
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from fmpy import read_model_description, extract
 from fmpy.fmi3 import FMU3Slave
 
 from tests.tech.resource_utils import resource_path
 
+_FEEDTHROUGH_FMU_FILE = resource_path() / "test_fmus" / "Feedthrough.fmu"
+_STATE_SPACE_FMU_FILE = resource_path() / "test_fmus" / "StateSpace.fmu"
+
 
 # This is only a test to play around with the FMI3 implementation of fmpy
+@skip_unless_fmpy_loads(_FEEDTHROUGH_FMU_FILE)
 def test_feedthrough() -> None:
-    fmu_file = os.path.join(resource_path(), "test_fmus", "Feedthrough.fmu")
-    model_description = read_model_description(f"{fmu_file}")
+    model_description = read_model_description(f"{_FEEDTHROUGH_FMU_FILE}")
 
-    unzipdir = extract(fmu_file)
+    unzipdir = extract(_FEEDTHROUGH_FMU_FILE)
 
     if model_description.fmiVersion == "3.0":
         fmu_instance = FMU3Slave(
@@ -89,11 +92,11 @@ def test_feedthrough() -> None:
 
 
 # This is only a test to play around with the FMI3 implementation of fmpy
+@skip_unless_fmpy_loads(_STATE_SPACE_FMU_FILE)
 def test_state_space() -> None:
-    fmu_file = os.path.join(resource_path(), "test_fmus", "StateSpace.fmu")
-    model_description = read_model_description(f"{fmu_file}")
+    model_description = read_model_description(f"{_STATE_SPACE_FMU_FILE}")
 
-    unzipdir = extract(fmu_file)
+    unzipdir = extract(_STATE_SPACE_FMU_FILE)
 
     if model_description.fmiVersion == "3.0":
         fmu_instance = FMU3Slave(

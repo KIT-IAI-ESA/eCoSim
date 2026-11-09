@@ -2,9 +2,11 @@ import csv
 from pathlib import Path
 from typing import ClassVar
 
+import pytest
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.config.executing_platform import ExecutingPlatform
 
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from ecosim_test_common.resources.resource_utils import resource_path_file
 
 ExpectedResultEntry = dict[str, InterfaceValue]
@@ -29,6 +31,17 @@ class HouseSimulationData:
     def client_config_file(module: str, platform: ExecutingPlatform | None = None) -> Path:
         platform_name = (platform or ExecutingPlatform.current()).value
         return HouseSimulationData.RESOURCES / platform_name / f"{module}_preferences_{platform_name}.ini"
+
+    @staticmethod
+    def fmu_file(module: str) -> Path:
+        return HouseSimulationData.client_config_file(module).parent / f"{module}.fmu"
+
+    @staticmethod
+    def skip_unless_fmpy_loads_the_fmus() -> pytest.MarkDecorator:
+        platform = ExecutingPlatform.current()
+        if platform not in HouseSimulationData.PLATFORMS:
+            return pytest.mark.skip(reason=f"There is no build of the house FMUs for {platform.value}")
+        return skip_unless_fmpy_loads(*[HouseSimulationData.fmu_file(module) for module in HouseSimulationData.MODULES])
 
     @staticmethod
     def expected_rows(module: str) -> list[ExpectedResultEntry]:
