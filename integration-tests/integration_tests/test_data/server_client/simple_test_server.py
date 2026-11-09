@@ -14,6 +14,7 @@ from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.server import Server
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
+from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 from integration_tests.test_data.server_client.simple_test_server_parameters import SimpleTestServerParameters
@@ -53,6 +54,10 @@ class SimpleTestServer(Server):
     def start_and_wait_for_all_clients_connected_and_ready(self) -> None:
         self._start_listening()
         self._wait_for_all_clients_connected_and_ready()
+
+    def wait_until_listening(self, timeout_in_seconds: float = WAIT_TIMEOUT_IN_SECONDS) -> None:
+        listening = self._channel.is_listening_on_connection_event().wait(timeout=timeout_in_seconds)
+        assert listening, f"The server did not listen within {timeout_in_seconds}s"
 
     def client_states(self) -> ClientStates:
         return self.client_communication()._client_states  # noqa: SLF001

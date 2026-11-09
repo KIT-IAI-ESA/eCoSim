@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 
-from integration_tests.server_client.performance.tooling.performance_setup import format_seconds
+from integration_tests.server_client.performance.tooling.performance_setup import MINIMUM_DIFFERENCE_IN_SECONDS, format_seconds
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,9 @@ class TimeStatistic:
         return (self.current - self.expected) / self.expected
 
     def is_too_slow(self) -> bool:
-        return self.deviation is not None and self.deviation > self.tolerance
+        if self.deviation is None or self.expected is None or self.current is None:
+            return False
+        return self.deviation > self.tolerance and self.current - self.expected > MINIMUM_DIFFERENCE_IN_SECONDS
 
     def describe(self) -> str:
         deviation = "-" if self.deviation is None else f"{self.deviation:+.1%}"

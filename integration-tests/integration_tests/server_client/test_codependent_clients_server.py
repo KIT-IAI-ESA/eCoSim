@@ -298,6 +298,7 @@ def run_codependent_clients_server(communication_protocol: CommunicationProtocol
 
     server.start_in_thread()
 
+    server.wait_until_listening()
     client_1.start()
     client_2.start()
     client_3.start()

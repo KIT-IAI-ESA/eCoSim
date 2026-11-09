@@ -52,6 +52,7 @@ def _run_with_completed_steps(
     for step in range(client_2_completed_steps):
         pre_set_two_clients.add_client_2_measurement(step=step, output_value=pre_set_two_clients.client_2_output_value_at_step(step))
     pre_set_two_clients.server.start_in_thread()
+    pre_set_two_clients.server.wait_until_listening()
     pre_set_two_clients.start_client_1_async()
     pre_set_two_clients.start_client_2_async()
     pre_set_two_clients.server.assert_finishing_in_time()

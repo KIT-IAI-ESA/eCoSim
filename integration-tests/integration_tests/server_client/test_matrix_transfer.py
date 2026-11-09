@@ -195,6 +195,7 @@ def run_matrix_transfer(communication_protocol: CommunicationProtocol) -> Simple
 
     server.start_in_thread()
 
+    server.wait_until_listening()
     client_1.start()
     client_2.start()
 
