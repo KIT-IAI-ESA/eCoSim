@@ -58,6 +58,7 @@ def run_client_server_single(communication_protocol: CommunicationProtocol) -> S
 
     server.start_in_thread()
 
+    server.wait_until_listening()
     client.start()
 
     server.assert_finishing_in_time()
