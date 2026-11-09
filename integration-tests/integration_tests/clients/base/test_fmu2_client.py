@@ -1,20 +1,18 @@
 from pathlib import Path
 from typing import override
 
-import pytest
-import sys
-
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
-from ecosim_test_common.resources.resource_utils import config_parser_for_resource
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.resources.resource_utils import config_parser_for_resource, fmu2_model_path
 from integration_tests.clients.base.client_base_test_case import ClientBaseTest
 
 _INPUT_INTERFACES_TO_FACTOR = {"Float64_continuous_input": 1.0, "Float64_discrete_input": 10.0}
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+@skip_unless_fmpy_loads(fmu2_model_path())
 class TestFMU2ClientBase(ClientBaseTest):
     """Runs the 'Feedthrough' Reference FMU (FMI 2.0), which sets every output to the value of its input."""
 

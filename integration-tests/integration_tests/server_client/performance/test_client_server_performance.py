@@ -2,6 +2,7 @@ from typing import Callable
 
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_test_common.resources.simulations.house_simulation_data import HouseSimulationData
 
 from integration_tests.server_client import test_client_server_batch_steps as batch_steps
 from integration_tests.server_client.performance.long_running_test import run_long_running_simulation_for_performance
@@ -32,7 +33,11 @@ RunTest = Callable[[CommunicationProtocol], SimpleTestServer]
             "test_client_server_batch_steps_different_completed_steps_step1_step5",
             batch_steps.run_client_server_batch_steps_different_completed_steps_step1_step5,
         ),
-        ("test_long_running_simulation", run_long_running_simulation_for_performance),
+        pytest.param(
+            "test_long_running_simulation",
+            run_long_running_simulation_for_performance,
+            marks=HouseSimulationData.skip_unless_fmpy_loads_the_fmus(),
+        ),
     ],
     ids=lambda value: value.removeprefix("test_") if isinstance(value, str) else "",
 )

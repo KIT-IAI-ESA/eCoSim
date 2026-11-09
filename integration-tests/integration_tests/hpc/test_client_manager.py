@@ -3,9 +3,11 @@ from __future__ import annotations
 import distributed
 from _pytest.capture import CaptureFixture
 from ecosim_hpc.client_manager import ClientManager
-from integration_tests.hpc.hpc_data import client_manager_config, simulation_config
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from integration_tests.hpc.hpc_data import client_manager_config, fmu_files, simulation_config
 
 
+@skip_unless_fmpy_loads(*fmu_files())
 def test_client_manager_start_clients(
     dask_client: distributed.Client,
     capsys: CaptureFixture[str],

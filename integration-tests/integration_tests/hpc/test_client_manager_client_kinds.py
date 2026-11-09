@@ -7,8 +7,12 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path
 
 from integration_tests.hpc.hpc_client_modules import ClientKind, write_client_module
+
+_FMU_FILES = {ClientKind.FMU2: fmu2_model_path(), ClientKind.FMU3: fmu3_model_path()}
 
 
 def _simulation_config(model_name: str) -> SimulationConfig:
@@ -29,7 +33,11 @@ def _simulation_config(model_name: str) -> SimulationConfig:
     )
 
 
-@pytest.mark.parametrize("kind", list(ClientKind), ids=lambda kind: kind.value)
+@pytest.mark.parametrize(
+    "kind",
+    [pytest.param(kind, marks=skip_unless_fmpy_loads(_FMU_FILES[kind])) if kind in _FMU_FILES else kind for kind in ClientKind],
+    ids=lambda kind: kind.value,
+)
 def test_client_manager_starts_every_client_kind(
     dask_client: distributed.Client,
     tmp_path: Path,

@@ -7,6 +7,7 @@ description: Requirements, and how to get eCoSim from source.
 
 ## Requirements
 
+- Linux or Windows. macOS is not tested.
 - Python 3.12 or newer. The MATLAB client needs exactly Python 3.12.
 - [uv](https://docs.astral.sh/uv/), which creates the environments and installs the dependencies
 - PostgreSQL/TimescaleDB, only if the results should go into a database

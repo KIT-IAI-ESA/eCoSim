@@ -9,7 +9,8 @@ import pytest
 from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.config.server_config import DatabaseConfig, ServerConfig
 from ecosim_server.data.repositories_db import RepositoriesDB
-from integration_tests.hpc.hpc_data import client_manager_config, server_config, simulation_config
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from integration_tests.hpc.hpc_data import client_manager_config, fmu_files, server_config, simulation_config
 from testcontainers.postgres import PostgresContainer
 
 
@@ -27,6 +28,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
     os.environ.get("CI") == "true",  # gitlab sets 'CI' and 'GITLAB_CI' true by default
     reason="Skipped in CI pipeline because it starts a postgres container",
 )
+@skip_unless_fmpy_loads(*fmu_files())
 def test_hpc_main_process_with_database_repositories(
     dask_client: distributed.Client,
     postgres_container: PostgresContainer,

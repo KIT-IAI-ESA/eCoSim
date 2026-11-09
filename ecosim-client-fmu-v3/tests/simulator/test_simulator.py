@@ -4,13 +4,17 @@ from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_client_fmu_v3.fmu3_simulator_config import FMU3SimulatorConfig
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
 
 from tests.tech.resource_utils import resource_path
 
+_FMU_FILE = resource_path() / "test_fmus/StateSpace.fmu"
 
+
+@skip_unless_fmpy_loads(_FMU_FILE)
 def test_with_matrix_inputs() -> None:
-    fmu_config = FMUBaseConfig(fmu_file=resource_path() / "test_fmus/StateSpace.fmu")
+    fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE)
     simulator_config = FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config)
     client = FMU3Client(
         _client_config=generate_mocked_client_config(),
