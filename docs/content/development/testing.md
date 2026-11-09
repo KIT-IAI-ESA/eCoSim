@@ -41,6 +41,8 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
   command above skips them, as CI does
 - `integration_tests/server_client/` runs a real server against real clients for every protocol and
   storage backend, the quickest way to see a whole run
+- start the clients after `server.wait_until_listening()`; a TCP client that starts before the server listens
+  waits a second and tries again
 
 ### Simulations
 
@@ -56,8 +58,9 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 The performance tests in `integration-tests/integration_tests/server_client/performance/` are not sophisticated
 performance tests. They run the integration tests of `server_client/` and a long running house simulation, and compare
 the times of each run with the expected times of the same test, machine and protocol. So they only show bigger
-deviations; the tolerances are in `tooling/performance_setup.py`. A summary of all times is printed at the end of the
-run.
+deviations: a time counts as slower only if it is beyond its tolerance and also more than `MINIMUM_DIFFERENCE_IN_SECONDS`
+above the expected time, so that times of a few milliseconds do not fail on small differences. The tolerances and the
+minimum difference are in `tooling/performance_setup.py`. A summary of all times is printed at the end of the run.
 
 - run them: `python dev/run_performance_tests.py` (arguments are forwarded to pytest, e.g. `-k batch_steps`)
 - create new expected data (locally): `python dev/create_performance_test_data.py` runs them several times (`--repetitions N`)

@@ -35,6 +35,7 @@ def test_the_predefined_client_server_run_is_stored_by_every_repository(
     client = _client(communication_protocol, server_port, client_data)
 
     server.start_in_thread()
+    server.wait_until_listening()
     client.start()
 
     server.assert_finishing_in_time()

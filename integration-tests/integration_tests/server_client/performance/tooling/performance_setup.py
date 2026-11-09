@@ -13,6 +13,8 @@ CI_TOLERANCE_PRIMARY = 1.7
 CI_TOLERANCE_SECONDARY = 5.0
 LOCAL_TOLERANCE_PRIMARY = 0.5
 LOCAL_TOLERANCE_SECONDARY = 2.2
+# short times vary by a few hundredths of a second, so smaller differences never count as slower
+MINIMUM_DIFFERENCE_IN_SECONDS = 0.05
 
 
 def current_machine() -> str:

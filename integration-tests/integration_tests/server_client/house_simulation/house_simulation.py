@@ -59,6 +59,7 @@ class HouseSimulation:
 
     def run(self, timeout_in_seconds: float = SERVER_FINISH_TIMEOUT_IN_SECONDS) -> None:
         self.server.start_in_thread()
+        self.server.wait_until_listening()
         for client in self.clients.values():
             client.start()
         self.server.assert_finishing_in_time(timeout_in_seconds=timeout_in_seconds)

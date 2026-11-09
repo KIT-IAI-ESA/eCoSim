@@ -48,6 +48,7 @@ def test_a_step_longer_than_the_receive_retry_interval_does_not_end_the_run(dask
 
     server_thread = threading.Thread(target=server.start, daemon=True)
     server_thread.start()
+    server.wait_until_listening()
     client.start()
     server_thread.join(timeout=60)
 
