@@ -1,5 +1,3 @@
-import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -51,10 +49,6 @@ def _unzip_dir(client: FMU2Client) -> Path:
     return Path(client._simulator_config.unzip_dir())  # noqa: SLF001
 
 
-def _unzip_dir_of_a_never_cleared_client() -> Path:
-    return _unzip_dir(_create_client())
-
-
 @skip_unless_fmpy_loads(_FMU_FILE)
 def test_set_input_float_with_real_fmu() -> None:
     client = _create_client()
@@ -99,9 +93,9 @@ def test_an_fmu_whose_initialization_failed_is_still_freed() -> None:
     assert fmu_instance.is_freed
 
 
-@skip_unless_fmpy_loads(_FMU_FILE)
-def test_the_extracted_files_of_a_never_cleared_client_are_removed_when_its_process_ends() -> None:
-    with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn")) as executor:
-        unzip_dir = executor.submit(_unzip_dir_of_a_never_cleared_client).result()
+def test_a_failing_free_still_removes_the_extracted_files() -> None:
+    client = _create_client_with_spy(fmu_instance=SpyFMUInstance(free_instance_fails=True), is_initialized=True)
 
-    assert not unzip_dir.exists()
+    client.on_app_shutdown()
+
+    assert not _unzip_dir(client).exists()

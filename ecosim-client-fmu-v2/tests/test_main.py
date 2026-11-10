@@ -18,7 +18,7 @@ def test_exits_with_the_failed_run_exit_code_when_the_server_closes_mid_run(esp_
     esp_monkey_patch.set_sys_arg("--server-host", server.address().ip)
     esp_monkey_patch.set_sys_arg("--server-port", str(server.address().port))
     esp_monkey_patch.set_sys_arg("--debug")
-    threading.Thread(target=server.serve, kwargs={"message_types": [MessageType.SIMULATION_START]}, daemon=True).start()
+    threading.Thread(target=server.serve_and_close, kwargs={"message_types": [MessageType.SIMULATION_START]}, daemon=True).start()
 
     with pytest.raises(SystemExit) as exit_info:
         main()

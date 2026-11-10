@@ -4,11 +4,13 @@ from dataclasses import dataclass, field
 from typing import override
 
 from ecosim_common.client.simulator_client import SimulatorClient
-from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
+from ecosim_common.communication.message_type import MessageType
+from ecosim_test_common.bounded_wait import finishes_in_time
 from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
+from ecosim_test_common.test_data.single_connection_server import SingleConnectionServer
 
 
 @dataclass(kw_only=True)
@@ -21,16 +23,25 @@ class SpySimulatorClient(SimulatorClient):
     def create(
         channel: ESPChannel | None = None,
         communication_protocol: CommunicationProtocol = CommunicationProtocol.TCP_SOCKET,
-        server_address: ConnectionAddress | None = None,
-        initialize_fails: bool = False,
-        stop_fails: bool = False,
     ) -> SpySimulatorClient:
         return SpySimulatorClient(
-            _client_config=generate_mocked_client_config(communication_protocol=communication_protocol, server_address=server_address),
+            _client_config=generate_mocked_client_config(communication_protocol),
             _channel_or_none=channel,
+        )
+
+    @staticmethod
+    def of_ended_run(message_types: list[MessageType], initialize_fails: bool = False, stop_fails: bool = False) -> SpySimulatorClient:
+        """The client after a server sent it these messages and closed the connection."""
+        server = SingleConnectionServer.listen()
+        client = SpySimulatorClient(
+            _client_config=generate_mocked_client_config(server_address=server.address()),
             initialize_fails=initialize_fails,
             stop_fails=stop_fails,
         )
+        client.start()
+        server.serve_and_close(message_types=message_types)
+        assert finishes_in_time(blocking_call=client.wait_until_finished), "the client kept waiting after the server closed the connection"
+        return client
 
     @override
     def _on_initialize_model(self, start_time: float) -> None:

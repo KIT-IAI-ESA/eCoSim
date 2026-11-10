@@ -26,7 +26,7 @@ class SingleConnectionServer:
     def address(self) -> ConnectionAddress:
         return ConnectionAddress.of_raw_socket_address(self._listening_socket.getsockname())
 
-    def serve(self, message_types: list[MessageType]) -> None:
+    def serve_and_close(self, message_types: list[MessageType]) -> None:
         channel = self._accept()
         for message_type in message_types:
             channel.send(ESPChannelMessageJson.empty(type=message_type))

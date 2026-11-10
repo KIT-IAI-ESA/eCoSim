@@ -1,5 +1,4 @@
 import socket
-import threading
 from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import Mock
@@ -10,6 +9,7 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.socket.tcp_socket import TCPSocket
 from ecosim_test_common.bounded_listen import listen_blocking_bounded
+from ecosim_test_common.bounded_wait import finishes_in_time
 from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS, WAIT_TIMEOUT_IN_SECONDS
 from tests.communication.channel_test_setup import ADDRESS, RaisingMessageHandler, dask_channel_pair, simple_message
 
@@ -36,13 +36,6 @@ def channel_and_peer(communication_protocol: CommunicationProtocol) -> Iterator[
         peer.close()
 
 
-def _finishes_in_time(channel: ESPChannel) -> bool:
-    waiting = threading.Thread(target=channel.wait_for_finish, daemon=True)
-    waiting.start()
-    waiting.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
-    return not waiting.is_alive()
-
-
 def test_a_raising_handler_closes_the_channel(channel_and_peer: tuple[ESPChannel, ESPChannel]) -> None:
     channel, peer = channel_and_peer
     handler = RaisingMessageHandler()
@@ -50,7 +43,7 @@ def test_a_raising_handler_closes_the_channel(channel_and_peer: tuple[ESPChannel
 
     peer.send(simple_message())
 
-    assert _finishes_in_time(channel), "the listen thread died and left the channel open"
+    assert finishes_in_time(blocking_call=channel.wait_for_finish), "the listen thread died and left the channel open"
     assert handler.call_count == 1
     assert listen_blocking_bounded(channel=peer, timeout_in_seconds=WAIT_TIMEOUT_IN_SECONDS) is None, "the peer was not told that the channel closed"
 
@@ -64,7 +57,7 @@ def test_the_swallowed_error_of_a_handler_is_logged_with_its_traceback(
 
     peer.send(simple_message())
 
-    assert _finishes_in_time(channel), "the listen thread died and left the channel open"
+    assert finishes_in_time(blocking_call=channel.wait_for_finish), "the listen thread died and left the channel open"
     assert "Traceback" in caplog.text
     assert RaisingMessageHandler.ERROR_MESSAGE in caplog.text
 
@@ -109,4 +102,4 @@ def test_a_receive_error_closes_the_tcp_channel() -> None:
 
     channel.listen_on_message_async(on_message=Mock())
 
-    assert _finishes_in_time(channel)
+    assert finishes_in_time(blocking_call=channel.wait_for_finish)
