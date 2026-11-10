@@ -107,6 +107,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  leaked-secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # the scan needs the whole history and the remote branches
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          cache-suffix: leaked-secrets
+      - name: Install pre-commit
+        run: uv sync --locked --extra dev
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Scan the whole history
+        run: uv run --no-project python dev/check_for_leaked_secrets.py
+
   dev-scripts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -121,7 +141,7 @@ jobs:
   # the ruleset requires only this job, so new jobs just go into its needs
   tests-passed:
     if: always()
-    needs: [ pre-commit, unit-tests, integration-tests, dev-scripts ]
+    needs: [ pre-commit, unit-tests, integration-tests, leaked-secrets, dev-scripts ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
