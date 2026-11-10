@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Tuple
@@ -30,7 +29,7 @@ SERVER_FINISH_TIMEOUT_IN_SECONDS = 110
 
 @dataclass
 class SimpleTestServer(Server):
-    _thread: threading.Thread | None = field(init=False, default=None)
+    _thread: ErrorRecordingThread | None = field(init=False, default=None)
 
     @staticmethod
     def for_client_ids(
@@ -57,11 +56,6 @@ class SimpleTestServer(Server):
             ),
         )
 
-    def start_with_error_recording(self) -> ErrorRecordingThread:
-        server_run = ErrorRecordingThread(target=self.start)
-        server_run.start()
-        return server_run
-
     def measurement_repository(self, client_id: ClientID) -> MeasurementRepository:
         return self._repositories.measurement_repository(client_id=client_id)
 
@@ -77,14 +71,15 @@ class SimpleTestServer(Server):
     def client_communication(self) -> ClientCommunication:
         return self._simulation_executor._client_communication  # noqa: SLF001
 
-    def start_in_thread(self) -> None:
-        self._thread = threading.Thread(target=self.start, daemon=True)
+    def start_in_thread(self) -> ErrorRecordingThread:
+        self._thread = ErrorRecordingThread(target=self.start)
         self._thread.start()
+        return self._thread
 
     def assert_finishing_in_time(self, timeout_in_seconds: float = SERVER_FINISH_TIMEOUT_IN_SECONDS) -> None:
         assert self._thread is not None, "The server was not started in the background"
-        self._thread.join(timeout=timeout_in_seconds)
-        assert not self._thread.is_alive(), f"The server did not finish within {timeout_in_seconds}s"
+        self._thread.assert_ends_within(limit_in_seconds=timeout_in_seconds)
+        assert self._thread.error is None, f"The server failed: {self._thread.error!r}"
 
     def start_and_wait_for_all_clients_connected_and_ready(self) -> None:
         self._start_listening()
