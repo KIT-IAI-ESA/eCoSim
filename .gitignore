@@ -1,6 +1,9 @@
 report.xml
 ecosim_roegling_log.txt
 
+# results of the betterleaks report run
+.betterleaks-report.json
+
 # results of local performance test runs, see docs/content/development/testing.md
 integration-tests/integration_tests/resources/performance/actual/
 
