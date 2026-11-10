@@ -155,15 +155,14 @@ repos:
       - id: betterleaks
       # the whole history of every branch, run by dev/check_for_leaked_secrets.py
       - id: betterleaks
-        alias: betterleaks-history
+        alias: betterleaks-full-history
         name: Detect hardcoded secrets in the whole git history
         # TODO: revert to '--log-opts=--all'
         entry: betterleaks git --redact --verbose --log-opts=origin/main .
         stages: [ manual ]
-      # writes every leak of the whole history to a report, run by dev/check_for_leaked_secrets.py
       - id: betterleaks
-        alias: betterleaks-known-leaks
-        name: Collect the leaks in the whole git history
+        alias: betterleaks-with-unredacted-report
+        name: Collect the leaks in the whole git history and create an unredacted report
         # TODO: revert to '--log-opts=--all'
-        entry: betterleaks git --redact --log-opts=origin/main --report-format=json --report-path=.betterleaks-report.json .
+        entry: betterleaks git --log-opts=origin/main --report-format=json --report-path=.betterleaks-report.json .
         stages: [ manual ]
