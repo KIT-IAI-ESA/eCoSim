@@ -22,6 +22,16 @@ class TestClientData:
     model_name: str
     interfaces: List[TestModelInterface]
 
+    @staticmethod
+    def with_output(
+        simulator_name: str,
+        model_name: str,
+        output_name: str,
+    ) -> TestClientData:
+        client_data = TestClientData(simulator_name=simulator_name, model_name=model_name, interfaces=[])
+        client_data.add_interface(interface_name=output_name, unit="float64", interface_type=InterfaceType.OUTPUT)
+        return client_data
+
     def add_interface(
         self,
         interface_name: str,
