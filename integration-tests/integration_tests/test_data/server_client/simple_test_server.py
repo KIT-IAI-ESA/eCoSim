@@ -78,7 +78,7 @@ class SimpleTestServer(Server):
 
     def assert_finishing_in_time(self, timeout_in_seconds: float = SERVER_FINISH_TIMEOUT_IN_SECONDS) -> None:
         assert self._thread is not None, "The server was not started in the background"
-        self._thread.assert_ends_within(limit_in_seconds=timeout_in_seconds)
+        self._thread.assert_ends_within(timeout_in_seconds=timeout_in_seconds)
         assert self._thread.error is None, f"The server failed: {self._thread.error!r}"
 
     def start_and_wait_for_all_clients_connected_and_ready(self) -> None:

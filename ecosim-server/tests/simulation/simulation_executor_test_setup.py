@@ -140,5 +140,5 @@ def executor_with_client(
 def error_of_bounded_run(executor: SimulationExecutor) -> Exception | None:
     run = ErrorRecordingThread(target=partial(executor.execute, rendering_socket=None))
     run.start()
-    run.assert_ends_within(limit_in_seconds=WAIT_TIMEOUT_IN_SECONDS)
+    run.assert_ends_within(timeout_in_seconds=WAIT_TIMEOUT_IN_SECONDS)
     return run.error

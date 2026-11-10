@@ -81,9 +81,9 @@ def test_restore_of_a_connected_client_still_ends_at_the_restore_timeout() -> No
     assert "Timeout" in str(error)
 
 
-def test_restore_limit_restarts_after_each_response() -> None:
-    """Both gaps between the answers are under the limit, while the total is over it."""
-    restore_limit_in_seconds = 3.0
+def test_restore_timeout_restarts_after_each_response() -> None:
+    """Both gaps between the answers are under the timeout, while the total is over it."""
+    restore_timeout_in_seconds = 3.0
     gap_between_answers_in_seconds = 2.0
     second_client_id = ClientID(model_name="second_model", simulator_name="simulator")
     executor, _ = executor_with_clients(
@@ -93,7 +93,7 @@ def test_restore_limit_restarts_after_each_response() -> None:
         },
         restore=True,
         response_timeouts=ResponseTimeouts(
-            restore_response_timeout_in_seconds=restore_limit_in_seconds,
+            restore_response_timeout_in_seconds=restore_timeout_in_seconds,
             restore_connection_check_interval_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
         ),
     )
