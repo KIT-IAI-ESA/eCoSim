@@ -6,7 +6,7 @@ from ecosim_server.simulation.state.simulation_state_repository_db import Simula
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementDBEntry
 from psycopg import sql
-from tests.data.generate_postgres_name_config import a_config, a_simulator
+from tests.data.generate_postgres_name_config import generate_client_simulator_config, generate_simulation_config
 from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
 
 pytestmark = skip_in_ci
@@ -20,8 +20,8 @@ def _config_of_a_new_database(cluster: PostgresTestCluster) -> ServerConfig:
 
 def test_the_tables_of_a_run_are_created_in_the_configured_schema(plain_cluster: PostgresTestCluster) -> None:
     config = _config_of_a_new_database(plain_cluster)
-    simulator = a_simulator("schema_test")
-    repositories = RepositoriesDB.create(server_config=config, simulation_config=a_config(simulator))
+    simulator = generate_client_simulator_config(simulator_name="schema_test")
+    repositories = RepositoriesDB.create(server_config=config, simulation_config=generate_simulation_config(clients=[simulator]))
 
     repositories.measurement_repository(simulator.client_id)
 
