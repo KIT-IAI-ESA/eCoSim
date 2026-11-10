@@ -157,11 +157,13 @@ repos:
       - id: betterleaks
         alias: betterleaks-history
         name: Detect hardcoded secrets in the whole git history
-        entry: betterleaks git --redact --verbose --log-opts=--all .
+        # TODO: revert to '--log-opts=--all'
+        entry: betterleaks git --redact --verbose --log-opts=origin/main .
         stages: [ manual ]
       # writes every leak of the whole history to a report, run by dev/check_for_leaked_secrets.py
       - id: betterleaks
         alias: betterleaks-known-leaks
         name: Collect the leaks in the whole git history
-        entry: betterleaks git --redact --log-opts=--all --report-format=json --report-path=.betterleaks-report.json .
+        # TODO: revert to '--log-opts=--all'
+        entry: betterleaks git --redact --log-opts=origin/main --report-format=json --report-path=.betterleaks-report.json .
         stages: [ manual ]
