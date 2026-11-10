@@ -18,7 +18,7 @@ HEALTHY = ClientID(model_name="healthy_model", simulator_name="healthy_simulator
 LOST = ClientID(model_name="lost_model", simulator_name="lost_simulator")
 HOST = "localhost"
 STEPS = 3
-RUN_LIMIT_IN_SECONDS = 30
+RUN_TIMEOUT_IN_SECONDS = 30
 SHORT_RESPONSE_TIMEOUTS = ResponseTimeouts(
     step_response_timeout_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
     start_response_timeout_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
@@ -28,8 +28,8 @@ SHORT_RESPONSE_TIMEOUTS = ResponseTimeouts(
 Inputs = dict[InterfaceId, InterfaceValue]
 
 
-def assert_naming_the_lost_client(server_run: ErrorRecordingThread, limit_in_seconds: float, waiting_for: str) -> None:
-    server_run.assert_ends_within(limit_in_seconds=limit_in_seconds)
+def assert_naming_the_lost_client(server_run: ErrorRecordingThread, timeout_in_seconds: float, waiting_for: str) -> None:
+    server_run.assert_ends_within(timeout_in_seconds=timeout_in_seconds)
     assert isinstance(server_run.error, RuntimeError), server_run.error
     assert str(LOST) in str(server_run.error)
     assert str(HEALTHY) not in str(server_run.error)

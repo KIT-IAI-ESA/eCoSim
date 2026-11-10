@@ -17,9 +17,9 @@ class ErrorRecordingThread:
     def start(self) -> None:
         self._thread.start()
 
-    def assert_ends_within(self, limit_in_seconds: float) -> None:
-        self._thread.join(limit_in_seconds)
-        assert not self._thread.is_alive(), f"the thread still runs after {limit_in_seconds}s"
+    def assert_ends_within(self, timeout_in_seconds: float) -> None:
+        self._thread.join(timeout_in_seconds)
+        assert not self._thread.is_alive(), f"the thread still runs after {timeout_in_seconds}s"
 
     def _run_target(self) -> None:
         try:

@@ -205,6 +205,7 @@ class ClientCommunication:
         self._client_states.reset_state(client_id)
 
     def lost_client_ids(self, client_ids: Iterable[ClientID]) -> Tuple[ClientID, ...]:
+        # uses the stored states: a ping would make a client that is busy with a long step look lost
         return self._client_states.lost_client_ids(client_ids)
 
     def are_all_clients_connected_and_ready(self) -> bool:

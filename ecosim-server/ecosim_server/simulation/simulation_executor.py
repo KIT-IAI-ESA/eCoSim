@@ -176,7 +176,6 @@ class SimulationExecutor:
         client_ids: Iterable[ClientID],
         waiting_for: str,
     ) -> None:
-        # a ping would make a client that is busy with a long step look lost
         lost_client_ids = self._client_communication.lost_client_ids(client_ids)
         if len(lost_client_ids) > 0:
             raise RuntimeError(f"Lost client {', '.join(str(client_id) for client_id in lost_client_ids)} while waiting for {waiting_for}")

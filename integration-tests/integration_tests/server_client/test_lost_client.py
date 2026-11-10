@@ -10,7 +10,7 @@ from integration_tests.test_data.server_client.lost_client_setup import (
     HEALTHY,
     HOST,
     LOST,
-    RUN_LIMIT_IN_SECONDS,
+    RUN_TIMEOUT_IN_SECONDS,
     SHORT_RESPONSE_TIMEOUTS,
     STEPS,
     answer_slowly,
@@ -44,7 +44,7 @@ def test_client_lost_mid_step_fails_the_run(communication_protocol: Communicatio
         on_simulation_step_return=crash_in_step,
     ).start()
 
-    assert_naming_the_lost_client(server_run=server_run, limit_in_seconds=RUN_LIMIT_IN_SECONDS, waiting_for="response of step")
+    assert_naming_the_lost_client(server_run=server_run, timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS, waiting_for="response of step")
 
 
 def test_killed_client_process_mid_step_fails_the_run() -> None:
@@ -68,12 +68,12 @@ def test_killed_client_process_mid_step_fails_the_run() -> None:
     process = multiprocessing.get_context("spawn").Process(target=run_client_killing_its_process, args=(port,), daemon=True)
     process.start()
     try:
-        assert_naming_the_lost_client(server_run=server_run, limit_in_seconds=RUN_LIMIT_IN_SECONDS, waiting_for="response of step")
-        process.join(RUN_LIMIT_IN_SECONDS)
+        assert_naming_the_lost_client(server_run=server_run, timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS, waiting_for="response of step")
+        process.join(RUN_TIMEOUT_IN_SECONDS)
         assert process.exitcode == -signal.SIGKILL
     finally:
         process.kill()
-        process.join(RUN_LIMIT_IN_SECONDS)
+        process.join(RUN_TIMEOUT_IN_SECONDS)
 
 
 def test_client_lost_during_start_up_fails_the_run(communication_protocol: CommunicationProtocol) -> None:
@@ -97,7 +97,7 @@ def test_client_lost_during_start_up_fails_the_run(communication_protocol: Commu
         on_simulation_start_return=crash,
     ).start()
 
-    assert_naming_the_lost_client(server_run=server_run, limit_in_seconds=RUN_LIMIT_IN_SECONDS, waiting_for="start their simulation")
+    assert_naming_the_lost_client(server_run=server_run, timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS, waiting_for="start their simulation")
 
 
 def test_client_lost_during_restore_fails_the_run(communication_protocol: CommunicationProtocol) -> None:
@@ -127,7 +127,7 @@ def test_client_lost_during_restore_fails_the_run(communication_protocol: Commun
         on_simulation_step_return=crash_in_step,
     ).start()
 
-    assert_naming_the_lost_client(server_run=server_run, limit_in_seconds=RUN_LIMIT_IN_SECONDS, waiting_for="restore response")
+    assert_naming_the_lost_client(server_run=server_run, timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS, waiting_for="restore response")
 
 
 def test_slow_client_does_not_fail_the_run(communication_protocol: CommunicationProtocol) -> None:
@@ -152,4 +152,4 @@ def test_slow_client_does_not_fail_the_run(communication_protocol: Communication
         on_simulation_step_return=answer_slowly,
     ).start()
 
-    server.assert_finishing_in_time(timeout_in_seconds=RUN_LIMIT_IN_SECONDS)
+    server.assert_finishing_in_time(timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS)
