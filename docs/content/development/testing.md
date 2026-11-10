@@ -96,3 +96,15 @@ Environment variables:
 
 The workflow `.github/workflows/tests.yml` runs these checks on GitHub for every pull request and every push to `main`.
 A pull request can only be merged when `tests-passed`, `docs-reference`, `docs-build` and `commit-messages` pass.
+
+## Secret leaks
+
+[Betterleaks](https://github.com/betterleaks/betterleaks) looks for leaked secrets such as passwords, tokens and API keys.
+
+- the pre-commit hook `betterleaks` checks the staged changes on every commit
+- `python dev/check_for_leaked_secrets.py` checks the whole git history; the job `leaked-secrets` in
+  `.github/workflows/tests.yml` runs it on GitHub
+- known leaks, e.g. the passwords of test databases, are listed in `.betterleaksignore` and no longer reported;
+  `python dev/check_for_leaked_secrets.py --interactive-update-known-leaks` shows every new leak and asks whether to
+  add it there
+- GitHub CI does the full history scan
