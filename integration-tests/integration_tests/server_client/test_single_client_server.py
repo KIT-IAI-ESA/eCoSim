@@ -12,6 +12,7 @@ from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServerParameters,
     generate_simple_test_server,
 )
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 def test_client_server_single(communication_protocol: CommunicationProtocol) -> None:
@@ -32,6 +33,7 @@ def run_client_server_single(communication_protocol: CommunicationProtocol) -> S
         second=0,
         microsecond=0,
     )
+    client_data = TestClientData.with_output(simulator_name="TestSimulator", model_name="TestModel", output_name="TestInterface")
     server = generate_simple_test_server(
         SimpleTestServerParameters(
             communication_protocol=communication_protocol,
@@ -40,12 +42,14 @@ def run_client_server_single(communication_protocol: CommunicationProtocol) -> S
             steps=steps,
             step_size_in_ms=step_size_in_ms,
             simulation_start_date=simulation_start_date,
+            clients=[client_data.to_client_simulator_config()],
         ),
     )
-    client = SimpleTestClient.generate(
+    client = SimpleTestClient.of_test_data(
         communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
+        test_client_data=client_data,
         on_simulation_step_return=lambda _self, received_inputs, steps: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(

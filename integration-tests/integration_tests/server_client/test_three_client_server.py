@@ -4,9 +4,7 @@ from typing import Tuple
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
-from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.port_utils import get_free_port
-from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from integration_tests.tech.db.measurement_repository_in_memory import MeasurementRepositoryInMemory
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import (
@@ -14,6 +12,7 @@ from integration_tests.test_data.server_client.simple_test_server import (
     SimpleTestServerParameters,
     generate_simple_test_server,
 )
+from integration_tests.test_data.test_client_data import TestClientData
 
 
 def test_three_clients_server(communication_protocol: CommunicationProtocol) -> None:
@@ -34,6 +33,9 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
         second=0,
         microsecond=0,
     )
+    client_data_1 = TestClientData.with_output(simulator_name="TestSimulator_1", model_name="TestModel_1", output_name="TestInterface")
+    client_data_2 = TestClientData.with_output(simulator_name="TestSimulator_2", model_name="TestModel_2", output_name="TestInterface")
+    client_data_3 = TestClientData.with_output(simulator_name="TestSimulator_3", model_name="TestModel_3", output_name="TestInterface")
     server = generate_simple_test_server(
         SimpleTestServerParameters(
             communication_protocol=communication_protocol,
@@ -43,34 +45,18 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
             step_size_in_ms=step_size_in_ms,
             simulation_start_date=simulation_start_date,
             clients=[
-                ClientSimulatorConfig(
-                    simulator_name="TestSimulator_1",
-                    model_name="TestModel_1",
-                    interfaces=[],
-                    client_id=ClientID(model_name="TestModel_1", simulator_name="TestSimulator_1"),
-                ),
-                ClientSimulatorConfig(
-                    simulator_name="TestSimulator_2",
-                    model_name="TestModel_2",
-                    interfaces=[],
-                    client_id=ClientID(model_name="TestModel_2", simulator_name="TestSimulator_2"),
-                ),
-                ClientSimulatorConfig(
-                    simulator_name="TestSimulator_3",
-                    model_name="TestModel_3",
-                    interfaces=[],
-                    client_id=ClientID(model_name="TestModel_3", simulator_name="TestSimulator_3"),
-                ),
+                client_data_1.to_client_simulator_config(),
+                client_data_2.to_client_simulator_config(),
+                client_data_3.to_client_simulator_config(),
             ],
         ),
     )
 
-    client_1 = SimpleTestClient.generate(
+    client_1 = SimpleTestClient.of_test_data(
         communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
-        model_name="TestModel_1",
-        simulator_name="TestSimulator_1",
+        test_client_data=client_data_1,
         on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
@@ -80,12 +66,11 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
             ],
         ),
     )
-    client_2 = SimpleTestClient.generate(
+    client_2 = SimpleTestClient.of_test_data(
         communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
-        model_name="TestModel_2",
-        simulator_name="TestSimulator_2",
+        test_client_data=client_data_2,
         on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
@@ -95,12 +80,11 @@ def run_three_clients_server(communication_protocol: CommunicationProtocol) -> S
             ],
         ),
     )
-    client_3 = SimpleTestClient.generate(
+    client_3 = SimpleTestClient.of_test_data(
         communication_protocol=communication_protocol,
         server_host=server_host,
         server_port=server_port,
-        model_name="TestModel_3",
-        simulator_name="TestSimulator_3",
+        test_client_data=client_data_3,
         on_simulation_step_return=lambda _self, received_inputs, current_step: ClientSimStepData(
             interface_values=[
                 ProtocolInterfaceValue(
