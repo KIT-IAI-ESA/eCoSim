@@ -148,3 +148,8 @@ repos:
         files: (^|/)pyproject\.toml$
         # the client classifiers are fixed with the client rework
         exclude: ^ecosim-client-
+
+  - repo: https://github.com/betterleaks/betterleaks
+    rev: v1.10.0
+    hooks:
+      - id: betterleaks
