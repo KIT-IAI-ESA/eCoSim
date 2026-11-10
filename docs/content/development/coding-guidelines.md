@@ -30,7 +30,7 @@ More conventions, with examples from the code: [Development tips](tips.md).
 ## Enforced by pre-commit
 
 - Python filenames in `snake_case` (`dev/validate_file_name.py`)
-- lines of at most 150 characters (`ruff`, `flake8`, `.editorconfig`)
+- lines of at most 150 characters (`ruff`, `.editorconfig`)
 - a trailing comma in multi-line calls and signatures, added by `add-trailing-comma`
 - a newline at the end of every file
 - no leftover `breakpoint()` or `pdb`
