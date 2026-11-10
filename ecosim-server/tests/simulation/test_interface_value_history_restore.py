@@ -18,7 +18,7 @@ def test_an_incomplete_newest_row_is_not_replayed() -> None:
     # without its second interface, so the step was not completed
     _store_step(repositories=repositories, client_id=weather.client_id, step=5, interface_values=_every_interface_value(client=weather)[:1])
 
-    restore_data = _restore(repositories=repositories)
+    restore_data = _restore_data(repositories=repositories)
 
     assert _steps_of(batch=restore_data.client_restore_data[weather.client_id]) == [0, 1, 2, 3, 4]
 
@@ -27,12 +27,12 @@ def test_a_client_without_a_stored_step_restarts_the_run_at_step_0() -> None:
     repositories = RecordingRepositories()
     _store_completed_steps(repositories=repositories, client=simulation_config().clients[0], steps=1)
 
-    restore_data = _restore(repositories=repositories)
+    restore_data = _restore_data(repositories=repositories)
 
     assert restore_data == RestoreData(current_step=0, client_restore_data={client.client_id: {} for client in simulation_config().clients})
 
 
-def _restore(repositories: RecordingRepositories) -> RestoreData:
+def _restore_data(repositories: RecordingRepositories) -> RestoreData:
     value_history = history(repositories=repositories, client_id=None)
     value_history.init_from_repositories()
     restore_data = value_history.calculate_restore_data_or_exception()
