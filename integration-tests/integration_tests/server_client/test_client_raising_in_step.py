@@ -4,7 +4,7 @@ from integration_tests.test_data.server_client.lost_client_setup import (
     HEALTHY,
     HOST,
     LOST,
-    RUN_LIMIT_IN_SECONDS,
+    RUN_TIMEOUT_IN_SECONDS,
     SHORT_RESPONSE_TIMEOUTS,
     STEPS,
     assert_naming_the_lost_client,
@@ -35,4 +35,4 @@ def test_client_raising_in_a_step_fails_the_run(communication_protocol: Communic
         on_simulation_step_return=raise_in_step,
     ).start()
 
-    assert_naming_the_lost_client(server_run=server_run, limit_in_seconds=RUN_LIMIT_IN_SECONDS, waiting_for="response of step")
+    assert_naming_the_lost_client(server_run=server_run, timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS, waiting_for="response of step")
