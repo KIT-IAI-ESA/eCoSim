@@ -34,11 +34,14 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 
 ## Integration tests
 
-- `cd integration-tests && uv run pytest --ignore=integration_tests/locally`
+- `cd integration-tests && uv run pytest -m integration`
+    - every test is marked `integration`, except the performance tests, which are marked `performance`
+    - a plain `uv run pytest` leaves the performance tests out
+    - the output and the logs of a test are shown when it fails; for the logs while the tests run, add `--log-cli-level=DEBUG`
 - they import the other subprojects, so sync after changing one: `python dev/sync_projects.py`
 - some start PostgreSQL through `testcontainers`, so they need Docker
 - the tests in `integration_tests/locally/` need external models or an HPC environment, so the
-  command above skips them, as CI does
+  `addopts` ignore them, as CI does
 - `integration_tests/server_client/` runs a real server against real clients for every protocol and
   storage backend, the quickest way to see a whole run
 - start the clients after `server.wait_until_listening()`; a TCP client that starts before the server listens
@@ -62,7 +65,7 @@ deviations: a time counts as slower only if it is beyond its tolerance and also 
 above the expected time, so that times of a few milliseconds do not fail on small differences. The tolerances and the
 minimum difference are in `tooling/performance_setup.py`. A summary of all times is printed at the end of the run.
 
-- run them: `python dev/run_performance_tests.py` (arguments are forwarded to pytest, e.g. `-k batch_steps`)
+- run them: `python dev/run_performance_tests.py` runs the tests marked `performance` (arguments are forwarded to pytest, e.g. `-k batch_steps`)
 - create new expected data (locally): `python dev/create_performance_test_data.py` runs them several times (`--repetitions N`)
   and writes the mean of each time as new expected data
 - create new expected data (GitHub): `.github/workflows/performance-tests.yml` runs them and `.github/workflows/create-performance-test-data.yml`

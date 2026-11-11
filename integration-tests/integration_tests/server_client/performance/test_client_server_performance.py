@@ -16,6 +16,7 @@ from integration_tests.test_data.server_client.simple_test_server import SimpleT
 RunTest = Callable[[CommunicationProtocol], SimpleTestServer]
 
 
+@pytest.mark.performance
 @pytest.mark.parametrize(
     ("test_name", "run"),
     [
