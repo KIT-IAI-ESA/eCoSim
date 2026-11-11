@@ -17,6 +17,11 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
+# not every platform wakes a blocked accept() on close(), so the accept loop checks for it this often
+ACCEPT_TIMEOUT_IN_SECONDS = 0.2
+# limited, so that a stuck accept thread cannot hold up the shutdown
+ACCEPT_LOOP_END_TIMEOUT_IN_SECONDS = 2
+
 
 @dataclass
 class TCPSocket(ESPChannel, ShutdownListener):
@@ -30,6 +35,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
     _listening: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
     _listening_on_connection: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
     _start_listening_in_progress: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
+    _accept_loop_ended: ParallelEvent = field(default_factory=lambda: ParallelEvent.thread())
 
     @override
     def __post_init__(self) -> None:
@@ -66,12 +72,6 @@ class TCPSocket(ESPChannel, ShutdownListener):
             # SO_REUSEADDR allows rebinding immediately, e.g. after a server restart.
             internal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    def _is_internal_socket_listening(self) -> bool:
-        try:
-            return not self._internal_socket.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
-        except socket.error:
-            return False
-
     def _has_internal_socket_peer(self) -> bool:
         try:
             self._internal_socket.getpeername()
@@ -99,56 +99,41 @@ class TCPSocket(ESPChannel, ShutdownListener):
             self._bound.clear()
             raise e
 
+    def _bind_and_listen(self) -> None:
+        try:
+            self._bind(self._connection_address)
+            self._internal_socket.listen()
+        except socket.error:
+            self._internal_socket.close()
+            raise
+        self._internal_socket.settimeout(ACCEPT_TIMEOUT_IN_SECONDS)
+        self._listening_on_connection.set()
+
     def _listen_on_connection_loop(
         self,
         channel_handler: ChannelHandler,
     ) -> None:
         TCPSocket._logger.debug("Starting listening on connection loop...")
-        with self._internal_socket:
-            connection_address = self._connection_address
-            if not connection_address:
-                TCPSocket._logger.error(
-                    "No connection address is set -> cannot listen on socket.",
-                )
-                return
-            if not self._bound.is_set():
-                self._bind(connection_address)
-            self._listening_on_connection.set()
-            self._internal_socket.listen()
+        try:
             while not self._closed.is_set():
-                try:
-                    connection, address = self._internal_socket.accept()
-                except Exception as e:
-                    if self._closed.is_set():
-                        return
-                    raise e
-                if not connection:
-                    TCPSocket._logger.error("Something went wrong accepting a connection on %s", connection_address)
-                    continue
-                client_address = ConnectionAddress.of_raw_socket_address(address)
-                if client_address.ip == connection_address.ip:
-                    TCPSocket._logger.info(
-                        "Socket listening on %s received a connection from itself - this is "
-                        "probably a shutdown trigger. If this message appears multiple times please investigate.",
-                        connection_address,
-                    )
-                    continue
-                TCPSocket._logger.debug("New connection on socket %s from %s", connection_address, client_address)
-
-                connection_data = ConnectionData(
-                    channel=TCPSocket(
-                        _internal_socket=connection,
-                        _connection_address=client_address,
-                    ),
-                    client_address=client_address,
-                )
-                threading.Thread(
-                    target=self._serve_channel,
-                    args=(channel_handler, connection_data),
-                    name=f"client-{connection_data.client_address}",
-                ).start()
+                self._accept_connection(channel_handler)
+        finally:
+            # closed first: a close() that finds the flag cleared relies on the port being free
+            self._internal_socket.close()
             self._listening_on_connection.clear()
+            self._accept_loop_ended.set()
         TCPSocket._logger.debug("Ended listening on connection loop.")
+
+    def _accept_connection(self, channel_handler: ChannelHandler) -> None:
+        try:
+            connection, address = self._internal_socket.accept()
+        except TimeoutError:
+            return
+        client_address = ConnectionAddress.of_raw_socket_address(address)
+        TCPSocket._logger.debug("New connection on socket %s from %s", self._connection_address, client_address)
+        channel = TCPSocket(_internal_socket=connection, _connection_address=client_address)
+        connection_data = ConnectionData(channel=channel, client_address=client_address)
+        threading.Thread(target=self._serve_channel, args=(channel_handler, connection_data), name=f"client-{client_address}").start()
 
     @staticmethod
     def _serve_channel(
@@ -160,16 +145,12 @@ class TCPSocket(ESPChannel, ShutdownListener):
         except Exception as e:
             TCPSocket._logger.error("Client handler for %s failed: %s", connection_data.client_address, e)
 
-    def listen_on_connection_loop_async(
-        self,
-        channel_handler: ChannelHandler,
-    ) -> None:
-        listen_thread = threading.Thread(
-            target=self._listen_on_connection_loop,
-            args=(channel_handler,),
-            daemon=False,
-        )
-        listen_thread.start()
+    def listen_on_connection_loop_async(self, channel_handler: ChannelHandler) -> None:
+        if self._listening_on_connection.is_set():
+            TCPSocket._logger.warning("Socket is already listening on %s. So nothing is done.", self._connection_address)
+            return
+        self._bind_and_listen()
+        threading.Thread(target=self._listen_on_connection_loop, args=(channel_handler,), daemon=False).start()
 
     def close(self) -> None:
         if self._closed.is_set():
@@ -178,20 +159,16 @@ class TCPSocket(ESPChannel, ShutdownListener):
         self._closed.set()
         self._listening.clear()
         TCPSocket._logger.debug("Closing socket...")
-        if self._is_internal_socket_listening() or self._has_internal_socket_peer() or self._listening_on_connection.is_set():
-            if TCPSocket._logger.is_debug_enabled:
-                TCPSocket._logger.debug(
-                    "Closing socket: internal listening: %s | peers: %s | listening on connection: %s",
-                    self._is_internal_socket_listening(),
-                    self._has_internal_socket_peer(),
-                    self._listening_on_connection.is_set(),
-                )
-            self._listening_on_connection.clear()
+        # a listening socket has no peer, its accept loop closes it
+        if self._has_internal_socket_peer():
             try:
                 self._internal_socket.shutdown(socket.SHUT_RDWR)
                 TCPSocket._logger.debug("Closing socket: successfully sent SHUT_RDWR signal")
             except socket.error as e:
                 TCPSocket._logger.warning("Something went wrong closing connection on %s: %s", self._connection_address, e)
+        if self._listening_on_connection.is_set() and not self._accept_loop_ended.wait(timeout=ACCEPT_LOOP_END_TIMEOUT_IN_SECONDS):
+            TCPSocket._logger.warning("Accept loop on %s did not end in time, so the port can still be in use.", self._connection_address)
+            return
         TCPSocket._logger.debug("Closing socket...done.")
 
     def on_app_shutdown(self) -> None:
