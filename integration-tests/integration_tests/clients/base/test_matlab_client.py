@@ -95,6 +95,16 @@ class TestMatlabClientBase(ClientBaseTest):
 
         assert (logging.WARNING, FakeMatlabEngine.FINISHING_ERROR_OUTPUT) in _client_log_entries(caplog)
 
+    def test_converts_integer_and_boolean_outputs_to_float(self) -> None:
+        client = self._create_matlab_client(config_override=ClientConfigOverride(), start_matlab=self._fake_matlab.start_matlab)
+        client.on_simulation_start()
+        self._fake_matlab.started[0].workspace.update(count=3, is_on=True)
+
+        outputs = [client._get_model_output(name) for name in ("count", "is_on")]  # noqa: SLF001
+
+        assert outputs == [3.0, 1.0]
+        assert [type(output) for output in outputs] == [float, float]
+
     def test_starting_the_model_without_the_matlab_engine_asks_to_install_it(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # 'None' in 'sys.modules' fails the import even where Matlab is installed
         monkeypatch.setitem(sys.modules, "matlab.engine", None)

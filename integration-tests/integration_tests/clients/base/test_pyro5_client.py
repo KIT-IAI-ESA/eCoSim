@@ -20,10 +20,11 @@ _OBJECT_NAME = "pyro5_test_model"
 class PyroTestModel:
     def __init__(self) -> None:
         self.holds_state = False
+        self.start_outputs: dict[str, float] = {"y": 0.0}
 
     def initialize(self) -> dict[str, float]:
         self.holds_state = True
-        return {"y": 0.0}
+        return self.start_outputs
 
     def do_step(self, inputs: dict[str, float]) -> dict[str, float]:
         return {"y": 2 * inputs["u"]}
@@ -68,3 +69,13 @@ class TestPyro5ClientBase(ClientBaseTest):
     @override
     def assert_resources_released(self, client: SimulatorClient) -> None:
         assert not self._model.holds_state
+
+    def test_converts_integer_and_boolean_outputs_to_float(self) -> None:
+        self._model.start_outputs = {"count": 3, "is_on": True}
+        client = self.create_client(config_override=ClientConfigOverride())
+        client.on_simulation_start()
+
+        outputs = [client._get_model_output(name) for name in ("count", "is_on")]  # noqa: SLF001
+
+        assert outputs == [3.0, 1.0]
+        assert [type(output) for output in outputs] == [float, float]
