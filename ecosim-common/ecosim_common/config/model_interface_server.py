@@ -39,8 +39,8 @@ class ModelInterfaceServer:
             unit=raw_interface.get("unit"),
             description=raw_interface.get("description"),
             interface_type=InterfaceType.of(interface_type),
-            required=ModelInterfaceServer._parse_required(
-                raw_required=raw_interface.setdefault(
+            required=config_parser.ConfigParser.config_bool_or_string_to_bool(
+                value=raw_interface.setdefault(
                     "required",
                     "false",
                 ),
@@ -75,12 +75,6 @@ class ModelInterfaceServer:
 
     def interface_id(self) -> InterfaceId:
         return self.simulator_interface_id.model_interface_id.interface
-
-    @staticmethod
-    def _parse_required(raw_required: bool | str) -> bool:
-        if isinstance(raw_required, bool):
-            return raw_required
-        return config_parser.ConfigParser.config_string_to_bool(raw_required)
 
     @staticmethod
     def _get_connected_to(

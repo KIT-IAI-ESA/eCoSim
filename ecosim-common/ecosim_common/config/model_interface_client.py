@@ -19,7 +19,7 @@ class ModelInterfaceClient:
     @staticmethod
     def of_json_client_config(
         model_interface_id: ModelInterfaceId,
-        interface: dict[str, str],
+        interface: dict[str, Any],
         interface_type: InterfaceType,
     ) -> "ModelInterfaceClient":
         interface_name = interface.get("name")
@@ -31,8 +31,8 @@ class ModelInterfaceClient:
             unit=interface.get("unit"),
             description=interface.get("description") or "",
             type=interface_type,
-            required=config_parser.ConfigParser.config_string_to_bool(
-                interface.setdefault(
+            required=config_parser.ConfigParser.config_bool_or_string_to_bool(
+                value=interface.setdefault(
                     "required",
                     "false",
                 ),
