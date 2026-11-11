@@ -102,3 +102,7 @@ eCoSim is a project of the [Energy System Analysis](https://www.iai.kit.edu/engl
 research group at the [Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
 of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php). See also
 [eASiMOV](https://easimov.cloud.iai.kit.edu) and the [Energy Lab](https://www.elab.kit.edu/english/index.php).
+
+## Licence
+
+eCoSim is released under the [Apache License 2.0](LICENSE).

@@ -19,6 +19,8 @@ ecosim-<name>/
 - the folder uses hyphens, the import package underscores
 - copy the `pyproject.toml` of the closest sibling; every subproject has its own
   `[tool.pytest.ini_options]` and `[tool.mypy]`
+- a published package needs its own copy of the root `LICENSE` and `NOTICE`; `license-files` cannot
+  point outside the package folder
 
 ## 2. `dev/config.py`
 
