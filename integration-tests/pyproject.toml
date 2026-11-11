@@ -92,13 +92,15 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
-    "-s",
     "--junitxml=report.xml",
     "-v",
     "--strict-markers",
-    "--ignore=integration_tests/locally"
+    "--ignore=integration_tests/locally",
+    # a plain run leaves the performance tests out; '-m performance' on the command line selects them
+    "-m", "not performance",
 ]
-log_cli = true
-log_cli_level = "DEBUG"
-log_cli_format = "%(asctime)s %(levelname)s %(message)s"
+markers = [
+    "integration: every test that is not a performance test",
+    "performance: compares the run times with the expected times",
+]
 log_level = "DEBUG"
