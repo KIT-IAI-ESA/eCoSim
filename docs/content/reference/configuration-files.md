@@ -213,7 +213,7 @@ The interface files and `simulators` in the simulation config describe an interf
 | --- | --- | --- | --- |
 | `name` | required | required | The same in both files, and the name in the model |
 | `type` | not read | required | `Input` or `Output`, in upper or lower case |
-| `required` | optional | optional | The string `"true"`, `"yes"`, `"false"` or `"no"`, in upper or lower case. Default `"false"`. |
+| `required` | optional | optional | `true` or `false`, or a string: `"true"`, `"yes"`, `"false"`, `"no"`, in upper or lower case. Default `false`. |
 | `unit` | optional | optional | Free text. Values are passed on as they are, nothing converts or compares units. |
 | `description` | optional | optional | Free text |
 | `connected_to` | not read | required on inputs | A list with one entry: the output the input gets its value from |
@@ -231,14 +231,6 @@ The interface files and `simulators` in the simulation config describe an interf
   exist and be an output, and an output of the same simulator needs a logical delay.
 - With PostgreSQL storage, names stop the server at start-up if they are too long (`name` over 60
   bytes, simulator name over 56) or would share a column or table.
-
-:::note
-
-In `simulation.json`, `required` can also be `true` or `false`. The `.fmc` file only takes a string,
-as in the `house.fmc` example: `"required": true` raises `AttributeError` there and
-`"required": false` fails with `Input is empty`.
-
-:::
 
 A complete `simulation.json` for the two models above. Unlike the shortened example, it loads as it is:
 

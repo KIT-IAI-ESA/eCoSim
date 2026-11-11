@@ -162,6 +162,12 @@ class ConfigParser:
             raise ConfigParserException(f"Can not parse {string} to bool")
 
     @staticmethod
+    def config_bool_or_string_to_bool(value: bool | str) -> bool:
+        if isinstance(value, bool):
+            return value
+        return ConfigParser.config_string_to_bool(value)
+
+    @staticmethod
     def ensure_file_exists(path: str | Path) -> None:
         if not os.path.exists(path):
             raise Exception(
