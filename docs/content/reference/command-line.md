@@ -38,7 +38,7 @@ Starts the server, which owns the clock and the data flow of a simulation.
 | `--database-drop-existing-schema` |  | flag | This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. |
 | `--image-renderer-port` |  |  | The port for the image renderer socket. If not set no image rendering socket will be opened. |
 | `--image-renderer-interval` |  |  | The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. If not set no images will be sent. |
-| `--restore-simulation-run` |  | flag | If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous simulation run, the simulation is executed normally. |
+| `--restore-simulation-run` |  | flag | If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous simulation run, the simulation is executed normally. A restore needs the unchanged configuration: the stored results are mapped to steps with the current step size and start date. |
 | `--communication-protocol` |  |  | The communication protocol to use between client and server. Default: CommunicationProtocol.TCP_SOCKET. Possible: ['DASK', 'TCP_SOCKET'] |
 
 ## FMU clients
@@ -100,7 +100,7 @@ Runs server and clients on a Dask cluster. The communication protocol is always 
 | `--database-drop-existing-schema` |  | flag | This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. |
 | `--image-renderer-port` |  |  | The port for the image renderer socket. If not set no image rendering socket will be opened. |
 | `--image-renderer-interval` |  |  | The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. If not set no images will be sent. |
-| `--restore-simulation-run` |  | flag | If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous simulation run, the simulation is executed normally. |
+| `--restore-simulation-run` |  | flag | If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous simulation run, the simulation is executed normally. A restore needs the unchanged configuration: the stored results are mapped to steps with the current step size and start date. |
 | `--communication-protocol` |  |  | The communication protocol to use between client and server. Default: CommunicationProtocol.TCP_SOCKET. Possible: ['DASK', 'TCP_SOCKET'] |
 | `--simulator-dir` | yes |  | The path to the directory containing all simulators. This must be a relative to the call path or it can be an absolute path. |
 | `--interactive` |  | flag | Connects to a running Dask scheduler through its scheduler file. If not set, the simulation runs in batch mode: started through mpirun, with the Dask cluster and the simulation in one MPI job. |
