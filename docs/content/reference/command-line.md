@@ -51,7 +51,6 @@ Connect an FMI 2.0 or FMI 3.0 model to the server.
 | --- | --- | --- | --- |
 | `--config-file` | yes |  | The path to the config file. This must be relative to the call path or it can be an absolute path. |
 | `--debug` |  | flag | enabling debug mode (more logs) |
-| `--simulator-type` |  | `fmu_2` | Specifies the type of simulator in lowercase letters. Default without specification is fmu_2. |
 | `--server-host` |  |  | Override the server host. |
 | `--server-port` |  |  | Override the port of the server. |
 | `--image-renderer-port` |  |  | The port for the image renderer socket on the target server. If not set no connection will be opened. |
@@ -68,7 +67,6 @@ Connect a MATLAB model or a Python model served over Pyro5.
 | --- | --- | --- | --- |
 | `--config-file` | yes |  | The path to the config file. This must be relative to the call path or it can be an absolute path. |
 | `--debug` |  | flag | enabling debug mode (more logs) |
-| `--simulator-type` |  | `fmu_2` | Specifies the type of simulator in lowercase letters. Default without specification is fmu_2. |
 | `--server-host` |  |  | Override the server host. |
 | `--server-port` |  |  | Override the port of the server. |
 | `--image-renderer-port` |  |  | The port for the image renderer socket on the target server. If not set no connection will be opened. |

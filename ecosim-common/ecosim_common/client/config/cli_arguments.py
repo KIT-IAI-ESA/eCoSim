@@ -24,11 +24,6 @@ class CLIArguments(AppConfig):
                     help_text="enabling debug mode (more logs)",
                 ),
                 AppConfigParameter(
-                    name="simulator-type",
-                    default_value="fmu_2",
-                    help_text="Specifies the type of simulator in lowercase letters. Default without specification is fmu_2.",
-                ),
-                AppConfigParameter(
                     name="server-host",
                     help_text="Override the server host.",
                 ),
@@ -63,9 +58,6 @@ class CLIArguments(AppConfig):
 
     def debug_enabled(self) -> bool:
         return self._args.debug  # type: ignore
-
-    def client_type(self) -> str:
-        return self._args.simulator_type  # type: ignore
 
     def image_renderer_port(self) -> int | None:
         return self._args.image_renderer_port  # type: ignore

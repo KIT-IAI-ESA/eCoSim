@@ -62,7 +62,7 @@ clients. In a second terminal, in the same folder, start them:
 
 ```shell
 for module in house occupancy weather; do
-    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../Modules/$module/preferences.ini" --simulator-type fmu &
+    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../Modules/$module/preferences.ini" &
 done
 wait
 ```
