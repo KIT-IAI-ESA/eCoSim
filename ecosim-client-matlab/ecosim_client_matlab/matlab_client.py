@@ -73,6 +73,8 @@ class MatlabClient(SimulatorClient):
         name: str,
     ) -> InterfaceValue:
         value: float = self._matlab_engine.workspace[name]
+        if isinstance(value, (int, bool)):
+            value = float(value)
         self.logger.debug("Getting float output %s: %s", name, value)
         return value
 

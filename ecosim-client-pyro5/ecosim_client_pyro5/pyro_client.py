@@ -62,7 +62,10 @@ class PyroClient(SimulatorClient):
 
     @override
     def _get_model_output(self, name: str) -> InterfaceValue:
-        return self._output_dict[name]
+        value = self._output_dict[name]
+        if isinstance(value, (int, bool)):
+            return float(value)
+        return value
 
     @override
     def _before_handle_message(
