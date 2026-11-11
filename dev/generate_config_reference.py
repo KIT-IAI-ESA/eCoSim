@@ -48,7 +48,8 @@ GROUPS = [
     ),
     (
         "FMU clients",
-        "Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file.",
+        "Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. "
+        "`ecosim-client-fmu-v2` supports Real variables only and stops at start-up if the `.fmc` file lists a variable of another type.",
         "ecosim-common-fmpy/ecosim_common_fmpy/config/fmu_base_config.py",
     ),
     (

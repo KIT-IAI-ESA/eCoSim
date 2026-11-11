@@ -15,7 +15,7 @@ _FMU_FILE = resource_path() / "fmu_v2" / "test_fmus" / "Sub1_Linux.fmu"
 
 def _create_client() -> FMU2Client:
     fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE)
-    simulator_config = FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config)
+    simulator_config = FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["pos_2"])
     return FMU2Client(
         _client_config=generate_mocked_client_config(),
         _channel_or_none=MagicMock(spec=ESPChannel),
