@@ -27,6 +27,10 @@ The example has these scripts in `building_hpc/Executable/`:
 
 `server/preferences.ini` points at the PostgreSQL server the job script starts.
 
+A simulator's directory in `Modules/` holds one model only, because `ecosim_hpc/main.py` chooses the client
+by the files in it: an FMU client for each `.fmu` file, the Pyro5 client for `.py` files and the MATLAB
+client for `.m` files.
+
 ## Set up and run
 
 1. Create a workspace for the simulation and link it into your home directory:

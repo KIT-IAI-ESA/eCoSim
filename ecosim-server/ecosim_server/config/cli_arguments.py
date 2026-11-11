@@ -137,7 +137,8 @@ class CLIArguments(AppConfig):
                     required=False,
                     is_flag=True,
                     help_text="If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous "
-                    + "simulation run, the simulation is executed normally.",
+                    + "simulation run, the simulation is executed normally. A restore needs the unchanged configuration: the stored results "
+                    + "are mapped to steps with the current step size and start date.",
                 ),
                 AppConfigParameter(
                     name="communication-protocol",

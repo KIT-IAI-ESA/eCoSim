@@ -35,3 +35,5 @@ The object provides three methods, which the client calls:
 | `initialize()` | once, before the simulation starts. The method must return a dictionary with every output. |
 | `do_step(value_dict)` | every step. `value_dict` holds the inputs from the other simulators. The method must return a dictionary with every output. |
 | `clear()` | once, after the simulation ends |
+
+The model gets neither the simulation time nor the step size, so it has to keep its own clock and know the step size.
