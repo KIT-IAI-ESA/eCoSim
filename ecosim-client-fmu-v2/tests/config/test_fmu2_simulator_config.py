@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -19,3 +20,11 @@ def test_retry_reads_a_model_description_that_fails_the_schema(
     model_description = FMU2SimulatorConfig.read_model_description(fmu_config=FMUBaseConfig(fmu_file=fmu_file))
 
     assert model_description.modelName == "Feedthrough"
+
+
+def test_interfaces_that_are_not_real_are_rejected() -> None:
+    interface_names = ["Float64_continuous_input", "Int32_input", "Boolean_output", "String_input", "Enumeration_output"]
+    not_real = "Int32_input (Integer), Boolean_output (Boolean), String_input (String), Enumeration_output (Enumeration)"
+
+    with pytest.raises(TypeError, match=re.escape(f"not Real: {not_real}")):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()), interface_names=interface_names)
