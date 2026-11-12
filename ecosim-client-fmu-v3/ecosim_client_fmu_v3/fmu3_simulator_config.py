@@ -28,8 +28,10 @@ class FMU3SimulatorConfig:
         cls,
         simulator_name: str,
         fmu_config: FMUBaseConfig,
+        interface_names: list[str],
     ) -> FMU3SimulatorConfig:
         model_description = read_model_description(file=fmu_config.fmu_file)
+        fmu_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
