@@ -114,7 +114,8 @@ class CLIArguments(AppConfig):
                 AppConfigParameter(
                     name="database-drop-existing-schema",
                     is_flag=True,
-                    help_text="This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option.",
+                    help_text="This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. "
+                    + "With --restore-simulation-run the schema is kept.",
                 ),
                 AppConfigParameter(
                     name="image-renderer-port",

@@ -4,7 +4,8 @@ Couples the weather, occupancy and house models for 100 steps of 15 minutes and 
 in PostgreSQL.
 
 **Warning: every start of `serverRun.sh` drops the schema `temp_schema` in the database
-`sim_control` with all its tables, so the results of the previous run are lost.**
+`sim_control` with all its tables, so the results of the previous run are lost. Only a start with
+`--restore-simulation-run` keeps them.**
 
 You need [uv](https://docs.astral.sh/uv/), a PostgreSQL server and Linux. The models have no macOS
 binaries and the scripts need bash.
