@@ -34,8 +34,9 @@ class ClientManager(ShutdownListener):
     def clients_start(
         self,
         simulation_config: SimulationConfig,
+        dask_client_overwrite: dd.Client | None = None,
     ) -> None:
-        dask_client: dd.Client = dd.get_client()
+        dask_client = dask_client_overwrite or dd.get_client()
         dask_client_ip = dask_client.scheduler_info()["address"].split(":")[1].strip("//")  # gets IP for dask scheduler
         simulator_directories = SimulatorDirectory.find_for_simulators(
             simulators_directory=self._config.simulator_dir,
