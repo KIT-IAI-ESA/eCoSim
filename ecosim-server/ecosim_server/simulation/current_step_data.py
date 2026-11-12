@@ -60,10 +60,9 @@ class CurrentStepData:
                 for logical_delay_connection in logical_delay.logical_delay_connections:
                     logical_delays[delayed_time_steps].connections.append(
                         CurrentStepLogicalDelayConnection(
-                            current_value=logical_delay_connection.start_value,
+                            delayed_values=[logical_delay_connection.start_value] * delayed_time_steps,
                             output_interface=logical_delay_connection.output_interface,
                             input_interface=logical_delay_connection.input_interface,
-                            set_in_step=[],
                         ),
                     )
 
@@ -175,22 +174,11 @@ class CurrentStepData:
                                 new_value,
                             )
 
-            cached_step = self._step.get_temporary_cache()
             with self._logical_delays.transaction() as logical_delays:
                 for logical_delay in logical_delays.values():
                     for logical_delay_connection in logical_delay.connections:
                         if logical_delay_connection.settable_by(simulator_interface_id_sender):
-                            if cached_step() in logical_delay_connection.set_in_step:
-                                CurrentStepData._logger.warning(
-                                    "Connection %s in logical delay %s was already set in time step %s. This should not happen. "
-                                    "The current value %s will be overwritten with %s.",
-                                    logical_delay_connection.input_interface,
-                                    logical_delay.delayed_time_steps,
-                                    cached_step(),
-                                    logical_delay_connection.current_value,
-                                    new_value,
-                                )
-                            logical_delay_connection.current_value = new_value
+                            logical_delay_connection.delayed_values[-1] = new_value
         CurrentStepData._logger.debug("CurrentStepData#add_received_data: exit for %s", client_id_sender)
 
     def all_clients_executed(self) -> bool:
@@ -237,13 +225,17 @@ class CurrentStepLogicalDelay:
 
 @dataclass
 class CurrentStepLogicalDelayConnection:
-    current_value: InterfaceValue
+    delayed_values: List[InterfaceValue]
     output_interface: SimulatorInterfaceId
     input_interface: SimulatorInterfaceId
-    set_in_step: List[int]
 
     def settable_by(
         self,
         simulator_interface_id: SimulatorInterfaceId,
     ) -> bool:
         return self.input_interface == simulator_interface_id
+
+    def take_next_value(self) -> InterfaceValue:
+        # a step that sends nothing repeats the last value
+        self.delayed_values.append(self.delayed_values[-1])
+        return self.delayed_values.pop(0)

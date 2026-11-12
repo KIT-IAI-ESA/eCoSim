@@ -10,6 +10,7 @@ from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.communication.data.server_interface_settings import (
     ServerInterfaceSettings,
 )
@@ -258,6 +259,8 @@ class LogicalDelay:
         delayed_time_steps: int,
         logical_delay_connections: List[LogicalDelayConnection],
     ):
+        if delayed_time_steps < 1:
+            raise RuntimeError(f"A logical delay must be at least 1 step long, got {delayed_time_steps}")
         self.delayed_time_steps: int = delayed_time_steps
         self.logical_delay_connections: List[LogicalDelayConnection] = logical_delay_connections
 
@@ -280,7 +283,7 @@ class LogicalDelayConnection:
             clients,
         )
         return LogicalDelayConnection(
-            start_value=float(delay_raw_json["start_value"]),
+            start_value=LogicalDelayConnection._to_floats(delay_raw_json["start_value"]),
             input_interface=LogicalDelayConnection._find_input_interface_for(
                 output_interface,
                 clients,
@@ -288,6 +291,12 @@ class LogicalDelayConnection:
             ),
             output_interface=output_interface,
         )
+
+    @staticmethod
+    def _to_floats(raw_value: Any) -> Any:
+        if isinstance(raw_value, list):
+            return [LogicalDelayConnection._to_floats(item) for item in raw_value]
+        return float(raw_value)
 
     @staticmethod
     def _find_input_interface_for(
@@ -381,12 +390,11 @@ class LogicalDelayConnection:
 
     def __init__(
         self,
-        start_value: float,
+        start_value: InterfaceValue,
         input_interface: SimulatorInterfaceId,
         output_interface: SimulatorInterfaceId,
     ):
         self.start_value = start_value
-        self.current_value = start_value
         self.input_interface = input_interface
         self.output_interface = output_interface
 

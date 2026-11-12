@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from tests.data.generate_connection_config import a_logical_delay, a_simulator, an_input, an_output, an_output_naming, error_of, load_config
+from ecosim_test_common.test_data.generate_simulation_file import a_logical_delay, a_simulator, an_input, an_output, an_output_naming
+from tests.data.generate_connection_config import error_of, load_config
 
 WEATHER = a_simulator("weather", an_output("T_out"), an_output("wind"))
 DELAY_OF_T = a_logical_delay("house", "T")

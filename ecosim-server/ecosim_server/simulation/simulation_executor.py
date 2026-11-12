@@ -308,21 +308,22 @@ class SimulationExecutor:
 
     def _execute_logical_delays(self) -> None:
         self.logger.debug("Step %s: Execute logical delays", self._current_step)
-        delays_by_delay_step = self._current_step_data.logical_delays_by_delay_step().get_snapshot()
-        for delayed_time_steps in sorted(delays_by_delay_step.keys()):
-            self.logger.info("Step %s: Execute logical delays at '%s'", self._current_step, delayed_time_steps)
-            for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
-                self.logger.debug(
-                    "Step %s: Execute logical delay '%s': %s -> %s",
-                    self._current_step,
-                    delayed_time_steps,
-                    logical_delay_connection.output_interface,
-                    logical_delay_connection.current_value,
-                )
-                self._current_step_data.set_value(
-                    logical_delay_connection.output_interface,
-                    logical_delay_connection.current_value,
-                )
+        with self._current_step_data.logical_delays_by_delay_step().transaction() as delays_by_delay_step:
+            for delayed_time_steps in sorted(delays_by_delay_step.keys()):
+                self.logger.info("Step %s: Execute logical delays at '%s'", self._current_step, delayed_time_steps)
+                for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
+                    delayed_value = logical_delay_connection.take_next_value()
+                    self.logger.debug(
+                        "Step %s: Execute logical delay '%s': %s -> %s",
+                        self._current_step,
+                        delayed_time_steps,
+                        logical_delay_connection.output_interface,
+                        delayed_value,
+                    )
+                    self._current_step_data.set_value(
+                        logical_delay_connection.output_interface,
+                        delayed_value,
+                    )
 
     def _execute_possible_parts(
         self,
