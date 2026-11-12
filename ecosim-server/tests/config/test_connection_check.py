@@ -9,16 +9,8 @@ import pytest
 from ecosim_server import main as server_main
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources.config_files import config_file_path, config_file_path_str
-from tests.data.generate_connection_config import (
-    a_logical_delay,
-    a_simulator,
-    an_input,
-    an_output,
-    an_output_naming,
-    config_file,
-    error_of,
-    load_config,
-)
+from ecosim_test_common.test_data.generate_simulation_file import a_logical_delay, a_simulator, an_input, an_output, an_output_naming, config_file
+from tests.data.generate_connection_config import error_of, load_config
 
 
 @pytest.mark.parametrize("index", ["0", 0], ids=["text", "number"])

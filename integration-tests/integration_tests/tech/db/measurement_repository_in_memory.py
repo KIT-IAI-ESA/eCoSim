@@ -5,7 +5,8 @@ from datetime import datetime
 from typing import Callable, List, Tuple, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue, ProtocolInterfaceValue
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.structures.esp_map import ESPMap, ThreadESPMap
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
@@ -57,3 +58,10 @@ class MeasurementRepositoryInMemory(MeasurementRepository):
         for timestamp, values in self._records.items():
             assert assertion(timestamp, values)
         return self
+
+    def values_by_step(
+        self,
+        interface: InterfaceId,
+    ) -> List[InterfaceValue]:
+        entries = sorted(self.all(), key=lambda entry: entry.timestamp)
+        return [next(value.value for value in entry.values if value.name == interface) for entry in entries]

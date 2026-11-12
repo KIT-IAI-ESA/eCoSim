@@ -95,6 +95,9 @@ class SimpleTestServer(Server):
     def communication_protocol(self) -> CommunicationProtocol:
         return self._server_config.server.communication_protocol  # noqa: SLF001
 
+    def port(self) -> int:
+        return self._server_config.server.port
+
 
 def generate_simple_test_server(parameters: SimpleTestServerParameters) -> SimpleTestServer:
     clients = parameters.clients or [
