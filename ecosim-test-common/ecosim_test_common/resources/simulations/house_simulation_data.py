@@ -1,4 +1,5 @@
 import csv
+import shutil
 from pathlib import Path
 from typing import ClassVar
 
@@ -31,6 +32,15 @@ class HouseSimulationData:
     def client_config_file(module: str, platform: ExecutingPlatform | None = None) -> Path:
         platform_name = (platform or ExecutingPlatform.current()).value
         return HouseSimulationData.RESOURCES / platform_name / f"{module}_preferences_{platform_name}.ini"
+
+    @staticmethod
+    def copy_config_files_to(
+        directory: Path,
+    ) -> None:
+        """Copies the config file of every module into a directory of its own, named after the module."""
+        for module in HouseSimulationData.MODULES:
+            (directory / module).mkdir()
+            shutil.copy(HouseSimulationData.client_config_file(module), directory / module)
 
     @staticmethod
     def fmu_file(module: str) -> Path:
