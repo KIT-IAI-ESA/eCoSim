@@ -1,4 +1,4 @@
-from typing import Any, Callable, override
+from typing import Callable, List, override
 
 import dask.distributed as dd
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
@@ -53,12 +53,9 @@ class ClientManager(ShutdownListener):
             )
             simulator_path = simulator_directory.path
             if any(simulator_path.glob("*.py")):  # Pyro5 Client first to ensure runs on same node as localhost
-                # Find worker that is on the same node as the scheduler
-                workers: Any | None = None
-                for core in dask_client.ncores().keys():
-                    if dask_client_ip in core:
-                        workers = core  # Ensures Pyro client runs on same node as localhost
-                        break
+                # Find workers that are on the same node as the scheduler and ensure it doesn't run on the same
+                # worker as endpoint listening (first worker).
+                workers: List[str] = [worker for i, worker in enumerate(dask_client.ncores().keys()) if (i != 0) and (dask_client_ip in worker)]
                 dask_client.sync(
                     client_submit,
                     client_function=PyroClient.of,
