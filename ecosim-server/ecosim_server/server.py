@@ -72,6 +72,18 @@ class Server(ShutdownListener):
         ShutdownManager().register_listener(self)
 
     def start(self) -> None:
+        try:
+            self._run()
+        except Exception as error:
+            self._logger.error("The run failed: %s -> closing the client connections and the server", error)
+            # a connection that ends before SIMULATION_STOP makes the client exit as failed
+            for client_id in self._client_communication.all_client_ids():
+                self._client_communication.reset_state(client_id)
+            self.on_app_shutdown()
+            self._simulation_executor.close_value_history()
+            raise
+
+    def _run(self) -> None:
         self._logger.info("Starting server")
         self._start_image_renderer_socket()
         self.server_measurements.set_start(ServerTimeMeasurementType.SERVER_UPTIME)
