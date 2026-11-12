@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Dict
 from unittest.mock import Mock
 
 import pytest
@@ -10,13 +10,9 @@ class MockDaskClient(Mock):
     def set_scheduler_address(self, address: str) -> None:
         self.scheduler_info.return_value = {"address": address}
 
-    def set_worker_addresses(
-        self,
-        addresses: Tuple[str, ...],
-        number_of_threads: int = 2,
-    ) -> None:
-        # ncores maps the address of every worker to its number of threads
-        self.ncores.return_value = {address: number_of_threads for address in addresses}
+    def set_workers(self, threads_by_address: Dict[str, int]) -> None:
+        # like dask, ncores maps the address of every worker to its number of threads
+        self.ncores.return_value = dict(threads_by_address)
 
 
 @pytest.fixture
