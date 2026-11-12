@@ -50,8 +50,8 @@ def generate_client_simulator_config(
     )
 
 
-def generate_simulation_config(clients: Sequence[ClientSimulatorConfig]) -> SimulationConfig:
-    return SimulationConfig(clients=list(clients), steps=1, step_size_in_ms=1000, start_date=START_DATE, logical_delays=[])
+def generate_simulation_config(clients: Sequence[ClientSimulatorConfig], restore: bool = False) -> SimulationConfig:
+    return SimulationConfig(clients=list(clients), steps=1, step_size_in_ms=1000, start_date=START_DATE, logical_delays=[], restore=restore)
 
 
 def error_of(*clients: ClientSimulatorConfig) -> str:

@@ -34,7 +34,7 @@ class RepositoriesDB(Repositories):
     ) -> RepositoriesDB:
         # before 'init_db', which can drop the existing schema
         check_names_fit_postgres_storage(simulation_config)
-        db_tech = RepositoriesDB._get_db_tech(server_config)
+        db_tech = RepositoriesDB._get_db_tech(server_config=server_config, restore=simulation_config.restore)
         db_tech.init_db()
         db_connection = db_tech.db_connection()
         return RepositoriesDB(
@@ -69,9 +69,10 @@ class RepositoriesDB(Repositories):
     @staticmethod
     def _get_db_tech(
         server_config: ServerConfig,
+        restore: bool,
     ) -> DbTechAbstract:
         match server_config.database.type:
             case DatabaseType.POSTGRES:
-                return PostgresTech(server_config)
+                return PostgresTech(server_config=server_config, restore=restore)
             case _:
                 raise Exception(f"Unsupported database type '{server_config.database.type}' for the database repositories")

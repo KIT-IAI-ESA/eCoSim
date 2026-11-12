@@ -1,8 +1,10 @@
 from uuid import uuid4
 
 import pytest
+from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from psycopg import sql
+from tests.data.generate_postgres_name_config import generate_simulation_config
 from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
 
 pytestmark = skip_in_ci
@@ -34,3 +36,18 @@ def test_an_existing_schema_with_the_flag_is_dropped_and_recreated(plain_cluster
 
     assert plain_cluster.schema_exists(database=name, schema="sim_control")
     assert plain_cluster.fetch_value(query=TABLE_QUERY, parameter="marker", database=name) is None
+
+
+@pytest.mark.parametrize("drop_existing_schema", [False, True])
+def test_a_restore_keeps_the_tables_of_an_existing_schema_with_and_without_the_flag(
+    plain_cluster: PostgresTestCluster,
+    drop_existing_schema: bool,
+) -> None:
+    name = _database_with_a_schema_of_an_earlier_run(plain_cluster)
+
+    RepositoriesDB.create(
+        server_config=plain_cluster.server_config(database_name=name, drop_existing_schema=drop_existing_schema),
+        simulation_config=generate_simulation_config(clients=[], restore=True),
+    )
+
+    assert plain_cluster.fetch_value(query=TABLE_QUERY, parameter="marker", database=name) is not None

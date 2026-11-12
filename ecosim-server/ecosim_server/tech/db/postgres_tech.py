@@ -16,8 +16,10 @@ class PostgresTech(DbTechAbstract):
     def __init__(
         self,
         server_config: ServerConfig,
+        restore: bool = False,
     ):
         self.server_config = server_config
+        self._restore = restore
 
     def db_connection(self) -> DBConnection:
         PostgresTech._logger.debug("Creating DB connection to %s", self.server_config.database.name)
@@ -81,18 +83,28 @@ class PostgresTech(DbTechAbstract):
     def _create_schema(self, engine: Engine) -> None:
         schema = self.server_config.database.schema
         with engine.connect() as connection:
+            if self._restore and self._schema_exists(connection=connection, schema=schema):
+                PostgresTech._logger.info("Schema '%s' is kept for the restore", schema)
+                return
             self._drop_existing_schema(connection=connection, schema=schema)
             connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             connection.commit()
             PostgresTech._logger.debug("Schema '%s' created", schema)
+
+    @staticmethod
+    def _schema_exists(
+        connection: Connection,
+        schema: str,
+    ) -> bool:
+        result = connection.execute(text(f"SELECT 1 FROM information_schema.schemata WHERE schema_name = '{schema}'"))
+        return result.scalar() is not None
 
     def _drop_existing_schema(
         self,
         connection: Connection,
         schema: str,
     ) -> None:
-        result = connection.execute(text(f"SELECT 1 FROM information_schema.schemata WHERE schema_name = '{schema}'"))
-        if not result.scalar():
+        if not self._schema_exists(connection=connection, schema=schema):
             return
         if not self.server_config.database.drop_existing_schema:
             raise RuntimeError(
