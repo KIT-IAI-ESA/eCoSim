@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass
-from typing import Any, List, Tuple
+from typing import List
 
 import fmpy
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
@@ -90,47 +90,13 @@ class FMU3Client(SimulatorClient):
     def _get_output_float_matrix(
         self,
         name: str,
-        m_dimension: int | None = None,
-        n_dimension: int | None = None,
     ) -> List[float]:
-        dimension = self._matrix_dimension(name, m_dimension, n_dimension)
-        value: List[float] = self._fmu_instance.getFloat64([self._simulation_config.output_value_references(name)], dimension[0] * dimension[1])
-        self.logger.debug("Getting matrix[%sx%s] output %s: %s", m_dimension, n_dimension, name, value)
+        value: List[float] = self._fmu_instance.getFloat64(
+            [self._simulation_config.output_value_references(name)],
+            self._simulation_config.output_value_count(name),
+        )
+        self.logger.debug("Getting matrix output %s: %s", name, value)
         return value
-
-    def _matrix_dimension(
-        self,
-        name: str,
-        default_m: int | None = None,
-        default_n: int | None = None,
-    ) -> Tuple[int, int]:
-        m_dimension = default_m
-        n_dimension = default_n
-        if not m_dimension:
-            config = self._simulation_config.output_matrix_config(name)
-            m_dimension = config.fix_m() or self._get_any_int(config.m_value_reference, config.m_type)
-            n_dimension = n_dimension or config.fix_n() or self._get_any_int(config.n_value_reference, config.n_type)
-        return m_dimension, n_dimension or 1
-
-    def _get_any_int(
-        self,
-        value_reference: Any,
-        variable_type: str | None,
-    ) -> int:
-        type_getters = {
-            "Int8": self._fmu_instance.getInt8,
-            "Int16": self._fmu_instance.getInt16,
-            "Int32": self._fmu_instance.getInt32,
-            "Int64": self._fmu_instance.getInt64,
-            "UInt8": self._fmu_instance.getUInt8,
-            "UInt16": self._fmu_instance.getUInt16,
-            "UInt32": self._fmu_instance.getUInt32,
-            "UInt64": self._fmu_instance.getUInt64,
-        }
-        if variable_type in type_getters:
-            return type_getters[variable_type]([value_reference])[0]  # type: ignore
-        else:
-            raise ValueError(f"Variable {value_reference} is not an integer type (found: {variable_type})")
 
     @override
     def _on_do_step(
