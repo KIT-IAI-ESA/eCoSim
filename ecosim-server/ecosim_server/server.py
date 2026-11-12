@@ -80,7 +80,6 @@ class Server(ShutdownListener):
             for client_id in self._client_communication.all_client_ids():
                 self._client_communication.reset_state(client_id)
             self.on_app_shutdown()
-            self._simulation_executor.close_value_history()
             raise
 
     def _run(self) -> None:

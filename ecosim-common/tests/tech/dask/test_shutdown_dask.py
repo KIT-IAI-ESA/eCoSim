@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import override
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import dask.distributed as dd
+import pytest
 from ecosim_common.tech.dask.shutdown_dask import shutdown_dask_workers
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -37,6 +39,15 @@ def test_shutdown_dask_workers_leaves_the_calling_process_running(dask_client: d
     shutdown_dask_workers(dask_client)
 
     assert not ShutdownManager().is_shutdown()
+
+
+def test_shutdown_dask_workers_logs_an_error_when_the_workers_cannot_be_reached(caplog: pytest.LogCaptureFixture) -> None:
+    client = MagicMock(spec=dd.Client)
+    client.run.side_effect = OSError("connection closed")
+
+    shutdown_dask_workers(client)
+
+    assert "Shutting down the dask workers failed: connection closed" in caplog.text
 
 
 @dataclass
