@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import math
 from typing import Any, ClassVar, Dict
 from uuid import uuid4
 
@@ -78,6 +79,12 @@ class FMU3SimulatorConfig:
     ) -> FMU3VariableType:
         return FMU3VariableType.type_of(self._output_scalar_by_name[name])
 
+    def output_value_count(
+        self,
+        name: str,
+    ) -> int:
+        return math.prod(self._output_scalar_by_name[name].shape)
+
     def fmi_version(self) -> str | None:
         return self._model_description.fmiVersion  # type: ignore
 
@@ -88,51 +95,3 @@ class FMU3SimulatorConfig:
             modelIdentifier=self.model_identifier(),
             instanceName=str(uuid4()),
         )
-
-    def output_matrix_config(
-        self,
-        name: str,
-    ) -> MatrixConfig:
-        scalar = self._output_scalar_by_name[name]
-        if scalar.dimensions is None or len(scalar.dimensions) == 0:
-            raise RuntimeError(f"Output matrix {name} has no dimensions")
-        if len(scalar.dimensions) == 1:
-            return MatrixConfig(
-                m_start_value=scalar.dimensions[0].start,
-                m_value_reference=scalar.dimensions[0].valueReference,
-                m_type=scalar.dimensions[0].variable.type,
-                n_start_value=1,
-                n_value_reference=None,
-                n_type=None,
-            )
-        if len(scalar.dimensions) == 2:
-            return MatrixConfig(
-                m_start_value=scalar.dimensions[0].start,
-                m_value_reference=scalar.dimensions[0].valueReference,
-                m_type=scalar.dimensions[0].type,
-                n_start_value=scalar.dimensions[1].start,
-                n_value_reference=scalar.dimensions[1].valueReference,
-                n_type=scalar.dimensions[1].variable.type,
-            )
-        else:
-            raise RuntimeError(f"Output matrix {name} has unsupported dimensions: {len(scalar.dimensions)}")
-
-
-@dataclasses.dataclass(frozen=True)
-class MatrixConfig:
-    m_start_value: int | None
-    m_value_reference: Any | None
-    m_type: str
-    n_start_value: int | None
-    n_value_reference: Any | None
-    n_type: str | None
-
-    def fix_m(self) -> int | None:
-        if self.m_start_value is None or self.m_value_reference is not None:
-            return None
-        return self.m_start_value
-
-    def fix_n(self) -> int | None:
-        if self.n_start_value is None or self.n_value_reference is not None:
-            return None
-        return self.n_start_value
