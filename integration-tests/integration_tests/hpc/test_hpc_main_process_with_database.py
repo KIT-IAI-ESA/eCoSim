@@ -55,8 +55,8 @@ def test_hpc_main_process_with_database_repositories(
                 ),
             )
         finally:
-            # the run collapses in its own way once the server is gone, so this is asserted either way
-            assert not thread_exceptions, f"The server thread died: {thread_exceptions}"
+            # a thread that died is reported even when the run itself fails
+            assert not thread_exceptions, f"A thread died: {thread_exceptions}"
 
 
 def _server_config_on(postgres_container: PostgresContainer) -> ServerConfig:
@@ -77,7 +77,7 @@ def _server_config_on(postgres_container: PostgresContainer) -> ServerConfig:
 
 @contextmanager
 def _exceptions_raised_in_threads() -> Iterator[list[BaseException | None]]:
-    """The server runs in a thread of its own, where an exception only ever reaches 'threading.excepthook'."""
+    """An exception in a thread of the main process only ever reaches 'threading.excepthook'."""
     raised: list[BaseException | None] = []
     previous_hook = threading.excepthook
 
