@@ -1,7 +1,12 @@
+import shutil
 import subprocess
 import sys
+from pathlib import Path
 
-from ecosim_test_common.resources.resource_utils import resource_path
+import pytest
+from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common_fmpy.config.validate_fmu_file_or_error import validate_fmu_file_or_error
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, resource_path
 from tests.tech import resource_utils
 
 
@@ -55,3 +60,12 @@ def test_validate_fmu_file_with_error() -> None:
     print("ERR:", err)
 
     assert 0 != proc.returncode
+
+
+def test_validation_fails_for_an_interface_the_fmu_does_not_have(tmp_path: Path) -> None:
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+    fmc_file = config_directory / "Feedthrough.fmc"
+    fmc_file.write_text(fmc_file.read_text().replace("Float64_continuous_output", "Float64_continuous_outptu"))
+
+    with pytest.raises(ValueError, match="Float64_continuous_outptu"):
+        validate_fmu_file_or_error(ConfigParser(config_directory / "feedthrough.ini"))

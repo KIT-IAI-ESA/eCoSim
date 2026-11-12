@@ -28,3 +28,12 @@ def test_interfaces_that_are_not_real_are_rejected() -> None:
 
     with pytest.raises(TypeError, match=re.escape(f"not Real: {not_real}")):
         FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()), interface_names=interface_names)
+
+
+def test_interfaces_that_are_no_input_or_output_of_the_fmu_are_rejected() -> None:
+    fmu_file = fmu2_model_path()
+    interface_names = ["Float64_continuous_input", "Float64_continuous_outptu", "Float64_fixed_parameter"]
+    missing = "Float64_continuous_outptu, Float64_fixed_parameter"
+
+    with pytest.raises(ValueError, match=re.escape(f"{fmu_file} has no input or output for these interfaces: {missing}")):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu_file), interface_names=interface_names)

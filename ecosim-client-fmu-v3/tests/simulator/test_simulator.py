@@ -15,7 +15,7 @@ _FMU_FILE = resource_path() / "test_fmus/StateSpace.fmu"
 @skip_unless_fmpy_loads(_FMU_FILE)
 def test_with_matrix_inputs() -> None:
     fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE)
-    simulator_config = FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config)
+    simulator_config = FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["u", "y"])
     client = FMU3Client(
         _client_config=generate_mocked_client_config(),
         _channel_or_none=MagicMock(spec=ESPChannel),

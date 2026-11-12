@@ -55,7 +55,7 @@ Connect an FMI 2.0 or FMI 3.0 model to the server.
 | `--server-port` |  |  | Override the port of the server. |
 | `--image-renderer-port` |  |  | The port for the image renderer socket on the target server. If not set no connection will be opened. |
 | `--communication-protocol` |  |  | The communication protocol to use between client and server. Default: CommunicationProtocol.TCP_SOCKET. Possible: ['DASK', 'TCP_SOCKET'] |
-| `--validate-fmu-file-only` |  | flag | Only validate the FMU file - no client will be started. |
+| `--validate-fmu-file-only` |  | flag | Only validate the FMU file and the interfaces of the .fmc file - no client will be started. |
 
 ## MATLAB and Pyro5 clients
 

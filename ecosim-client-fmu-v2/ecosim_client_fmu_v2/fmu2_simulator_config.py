@@ -36,6 +36,7 @@ class FMU2SimulatorConfig:
     ) -> FMU2SimulatorConfig:
         model_description = cls.read_model_description(fmu_config)
         # before extracting, so a rejected FMU leaves no files behind
+        fmu_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
         cls._ensure_interfaces_are_real(model_description=model_description, interface_names=interface_names)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]

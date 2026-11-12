@@ -14,7 +14,7 @@ class FMPyCliArguments(CLIArguments):
                     name="validate-fmu-file-only",
                     required=False,
                     is_flag=True,
-                    help_text="Only validate the FMU file - no client will be started.",
+                    help_text="Only validate the FMU file and the interfaces of the .fmc file - no client will be started.",
                 ),
             ],
         )
