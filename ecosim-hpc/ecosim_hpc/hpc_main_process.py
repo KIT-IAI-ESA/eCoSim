@@ -1,9 +1,8 @@
-import threading
 from time import sleep
-from typing import override
 
 import dask.distributed as distributed
 from ecosim_common.tech.dask.shutdown_dask import shutdown_dask_workers
+from ecosim_common.tech.parallel.error_recording_thread import ErrorRecordingThread
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.client_manager_config import ClientManagerConfig
@@ -12,19 +11,6 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.server import Server
-
-
-class _ServerThread(threading.Thread):
-    """Keeps what the server raises, so the main process can end as failed."""
-
-    error: BaseException | None = None
-
-    @override
-    def run(self) -> None:
-        try:
-            super().run()
-        except BaseException as error:
-            self.error = error
 
 
 def hpc_main_process(
@@ -40,8 +26,7 @@ def hpc_main_process(
         _repositories=repositories,
     )
 
-    server_thread = _ServerThread(target=server.start)
-    server_thread.daemon = True
+    server_thread = ErrorRecordingThread(target=server.start)
     server_thread.start()
     client_manager = ClientManager(client_manager_config)
     client_manager.clients_start(simulation_config)
