@@ -86,7 +86,8 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
 - `simulators`: one entry per client with its `name`, `model` and `interfaces`. `connected_to` links
   an interface to an interface of a simulator, which is given by its position in `simulators`,
   counting from 0.
-- `logical_delays`: connections whose values arrive a number of steps (`delay`) later.
+- `logical_delays`: connections whose values arrive a number of steps (`delay`, at least 1) later.
+  Until then the receiving interface gets `start_value`.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
 - `setup.start_date`: the time stamp of the first step, by default `2024-01-01T00:00:00.000Z`. It
   only sets the time stamps of the steps and the stored results; the models always start at time 0.

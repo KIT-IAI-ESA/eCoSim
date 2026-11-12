@@ -13,8 +13,11 @@ from ecosim_common.communication.channel.esp_channel_message import ESPChannelMe
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
+from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
+from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -76,6 +79,15 @@ class FakeClient:
     def received_steps(self) -> List[int]:
         return [message.correlation_id().to_int() for message in self.received_messages if message.type() == MessageType.SIMULATION_STEP]
 
+    def received_inputs(self, interface: InterfaceId) -> List[InterfaceValue]:
+        return [
+            interface_value.value
+            for message in self.received_messages
+            if message.type() == MessageType.SIMULATION_STEP
+            for interface_value in message.payload(SimulationStepRequest).inputs
+            if interface_value.name == interface
+        ]
+
 
 def _simulation_config(client_ids: tuple[ClientID, ...], restore: bool) -> SimulationConfig:
     return SimulationConfig(
@@ -107,8 +119,18 @@ def executor_with_clients(
     restore: bool = False,
     response_timeouts: ResponseTimeouts = ResponseTimeouts(),
 ) -> tuple[SimulationExecutor, List[FakeClient]]:
-    client_ids = tuple(reactions_by_client)
-    simulation_config = _simulation_config(client_ids=client_ids, restore=restore)
+    return executor_for_simulation_config(
+        simulation_config=_simulation_config(client_ids=tuple(reactions_by_client), restore=restore),
+        reactions_by_client=reactions_by_client,
+        response_timeouts=response_timeouts,
+    )
+
+
+def executor_for_simulation_config(
+    simulation_config: SimulationConfig,
+    reactions_by_client: dict[ClientID, dict[MessageType, MessageReaction]],
+    response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+) -> tuple[SimulationExecutor, List[FakeClient]]:
     server_config = generate_server_config()
     communication = ClientCommunication.of(server_config=server_config, simulation_config=simulation_config)
     fake_clients = [

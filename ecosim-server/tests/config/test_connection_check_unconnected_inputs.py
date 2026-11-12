@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from tests.data.generate_connection_config import a_logical_delay, a_simulator, an_input, an_output, error_of, load_config
+from ecosim_test_common.test_data.generate_simulation_file import a_logical_delay, a_simulator, an_input, an_output
+from tests.data.generate_connection_config import error_of, load_config
 
 WEATHER = a_simulator("weather", an_output("T_out"))
 NO_CONNECTION = [pytest.param({}, id="missing"), pytest.param({"connected_to": None}, id="null"), pytest.param({"connected_to": []}, id="empty")]
