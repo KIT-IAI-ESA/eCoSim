@@ -44,8 +44,52 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
   `addopts` ignore them, as CI does
 - `integration_tests/server_client/` runs a real server against real clients for every protocol and
   storage backend, the quickest way to see a whole run
-- start the clients after `server.wait_until_listening()`; a TCP client that starts before the server listens
-  waits a second and tries again
+
+### Write a server and client test
+
+`SimpleTestServer` and `SimpleTestClient` in `integration_tests/test_data/server_client/` run a real server and real
+clients inside one test:
+
+```python
+def test_run_stores_every_step(communication_protocol: CommunicationProtocol) -> None:
+    host = "localhost"
+    port = get_free_port()
+    steps = 3
+    client_id = ClientID(model_name="model", simulator_name="simulator")
+    server = SimpleTestServer.for_client_ids(
+        communication_protocol=communication_protocol,
+        host=host,
+        port=port,
+        client_ids=(client_id,),
+        steps=steps,
+    )
+
+    server.start_in_thread()
+    server.wait_until_listening()
+    SimpleTestClient.of_client_id(
+        communication_protocol=communication_protocol,
+        server_host=host,
+        server_port=port,
+        client_id=client_id,
+    ).start()
+
+    server.assert_finishing_in_time()
+    assert len(server.measurement_repository(client_id=client_id).all()) == steps
+```
+
+- the `communication_protocol` fixture runs the test once with TCP and once with Dask
+- `for_client_ids()` and `of_client_id()` are for clients without interfaces;
+  `integration_tests/server_client/test_single_client_server.py` shows a client with an output
+- `start_in_thread()` runs the server in the background and keeps what it raises
+- start the clients after `wait_until_listening()`; a TCP client that starts before the server listens waits a second
+  and tries again
+- `assert_finishing_in_time()` fails if the server raised or is still running after the timeout
+- to change what a client answers, for example to answer late or to raise, pass `on_simulation_start_return` or
+  `on_simulation_step_return` to `of_client_id()`
+- for a run that has to fail, keep the thread that `start_in_thread()` returns, wait with its `assert_ends_within()`
+  and check its `error`, as `integration_tests/server_client/test_lost_client.py` does
+- the server looks for lost clients when its wait for an answer times out, after 30 s for a step; a test that loses a
+  client passes shorter `ResponseTimeouts` to the server
 
 ### Simulations
 
