@@ -28,6 +28,13 @@ def test_pyro5_clients_run_on_the_scheduler_node_but_not_on_its_first_worker(
     mock_dask_client: MockDaskClient,
     tmp_path: Path,
 ) -> None:
+    """
+    Every house module becomes a pyro5 simulator (its ini file and an empty .py file). The mocked dask cluster has a
+    scheduler on 10.0.0.1 and three workers: the first one (assumed to run the listener), one on another node and
+    one more on the scheduler node. Each pyro5 client must be submitted only to a worker on the scheduler node that
+    does not run the server's dask connection listener: the same node, so the client reaches its Pyro simulator via
+    localhost, but not the first worker, which is assumed to run that listener (the scheduler itself is no worker).
+    """
     HouseSimulationData.copy_config_files_to(tmp_path)
     for module in HouseSimulationData.MODULES:
         (tmp_path / module / "simulator.py").touch()
