@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Tuple
+from typing import Any, Tuple, override
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -9,6 +9,7 @@ from ecosim_common.communication.data.protocol_interface_value import (
 )
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common.tech.structures.esp_queue import ESPQueue
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
@@ -26,7 +27,7 @@ from ecosim_server.simulation.restore_data import RestoreData
 
 
 @dataclass
-class InterfaceValueHistory:
+class InterfaceValueHistory(ShutdownListener):
     logger = ESPLogger("InterfaceValueHistory")
 
     _repositories: Repositories = field()
@@ -55,6 +56,7 @@ class InterfaceValueHistory:
     def __post_init__(self) -> None:
         self._adding_thread = self._create_adding_thread()
         self._adding_thread.start()
+        ShutdownManager().register_listener(self)
 
     def __getstate__(self) -> dict[str, Any]:
         return {
@@ -111,6 +113,10 @@ class InterfaceValueHistory:
     def close(self) -> None:
         """Adds the remaining entries and stops the adding thread."""
         self._adding_thread.close()
+
+    @override
+    def on_app_shutdown(self) -> None:
+        self.close()
 
     def init_from_repositories(self) -> None:
         self.flush()  # the entries and the repositories are read below - so as a precaution the 'flush' method is called

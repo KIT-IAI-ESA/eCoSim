@@ -99,9 +99,6 @@ class SimulationExecutor:
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_EXECUTION)
         self._stop_simulation()
 
-    def close_value_history(self) -> None:
-        self._value_history.close()
-
     def _stop_simulation(self) -> None:
         self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_STOP)
         SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
