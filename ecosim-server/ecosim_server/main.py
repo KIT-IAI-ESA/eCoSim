@@ -42,12 +42,13 @@ def main() -> None:
         _simulation_config=simulation_config,
         _repositories=repositories,
     )
-    server.start()
-    server.server_measurements.set_end(ServerTimeMeasurementType.SERVER_UPTIME)
-    server.print_measurement_statistics()
-    repositories.server_time_measurement_repository.put(server.server_measurements)
-
-    ShutdownManager().set_shutdown_at_application_end()
+    try:
+        server.start()
+        server.server_measurements.set_end(ServerTimeMeasurementType.SERVER_UPTIME)
+        server.print_measurement_statistics()
+        repositories.server_time_measurement_repository.put(server.server_measurements)
+    finally:
+        ShutdownManager().set_shutdown_at_application_end()
 
 
 if __name__ == "__main__":
