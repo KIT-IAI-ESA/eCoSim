@@ -50,6 +50,9 @@ has to happen in every `pyproject.toml` at once.
 
 ## Module structure
 
+The Python modules are internal and can change: the supported way to use eCoSim is the
+[command line](../reference/command-line.md) and the [configuration files](../reference/configuration-files.md).
+
 ### `ecosim_common`
 
 | Package | Contains |
@@ -62,7 +65,7 @@ has to happen in every `pyproject.toml` at once.
 | `config` | `AppConfig` (CLI parsing), `ConfigParser` (ini files), `DatabaseType`, interface ids |
 | `client` | `Client` — the base class every client subproject specialises |
 | `simulation` | Interface identity: `InterfaceId`, `ModelInterfaceId`, `SimulatorInterfaceId` |
-| `tech` | Infrastructure without domain knowledge: logging, threading, json, datetime |
+| `tech` | Infrastructure: logging, threading, json, datetime |
 | `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |
 
 ### `ecosim_server`
@@ -75,7 +78,7 @@ has to happen in every `pyproject.toml` at once.
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |
 | `measurement/` | `MeasurementRepository` — the simulation results |
 | `data/` | `Repositories` — the aggregate the rest of the server is given |
-| `tech/db/` | SQLAlchemy and file backends, kept out of the domain code |
+| `tech/db/` | SQLAlchemy and file backends |
 | `config/` | `CLIArguments`, `ServerConfig`, `SimulationConfig` |
 
 ### The clients
@@ -122,9 +125,10 @@ reply to its request, which is what allows the steps to be sent from separate th
 | `INTERFACE_REQUEST` | which interfaces do you expose | its `ModelInterfaceIds`, which the server validates against the simulation config |
 | `INTERFACE_SETTINGS` | here is your interface configuration | acknowledgement |
 | `SIMULATION_SETUP` | here is the step size | acknowledgement |
-| `SIMULATION_START` / `SIMULATION_STOP` | start / stop now | acknowledgement |
+| `SIMULATION_START` | start now | its start values |
+| `SIMULATION_STOP` | stop now | acknowledgement |
 | `SIMULATION_STEP` | advance one step with these inputs | its outputs |
-| `SIMULATION_STEP_BATCH` | advance several steps | the outputs of all of them |
+| `SIMULATION_STEP_BATCH` | advance several steps | the outputs of the last step |
 | `PING` | are you alive | `PING` |
 
 On the client side `Client._handle_message` dispatches over the same enum with an `assert_never`
@@ -147,9 +151,10 @@ the server ini:
 | `postgres` | `RepositoriesDB` | a PostgreSQL/TimescaleDB instance |
 | `file` | `RepositoriesFileBased` | a writable directory, one JSON lines file per module |
 
-Both are exercised end to end by the [Docker example](../guides/docker.md). The domain code never sees the
-difference; everything database specific lives under `tech/db/`. The final state is stored as
-`finished` in the database and as `Finished` in the file backend.
+Both are exercised end to end by the [Docker example](../guides/docker.md). The code that uses them never sees
+the difference. The implementations are in `data/`, `measurement/`, `simulation/state/` and `tech/db/`.
+`tech/db/` also holds what they share: the database connection and base classes, the PostgreSQL setup and
+`FileRepository`. The final state is stored as `finished` in the database and as `Finished` in the file backend.
 
 ## Entry points
 
