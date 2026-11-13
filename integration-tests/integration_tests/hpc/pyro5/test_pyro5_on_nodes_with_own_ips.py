@@ -16,16 +16,6 @@ PYRO_NODE_IP = "127.0.0.111"
 pytestmark = pytest.mark.parametrize("pyro_port", [PYRO_NODE_IP], indirect=True, ids=["pyro object on its own node"])
 
 
-@pytest.fixture
-def dask_cluster_on_nodes() -> dd.Client:
-    """One worker per node; the teardown hook of ecosim-test-common closes the client and the cluster."""
-    cluster = dd.SpecCluster(
-        scheduler={"cls": dd.Scheduler, "options": {"host": "127.0.0.1", "dashboard_address": ":0"}},
-        workers={ip: {"cls": dd.Nanny, "options": {"host": ip, "nthreads": 2}} for ip in ("127.0.0.2", "127.0.0.3")},
-    )
-    return dd.Client(cluster)
-
-
 def test_a_pyro5_client_on_any_node_runs_every_step_with_the_pyro_object_on_its_own_node(
     dask_cluster_on_nodes: dd.Client,
     pyro_port: int,
