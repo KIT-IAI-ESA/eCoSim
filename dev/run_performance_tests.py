@@ -5,7 +5,7 @@ import subprocess
 import sys
 from typing import List, Sequence
 
-from config import REPO_ROOT, get_uv_path, subproject_environment
+from config import REPO_ROOT, pytest_command, subproject_environment
 
 INTEGRATION_TESTS = REPO_ROOT / "integration-tests"
 
@@ -20,16 +20,16 @@ The results are written to integration-tests/integration_tests/resources/perform
 set ECOSIM_PERFORMANCE_MACHINE to choose the machine name of the results."""
 
 
-def pytest_command(pytest_arguments: Sequence[str]) -> List[str]:
+def performance_pytest_command(pytest_arguments: Sequence[str]) -> List[str]:
     # '-rs' lists the skip reasons: a local machine without current results skips the comparison
-    return [get_uv_path(), "run", "pytest", "-m", "performance", "--no-cov", "-rs", *pytest_arguments]
+    return pytest_command(marker="performance", pytest_arguments=["--no-cov", "-rs", *pytest_arguments])
 
 
 def main(argv: Sequence[str]) -> int:
     if "-h" in argv or "--help" in argv:
         print(USAGE)
         return 0
-    command = pytest_command(argv)
+    command = performance_pytest_command(argv)
     print(f"==> {INTEGRATION_TESTS.name}: {' '.join(command)}", flush=True)
     return subprocess.run(command, cwd=str(INTEGRATION_TESTS), env=subproject_environment()).returncode
 

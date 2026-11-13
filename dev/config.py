@@ -3,7 +3,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Sequence
 
 # The repository root is the parent directory of the directory where this script resides
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -59,6 +59,13 @@ def subproject_environment() -> dict[str, str]:
     for name in ("UV_PROJECT_ENVIRONMENT", "VIRTUAL_ENV", "VIRTUAL_ENV_PROMPT"):
         environment.pop(name, None)
     return environment
+
+
+def pytest_command(
+    marker: str,
+    pytest_arguments: Sequence[str],
+) -> List[str]:
+    return [get_uv_path(), "run", "pytest", "-m", marker, *pytest_arguments]
 
 
 def get_uv_path() -> str:

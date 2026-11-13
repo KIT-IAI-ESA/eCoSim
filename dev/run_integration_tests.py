@@ -3,9 +3,9 @@
 
 import subprocess
 import sys
-from typing import List, Sequence
+from typing import Sequence
 
-from config import REPO_ROOT, get_uv_path, subproject_environment
+from config import REPO_ROOT, pytest_command, subproject_environment
 
 INTEGRATION_TESTS = REPO_ROOT / "integration-tests"
 
@@ -19,15 +19,11 @@ Runs the tests of integration-tests marked 'integration', which are all apart fr
 """
 
 
-def pytest_command(pytest_arguments: Sequence[str]) -> List[str]:
-    return [get_uv_path(), "run", "pytest", "-m", "integration", "", *pytest_arguments]
-
-
 def main(argv: Sequence[str]) -> int:
     if "-h" in argv or "--help" in argv:
         print(USAGE)
         return 0
-    command = pytest_command(argv)
+    command = pytest_command(marker="integration", pytest_arguments=argv)
     print(f"==> {INTEGRATION_TESTS.name}: {' '.join(command)}", flush=True)
     return subprocess.run(command, cwd=str(INTEGRATION_TESTS), env=subproject_environment()).returncode
 
