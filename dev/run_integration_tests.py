@@ -16,6 +16,12 @@ Runs the tests of integration-tests marked 'integration', which are all apart fr
   python dev/run_integration_tests.py                 all integration tests
   python dev/run_integration_tests.py -k restore      forward arguments to pytest
 
+# EXAMPLES
+
+A single test with a specific communication protocol:
+
+  python dev/run_integration_tests.py "integration_tests/server_client/test_client_server_batch_steps.py::test_client_server_batch_steps[tcp_socket]"
+  python dev/run_integration_tests.py "integration_tests/server_client/test_client_server_batch_steps.py::test_client_server_batch_steps[dask]"
 """
 
 
