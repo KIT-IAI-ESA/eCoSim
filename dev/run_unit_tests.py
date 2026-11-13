@@ -18,13 +18,13 @@ EXCLUDED_PROJECTS = frozenset({"integration-tests", "ecosim-test-common"})
 # tests (yet), which must not fail the whole run
 EXIT_CODE_NO_TESTS_COLLECTED = 5
 
-USAGE = """Usage: python dev/run_tests.py [subproject ...] [-- pytest argument ...]
+USAGE = """Usage: python dev/run_unit_tests.py [subproject ...] [-- pytest argument ...]
 
 Runs 'uv run pytest' in every subproject except the integration tests.
 
-  python dev/run_tests.py                        every subproject
-  python dev/run_tests.py ecosim-server          only the given subprojects
-  python dev/run_tests.py -- -k history          forward arguments to pytest
+  python dev/run_unit_tests.py                        every subproject
+  python dev/run_unit_tests.py ecosim-server          only the given subprojects
+  python dev/run_unit_tests.py -- -k history          forward arguments to pytest
 
 ATTENTION: no pytest arguments are passed by default."""
 

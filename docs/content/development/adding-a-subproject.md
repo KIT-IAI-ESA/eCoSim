@@ -30,7 +30,7 @@ Add it to `SUBPROJECTS`, with the extras to sync:
 (REPO_ROOT / "ecosim-<name>", ["dev"]),
 ```
 
-`dev/sync_projects.py`, `dev/init_dev.py`, `dev/run_tests.py` and `dev/bump_version.py` go through this list.
+`dev/sync_projects.py`, `dev/init_dev.py`, `dev/run_unit_tests.py` and `dev/bump_version.py` go through this list.
 
 ## 3. `.pre-commit-config.yaml`
 
@@ -48,8 +48,8 @@ mypy runs once per subproject. Add a hook next to the others:
 
 ## 4. `.github/workflows/tests.yml`
 
-The `unit-tests` job runs `dev/run_tests.py` for each subproject in its matrix. Add the new one,
-unless it is one of the `EXCLUDED_PROJECTS` in `dev/run_tests.py`:
+The `unit-tests` job runs `dev/run_unit_tests.py` for each subproject in its matrix. Add the new one,
+unless it is one of the `EXCLUDED_PROJECTS` in `dev/run_unit_tests.py`:
 
 ```yaml
       matrix:
