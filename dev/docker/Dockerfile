@@ -1,4 +1,4 @@
-FROM astral/uv:0.12.5-python3.12-trixie-slim as BUILD
+FROM astral/uv:0.13.7-python3.12-trixie-slim AS build
 
 ARG BUILD_DIR=/opt/ecosim
 ARG SOURCE_DIR
@@ -37,7 +37,7 @@ ARG BUILD_DIR=/opt/ecosim
 ARG COMMAND_NAME
 ENV EXECUTABLE=${COMMAND_NAME}.pex
 
-COPY --from=BUILD ${BUILD_DIR}/${EXECUTABLE} /opt
+COPY --from=build ${BUILD_DIR}/${EXECUTABLE} /opt
 # '/opt/ecosim' is a fixed name, because the exec form of ENTRYPOINT below does not expand variables
 RUN chmod +x /opt/${EXECUTABLE} && ln -s /opt/${EXECUTABLE} /opt/ecosim
 
