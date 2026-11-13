@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List, Sequence
 
 from config import get_uv_path, subproject_environment
-from run_performance_tests import INTEGRATION_TESTS, pytest_command
+from run_performance_tests import INTEGRATION_TESTS, performance_pytest_command
 
 DEFAULT_REPETITIONS = 10
 # the same format as FILE_NAME_DATE_TIME_FORMAT in integration_tests/server_client/performance/tooling/performance_setup.py
@@ -39,7 +39,7 @@ def main(argv: Sequence[str]) -> int:
     since = now().strftime(FILE_NAME_DATE_TIME_FORMAT)
     for repetition in range(1, arguments.repetitions + 1):
         print(f"==> performance test run {repetition}/{arguments.repetitions}", flush=True)
-        run(pytest_command(pytest_arguments))
+        run(performance_pytest_command(pytest_arguments))
     return run([get_uv_path(), "run", "python", "-m", AGGREGATION_MODULE, "--since", since])
 
 
