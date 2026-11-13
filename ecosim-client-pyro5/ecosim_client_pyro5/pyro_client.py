@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import override
 
@@ -40,7 +42,8 @@ class PyroClient(SimulatorClient):
         start_time: float = 0.0,
     ) -> None:
         self._simulation_object._pyroClaimOwnership()
-        self._output_dict = self._simulation_object.initialize()
+        with self._log_model_traceback_on_error(method_name="initialize"):
+            self._output_dict = self._simulation_object.initialize()
 
     @override
     def _set_input_float(
@@ -80,7 +83,8 @@ class PyroClient(SimulatorClient):
         self,
         step_size_in_seconds: float,
     ) -> None:
-        self._output_dict = self._simulation_object.do_step(self._input_dict)
+        with self._log_model_traceback_on_error(method_name="do_step"):
+            self._output_dict = self._simulation_object.do_step(self._input_dict)
 
     @override
     def _on_clear_simulator(self) -> None:
@@ -89,4 +93,19 @@ class PyroClient(SimulatorClient):
             return
         self._simulation_object._pyroClaimOwnership()
         self.logger.debug("        ->> terminating instance...")
-        self._simulation_object.clear()
+        with self._log_model_traceback_on_error(method_name="clear"):
+            self._simulation_object.clear()
+
+    @contextmanager
+    def _log_model_traceback_on_error(
+        self,
+        method_name: str,
+    ) -> Iterator[None]:
+        try:
+            yield
+        except Exception as error:
+            # the local traceback only shows Pyro, the line in the model comes with the error
+            model_traceback = getattr(error, "_pyroTraceback", None)
+            if model_traceback:
+                self.logger.error("The Pyro model failed in %s():\n%s", method_name, "".join(model_traceback))
+            raise

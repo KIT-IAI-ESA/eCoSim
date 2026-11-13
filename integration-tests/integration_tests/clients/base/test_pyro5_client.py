@@ -21,6 +21,7 @@ class PyroTestModel:
     def __init__(self) -> None:
         self.holds_state = False
         self.start_outputs: dict[str, float] = {"y": 0.0}
+        self.clear_fails = False
 
     def initialize(self) -> dict[str, float]:
         self.holds_state = True
@@ -30,6 +31,8 @@ class PyroTestModel:
         return {"y": 2 * inputs["u"]}
 
     def clear(self) -> None:
+        if self.clear_fails:
+            raise RuntimeError("the model could not clean up")
         self.holds_state = False
 
 
@@ -79,3 +82,13 @@ class TestPyro5ClientBase(ClientBaseTest):
 
         assert outputs == [3.0, 1.0]
         assert [type(output) for output in outputs] == [float, float]
+
+    def test_a_failing_model_call_logs_the_line_in_the_model(self, caplog: pytest.LogCaptureFixture) -> None:
+        self._model.clear_fails = True
+        client = self.create_client(config_override=ClientConfigOverride())
+        client.on_simulation_start()
+
+        with pytest.raises(RuntimeError, match="the model could not clean up"):
+            client.on_app_shutdown()
+
+        assert 'raise RuntimeError("the model could not clean up")' in caplog.text
