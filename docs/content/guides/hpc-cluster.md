@@ -65,6 +65,19 @@ Add these options to the `mpirun` line of `clusterRunHPC.sh` to change that:
   threads when the job has only one worker: the server waits for new connections in a task that keeps
   one thread busy for the whole run, and with a single thread the clients never start.
 
+## Pyro5 simulators
+
+The Dask scheduler places a Pyro5 client on any worker, so it can run on any node of the job. The Pyro object it
+connects to therefore has to be reachable from every node:
+
+- `pyro_host` in the simulator's `preferences.ini` is a host name or IP address that every node can reach, not
+  `localhost` or `127.0.0.1`
+- the Pyro daemon listens on that address, not on `localhost`, and the cluster's network lets the nodes reach
+  `pyro_port`
+- the process with the Pyro object runs before the job starts the simulation; eCoSim does not start it
+
+[Pyro5 client](pyro5-client.md#reach-the-pyro-object) shows how to start the daemon.
+
 ## Look at the results
 
 After the run, the PostgreSQL database `sim_control` is in the directory `test` next to the scripts.
