@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Runs the integration tests (i.e. without the performance tests and without the unit tests)."""
+
+import subprocess
+import sys
+from typing import List, Sequence
+
+from config import REPO_ROOT, get_uv_path, subproject_environment
+
+INTEGRATION_TESTS = REPO_ROOT / "integration-tests"
+
+USAGE = """Usage: python dev/run_integration_tests.py [pytest argument ...]
+
+Runs the tests of integration-tests marked 'integration', which are all apart from the performance tests.
+
+  python dev/run_integration_tests.py                 all integration tests
+  python dev/run_integration_tests.py -k restore      forward arguments to pytest
+
+"""
+
+
+def pytest_command(pytest_arguments: Sequence[str]) -> List[str]:
+    return [get_uv_path(), "run", "pytest", "-m", "integration", "", *pytest_arguments]
+
+
+def main(argv: Sequence[str]) -> int:
+    if "-h" in argv or "--help" in argv:
+        print(USAGE)
+        return 0
+    command = pytest_command(argv)
+    print(f"==> {INTEGRATION_TESTS.name}: {' '.join(command)}", flush=True)
+    return subprocess.run(command, cwd=str(INTEGRATION_TESTS), env=subproject_environment()).returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
