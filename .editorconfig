@@ -12,15 +12,6 @@ indent_style = space
 
 [{*.py,*.pyw}]
 max_line_length = 150
-ij_python_call_parameters_wrap = on_every_item
-ij_python_method_parameters_wrap = on_every_item
-ij_python_dict_wrapping = on_every_item
-ij_python_set_wrapping = on_every_item
-ij_python_method_parameters_right_paren_on_new_line = true
-ij_python_use_trailing_comma_in_arguments_list = true
-ij_python_use_trailing_comma_in_parameter_list = true
-ij_python_use_trailing_comma_in_collections = true
-ij_continuation_indent_size = 4
 
 [*.ini]
 # windows ini files need special handling
