@@ -37,3 +37,41 @@ The object provides three methods, which the client calls:
 | `clear()` | once, after the simulation ends |
 
 The model gets neither the simulation time nor the step size, so it has to keep its own clock and know the step size.
+
+A small Pyro object, with an input `heating_power` and an output `temperature` in the client's `.fmc` file:
+
+```python
+import Pyro5.api
+
+
+@Pyro5.api.expose
+class Room:
+    def __init__(self) -> None:
+        self.temperature = 20.0
+        self.running = True
+
+    def initialize(self) -> dict[str, float]:
+        return {"temperature": self.temperature}
+
+    def do_step(self, value_dict: dict[str, float]) -> dict[str, float]:
+        self.temperature += 0.001 * value_dict["heating_power"]
+        return {"temperature": self.temperature}
+
+    def clear(self) -> None:
+        self.running = False
+
+
+room = Room()
+daemon = Pyro5.api.Daemon(host="localhost", port=51234)
+daemon.register(room, objectId="room")
+daemon.requestLoop(loopCondition=lambda: room.running)
+daemon.close()
+```
+
+Start the script before the client. Here `pyro_host` is `localhost`, `pyro_port` is `51234` and
+`pyro_object_name` is `room`. To reach it from another machine, use that machine's host name or IP address
+instead of `localhost`.
+
+The script ends after the client has called `clear()`. `clear()` only sets `running`, because a daemon that
+is shut down inside a call closes the connection before the client gets the answer, and the client then
+fails with `ConnectionClosedError`.
