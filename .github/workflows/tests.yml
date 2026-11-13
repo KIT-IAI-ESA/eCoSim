@@ -70,7 +70,7 @@ jobs:
         working-directory: ${{ matrix.project }}
         run: uv sync --locked --extra dev
       - name: Test
-        run: uv run --no-project python dev/run_tests.py ${{ matrix.project }}
+        run: uv run --no-project python dev/run_unit_tests.py ${{ matrix.project }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:

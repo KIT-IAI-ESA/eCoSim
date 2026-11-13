@@ -42,7 +42,7 @@ flowchart TD
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster
-- `integration-tests` depends on all of them, which is why it is excluded from `dev/run_tests.py`
+- `integration-tests` depends on all of them, which is why it is excluded from `dev/run_unit_tests.py`
 
 Every internal dependency is pinned to the exact version (`ecosim-common==0.14.0`) and resolved
 from the working tree through `[tool.uv.sources]` with `editable = true`. A version bump therefore

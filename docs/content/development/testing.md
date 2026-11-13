@@ -8,11 +8,11 @@
       subproject's `.venv`; unset it for runs by hand: `env -u UV_PROJECT_ENVIRONMENT uv run pytest`
 - a single test, without the coverage report the `addopts` add:
     - `cd ecosim-server && uv run pytest tests/simulation/test_interface_value_history_thread.py -k history --no-cov`
-- all subprojects except the integration tests: `python dev/run_tests.py`
+- all subprojects except the integration tests: `python dev/run_unit_tests.py`
     - it keeps going after a failure, prints a summary and exits non-zero if anything failed
     - subprojects without tests are reported as `no tests`, not as failures
-    - limit the run: `python dev/run_tests.py ecosim-server ecosim-common`
-    - forward arguments to pytest after `--`: `python dev/run_tests.py ecosim-server -- -k history --no-cov`
+    - limit the run: `python dev/run_unit_tests.py ecosim-server ecosim-common`
+    - forward arguments to pytest after `--`: `python dev/run_unit_tests.py ecosim-server -- -k history --no-cov`
 - a test fails after 120 s (`timeout` in the subproject's `pyproject.toml`), switch that off in a debugger or for a long local run: `--timeout=0`
 
 | Subproject | Tests |
