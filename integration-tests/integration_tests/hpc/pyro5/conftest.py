@@ -7,7 +7,7 @@ import pytest
 from dask import distributed as dd
 from ecosim_common.tech.dask.init_dask import init_dask
 
-from integration_tests.hpc.pyro5.hpc_pyro5_setup import Pyro5CountingModel
+from integration_tests.hpc.pyro5.hpc_pyro5_setup import SCHEDULER_NODE_IP, WORKER_NODE_IPS, Pyro5CountingModel
 
 
 @pytest.fixture
@@ -31,3 +31,17 @@ def dask_cluster(request: pytest.FixtureRequest) -> dd.Client:
     client = dd.Client(n_workers=workers, threads_per_worker=threads_per_worker)
     init_dask(log_level=logging.DEBUG, client=client)
     return client
+
+
+@pytest.fixture
+def dask_cluster_on_nodes(request: pytest.FixtureRequest) -> dd.Client:
+    """One worker per node, with the threads an indirect parametrization passes as {node IP: threads}; 2 by default.
+
+    The teardown hook of ecosim-test-common closes the client and the cluster.
+    """
+    threads_by_node_ip: dict[str, int] = getattr(request, "param", {ip: 2 for ip in WORKER_NODE_IPS})
+    cluster = dd.SpecCluster(
+        scheduler={"cls": dd.Scheduler, "options": {"host": SCHEDULER_NODE_IP, "dashboard_address": ":0"}},
+        workers={ip: {"cls": dd.Nanny, "options": {"host": ip, "nthreads": threads}} for ip, threads in threads_by_node_ip.items()},
+    )
+    return dd.Client(cluster)

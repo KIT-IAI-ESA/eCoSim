@@ -1,15 +1,25 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import Pyro5.api
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.server import Server
 
+from integration_tests.hpc.hpc_data import server_config
+from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
 from integration_tests.test_data.test_client_data import TestClientData
 from integration_tests.test_data.write_ini import write_client_ini, write_fmc
+
+# loopback addresses stand in for the nodes of a cluster, each listens on an address of its own
+SCHEDULER_NODE_IP = "127.0.0.1"
+WORKER_NODE_IPS = ("127.0.0.2", "127.0.0.3")
+PYRO_NODE_IP = "127.0.0.4"
 
 
 @Pyro5.api.expose
@@ -63,6 +73,16 @@ class Pyro5TestModule:
             simulation_config=Pyro5TestModule._simulation_config_of(client_data, steps),
             steps=steps,
         )
+
+    def start_server(self) -> threading.Thread:
+        server = Server(
+            _server_config=server_config(),
+            _simulation_config=self.simulation_config,
+            _repositories=RepositoriesInMemory.for_communication_protocol(CommunicationProtocol.DASK),
+        )
+        server_thread = threading.Thread(target=server.start, daemon=True)
+        server_thread.start()
+        return server_thread
 
     @staticmethod
     def _simulation_config_of(
