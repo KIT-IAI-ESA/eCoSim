@@ -25,7 +25,7 @@ def main() -> None:
     config = config_parser.ConfigParser(args.config_file())
 
     if args.validate_fmu_file_only():
-        validate_fmu_file_or_error(config)
+        validate_fmu_file_or_error(config=config, fmi_major_version=2)
         return
 
     client = FMU2Client.create(

@@ -27,8 +27,10 @@ class FMUBaseConfig:
         if missing:
             raise ValueError(f"The FMU {self.fmu_file} has no input or output for these interfaces: {', '.join(missing)}")
 
-    def ensure_interfaces_are_supported(self, model_description: ModelDescription, interface_names: list[str]) -> None:
-        supported_type = "Real" if model_description.fmiVersion.startswith("2") else "Float64"
+    def ensure_fmu_is_supported(self, model_description: ModelDescription, interface_names: list[str], fmi_major_version: int) -> None:
+        if model_description.fmiMajorVersion != fmi_major_version:
+            raise ValueError(f"The FMU {self.fmu_file} is FMI {model_description.fmiVersion}, but this client runs FMI {fmi_major_version} FMUs only")
+        supported_type = "Real" if fmi_major_version == 2 else "Float64"
         other_types = [
             f"{variable.name} ({variable.type})"
             for variable in model_description.modelVariables

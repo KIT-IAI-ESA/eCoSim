@@ -63,7 +63,7 @@ The `preferences.ini` passed to a client with `--config-file`. `--server-host` a
 
 ## FMU clients
 
-Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up if the `.fmc` file lists a name that is not an input or output of the FMU, or a variable of a type they do not support, and `--validate-fmu-file-only` reports both. `ecosim-client-fmu-v2` supports Real variables only. `ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.
+Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up for an FMU of the other FMI version, for a name in the `.fmc` file that is not an input or output of the FMU and for a variable of a type they do not support. `--validate-fmu-file-only` reports all three. `ecosim-client-fmu-v2` supports Real variables only. `ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.
 
 | Section | Key | Type | Default |
 | --- | --- | --- | --- |

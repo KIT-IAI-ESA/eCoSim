@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from ecosim_client_fmu_v3.fmu3_simulator_config import FMU3SimulatorConfig
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
-from ecosim_test_common.resources.resource_utils import fmu3_model_path
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path
 from ecosim_test_common.test_data.generate_broken_fmu import generate_broken_fmu
 
 from tests.tech.resource_utils import resource_path
@@ -32,3 +32,10 @@ def test_interfaces_that_are_not_float64_are_rejected() -> None:
 
     with pytest.raises(TypeError, match=re.escape(f"not Float64: {not_float64}")):
         FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=interface_names)
+
+
+def test_an_fmi_2_fmu_is_rejected() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
+
+    with pytest.raises(ValueError, match=re.escape("is FMI 2.0, but this client runs FMI 3 FMUs only")):
+        FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["Float64_continuous_input"])

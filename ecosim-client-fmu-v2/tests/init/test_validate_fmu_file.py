@@ -69,7 +69,7 @@ def test_validation_fails_for_an_interface_the_fmu_does_not_have(tmp_path: Path)
     fmc_file.write_text(fmc_file.read_text().replace("Float64_continuous_output", "Float64_continuous_outptu"))
 
     with pytest.raises(ValueError, match="Float64_continuous_outptu"):
-        validate_fmu_file_or_error(ConfigParser(config_directory / "feedthrough.ini"))
+        validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)
 
 
 def test_validation_fails_for_an_interface_that_is_not_real(tmp_path: Path) -> None:
@@ -78,4 +78,11 @@ def test_validation_fails_for_an_interface_that_is_not_real(tmp_path: Path) -> N
     fmc_file.write_text(fmc_file.read_text().replace("Float64_continuous_output", "Int32_output"))
 
     with pytest.raises(TypeError, match=re.escape("not Real: Int32_output (Integer)")):
-        validate_fmu_file_or_error(ConfigParser(config_directory / "feedthrough.ini"))
+        validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)
+
+
+def test_validation_fails_for_an_fmu_of_the_other_fmi_version(tmp_path: Path) -> None:
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+
+    with pytest.raises(ValueError, match=re.escape("is FMI 2.0, but this client runs FMI 3 FMUs only")):
+        validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=3)

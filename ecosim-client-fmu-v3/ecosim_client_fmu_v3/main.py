@@ -26,7 +26,7 @@ def main() -> None:
     config = config_parser.ConfigParser(args.config_file())
 
     if args.get_additional_parameter("validate-fmu-file-only"):
-        validate_fmu_file_or_error(config)
+        validate_fmu_file_or_error(config=config, fmi_major_version=3)
         return
 
     client = FMU3Client.of(
