@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from ecosim_client_fmu_v2.fmu2_simulator_config import FMU2SimulatorConfig
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
-from ecosim_test_common.resources.resource_utils import fmu2_model_path
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path
 from ecosim_test_common.test_data.generate_broken_fmu import generate_broken_fmu
 
 
@@ -37,3 +37,10 @@ def test_interfaces_that_are_no_input_or_output_of_the_fmu_are_rejected() -> Non
 
     with pytest.raises(ValueError, match=re.escape(f"{fmu_file} has no input or output for these interfaces: {missing}")):
         FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu_file), interface_names=interface_names)
+
+
+def test_an_fmi_3_fmu_is_rejected() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu3_model_path())
+
+    with pytest.raises(ValueError, match=re.escape("is FMI 3.0, but this client runs FMI 2 FMUs only")):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["u", "y"])
