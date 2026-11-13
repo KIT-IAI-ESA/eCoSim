@@ -1,4 +1,4 @@
-from typing import Callable, List, override
+from typing import Callable, override
 
 import dask.distributed as dd
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
@@ -52,7 +52,7 @@ class ClientManager(ShutdownListener):
                 config_parser=simulator_directory.config_parser,
             )
             simulator_path = simulator_directory.path
-            if any(simulator_path.glob("*.py")): 
+            if any(simulator_path.glob("*.py")):
                 dask_client.sync(
                     client_submit,
                     client_function=PyroClient.of,
