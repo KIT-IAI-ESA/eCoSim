@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 import yaml
 
-from config import REPO_ROOT, SUBPROJECTS, write_or_check
+from config import REPO_ROOT, SUBPROJECTS, pytest_command, write_or_check
 from run_unit_tests import all_projects_apart_integration_tests
 
 
@@ -33,6 +33,10 @@ def test_write_or_check_reports_an_out_of_date_file(tmp_path: Path, capsys: pyte
     assert write_or_check(page, "new", check=True) == 1
     assert page.read_text(encoding="utf-8") == "old"
     assert "page.md is out of date" in capsys.readouterr().err
+
+
+def test_pytest_command_selects_the_marker_and_forwards_the_arguments() -> None:
+    assert pytest_command(marker="integration", pytest_arguments=["-k", "restore"])[1:] == ["run", "pytest", "-m", "integration", "-k", "restore"]
 
 
 def test_no_subproject_is_left_out_of_the_unit_tests_in_ci() -> None:
