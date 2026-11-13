@@ -25,7 +25,8 @@ The example has these scripts in `building_hpc/Executable/`:
 - `clusterRun.sh` is the same job with the plain server and one process per client, without `mpirun`
   and Dask.
 
-`server/preferences.ini` points at the PostgreSQL server the job script starts.
+`server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
+are empty, so the server logs in as your cluster user with the password from `test.pgpass`, see below.
 
 A simulator's directory in `Modules/` holds one model only, because `ecosim_hpc/main.py` chooses the client
 by the files in it: an FMU client for each `.fmu` file, the Pyro5 client for `.py` files and the MATLAB
@@ -52,6 +53,12 @@ client for `.m` files.
 6. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
+The first run creates the PostgreSQL data directory `test` next to the scripts. Other users on the same
+node can reach this PostgreSQL server, so it only lets in logins with a password. The script creates a
+random password, keeps it in `test.pgpass`, a file only you can read, and points `PGPASSFILE` at it, so
+`psql`, `createdb` and the server find it. A `test` directory from an older version of the scripts lets
+everyone in without a password, so the job stops with a message: delete or rename `test` and submit again.
+
 ## Choose the network and the threads
 
 By default Dask uses the address of the network with the default route, and every worker has 2 threads.
@@ -69,11 +76,13 @@ Add these options to the `mpirun` line of `clusterRunHPC.sh` to change that:
 
 After the run, the PostgreSQL database `sim_control` is in the directory `test` next to the scripts.
 The script's `--database-schema` puts the tables into the schema `temp_schema`, and its
-`--database-drop-existing-schema` makes the next run replace them:
+`--database-drop-existing-schema` makes the next run replace them. `psql` reads the password from
+`test.pgpass`:
 
 ```shell
 module load devel/miniforge/25.3.1-python-3.12
 conda activate eCoSim
+export PGPASSFILE="$PWD/test.pgpass"
 pg_ctl start -D test -l test/logfile -o "-F -p 5432"
 psql -d sim_control
 # \dt temp_schema.* lists the tables; run your queries, then leave psql with \q
