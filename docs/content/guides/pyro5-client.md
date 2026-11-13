@@ -75,3 +75,25 @@ instead of `localhost`.
 The script ends after the client has called `clear()`. `clear()` only sets `running`, because a daemon that
 is shut down inside a call closes the connection before the client gets the answer, and the client then
 fails with `ConnectionClosedError`.
+
+## Reach the Pyro object
+
+eCoSim does not start the Python process with the Pyro object, it only connects to it. Whoever sets up the run
+makes sure the client reaches the object:
+
+- the process runs and the object is registered under `pyro_object_name` before the simulation starts; the client
+  connects when it calls `initialize()`
+- the daemon listens on an address the client can reach. A `Pyro5.api.Daemon()` without a host listens on
+  `localhost` only, so a client on another machine needs the host set explicitly:
+
+  ```python
+  daemon = Pyro5.api.Daemon(host="<host name or IP address>", port=<pyro_port>)
+  daemon.register(model, objectId="<pyro_object_name>")
+  daemon.requestLoop()
+  ```
+
+- `pyro_host` and `pyro_port` in `preferences.ini` are the same host and port, and no firewall blocks the port
+- several Pyro objects on one host use different ports
+
+`localhost` as `pyro_host` only works if the client runs on the same machine as the Pyro object. On an HPC
+cluster that is most likely not the case, see [HPC cluster](hpc-cluster.md#pyro5-simulators).
