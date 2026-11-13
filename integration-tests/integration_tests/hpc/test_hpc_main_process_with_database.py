@@ -1,8 +1,6 @@
 import os
-import threading
-from contextlib import contextmanager
 from dataclasses import replace
-from typing import Any, Generator, Iterator
+from typing import Any, Generator
 
 import dask.distributed as distributed
 import pytest
@@ -10,6 +8,7 @@ from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.config.server_config import DatabaseConfig, ServerConfig
 from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.tech.threading import exceptions_raised_in_threads
 from integration_tests.hpc.hpc_data import client_manager_config, fmu_files, server_config, simulation_config
 from testcontainers.postgres import PostgresContainer
 
@@ -42,7 +41,7 @@ def test_hpc_main_process_with_database_repositories(
     config = _server_config_on(postgres_container)
     simulation = simulation_config()
 
-    with _exceptions_raised_in_threads() as thread_exceptions:
+    with exceptions_raised_in_threads() as thread_exceptions:
         try:
             hpc_main_process(
                 dask_client=dask_client,
@@ -73,20 +72,3 @@ def _server_config_on(postgres_container: PostgresContainer) -> ServerConfig:
             drop_existing_schema=True,
         ),
     )
-
-
-@contextmanager
-def _exceptions_raised_in_threads() -> Iterator[list[BaseException | None]]:
-    """An exception in a thread of the main process only ever reaches 'threading.excepthook'."""
-    raised: list[BaseException | None] = []
-    previous_hook = threading.excepthook
-
-    def record(args: threading.ExceptHookArgs) -> None:
-        raised.append(args.exc_value)
-        previous_hook(args)
-
-    threading.excepthook = record
-    try:
-        yield raised
-    finally:
-        threading.excepthook = previous_hook
