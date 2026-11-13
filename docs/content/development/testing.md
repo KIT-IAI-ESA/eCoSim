@@ -34,11 +34,10 @@ arguments. Otherwise it passes under `pytest` but fails under `pytest -q` or in 
 
 ## Integration tests
 
-- `cd integration-tests && uv run pytest -m integration`
+- `python dev/run_integration_tests.py`, the same as `cd integration-tests && uv run pytest -m integration`
     - every test is marked `integration`, except the performance tests, which are marked `performance`
     - a plain `uv run pytest` leaves the performance tests out
     - the output and the logs of a test are shown when it fails; for the logs while the tests run, add `--log-cli-level=DEBUG`
-- they import the other subprojects, so sync after changing one: `python dev/sync_projects.py`
 - some start PostgreSQL through `testcontainers`, so they need Docker
 - the tests in `integration_tests/locally/` need external models or an HPC environment, so the
   `addopts` ignore them, as CI does
