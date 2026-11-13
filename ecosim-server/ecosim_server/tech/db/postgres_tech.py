@@ -84,7 +84,8 @@ class PostgresTech(DbTechAbstract):
         schema = self.server_config.database.schema
         with engine.connect() as connection:
             if self._restore and self._schema_exists(connection=connection, schema=schema):
-                PostgresTech._logger.info("Schema '%s' is kept for the restore", schema)
+                if self.server_config.database.drop_existing_schema:
+                    PostgresTech._logger.warning("Schema '%s' is kept for the restore, --database-drop-existing-schema is ignored", schema)
                 return
             self._drop_existing_schema(connection=connection, schema=schema)
             connection.execute(text(f'CREATE SCHEMA "{schema}"'))

@@ -22,6 +22,7 @@ STEP_SIZE_IN_MS = 2_500
 OUTPUT_INTERFACE = "Interface_Output"
 
 
+# TODO: a PostgreSQL test that a restore keeps what an earlier server stored, this one stores the steps after the server set up its schema
 def test_a_restore_after_an_uneven_abort_continues_from_the_replayed_steps_and_stores_every_step_once(
     database_config: DatabaseConfig,
     communication_protocol: CommunicationProtocol,
