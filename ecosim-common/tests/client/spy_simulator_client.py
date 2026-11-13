@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from typing import override
 
@@ -11,6 +12,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_test_common.bounded_wait import finishes_in_time
 from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
 from ecosim_test_common.test_data.single_connection_server import SingleConnectionServer
+from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 
 
 @dataclass(kw_only=True)
@@ -18,6 +20,9 @@ class SpySimulatorClient(SimulatorClient):
     calls: list[str] = field(default_factory=list)
     initialize_fails: bool = field(default=False)
     stop_fails: bool = field(default=False)
+    step_blocks: bool = field(default=False)
+    step_started: threading.Event = field(default_factory=threading.Event)
+    step_may_end: threading.Event = field(default_factory=threading.Event)
 
     @staticmethod
     def create(
@@ -65,6 +70,9 @@ class SpySimulatorClient(SimulatorClient):
     @override
     def _on_do_step(self, step_size_in_seconds: float) -> None:
         self.calls.append(f"step of {step_size_in_seconds} at {self._current_simulation_time}")
+        if self.step_blocks:
+            self.step_started.set()
+            self.step_may_end.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
 
     @override
     def _get_model_output(self, name: str) -> InterfaceValue:
