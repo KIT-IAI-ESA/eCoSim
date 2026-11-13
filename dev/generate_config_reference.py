@@ -52,7 +52,8 @@ GROUPS = [
         "Both clients stop at start-up if the `.fmc` file lists a name that is not an input or output of the FMU, "
         "and `--validate-fmu-file-only` reports that too. "
         "`ecosim-client-fmu-v2` supports Real variables only and stops at start-up if the `.fmc` file lists a variable of another type. "
-        "`ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays whose size is a structural parameter.",
+        "`ecosim-client-fmu-v3` supports `Float64` variables only: "
+        "scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.",
         "ecosim-common-fmpy/ecosim_common_fmpy/config/fmu_base_config.py",
     ),
     (
@@ -89,7 +90,8 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   an interface to an interface of a simulator, which is given by its position in `simulators`,
   counting from 0.
 - `logical_delays`: connections whose values arrive a number of steps (`delay`, at least 1) later.
-  Until then the receiving interface gets `start_value`.
+  Until then the receiving interface gets `start_value`. After a restore they start again with `start_value`,
+  so the first steps after the restore can differ from a run without the abort.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
 - `setup.start_date`: the time stamp of the first step, by default `2024-01-01T00:00:00.000Z`. It
   only sets the time stamps of the steps and the stored results; the models always start at time 0.
