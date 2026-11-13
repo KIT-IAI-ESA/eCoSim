@@ -44,6 +44,14 @@ def test_an_fmu_whose_initialization_failed_is_still_freed() -> None:
     assert fmu_instance.is_freed
 
 
+def test_an_array_input_with_the_wrong_number_of_values_is_rejected() -> None:
+    client = _create_client_with_spy(fmu_instance=SpyFMUInstance(), is_initialized=True)
+
+    with pytest.raises(ValueError, match="The input u takes 3 values, but got 2"):
+        client._set_input_float_matrix(name="u", value=[1.0, 2.0])  # noqa: SLF001
+    client.on_app_shutdown()
+
+
 def test_a_failing_free_still_removes_the_extracted_files() -> None:
     client = _create_client_with_spy(fmu_instance=SpyFMUInstance(free_instance_fails=True), is_initialized=True)
 

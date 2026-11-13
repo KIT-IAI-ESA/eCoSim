@@ -17,7 +17,9 @@ def validate_fmu_file_or_error(
         model_description = read_model_description(file=fmu2_config.fmu_file, validate=True)
         simulator_config = SimulatorConfig.of_config_parser(config)
         interfaces = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=config.config_file.parent).interfaces
-        fmu2_config.ensure_interfaces_exist(model_description=model_description, interface_names=[interface.name for interface in interfaces])
+        interface_names = [interface.name for interface in interfaces]
+        fmu2_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
+        fmu2_config.ensure_interfaces_are_supported(model_description=model_description, interface_names=interface_names)
     except Exception as e:
         logger.error("Checking FMU file failed: %s", e)
         raise e

@@ -33,6 +33,7 @@ class FMU3SimulatorConfig:
     ) -> FMU3SimulatorConfig:
         model_description = read_model_description(file=fmu_config.fmu_file)
         fmu_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
+        fmu_config.ensure_interfaces_are_supported(model_description=model_description, interface_names=interface_names)
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
@@ -78,6 +79,12 @@ class FMU3SimulatorConfig:
         name: str,
     ) -> FMU3VariableType:
         return FMU3VariableType.type_of(self._output_scalar_by_name[name])
+
+    def input_value_count(
+        self,
+        name: str,
+    ) -> int:
+        return math.prod(self._input_scalar_by_name[name].shape)
 
     def output_value_count(
         self,

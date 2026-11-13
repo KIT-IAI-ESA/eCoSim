@@ -26,3 +26,16 @@ class FMUBaseConfig:
         missing = [name for name in interface_names if name not in inputs_and_outputs]
         if missing:
             raise ValueError(f"The FMU {self.fmu_file} has no input or output for these interfaces: {', '.join(missing)}")
+
+    def ensure_interfaces_are_supported(self, model_description: ModelDescription, interface_names: list[str]) -> None:
+        supported_type = "Real" if model_description.fmiVersion.startswith("2") else "Float64"
+        other_types = [
+            f"{variable.name} ({variable.type})"
+            for variable in model_description.modelVariables
+            if variable.name in interface_names and variable.type != supported_type
+        ]
+        if other_types:
+            raise TypeError(
+                f"The FMU {self.fmu_file} is FMI {model_description.fmiVersion}, which eCoSim supports with {supported_type} variables only, "
+                + f"but these interfaces are not {supported_type}: {', '.join(other_types)}",
+            )

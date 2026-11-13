@@ -56,6 +56,7 @@ class FMU3Client(SimulatorClient):
         value: float | None,
     ) -> None:
         self.logger.debug("Setting float input %s to %s", name, value)
+        self._ensure_input_value_count(name=name, value_count=1)
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], [value])
 
     @override
@@ -65,7 +66,17 @@ class FMU3Client(SimulatorClient):
         value: FloatMatrix,
     ) -> None:
         self.logger.debug("Setting float vector input %s to %s", name, value)
+        self._ensure_input_value_count(name=name, value_count=len(value))
         self._fmu_instance.setFloat64([self._simulation_config.input_value_references(name)], value)
+
+    def _ensure_input_value_count(
+        self,
+        name: str,
+        value_count: int,
+    ) -> None:
+        expected_count = self._simulation_config.input_value_count(name)
+        if value_count != expected_count:
+            raise ValueError(f"The input {name} takes {expected_count} values, but got {value_count}")
 
     @override
     def _get_model_output(

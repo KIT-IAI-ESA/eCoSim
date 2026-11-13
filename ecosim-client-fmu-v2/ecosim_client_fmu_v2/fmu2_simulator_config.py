@@ -37,7 +37,7 @@ class FMU2SimulatorConfig:
         model_description = cls.read_model_description(fmu_config)
         # before extracting, so a rejected FMU leaves no files behind
         fmu_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
-        cls._ensure_interfaces_are_real(model_description=model_description, interface_names=interface_names)
+        fmu_config.ensure_interfaces_are_supported(model_description=model_description, interface_names=interface_names)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
@@ -50,16 +50,6 @@ class FMU2SimulatorConfig:
             _unzip_dir=unzip_dir,
             _fmu_file=fmu_config.fmu_file,
         )
-
-    @staticmethod
-    def _ensure_interfaces_are_real(model_description: ModelDescription, interface_names: list[str]) -> None:
-        not_real = [
-            f"{variable.name} ({variable.type})"
-            for variable in model_description.modelVariables
-            if variable.name in interface_names and variable.type != "Real"
-        ]
-        if not_real:
-            raise TypeError(f"FMUv2 can only handle Real variables, but these interfaces are not Real: {', '.join(not_real)}")
 
     @classmethod
     def read_model_description(cls, fmu_config: FMUBaseConfig) -> ModelDescription:
