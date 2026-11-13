@@ -6,7 +6,7 @@ from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc.client_manager import ClientManager
 from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_test_common.dask.wait_until_server_connection_listener_started import wait_until_server_connection_listener_started
-from ecosim_test_common.tech.threading import exceptions_raised_in_threads
+from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 
 from integration_tests.hpc.pyro5.hpc_pyro5_setup import PYRO_NODE_IP, WORKER_NODE_IPS, Pyro5TestModule
 
@@ -20,16 +20,15 @@ def test_a_pyro5_client_is_not_deployed_while_the_connection_listener_holds_the_
 ) -> None:
     module = Pyro5TestModule.generate_pyro5_module(tmp_path, pyro_port, pyro_host=PYRO_NODE_IP)
 
-    with exceptions_raised_in_threads():
-        server_thread = module.start_server()
-        wait_until_server_connection_listener_started(dask_cluster_on_nodes)
-        client_manager = ClientManager(ClientManagerConfig(host="localhost", port=9090, simulator_dir=module.path))
-        client_manager.clients_start(module.simulation_config)
+    server_thread = module.start_server()
+    wait_until_server_connection_listener_started(dask_cluster_on_nodes)
+    client_manager = ClientManager(ClientManagerConfig(host="localhost", port=9090, simulator_dir=module.path))
+    client_manager.clients_start(module.simulation_config)
 
-        is_deployed = client_manager.client_dict[module.client_id].is_boot_strapping_done.wait(timeout=10)
+    is_deployed = client_manager.client_dict[module.client_id].is_boot_strapping_done.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
 
-        ShutdownManager().set_shutdown_at_application_end()
-        server_thread.join(timeout=30)
+    ShutdownManager().set_shutdown_at_application_end()
 
     assert not is_deployed
-    assert not server_thread.is_alive()
+    server_thread.assert_ends_within(timeout_in_seconds=WAIT_TIMEOUT_IN_SECONDS)
+    assert server_thread.error is not None

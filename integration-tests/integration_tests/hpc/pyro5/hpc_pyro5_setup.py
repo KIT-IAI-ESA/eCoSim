@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +9,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.server import Server
+from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
 
 from integration_tests.hpc.hpc_data import server_config
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
@@ -74,13 +74,13 @@ class Pyro5TestModule:
             steps=steps,
         )
 
-    def start_server(self) -> threading.Thread:
+    def start_server(self) -> ErrorRecordingThread:
         server = Server(
             _server_config=server_config(),
             _simulation_config=self.simulation_config,
             _repositories=RepositoriesInMemory.for_communication_protocol(CommunicationProtocol.DASK),
         )
-        server_thread = threading.Thread(target=server.start, daemon=True)
+        server_thread = ErrorRecordingThread(target=server.start)
         server_thread.start()
         return server_thread
 
