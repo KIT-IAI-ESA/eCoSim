@@ -37,7 +37,6 @@ class ClientManager(ShutdownListener):
         dask_client_overwrite: dd.Client | None = None,
     ) -> None:
         dask_client = dask_client_overwrite or dd.get_client()
-        dask_client_ip = dask_client.scheduler_info()["address"].split(":")[1].strip("//")  # gets IP for dask scheduler
         simulator_directories = SimulatorDirectory.find_for_simulators(
             simulators_directory=self._config.simulator_dir,
             client_ids=[simulation.client_id for simulation in simulation_config.clients],
@@ -53,16 +52,12 @@ class ClientManager(ShutdownListener):
                 config_parser=simulator_directory.config_parser,
             )
             simulator_path = simulator_directory.path
-            if any(simulator_path.glob("*.py")):  # Pyro5 Client first to ensure runs on same node as localhost
-                # Find workers that are on the same node as the scheduler and ensure it doesn't run on the same
-                # worker as endpoint listening (first worker).
-                workers: List[str] = [worker for i, worker in enumerate(dask_client.ncores().keys()) if (i != 0) and (dask_client_ip in worker)]
+            if any(simulator_path.glob("*.py")): 
                 dask_client.sync(
                     client_submit,
                     client_function=PyroClient.of,
                     client_states=self.client_dict,
                     state=self.client_dict[client_id],
-                    workers=workers,
                 )
 
             for fmu_file in simulator_path.glob("*.fmu"):
