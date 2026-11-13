@@ -1,6 +1,9 @@
+import threading
 from unittest.mock import MagicMock
 
+import pytest
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS, WAIT_TIMEOUT_IN_SECONDS
 
 from tests.client.spy_simulator_client import SpySimulatorClient
 
@@ -48,4 +51,35 @@ def test_a_shutdown_through_the_shutdown_manager_closes_the_channel_and_clears_o
     ShutdownManager().set_shutdown_at_application_end()
 
     channel.close.assert_called_once()
+    assert client.calls == ["clear"]
+
+
+def test_a_shutdown_waits_for_the_running_step() -> None:
+    client = SpySimulatorClient.create()
+    client.step_blocks = True
+    step = threading.Thread(target=client.on_simulation_step, kwargs={"received_inputs": {}, "step_size_in_seconds": 1.0})
+    step.start()
+    client.step_started.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
+    shutdown = threading.Thread(target=client.on_app_shutdown)
+    shutdown.start()
+
+    shutdown.join(timeout=SHORT_TIMEOUT_IN_SECONDS)
+    calls_while_the_step_runs = list(client.calls)
+    client.step_may_end.set()
+    step.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
+    shutdown.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
+
+    assert calls_while_the_step_runs == ["step of 1.0 at 0.0"]
+    assert client.calls == ["step of 1.0 at 0.0", "clear"]
+
+
+def test_the_model_is_not_used_after_the_shutdown() -> None:
+    client = SpySimulatorClient.create()
+    client.on_app_shutdown()
+
+    with pytest.raises(RuntimeError):
+        client.on_simulation_start()
+    with pytest.raises(RuntimeError):
+        client.on_simulation_step(received_inputs={"a": 1.0}, step_size_in_seconds=1.0)
+
     assert client.calls == ["clear"]
