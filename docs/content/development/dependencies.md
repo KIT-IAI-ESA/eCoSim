@@ -8,7 +8,7 @@
       already depend on fmpy and keep the plain pin `ecosim-test-common==0.14.0`
     - the root `pyproject.toml` only holds the development tooling (`pre-commit`, `mypy`, `pytest`, `ruff`)
 - **either** sync that subproject: `cd ecosim-server && uv sync --extra dev`
-- **or** sync all of them from the root: `python dev/sync_projects.py`, or the PyCharm run config `sync projects`
+- **or** sync all of them from the root: `python dev/sync_projects.py`
     - it recreates every `.venv` (`uv venv --clear`) first, so prefer the single sync while you work
 - commit the subproject's `uv.lock` together with its `pyproject.toml`
 
