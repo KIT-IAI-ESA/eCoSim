@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 import sys
@@ -68,4 +69,13 @@ def test_validation_fails_for_an_interface_the_fmu_does_not_have(tmp_path: Path)
     fmc_file.write_text(fmc_file.read_text().replace("Float64_continuous_output", "Float64_continuous_outptu"))
 
     with pytest.raises(ValueError, match="Float64_continuous_outptu"):
+        validate_fmu_file_or_error(ConfigParser(config_directory / "feedthrough.ini"))
+
+
+def test_validation_fails_for_an_interface_that_is_not_real(tmp_path: Path) -> None:
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+    fmc_file = config_directory / "Feedthrough.fmc"
+    fmc_file.write_text(fmc_file.read_text().replace("Float64_continuous_output", "Int32_output"))
+
+    with pytest.raises(TypeError, match=re.escape("not Real: Int32_output (Integer)")):
         validate_fmu_file_or_error(ConfigParser(config_directory / "feedthrough.ini"))
