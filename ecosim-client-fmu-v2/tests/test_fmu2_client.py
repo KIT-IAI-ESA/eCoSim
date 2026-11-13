@@ -27,7 +27,7 @@ def _create_client() -> FMU2Client:
 
 def _create_simulator_config() -> FMU2SimulatorConfig:
     fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE)
-    return FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["pos_2"])
+    return FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["pos_2"], output_names=[])
 
 
 def _create_client_with_spy(fmu_instance: SpyFMUInstance, is_initialized: bool) -> FMU2Client:

@@ -302,7 +302,7 @@ class ClientInterfaceConfig:
             return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT and interface.required]
         return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT]
 
-    def _output_interface_names(self) -> List[str]:
+    def output_interface_names(self) -> List[str]:
         return [interface.name for interface in self.interfaces if interface.type == InterfaceType.OUTPUT]
 
     def validate_config_with_server(
@@ -331,7 +331,7 @@ class ClientInterfaceConfig:
         self,
         actual_outputs: List[InterfaceId],
     ) -> bool:
-        return all(actual_output in self._output_interface_names() for actual_output in actual_outputs)
+        return all(actual_output in self.output_interface_names() for actual_output in actual_outputs)
 
 
 @dataclass

@@ -24,7 +24,8 @@ def test_with_matrix_inputs(tmp_path: Path, fixed_size_output: bool) -> None:
     simulator_config = FMU3SimulatorConfig.of(
         simulator_name="test_simulator",
         fmu_config=FMUBaseConfig(fmu_file=fmu_file),
-        interface_names=["u", "y"],
+        input_names=["u"],
+        output_names=["y"],
     )
     client = FMU3Client(
         _client_config=generate_mocked_client_config(),
