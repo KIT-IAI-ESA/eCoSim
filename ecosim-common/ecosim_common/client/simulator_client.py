@@ -1,3 +1,4 @@
+import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, override
@@ -15,6 +16,7 @@ class SimulatorClient(Client, ABC):
 
     On each step, all received inputs are set first, then the model advances by one step, and finally the outputs
     the server uses are read. The model is initialized once at simulation start and cleared once at app shutdown.
+    The clear waits for a running start or step, and the model is not used after it.
     For each of the steps described above, there are callbacks for the concrete classes to implement.
 
     Please note, that the __post_init__ method is essential. If you overwrite it in a subclass, you need to call
@@ -24,6 +26,8 @@ class SimulatorClient(Client, ABC):
     _current_simulation_time: float = field(default=0.0)
     _is_initialized: bool = field(default=False)
     _is_cleared: bool = field(default=False)
+    # reentrant: a signal handler that clears in the middle of a step in the same thread must not wait for itself
+    _model_lock: threading.RLock = field(init=False, default_factory=threading.RLock)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -45,8 +49,10 @@ class SimulatorClient(Client, ABC):
         To implement it, we need to adapt the SIMULATION_START message to contain a corresponding parameter. We also need to
         check all clients, if they handle the start_time correctly (e.g. the MatLab and Pyro clients currently ignore it).
         """
-        self._initialize_model(start_time=0.0)
-        return self._server_used_output_values()
+        with self._model_lock:
+            self._ensure_not_cleared()
+            self._initialize_model(start_time=0.0)
+            return self._server_used_output_values()
 
     @override
     def on_simulation_step(
@@ -54,11 +60,17 @@ class SimulatorClient(Client, ABC):
         received_inputs: Dict[InterfaceId, InterfaceValue],
         step_size_in_seconds: float,
     ) -> ClientSimStepData:
-        self._do_model_step(
-            input_values=received_inputs,
-            step_size_in_seconds=step_size_in_seconds,
-        )
-        return self._server_used_output_values()
+        with self._model_lock:
+            self._ensure_not_cleared()
+            self._do_model_step(
+                input_values=received_inputs,
+                step_size_in_seconds=step_size_in_seconds,
+            )
+            return self._server_used_output_values()
+
+    def _ensure_not_cleared(self) -> None:
+        if self._is_cleared:
+            raise RuntimeError("Simulator already cleared, so the model is not used anymore.")
 
     @override
     def on_simulation_stop(self) -> None:
@@ -144,10 +156,11 @@ class SimulatorClient(Client, ABC):
             self._clear_simulator()
 
     def _clear_simulator(self) -> None:
-        if self._is_cleared:
-            self.logger.warning("Simulator already cleared, skipping clearing.")
-            return
-        self.logger.info("Clearing simulator...")
-        self._is_cleared = True
-        self._on_clear_simulator()
-        self.logger.debug("Clearing simulator...done.")
+        with self._model_lock:
+            if self._is_cleared:
+                self.logger.warning("Simulator already cleared, skipping clearing.")
+                return
+            self.logger.info("Clearing simulator...")
+            self._is_cleared = True
+            self._on_clear_simulator()
+            self.logger.debug("Clearing simulator...done.")
