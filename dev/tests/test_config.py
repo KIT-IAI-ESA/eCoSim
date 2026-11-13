@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from config import REPO_ROOT, SUBPROJECTS, write_or_check
-from run_tests import all_projects_apart_integration_tests
+from run_unit_tests import all_projects_apart_integration_tests
 
 
 def read_yaml(path: Path) -> Any:
