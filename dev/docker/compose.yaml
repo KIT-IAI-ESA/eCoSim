@@ -1,3 +1,4 @@
+# Builds the eCoSim images. From this folder: docker compose build ecosim_server ecosim_client_fmu_v2
 services:
   ecosim_server:
     image: localhost/ecosim_server:latest

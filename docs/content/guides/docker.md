@@ -32,13 +32,13 @@ All commands below run in `dev/docker/example/`.
 Build the images once. They are tagged `localhost/ecosim_*`:
 
 ```shell
-docker compose -f ../docker-compose-build-images.yml build ecosim_server ecosim_client_fmu_v2
+docker compose -f ../compose.yaml build ecosim_server ecosim_client_fmu_v2
 ```
 
 ### How the images are built
 
 - every image comes from `dev/docker/Dockerfile`, with `SOURCE_DIR` and `COMMAND_NAME` as build arguments
-- each service in `docker-compose-build-images.yml` sets `image: localhost/<service>:latest`; without it,
+- each service in `dev/docker/compose.yaml` sets `image: localhost/<service>:latest`; without it,
   compose tags the build `localhost/docker_<service>` and the examples keep using an older image
 - the build turns the package into one self-contained `<command>.pex` and links it to `/opt/ecosim`,
   the `ENTRYPOINT`. The exec form of `ENTRYPOINT` does not expand build arguments, hence the fixed path
@@ -116,7 +116,7 @@ With a rootful Docker daemon the files belong to root, so remove them with `sudo
 
 | File | Purpose |
 | --- | --- |
-| `<variant>/docker-compose.yml` | the server and the four clients (plus the database in `postgres`) |
+| `<variant>/compose.yaml` | the server and the four clients (plus the database in `postgres`) |
 | `<variant>/config/server_config.ini` | server port and where the results are stored |
 | `<variant>/config/simulation.json` | the simulators and how their interfaces are connected |
 
