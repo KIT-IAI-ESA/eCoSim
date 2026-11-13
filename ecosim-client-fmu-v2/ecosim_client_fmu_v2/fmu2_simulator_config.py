@@ -32,12 +32,17 @@ class FMU2SimulatorConfig:
         cls,
         simulator_name: str,
         fmu_config: FMUBaseConfig,
-        interface_names: list[str],
+        input_names: list[str],
+        output_names: list[str],
     ) -> FMU2SimulatorConfig:
         model_description = cls.read_model_description(fmu_config)
         # before extracting, so a rejected FMU leaves no files behind
-        fmu_config.ensure_fmu_is_supported(model_description=model_description, interface_names=interface_names, fmi_major_version=2)
-        fmu_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
+        fmu_config.ensure_fmu_is_supported(
+            model_description=model_description,
+            interface_names=[*input_names, *output_names],
+            fmi_major_version=2,
+        )
+        fmu_config.ensure_interfaces_exist(model_description=model_description, input_names=input_names, output_names=output_names)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]

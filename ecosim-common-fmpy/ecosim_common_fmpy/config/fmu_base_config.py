@@ -21,11 +21,18 @@ class FMUBaseConfig:
             fmu_file=fmu_file,
         )
 
-    def ensure_interfaces_exist(self, model_description: ModelDescription, interface_names: list[str]) -> None:
-        inputs_and_outputs = [variable.name for variable in model_description.modelVariables if variable.causality in ("input", "output")]
-        missing = [name for name in interface_names if name not in inputs_and_outputs]
+    def ensure_interfaces_exist(self, model_description: ModelDescription, input_names: list[str], output_names: list[str]) -> None:
+        fmu_inputs = [variable.name for variable in model_description.modelVariables if variable.causality == "input"]
+        fmu_outputs = [variable.name for variable in model_description.modelVariables if variable.causality == "output"]
+        missing_inputs = [name for name in input_names if name not in fmu_inputs]
+        missing_outputs = [name for name in output_names if name not in fmu_outputs]
+        missing = []
+        if missing_inputs:
+            missing.append(f"no input {', '.join(missing_inputs)}")
+        if missing_outputs:
+            missing.append(f"no output {', '.join(missing_outputs)}")
         if missing:
-            raise ValueError(f"The FMU {self.fmu_file} has no input or output for these interfaces: {', '.join(missing)}")
+            raise ValueError(f"The FMU {self.fmu_file} has {' and '.join(missing)}")
 
     def ensure_fmu_is_supported(self, model_description: ModelDescription, interface_names: list[str], fmi_major_version: int) -> None:
         if model_description.fmiMajorVersion != fmi_major_version:

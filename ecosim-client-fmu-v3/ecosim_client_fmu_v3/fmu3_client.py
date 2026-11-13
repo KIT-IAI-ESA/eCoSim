@@ -31,7 +31,8 @@ class FMU3Client(SimulatorClient):
         simulator_config = FMU3SimulatorConfig.of(
             fmu_config=FMUBaseConfig.of_config_parser(config_parser),
             simulator_name=client_config.simulator_config().simulator_name,
-            interface_names=[interface.name for interface in client_config.interfaces_config().interfaces],
+            input_names=client_config.interfaces_config().input_interface_names(),
+            output_names=client_config.interfaces_config().output_interface_names(),
         )
         return FMU3Client(
             _client_config=client_config,

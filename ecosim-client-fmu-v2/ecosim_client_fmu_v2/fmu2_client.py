@@ -33,7 +33,8 @@ class FMU2Client(SimulatorClient):
         simulator_config = FMU2SimulatorConfig.of(
             simulator_name=client_config.simulator_config().simulator_name,
             fmu_config=fmu_config,
-            interface_names=[interface.name for interface in client_config.interfaces_config().interfaces],
+            input_names=client_config.interfaces_config().input_interface_names(),
+            output_names=client_config.interfaces_config().output_interface_names(),
         )
         return FMU2Client(
             _client_config=client_config,

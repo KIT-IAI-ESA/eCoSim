@@ -17,10 +17,15 @@ def validate_fmu_file_or_error(
     try:
         model_description = read_model_description(file=fmu2_config.fmu_file, validate=True)
         simulator_config = SimulatorConfig.of_config_parser(config)
-        interfaces = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=config.config_file.parent).interfaces
-        interface_names = [interface.name for interface in interfaces]
-        fmu2_config.ensure_fmu_is_supported(model_description=model_description, interface_names=interface_names, fmi_major_version=fmi_major_version)
-        fmu2_config.ensure_interfaces_exist(model_description=model_description, interface_names=interface_names)
+        interface_config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=config.config_file.parent)
+        input_names = interface_config.input_interface_names()
+        output_names = interface_config.output_interface_names()
+        fmu2_config.ensure_fmu_is_supported(
+            model_description=model_description,
+            interface_names=[*input_names, *output_names],
+            fmi_major_version=fmi_major_version,
+        )
+        fmu2_config.ensure_interfaces_exist(model_description=model_description, input_names=input_names, output_names=output_names)
     except Exception as e:
         logger.error("Checking FMU file failed: %s", e)
         raise e

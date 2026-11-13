@@ -23,24 +23,49 @@ def test_retry_reads_a_model_description_that_fails_the_schema(
 
 
 def test_interfaces_that_are_not_real_are_rejected() -> None:
-    interface_names = ["Float64_continuous_input", "Int32_input", "Boolean_output", "String_input", "Enumeration_output"]
+    input_names = ["Float64_continuous_input", "Int32_input", "String_input"]
+    output_names = ["Boolean_output", "Enumeration_output"]
     not_real = "Int32_input (Integer), Boolean_output (Boolean), String_input (String), Enumeration_output (Enumeration)"
 
     with pytest.raises(TypeError, match=re.escape(f"not Real: {not_real}")):
-        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()), interface_names=interface_names)
+        FMU2SimulatorConfig.of(
+            simulator_name="test_simulator",
+            fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()),
+            input_names=input_names,
+            output_names=output_names,
+        )
 
 
 def test_interfaces_that_are_no_input_or_output_of_the_fmu_are_rejected() -> None:
     fmu_file = fmu2_model_path()
-    interface_names = ["Float64_continuous_input", "Float64_continuous_outptu", "Float64_fixed_parameter"]
-    missing = "Float64_continuous_outptu, Float64_fixed_parameter"
+    input_names = ["Float64_continuous_input", "Float64_fixed_parameter"]
+    output_names = ["Float64_continuous_outptu"]
 
-    with pytest.raises(ValueError, match=re.escape(f"{fmu_file} has no input or output for these interfaces: {missing}")):
-        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=FMUBaseConfig(fmu_file=fmu_file), interface_names=interface_names)
+    with pytest.raises(ValueError, match=re.escape(f"{fmu_file} has no input Float64_fixed_parameter and no output Float64_continuous_outptu")):
+        FMU2SimulatorConfig.of(
+            simulator_name="test_simulator",
+            fmu_config=FMUBaseConfig(fmu_file=fmu_file),
+            input_names=input_names,
+            output_names=output_names,
+        )
+
+
+def test_an_fmu_output_listed_as_an_input_is_rejected() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
+
+    with pytest.raises(ValueError, match="has no input Float64_continuous_output"):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["Float64_continuous_output"], output_names=[])
 
 
 def test_an_fmi_3_fmu_is_rejected() -> None:
     fmu_config = FMUBaseConfig(fmu_file=fmu3_model_path())
 
     with pytest.raises(ValueError, match=re.escape("is FMI 3.0, but this client runs FMI 2 FMUs only")):
-        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=["u", "y"])
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["u"], output_names=["y"])
+
+
+def test_an_fmu_input_listed_as_an_output_is_rejected() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
+
+    with pytest.raises(ValueError, match="has no output Float64_continuous_input"):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[], output_names=["Float64_continuous_input"])

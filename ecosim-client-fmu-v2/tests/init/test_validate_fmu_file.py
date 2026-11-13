@@ -86,3 +86,13 @@ def test_validation_fails_for_an_fmu_of_the_other_fmi_version(tmp_path: Path) ->
 
     with pytest.raises(ValueError, match=re.escape("is FMI 2.0, but this client runs FMI 3 FMUs only")):
         validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=3)
+
+
+def test_validation_fails_for_swapped_inputs_and_outputs(tmp_path: Path) -> None:
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+    fmc_file = config_directory / "Feedthrough.fmc"
+    swapped = fmc_file.read_text().replace("Float64_continuous_input", "swap").replace("Float64_continuous_output", "Float64_continuous_input")
+    fmc_file.write_text(swapped.replace("swap", "Float64_continuous_output"))
+
+    with pytest.raises(ValueError, match="has no input Float64_continuous_output and no output Float64_continuous_input"):
+        validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)

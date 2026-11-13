@@ -14,7 +14,7 @@ def _create_client_with_spy(fmu_instance: SpyFMUInstance, is_initialized: bool) 
     fmu_config = FMUBaseConfig(fmu_file=resource_path() / "test_fmus/StateSpace.fmu")
     return FMU3Client(
         _client_config=generate_mocked_client_config(),
-        _simulation_config=FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, interface_names=[]),
+        _simulation_config=FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[], output_names=[]),
         _fmu_instance=fmu_instance,
         _is_initialized=is_initialized,
     )
