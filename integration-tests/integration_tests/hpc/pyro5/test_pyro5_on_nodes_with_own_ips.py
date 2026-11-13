@@ -48,10 +48,8 @@ def test_the_run_fails_when_the_pyro5_client_cannot_reach_its_pyro_object(
     module = Pyro5TestModule.generate_pyro5_module(tmp_path, pyro_port, pyro_host=pyro_host)
     repositories = RepositoriesInMemory.for_communication_protocol(CommunicationProtocol.DASK)
 
-    with exceptions_raised_in_threads() as thread_exceptions:
+    with pytest.raises(RuntimeError, match="Lost client"):
         _run(dask_cluster_on_nodes, module, repositories)
-
-    assert thread_exceptions is not None
 
     assert repositories.measurement_repository(client_id=module.client_id).all() == []
 
