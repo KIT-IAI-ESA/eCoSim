@@ -84,7 +84,8 @@ The documentation is at [mekkyz.github.io/ecosim-os](https://mekkyz.github.io/ec
 
 ## Development
 
-To work on eCoSim itself, start with the project setup.
+Questions, bug reports and pull requests are welcome, see [Contributing](CONTRIBUTING.md). To work on
+eCoSim itself, start with the project setup.
 
 - [Project setup](docs/content/development/project-setup.md)
 - [Architecture](docs/content/development/architecture.md)
@@ -102,6 +103,11 @@ eCoSim is a project of the [Energy System Analysis](https://www.iai.kit.edu/engl
 research group at the [Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
 of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php). See also
 [eASiMOV](https://easimov.cloud.iai.kit.edu) and the [Energy Lab](https://www.elab.kit.edu/english/index.php).
+
+## Citing eCoSim
+
+If you use eCoSim in your work, please cite it. The details are in [CITATION.cff](CITATION.cff), and
+GitHub shows them under "Cite this repository" on the repository page.
 
 ## Licence
 

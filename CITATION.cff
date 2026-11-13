@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use eCoSim in your work, please cite it as below."
+title: eCoSim
+type: software
+abstract: >-
+  eCoSim couples simulation models, such as FMI 2 and FMI 3 FMUs, MATLAB models and Python
+  models, and steps them together, on one machine or on an HPC cluster. The results go into
+  files or a PostgreSQL database.
+authors:
+  - given-names: Hüseyin K.
+    family-names: Çakmak
+    affiliation: "Institute for Automation and Applied Informatics, Karlsruhe Institute of Technology, Karlsruhe, Germany"
+    email: hueseyin.cakmak@kit.edu
+  - given-names: Alexander
+    family-names: Kocher
+    affiliation: "Institute for Automation and Applied Informatics, Karlsruhe Institute of Technology, Karlsruhe, Germany"
+    email: alexander.kocher@kit.edu
+  - given-names: Maurice
+    family-names: Müller
+    affiliation: "Bit Raven, Remchingen, Germany"
+    email: maurice.mueller@bitraven.de
+  - given-names: Mostafa
+    family-names: Mekky
+    affiliation: "Institute for Automation and Applied Informatics, Karlsruhe Institute of Technology, Karlsruhe, Germany"
+  - given-names: Glen
+    family-names: Hunter
+    affiliation: "Scientific Computing Center, Karlsruhe Institute of Technology, Karlsruhe, Germany"
+    email: glen.hunter@kit.edu
+license: Apache-2.0
+repository-code: "https://github.com/mekkyz/ecosim-os"
+url: "https://mekkyz.github.io/ecosim-os/"
+version: 0.14.0
+keywords:
+  - co-simulation
+  - FMI
+  - energy systems
+  - HPC

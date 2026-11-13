@@ -44,3 +44,11 @@ environment of every package with its development tools and installs the pre-com
 together. The examples use it.
 
 To work on eCoSim itself, see [Project setup](../development/project-setup.md).
+
+## Network
+
+The server and the clients talk without a login and without encryption, so anyone who can reach the
+server port can join a run. By default the server only listens on `localhost`. When you set another
+host, run eCoSim only in a network you trust, for example inside a cluster job or behind a firewall.
+The [security policy](https://github.com/mekkyz/ecosim-os/blob/main/SECURITY.md) says how to report
+a security problem.
