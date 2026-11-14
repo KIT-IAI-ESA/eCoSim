@@ -51,7 +51,8 @@ docker compose up --abort-on-container-exit
 ```
 
 The run takes a few seconds. It is finished when the server prints `SERVER MEASUREMENT` and every
-container has exited with code 0.
+container has exited with code 0. The last block, `SIMULATION FINISHED`, says how many steps ran and
+where the results are.
 
 ### Check the results
 

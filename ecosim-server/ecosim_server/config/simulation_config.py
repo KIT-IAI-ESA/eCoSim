@@ -15,6 +15,8 @@ from ecosim_common.communication.data.server_interface_settings import (
     ServerInterfaceSettings,
 )
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
+from ecosim_common.tech.datetime.readable_duration import readable_duration
+from ecosim_common.tech.datetime.readable_period import readable_period
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.config.client_id import ClientID
@@ -168,12 +170,15 @@ class SimulationConfig:
         GlobalLogger.print_values(
             header="SIMULATION CONFIG",
             value_pairs={
-                "Step size (in ms)": self.step_size_in_ms,
-                "Steps": self.steps,
-                "Simulated start time": self.start_date,
+                "Step size": f"{self.step_size_in_ms} ms ({readable_duration(self.step_size_in_ms / 1000)})",
+                "Steps": f"{self.steps:,}",
+                "Simulated period": self.simulated_period_text(completed_steps=self.steps),
                 "Expected clients": [client.client_id for client in self.clients],
             },
         )
+
+    def simulated_period_text(self, completed_steps: int) -> str:
+        return readable_period(start=self.start_date, end=self.date_time_for_step(step=completed_steps - 1))
 
     def client_ids(self) -> Tuple[ClientID, ...]:
         return tuple([client.client_id for client in self.clients])

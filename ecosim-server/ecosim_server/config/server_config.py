@@ -64,12 +64,8 @@ class ServerConfig:
             header="SERVER CONFIG",
             value_pairs={
                 "Server address": f"{self.server.host}:{self.server.port}",
-                "Image renderer socket": f"{f'{self.server.host}:{self.server.image_renderer_port}' if self.server.image_renderer_port else 'N/A'}",
-                "Image renderer interval": f"{self.server.image_renderer_interval if self.server.image_renderer_interval else 'N/A'}",
-                "Database server": f"{self.database.host}:{self.database.port} ({self.database.type.value})",
-                "Database name": self.database.name,
-                "Database schema": self.database.schema,
-                "Database directory": self.database.directory,
+                **self.server.image_renderer_start_up_values(),
+                **self.database.start_up_values(),
             },
         )
 
@@ -112,8 +108,8 @@ class MainConfig:
         # This method is mainly responsible for getting a meaningful info log if the port is overridden
         if config.contains("server", "port") and config_override.server_port is not None:
             config_port = config.get_int("server", "port")
-            ServerConfig.logger.info(
-                "Port was passed as an CLI argument. The port in the config file (%s) is therefor overridden with %s",
+            ServerConfig.logger.debug(
+                "Port was passed as an CLI argument. The port in the config file (%s) is therefore overridden with %s",
                 config_port,
                 config_override.server_port,
             )
@@ -131,6 +127,14 @@ class MainConfig:
             ip=self.host,
             port=self.port,
         )
+
+    def image_renderer_start_up_values(self) -> dict[str, str]:
+        if self.image_renderer_port is None and self.image_renderer_interval is None:
+            return {}
+        return {
+            "Image renderer socket": f"{self.host}:{self.image_renderer_port}" if self.image_renderer_port is not None else "not set",
+            "Image renderer interval": f"{self.image_renderer_interval}" if self.image_renderer_interval is not None else "not set",
+        }
 
 
 @dataclass(frozen=True)
@@ -189,3 +193,17 @@ class DatabaseConfig:
             database=database,
             query={"sslmode": "require" if self.ssl else "disable"},
         )
+
+    def start_up_values(self) -> dict[str, str]:
+        if self.type == DatabaseType.FILE:
+            return {"Results directory": f"{self.directory.absolute()}"}
+        return {"Database server": self.server_location(), "Database name": self.name, "Database schema": self.schema}
+
+    def results_location(self) -> str:
+        if self.type == DatabaseType.FILE:
+            return f"files in {self.directory.absolute()}"
+        return f"PostgreSQL database {self.name} on {self.server_location()}, schema {self.schema}"
+
+    def server_location(self) -> str:
+        # without a server name, PostgreSQL connects to the server of this computer
+        return f"{self.host}:{self.port}" if self.host else f"port {self.port} of this computer"

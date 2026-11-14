@@ -53,15 +53,23 @@ client for `.m` files.
 6. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
-The job script passes `--debug`, so the SLURM file `slurm-<job id>.out` gets every message of every step.
-`grep -v ' - DEBUG - ' slurm-<job id>.out` shows the file without the debug messages, as a run without
-`--debug` would write it.
-
 The first run creates the PostgreSQL data directory `test` next to the scripts. Other users on the same
 node can reach this PostgreSQL server, so it only lets in logins with a password. The script creates a
 random password, keeps it in `test.pgpass`, a file only you can read, and points `PGPASSFILE` at it, so
 `psql`, `createdb` and the server find it. A `test` directory from an older version of the scripts lets
 everyone in without a password, so the job stops with a message: delete or rename `test` and submit again.
+
+## What the job prints
+
+The job writes its output into the SLURM file `slurm-<job id>.out` next to the scripts. The server
+prints its settings, a progress line every 10 seconds in the first minute, then every minute and after an
+hour every 10 minutes, and at the end SIMULATION FINISHED or SIMULATION FAILED with the steps, the
+simulated period and where the results are. `clusterRun.sh` writes what each client prints into
+`log_client1` to `log_client3` instead.
+
+The job scripts pass `--debug`, so the output also has every message of every step. For 100 steps the
+SLURM file of `clusterRunHPC.sh` has about 10,000 lines. `grep -v ' - DEBUG - ' slurm-<job id>.out` shows
+the file without the debug messages, as a run without `--debug` would write it.
 
 ## Choose the network and the threads
 

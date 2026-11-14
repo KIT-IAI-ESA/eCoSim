@@ -43,6 +43,7 @@ def main(passed_arguments: Sequence[str] | None = None) -> None:
         server.print_measurement_statistics()
         repositories.server_time_measurement_repository.put(server.server_measurements)
     finally:
+        server.print_run_summary()
         ShutdownManager().set_shutdown_at_application_end()
 
 

@@ -17,6 +17,7 @@ class StepProgress:
     first_step: int = field(init=False, default=0)
     _started_at: float = field(init=False, default=0.0)
     _last_line_at: float = field(init=False, default=0.0)
+    _last_step_at: float | None = field(init=False, default=None)
 
     def start(self, first_step: int) -> None:
         self.first_step = first_step
@@ -24,12 +25,18 @@ class StepProgress:
 
     def step_completed(self, completed_steps: int) -> str | None:
         """The progress line, if one is due."""
-        now = self._clock()
-        # the end of the run follows the last step right away
+        self._last_step_at = now = self._clock()
+        # the summary follows the last step right away
         if completed_steps >= self._simulation_config.steps or now - self._last_line_at < self._interval_in_seconds():
             return None
         self._last_line_at = now
         return self._line(completed_steps=completed_steps, elapsed_in_seconds=now - self._started_at)
+
+    def step_time_in_seconds(self) -> float | None:
+        """Ends with the last completed step, so a wait for a lost client does not count."""
+        if self._last_step_at is None:
+            return None
+        return self._last_step_at - self._started_at
 
     def _interval_in_seconds(self) -> float:
         elapsed_at_last_line = self._last_line_at - self._started_at

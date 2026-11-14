@@ -19,6 +19,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.progress_logger import progress_logger
+from ecosim_server.run_summary import RunSummary
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory, RestoreData
@@ -105,7 +106,7 @@ class SimulationExecutor:
 
     def _stop_simulation(self) -> None:
         self._server_measurement.set_start(ServerTimeMeasurementType.SIMULATION_STOP)
-        SimulationExecutor.logger.info("Sending 'stop simulation' signal to all clients")
+        SimulationExecutor.logger.info("All steps done, stopping the clients")
         self._server_state.set_is_finished(True)
         self._handle_image_renderer(wait_for_finish_timeout=9)
         self._server_measurement.set_end(ServerTimeMeasurementType.SIMULATION_STOP)
@@ -113,7 +114,7 @@ class SimulationExecutor:
         with self._subscribe_to(MessageType.SIMULATION_STOP) as subscription:
             self._client_communication.broadcast(ESPChannelMessageJson.empty(type=MessageType.SIMULATION_STOP))
             self._wait_for_all_clients_stopped(subscription)
-        SimulationExecutor.logger.info("All clients stopped (or are not connected anymore)")
+        SimulationExecutor.logger.debug("All clients stopped (or are not connected anymore)")
 
     def _wait_for_all_clients_stopped(
         self,
@@ -314,6 +315,16 @@ class SimulationExecutor:
         line = self._step_progress.step_completed(completed_steps=self._current_step)
         if line is not None:
             progress_logger.info("%s", line)
+
+    def run_summary(self, failure_reason: str | None) -> RunSummary:
+        return RunSummary(
+            failure_reason=failure_reason,
+            completed_steps=self._current_step,
+            restored_steps=self._step_progress.first_step,
+            step_time_in_seconds=self._step_progress.step_time_in_seconds(),
+            simulation_config=self.simulation_config,
+            database=self._server_config.database,
+        )
 
     def _execute_step(
         self,
