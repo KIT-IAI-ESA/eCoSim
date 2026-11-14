@@ -6,6 +6,7 @@ from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_client_pyro5.pyro_client import PyroClient
 from ecosim_common.client.client import Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
+from ecosim_common.client.config.simulator_directory import SimulatorDirectory
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.config_parser import ConfigParser
@@ -17,7 +18,6 @@ from ecosim_server.config.simulation_config import SimulationConfig
 
 from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_hpc.hpc_client_state import HPCClientState
-from ecosim_hpc.simulator_directory import SimulatorDirectory
 
 
 class ClientManager(ShutdownListener):
