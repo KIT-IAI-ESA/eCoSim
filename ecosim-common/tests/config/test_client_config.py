@@ -7,7 +7,6 @@ from ecosim_common.client.config.client_type import ClientType
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
-from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
@@ -129,54 +128,6 @@ def test_an_fmc_file_that_is_not_json_shows_the_file(tmp_path: Path) -> None:
         ClientInterfaceConfig.of_simulator_config(simulator_config=_simulator_config_with_fmc_file(fmc_file="house.fmc"), config_path=tmp_path)
 
     assert str(error_info.value).startswith(f"{fmc_file} is not valid JSON")
-
-
-# #SPEC
-def test_validate_interface_config_with_actual() -> None:
-    simulator_config = Mock(spec=ClientInterfaceConfig)
-    simulator_config.fmc_file = "fmc_interface_test.fmc"
-    simulator_config.ensemble = "Test_Ensemble"
-    simulator_config.model_name = "Model_Name"
-    config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=fmc_path())
-    actual_input_only_required = ["input_2"]
-    actual_input_missing_required = ["input_1", "input_3"]
-    actual_input_all = ["input_1", "input_2", "input_3"]
-    actual_input_all_plus_non_matching = ["input_1", "input_2", "input_3", "non_matching"]
-    actual_output_all = ["output_1", "output_2"]
-    actual_output_all_plus_non_matching = ["output_1", "output_2", "non_matching"]
-    assert (
-        config.validate_config_with_server(
-            ServerInterfaceSettings(
-                inputs=actual_input_only_required,
-                outputs=actual_output_all,
-            ),
-        )
-        is True
-    )
-    assert (
-        config.validate_config_with_server(
-            ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all),
-        )
-        is True
-    )
-    assert (
-        config.validate_config_with_server(
-            ServerInterfaceSettings(inputs=actual_input_missing_required, outputs=actual_output_all),
-        )
-        is False
-    )
-    assert (
-        config.validate_config_with_server(
-            ServerInterfaceSettings(inputs=actual_input_all_plus_non_matching, outputs=actual_output_all),
-        )
-        is False
-    )
-    assert (
-        config.validate_config_with_server(
-            ServerInterfaceSettings(inputs=actual_input_all, outputs=actual_output_all_plus_non_matching),
-        )
-        is False
-    )
 
 
 def test_as_config_file_content() -> None:
