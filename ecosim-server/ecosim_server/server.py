@@ -14,6 +14,7 @@ from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
+from ecosim_common.tech.readable_count import readable_count
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_connection import ClientConnection
@@ -21,6 +22,7 @@ from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
+from ecosim_server.run_summary import RunSummary
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
@@ -44,6 +46,10 @@ class Server(ShutdownListener):
     _simulation_executor: SimulationExecutor = field(init=False)
     _channel: ESPChannel = field(init=False)
     _rendering_socket: RenderingSocket | None = field(init=False)
+    # replaced when the run ends, so it stays only if a signal stopped the run
+    _failure_reason: str | None = field(init=False, default="stopped by Ctrl-C or a kill signal")
+    # the caller of force_stop reports why the run ends
+    _force_stopped: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
         self.server_measurements = ServerTimeMeasurement(protocol=self._server_config.server.communication_protocol)
@@ -74,8 +80,14 @@ class Server(ShutdownListener):
     def start(self) -> None:
         try:
             self._run()
+            self._failure_reason = None
         except Exception as error:
-            self._logger.error("The run failed: %s -> closing the client connections and the server", error)
+            # a signal reaches only the main thread, so the server thread of ecosim-hpc fails on what the shutdown closed
+            stopped_by_a_signal = self._client_communication.is_shutdown_triggered() and not self._force_stopped
+            if not stopped_by_a_signal:
+                self._failure_reason = str(error) or type(error).__name__
+            log_the_failure = self._logger.debug if self._force_stopped or stopped_by_a_signal else self._logger.error
+            log_the_failure("The run failed: %s -> closing the client connections and the server", error)
             # a connection that ends before SIMULATION_STOP makes the client exit as failed
             for client_id in self._client_communication.all_client_ids():
                 self._client_communication.reset_state(client_id)
@@ -107,14 +119,22 @@ class Server(ShutdownListener):
         )
 
     def _wait_for_all_clients_connected_and_ready(self) -> None:
-        self._logger.info("Waiting for %s to connect", Server._clients_text(count=len(self._simulation_config.clients)))
+        self._logger.info("Waiting for %s to connect", readable_count(count=len(self._simulation_config.clients), noun="client"))
         self._client_communication.wait_for_all_clients_connected_and_ready()
 
     def print_measurement_statistics(self) -> None:
         self.server_measurements.print_statistics()
 
+    def print_run_summary(self) -> None:
+        self.run_summary().print_to_info()
+
+    def run_summary(self) -> RunSummary:
+        return self._simulation_executor.run_summary(failure_reason=self._failure_reason)
+
     def force_stop(self) -> None:
+        self._force_stopped = True
         self.on_app_shutdown()
+        self._client_communication.stop_waiting_for_clients()
         self._simulation_executor.force_stop()
 
     @override
@@ -195,7 +215,7 @@ class Server(ShutdownListener):
         rendering_interval = self._server_config.server.image_renderer_interval
         socket_port = self._server_config.server.image_renderer_port
         if rendering_interval is None and socket_port is None:
-            SimulationExecutor.logger.info(
+            SimulationExecutor.logger.debug(
                 "No image renderer config is set - so no rendering socket will be opened.",
             )
             return
@@ -288,10 +308,6 @@ class Server(ShutdownListener):
             Server._logger.warning("Client %s closed the connection", client_id)
             return
         Server._logger.debug("Client %s closed the connection", client_id)
-
-    @staticmethod
-    def _clients_text(count: int) -> str:
-        return "1 client" if count == 1 else f"{count} clients"
 
     @staticmethod
     def _on_new_channel(

@@ -38,7 +38,8 @@ class SimulatorClient(Client, ABC):
         if self._is_initialized:
             self.logger.warning("Already initialized, skipping initialization.")
             return
-        self.logger.info("Initializing with start_time %s", start_time)
+        self.logger.info("Initializing the model of %s", self.client_id)
+        self.logger.debug("Initializing with start_time %s", start_time)
         self._current_simulation_time = start_time
         self._on_initialize_model(start_time)
         self._is_initialized = True
@@ -163,7 +164,7 @@ class SimulatorClient(Client, ABC):
             if self._is_cleared:
                 self.logger.warning("Simulator already cleared, skipping clearing.")
                 return
-            self.logger.info("Clearing simulator...")
+            self.logger.debug("Clearing simulator...")
             self._is_cleared = True
             self._on_clear_simulator()
             self.logger.debug("Clearing simulator...done.")

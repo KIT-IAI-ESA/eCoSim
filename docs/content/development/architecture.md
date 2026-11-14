@@ -73,6 +73,7 @@ The Python modules are internal and can change: the supported way to use eCoSim 
 | Module | Contains |
 | --- | --- |
 | `main.py`, `server.py`, `server_state.py` | Entry point and the server lifecycle |
+| `run_summary.py`, `progress_logger.py` | The summary at the end of a run, and the logger of the progress lines |
 | `client/` | One `ClientConnection` per client, message buffer and subscriptions |
 | `simulation/` | `SimulationExecutor`, the step loop and its progress line, value history, restore |
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |

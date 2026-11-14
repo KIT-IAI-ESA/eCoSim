@@ -89,3 +89,14 @@ def test_a_step_size_below_a_minute_shows_the_seconds_of_the_simulated_time() ->
 
     assert line is not None
     assert "simulated 2024-01-01 00:00:04" in line
+
+
+def test_the_step_time_ends_with_the_last_completed_step() -> None:
+    clock = ManualClock()
+    step_progress = _started_progress(clock=clock)
+
+    clock.advance(seconds=5)
+    step_progress.step_completed(completed_steps=1)
+    clock.advance(seconds=30)
+
+    assert step_progress.step_time_in_seconds() == 5

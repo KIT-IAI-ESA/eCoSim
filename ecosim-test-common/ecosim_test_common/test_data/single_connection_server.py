@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
+from ecosim_common.communication.channel.message_data import MessageData
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.communication.socket.tcp_socket import TCPSocket
 from ecosim_test_common.bounded_listen import listen_blocking_bounded
@@ -26,14 +27,22 @@ class SingleConnectionServer:
     def address(self) -> ConnectionAddress:
         return ConnectionAddress.of_raw_socket_address(self._listening_socket.getsockname())
 
-    def serve_and_close(self, message_types: list[MessageType]) -> None:
+    def serve_and_close(self, message_types: list[MessageType], payloads: dict[MessageType, MessageData] | None = None) -> None:
+        """Sends a message of each type with its payload from 'payloads', the others empty."""
+        payloads = payloads or {}
         channel = self._accept()
         for message_type in message_types:
-            channel.send(ESPChannelMessageJson.empty(type=message_type))
+            channel.send(SingleConnectionServer._message(message_type=message_type, payload=payloads.get(message_type)))
             # no answer: the client closed the connection
             if listen_blocking_bounded(channel=channel) is None:
                 break
         channel.close()
+
+    @staticmethod
+    def _message(message_type: MessageType, payload: MessageData | None) -> ESPChannelMessageJson:
+        if payload is None:
+            return ESPChannelMessageJson.empty(type=message_type)
+        return ESPChannelMessageJson.create(type=message_type, payload=payload)
 
     def _accept(self) -> TCPSocket:
         with self._listening_socket:

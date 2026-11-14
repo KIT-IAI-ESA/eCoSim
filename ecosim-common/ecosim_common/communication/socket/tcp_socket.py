@@ -239,7 +239,7 @@ class TCPSocket(ESPChannel, ShutdownListener):
         finally:
             self._internal_socket.settimeout(timeout_buffer)
         if not message:
-            TCPSocket._logger.info("Received empty message -> closing connection")
+            TCPSocket._logger.debug("Received empty message -> closing connection")
             self.close()
             return None
         return message.to_esp_channel_message()

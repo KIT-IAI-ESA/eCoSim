@@ -1,4 +1,6 @@
+import io
 import logging
+import sys
 import traceback
 
 default_log_format = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
@@ -6,6 +8,9 @@ default_handlers = [logging.StreamHandler()]
 
 
 def init_logger(log_level: int = logging.INFO) -> None:
+    # what a model prints lands in a log file where it happens, not at the end
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(line_buffering=True)
     # Reset any existing logging configuration - this was implemented due to no logging in unittests
     # logging.root.handlers.clear()
 
