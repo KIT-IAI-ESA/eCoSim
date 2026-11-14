@@ -1,4 +1,5 @@
 import configparser
+import errno
 import math
 import os.path
 import re
@@ -7,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import List
 
+from ecosim_common.tech.close_name import did_you_mean
 from ecosim_common.tech.logger.logger import ESPLogger
 
 
@@ -20,7 +22,27 @@ class ConfigParser:
         ConfigParser.ensure_file_exists(path)
         self.config_file: Path = path
         self._config: configparser.ConfigParser = configparser.ConfigParser(interpolation=None)
-        self._config.read(path)
+        try:
+            self._config.read(path)
+        except configparser.Error as error:
+            raise ConfigParserException(self._unreadable_file_message(error=error)) from error
+
+    def _unreadable_file_message(self, error: configparser.Error) -> str:
+        # configparser names the file by its repr, like PosixPath('...')
+        if isinstance(error, configparser.DuplicateSectionError):
+            return f"{self.config_file} has the section [{error.section}] twice, the second time in line {error.lineno}"
+        if isinstance(error, configparser.MissingSectionHeaderError):
+            return f"{self.config_file} has to start with a section like [server], not '{error.line.strip()}' in line {error.lineno}"
+        if isinstance(error, configparser.ParsingError):
+            # the first bad line only, as a JSON error names only the first mistake
+            first_line_number, _ = error.errors[0]
+            return self._parsing_error_line(line_number=first_line_number)
+        return f"{self.config_file} cannot be read: {error.message}"
+
+    def _parsing_error_line(self, line_number: int) -> str:
+        # read again, since Python 3.12 keeps only the repr of each line
+        line = self.config_file.read_text(encoding="locale").splitlines()[line_number - 1]
+        return f"{self.config_file}: line {line_number} has to be a section like [server] or a key = value, not '{line.strip()}'"
 
     def get_bool(
         self,
@@ -29,19 +51,30 @@ class ConfigParser:
         default: bool | None = None,
     ) -> bool:
         try:
-            return self.config_string_to_bool(self._get(section, option))
+            value = self._get(section, option)
         except ConfigParserException as e:
             if default is not None:
                 ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
+        # the default is only for a missing key, a value that is no boolean is a mistake
+        try:
+            return self.config_string_to_bool(value)
+        except ConfigParserException as error:
+            raise ConfigParserException(f"{self.config_file}: {option} in [{section}] has to be true or false, not '{value}'") from error
 
     def get_string_array(
         self,
         section: str,
         option: str,
     ) -> List[str]:
-        return self.config_string_to_string_array(self._get(section, option))
+        value = self._get(section, option)
+        try:
+            return self.config_string_to_string_array(value)
+        except ConfigParserException as error:
+            raise ConfigParserException(
+                f"{self.config_file}: {option} in [{section}] has to be a list in brackets, like {option} = [{value}]",
+            ) from error
 
     def get_string(
         self,
@@ -66,24 +99,27 @@ class ConfigParser:
     ) -> T:
         try:
             value = self.get_string(section, option)
-            return enum_class[value]
         except ConfigParserException as e:
             if default is not None:
                 ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
+        if value not in enum_class.__members__:
+            message = f"{self.config_file}: {option} in [{section}] has to be one of {', '.join(enum_class.__members__)}, not '{value}'"
+            hint = did_you_mean(name=value, known_names=enum_class.__members__)
+            raise ConfigParserException(f"{message}.{hint}" if hint else message)
+        return enum_class[value]
 
     def get_int(
         self,
         section: str,
         option: str,
     ) -> int:
+        value = self._get(section, option)
         try:
-            return int(self._get(section, option))
+            return int(value)
         except ValueError as e:
-            raise ConfigParserException(
-                f"Cannot parse value as int ({section}#{option})",
-            ) from e
+            raise ConfigParserException(f"{self.config_file}: {option} in [{section}] has to be a whole number, not '{value}'") from e
 
     def contains(
         self,
@@ -100,11 +136,9 @@ class ConfigParser:
         try:
             return self._config.get(section, option)
         except configparser.NoSectionError as e:
-            raise ConfigParserException(f"The section {section} does not exist") from e
+            raise ConfigParserException(f"{self.config_file} has no section [{section}]") from e
         except configparser.NoOptionError as e:
-            raise ConfigParserException(
-                f"In section {section} the key {option} does not exist",
-            ) from e
+            raise ConfigParserException(f"{self.config_file} has no key {option} in [{section}]") from e
 
     def extract_extra_sections(self) -> List[str]:
         return ConfigParser.extract_extra_sections_from_config_file(self.config_file)
@@ -206,9 +240,7 @@ class ConfigParser:
     @staticmethod
     def ensure_file_exists(path: str | Path) -> None:
         if not os.path.exists(path):
-            raise Exception(
-                f"Cannot open path: {path}. Current working directory: {os.getcwd()}",
-            )
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), str(path))
 
 
 class ConfigParserException(Exception):

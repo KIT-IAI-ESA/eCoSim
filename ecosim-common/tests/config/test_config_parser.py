@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 import ecosim_common.config.config_parser as config_parser
+from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_test_common.resources.resource_utils import config_parser_for_resource
 
@@ -41,16 +44,18 @@ def test_empty_bool() -> None:
         config.get_bool("Section1", "bool_empty")
 
 
-def test_invalid_bool() -> None:
+def test_a_value_that_is_no_boolean_names_the_key_and_the_value_also_with_a_default() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
-    with pytest.raises(config_parser.ConfigParserException):
-        config.get_bool("Section1", "bool_invalid")
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        config.get_bool(section="Section1", option="bool_invalid", default=False)
+    assert str(error_info.value) == f"{config.config_file}: bool_invalid in [Section1] has to be true or false, not 'not parsable as bool'"
 
 
-def test_non_existing_string() -> None:
+def test_a_missing_key_names_the_file_the_section_and_the_key() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
-    with pytest.raises(config_parser.ConfigParserException):
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_string("Section1", "non_existing")
+    assert str(error_info.value) == f"{config.config_file} has no key non_existing in [Section1]"
 
 
 def test_non_existing_bool() -> None:
@@ -65,10 +70,11 @@ def test_non_existing_int() -> None:
         config.get_int("Section1", "non_existing")
 
 
-def test_invalid_int() -> None:
+def test_a_value_that_is_no_whole_number_names_the_key_and_the_value() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
-    with pytest.raises(config_parser.ConfigParserException):
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_int("Section1", "int_invalid")
+    assert str(error_info.value) == f"{config.config_file}: int_invalid in [Section1] has to be a whole number, not 'asdfsad'"
 
 
 def test_non_existing_string_array() -> None:
@@ -77,16 +83,80 @@ def test_non_existing_string_array() -> None:
         config.get_string_array("Section1", "non_existing")
 
 
-def test_invalid_string_array() -> None:
+def test_a_list_without_brackets_shows_how_to_write_it() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
-    with pytest.raises(config_parser.ConfigParserException):
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_string_array("Section1", "string_array_invalid")
+    expected = f"{config.config_file}: string_array_invalid in [Section1] has to be a list in brackets, like string_array_invalid = [klasjdf]"
+    assert str(error_info.value) == expected
 
 
-def test_non_existing_section() -> None:
+def test_a_missing_section_names_the_file_and_the_section() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
-    with pytest.raises(config_parser.ConfigParserException):
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_string_array("NON_EXISTING", "string_empty")
+    assert str(error_info.value) == f"{config.config_file} has no section [NON_EXISTING]"
+
+
+def test_an_unknown_enum_value_lists_the_known_values_and_the_close_one(tmp_path: Path) -> None:
+    file = tmp_path / "preferences.ini"
+    file.write_text("[server]\ncommunication_protocol = tcp_socket\n", encoding="utf-8")
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        ConfigParser(file).get_enum(
+            enum_class=CommunicationProtocol,
+            section="server",
+            option="communication_protocol",
+            default=CommunicationProtocol.TCP_SOCKET,
+        )
+    expected = f"{file}: communication_protocol in [server] has to be one of DASK, TCP_SOCKET, not 'tcp_socket'. Did you mean TCP_SOCKET?"
+    assert str(error_info.value) == expected
+
+
+def test_a_missing_file_names_its_path(tmp_path: Path) -> None:
+    file = tmp_path / "preferencs.ini"
+    with pytest.raises(FileNotFoundError) as error_info:
+        ConfigParser(file)
+    assert error_info.value.filename == str(file)
+
+
+def test_a_line_that_is_no_key_and_no_section_names_the_file_and_the_line(tmp_path: Path) -> None:
+    file = tmp_path / "preferences.ini"
+    file.write_text("[server]\nport 1234\nhost = localhost\n", encoding="utf-8")
+
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        ConfigParser(file)
+
+    assert str(error_info.value) == f"{file}: line 2 has to be a section like [server] or a key = value, not 'port 1234'"
+
+
+def test_a_file_with_several_bad_lines_names_the_first_one_in_one_line(tmp_path: Path) -> None:
+    file = tmp_path / "preferences.ini"
+    file.write_text("[server]\nport 1234\nhost localhost\n", encoding="utf-8")
+
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        ConfigParser(file)
+
+    assert str(error_info.value) == f"{file}: line 2 has to be a section like [server] or a key = value, not 'port 1234'"
+
+
+def test_a_key_before_the_first_section_names_the_file_and_the_line(tmp_path: Path) -> None:
+    file = tmp_path / "preferences.ini"
+    file.write_text("# the server\nport = 1234\n[server]\n", encoding="utf-8")
+
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        ConfigParser(file)
+
+    assert str(error_info.value) == f"{file} has to start with a section like [server], not 'port = 1234' in line 2"
+
+
+def test_a_section_written_twice_names_the_file_and_the_second_line(tmp_path: Path) -> None:
+    file = tmp_path / "preferences.ini"
+    file.write_text("[server]\nport = 1234\n[server]\nhost = localhost\n", encoding="utf-8")
+
+    with pytest.raises(config_parser.ConfigParserException) as error_info:
+        ConfigParser(file)
+
+    assert str(error_info.value) == f"{file} has the section [server] twice, the second time in line 3"
 
 
 def test_string_to_bool() -> None:

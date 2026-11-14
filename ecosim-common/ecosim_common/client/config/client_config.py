@@ -19,8 +19,10 @@ from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
+from ecosim_common.tech.json.read_json_file import read_json_file
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.optional_access import if_exists
 from ecosim_common.tech.readable_count import readable_count
 
@@ -249,53 +251,41 @@ class ClientInterfaceConfig:
             raise FileNotFoundError("No FMC file detected in config.")
         fmc_file_absolute = config_path / simulator_config.fmc_file
         try:
-            with open(
-                fmc_file_absolute,
-                "r",
-            ) as fmc_file:
-                fmc_json = json.load(fmc_file)
-                input_interfaces = fmc_json.get("inputs", [])
-                output_interfaces = fmc_json.get("outputs", [])
-                for input_interface in input_interfaces:
-                    if not input_interface["name"]:
-                        ClientConfig.logger.warning("There is an input interface without a name in file %s: %s", fmc_file_absolute, input_interface)
-                        continue
-                    interfaces.append(
-                        ModelInterfaceClient.of_json_client_config(
-                            model_interface_id=ModelInterfaceId(
-                                model_name=simulator_config.model_name,
-                                interface=input_interface["name"],
-                            ),
-                            interface=input_interface,
-                            interface_type=InterfaceType.INPUT,
-                        ),
-                    )
-                for output_interface in output_interfaces:
-                    interfaces.append(
-                        ModelInterfaceClient.of_json_client_config(
-                            model_interface_id=ModelInterfaceId(
-                                model_name=simulator_config.model_name,
-                                interface=output_interface["name"],
-                            ),
-                            interface=output_interface,
-                            interface_type=InterfaceType.OUTPUT,
-                        ),
-                    )
-                    if not output_interface["name"]:
-                        ClientConfig.logger.warning("There is an output interface without a name in file %s: %s", fmc_file_absolute, output_interface)
-                        continue
-        except FileNotFoundError:
-            error_message = f"Can not load fmc file {simulator_config.fmc_file}"
-            ClientConfig.logger.error(error_message)
-            raise FileNotFoundError(error_message)
-        except json.JSONDecodeError as e:
-            error_message = f"Can not parse fmc file {fmc_file_absolute} - invalid json"
-            ClientConfig.logger.error(error_message)
-            raise json.JSONDecodeError(
-                error_message,
-                e.doc,
-                e.pos,
+            fmc_json = read_json_file(file=fmc_file_absolute)
+        except (FileNotFoundError, ValueError) as error:
+            # on HPC no main prints the error of a client, so the log is the only place that shows it
+            ClientConfig.logger.error("%s", one_line_message(error=error))
+            raise
+        input_interfaces = fmc_json.get("inputs", [])
+        output_interfaces = fmc_json.get("outputs", [])
+        for input_interface in input_interfaces:
+            if not input_interface["name"]:
+                ClientConfig.logger.warning("There is an input interface without a name in file %s: %s", fmc_file_absolute, input_interface)
+                continue
+            interfaces.append(
+                ModelInterfaceClient.of_json_client_config(
+                    model_interface_id=ModelInterfaceId(
+                        model_name=simulator_config.model_name,
+                        interface=input_interface["name"],
+                    ),
+                    interface=input_interface,
+                    interface_type=InterfaceType.INPUT,
+                ),
             )
+        for output_interface in output_interfaces:
+            interfaces.append(
+                ModelInterfaceClient.of_json_client_config(
+                    model_interface_id=ModelInterfaceId(
+                        model_name=simulator_config.model_name,
+                        interface=output_interface["name"],
+                    ),
+                    interface=output_interface,
+                    interface_type=InterfaceType.OUTPUT,
+                ),
+            )
+            if not output_interface["name"]:
+                ClientConfig.logger.warning("There is an output interface without a name in file %s: %s", fmc_file_absolute, output_interface)
+                continue
         return ClientInterfaceConfig(interfaces=interfaces)
 
     def all_interfaces_to_protocol_json_string(self) -> str:
