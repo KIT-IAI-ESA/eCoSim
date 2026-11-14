@@ -16,6 +16,7 @@ class ClientKind(Enum):
     FMU3 = "fmu3"
     PYRO5 = "pyro5"
     MATLAB = "matlab"
+    PYTHON = "python"
 
 
 def _fmu_module(directory: Path, client_type: str, fmu_file: Path, fmc_file: Path) -> None:
@@ -45,6 +46,14 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
                 client_type="pyro5",
                 scripts=["model.py"],
                 extra_sections={"pyro": {"pyro_host": "localhost", "pyro_port": "9091", "pyro_object_name": "model"}},
+            )
+        case ClientKind.PYTHON:
+            # an installed module, so the directory has no .py file and only the ini names the model
+            _script_module(
+                directory=directory,
+                client_type="python",
+                scripts=[],
+                extra_sections={"python": {"model": "ecosim_test_common.test_data.python_models:DoublingModel"}},
             )
         case ClientKind.MATLAB:
             # the Matlab engine starts with the simulation, starting the client needs no Matlab installation
