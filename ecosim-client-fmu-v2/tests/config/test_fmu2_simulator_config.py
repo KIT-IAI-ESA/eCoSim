@@ -1,11 +1,27 @@
 import re
+import shutil
 from pathlib import Path
+from typing import Iterator
 
 import pytest
 from ecosim_client_fmu_v2.fmu2_simulator_config import FMU2SimulatorConfig
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
-from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path, resource_path_file
 from ecosim_test_common.test_data.generate_broken_fmu import generate_broken_fmu
+
+
+@pytest.fixture
+def feedthrough_config() -> Iterator[FMU2SimulatorConfig]:
+    """The FMI 2 Feedthrough FMU with a .fmc file that lists none of its interfaces, extracted only for the test."""
+    simulator_config = FMU2SimulatorConfig.of(
+        simulator_name="test_simulator",
+        fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()),
+        input_names=[],
+        output_names=[],
+    )
+    yield simulator_config
+    shutil.rmtree(simulator_config.unzip_dir(), ignore_errors=True)
 
 
 def test_retry_reads_a_model_description_that_fails_the_schema(
@@ -53,7 +69,7 @@ def test_interfaces_that_are_no_input_or_output_of_the_fmu_are_rejected() -> Non
 def test_an_fmu_output_listed_as_an_input_is_rejected() -> None:
     fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
 
-    with pytest.raises(ValueError, match="has no input Float64_continuous_output"):
+    with pytest.raises(ValueError, match=re.escape("has no input Float64_continuous_output. Float64_continuous_output is an output of the FMU.")):
         FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["Float64_continuous_output"], output_names=[])
 
 
@@ -67,5 +83,56 @@ def test_an_fmi_3_fmu_is_rejected() -> None:
 def test_an_fmu_input_listed_as_an_output_is_rejected() -> None:
     fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
 
-    with pytest.raises(ValueError, match="has no output Float64_continuous_input"):
+    with pytest.raises(ValueError, match=re.escape("has no output Float64_continuous_input. Float64_continuous_input is an input of the FMU.")):
         FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[], output_names=["Float64_continuous_input"])
+
+
+@pytest.mark.parametrize(
+    ("fmu_file", "misspelt_input", "fmu_input"),
+    [
+        (fmu2_model_path(), "Float64_continuous_inptu", "Float64_continuous_input"),
+        # two swapped letters make a short name less alike than one letter does in a long name
+        (resource_path_file("fmu_v2/models/house/linux/house.fmu"), "T_otu", "T_out"),
+    ],
+)
+def test_an_fmc_input_the_fmu_lacks_gets_the_close_fmu_name(fmu_file: Path, misspelt_input: str, fmu_input: str) -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu_file)
+
+    with pytest.raises(ValueError, match=re.escape(f"has no input {misspelt_input}. Did you mean {fmu_input}?")):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[misspelt_input], output_names=[])
+
+
+def test_with_several_names_the_fmu_lacks_a_hint_names_the_one_it_replaces() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
+
+    with pytest.raises(ValueError, match=re.escape("Did you mean Float64_continuous_input instead of Float64_continuous_inptu?")):
+        FMU2SimulatorConfig.of(
+            simulator_name="test_simulator",
+            fmu_config=fmu_config,
+            input_names=["Float64_continuous_inptu", "T_out"],
+            output_names=[],
+        )
+
+
+def test_an_input_of_the_simulation_config_that_the_fmu_lacks_is_named_with_the_close_name(feedthrough_config: FMU2SimulatorConfig) -> None:
+    reason = feedthrough_config.reason_the_model_cannot_run(
+        server_interface_settings=ServerInterfaceSettings(inputs=["Float64_continuous_inptu"], outputs=[]),
+    )
+
+    assert reason == (
+        f"The simulation config does not fit the model. The FMU {fmu2_model_path()} has no input Float64_continuous_inptu. "
+        + "Did you mean Float64_continuous_input?"
+    )
+
+
+def test_an_fmu_input_that_the_fmc_file_does_not_list_is_no_problem_for_the_model(feedthrough_config: FMU2SimulatorConfig) -> None:
+    settings = ServerInterfaceSettings(inputs=["Float64_continuous_input"], outputs=["Float64_continuous_output"])
+
+    assert feedthrough_config.reason_the_model_cannot_run(server_interface_settings=settings) is None
+
+
+def test_a_simulation_config_interface_of_a_type_the_client_cannot_run_is_a_problem(feedthrough_config: FMU2SimulatorConfig) -> None:
+    reason = feedthrough_config.reason_the_model_cannot_run(server_interface_settings=ServerInterfaceSettings(inputs=[], outputs=["Int32_output"]))
+
+    assert reason is not None
+    assert reason.endswith("these interfaces are not Real: Int32_output (Integer).")

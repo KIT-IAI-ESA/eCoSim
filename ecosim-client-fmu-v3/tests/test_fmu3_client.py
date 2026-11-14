@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 from ecosim_client_fmu_v3.fmu3_simulator_config import FMU3SimulatorConfig
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from ecosim_test_common.test_data.spy_fmu_instance import SpyFMUInstance
 from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
@@ -49,6 +50,16 @@ def test_an_array_input_with_the_wrong_number_of_values_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="The input u takes 3 values, but got 2"):
         client._set_input_float_matrix(name="u", value=[1.0, 2.0])  # noqa: SLF001
+    client.on_app_shutdown()
+
+
+def test_an_input_the_fmu_lacks_is_the_reason_the_client_does_not_start() -> None:
+    client = _create_client_with_spy(fmu_instance=SpyFMUInstance(), is_initialized=False)
+
+    reason = client._reason_the_model_cannot_run(server_interface_settings=ServerInterfaceSettings(inputs=["U"], outputs=[]))  # noqa: SLF001
+
+    assert reason is not None
+    assert reason.endswith("has no input U. Did you mean u?")
     client.on_app_shutdown()
 
 

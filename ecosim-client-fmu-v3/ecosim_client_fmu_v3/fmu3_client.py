@@ -9,6 +9,7 @@ from ecosim_common.client.config.client_config import ClientConfigOverride, Simp
 from ecosim_common.client.renderer.pre_rendered_images_service import PreRenderedImageService
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from typing_extensions import override
@@ -49,6 +50,10 @@ class FMU3Client(SimulatorClient):
         self._fmu_instance.instantiate()
         self._fmu_instance.enterInitializationMode(startTime=start_time)
         self._fmu_instance.exitInitializationMode()
+
+    @override
+    def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
+        return self._simulation_config.reason_the_model_cannot_run(server_interface_settings=server_interface_settings)
 
     @override
     def _set_input_float(

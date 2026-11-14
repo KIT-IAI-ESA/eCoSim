@@ -67,7 +67,7 @@ The `preferences.ini` passed to a client with `--config-file`. `--server-host` a
 
 ## FMU clients
 
-Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up for an FMU of the other FMI version, for an input of the `.fmc` file that is not an input of the FMU, for an output of the `.fmc` file that is not an output of the FMU, and for a variable of a type they do not support. `--validate-fmu-file-only` reports all three. `ecosim-client-fmu-v2` supports Real variables only. `ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.
+Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up for an FMU of the other FMI version, for an input of the `.fmc` file that is not an input of the FMU, for an output of the `.fmc` file that is not an output of the FMU, and for a variable of a type they do not support. `--validate-fmu-file-only` reports the same. When a run starts, the clients also check the interfaces that `simulation.json` gives them. For one the FMU does not have, or one of a type they do not support, they do not start the simulation, and the run fails right away. An interface the FMU has but the `.fmc` file does not list only gives a warning. `ecosim-client-fmu-v2` supports Real variables only. `ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.
 
 | Section | Key | Type | Default |
 | --- | --- | --- | --- |

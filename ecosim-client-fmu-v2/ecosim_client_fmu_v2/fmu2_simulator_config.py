@@ -4,11 +4,11 @@ import importlib
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Any, ClassVar, Dict
 from uuid import uuid4
 
 import fmpy
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from ecosim_common_fmpy.tech.read_model_description import read_model_description
@@ -20,7 +20,7 @@ from fmpy.model_description import ModelDescription
 class FMU2SimulatorConfig:
     _logger: ClassVar[ESPLogger] = ESPLogger("SimulationConfig")
 
-    _fmu_file: Path
+    _fmu_config: FMUBaseConfig
     _model_description: ModelDescription
     _unzip_dir: str
     _input_value_references: Dict[str, Any]
@@ -37,12 +37,12 @@ class FMU2SimulatorConfig:
     ) -> FMU2SimulatorConfig:
         model_description = cls.read_model_description(fmu_config)
         # before extracting, so a rejected FMU leaves no files behind
-        fmu_config.ensure_fmu_is_supported(
+        fmu_config.ensure_model_runs_interfaces(
             model_description=model_description,
-            interface_names=[*input_names, *output_names],
+            input_names=input_names,
+            output_names=output_names,
             fmi_major_version=2,
         )
-        fmu_config.ensure_interfaces_exist(model_description=model_description, input_names=input_names, output_names=output_names)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
@@ -53,7 +53,7 @@ class FMU2SimulatorConfig:
             _input_value_references={var.name: var.valueReference for var in input_variables},
             _output_value_references={var.name: var.valueReference for var in output_variables},
             _unzip_dir=unzip_dir,
-            _fmu_file=fmu_config.fmu_file,
+            _fmu_config=fmu_config,
         )
 
     @classmethod
@@ -109,6 +109,14 @@ class FMU2SimulatorConfig:
 
     def unzip_dir(self) -> str:
         return self._unzip_dir
+
+    def reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
+        return self._fmu_config.reason_the_model_cannot_run(
+            model_description=self._model_description,
+            input_names=server_interface_settings.inputs,
+            output_names=server_interface_settings.outputs,
+            fmi_major_version=2,
+        )
 
     def input_value_references(
         self,

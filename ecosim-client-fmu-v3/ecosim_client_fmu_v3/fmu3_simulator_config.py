@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import fmpy
 from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from ecosim_common_fmpy.tech.read_model_description import read_model_description
@@ -20,6 +21,7 @@ class FMU3SimulatorConfig:
 
     simulator_name: str
     unzip_dir: str
+    _fmu_config: FMUBaseConfig
     _model_description: ModelDescription
     _input_scalar_by_name: Dict[str, ScalarVariable]
     _output_scalar_by_name: Dict[str, ScalarVariable]
@@ -33,20 +35,29 @@ class FMU3SimulatorConfig:
         output_names: list[str],
     ) -> FMU3SimulatorConfig:
         model_description = read_model_description(file=fmu_config.fmu_file)
-        fmu_config.ensure_fmu_is_supported(
+        fmu_config.ensure_model_runs_interfaces(
             model_description=model_description,
-            interface_names=[*input_names, *output_names],
+            input_names=input_names,
+            output_names=output_names,
             fmi_major_version=3,
         )
-        fmu_config.ensure_interfaces_exist(model_description=model_description, input_names=input_names, output_names=output_names)
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
             simulator_name=simulator_name,
             unzip_dir=fmpy.extract(fmu_config.fmu_file),
+            _fmu_config=fmu_config,
             _model_description=model_description,
             _input_scalar_by_name={var.name: var for var in input_variables},
             _output_scalar_by_name={var.name: var for var in output_variables},
+        )
+
+    def reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
+        return self._fmu_config.reason_the_model_cannot_run(
+            model_description=self._model_description,
+            input_names=server_interface_settings.inputs,
+            output_names=server_interface_settings.outputs,
+            fmi_major_version=3,
         )
 
     def is_fmi_version(
