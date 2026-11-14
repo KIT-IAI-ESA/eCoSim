@@ -14,7 +14,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Guides',
-      items: ['guides/docker', 'guides/hpc-cluster', 'guides/matlab-client', 'guides/pyro5-client', 'guides/python-client'],
+      items: ['guides/run-a-simulation', 'guides/docker', 'guides/hpc-cluster', 'guides/matlab-client', 'guides/pyro5-client', 'guides/python-client'],
     },
     {
       type: 'category',

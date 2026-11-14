@@ -5,7 +5,7 @@ import pytest
 from ecosim.check.check_command import main
 from ecosim_test_common.test_data.building_simulation import write_building_simulation
 
-from tests.check.simulation_changes import replace_in_file
+from tests.simulation_changes import replace_in_file
 
 
 def test_problems_exit_with_1_and_name_their_files(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

@@ -48,3 +48,9 @@ uv sync --extra R2024b
 ```
 
 Without it, the simulation start fails with an `ImportError` that names the extra.
+
+`ecosim run` finds the MATLAB client on the PATH, since its environment has Python 3.12 and the
+`ecosim` command can have another Python. Put the environment on the PATH before the run, on Linux
+with `export PATH="$PWD/.venv/bin:$PATH"` in `ecosim-client-matlab`, see [Run a simulation](run-a-simulation.md).
+`ecosim check` and `ecosim run` know a MATLAB model by its `.m` files in the simulator folder, as
+`ecosim-hpc` does, so keep the scripts there and write `scriptfolder = .` for them.

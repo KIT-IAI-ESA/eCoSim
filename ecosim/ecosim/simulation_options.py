@@ -7,7 +7,7 @@ import dataclasses
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
 from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_common.config.argument_parser import EcosimArgumentParser
@@ -61,7 +61,7 @@ def add_simulation_options(parser: EcosimArgumentParser) -> None:
     parser.add_parameters(parameters=[DEBUG_PARAMETER, *SIMULATION_FILE_PARAMETERS], environment_variables=os.environ)
 
 
-def add_run_options(parser: EcosimArgumentParser) -> None:
+def add_run_options(parser: EcosimArgumentParser, results_parameters: Sequence[AppConfigParameter] = ()) -> None:
     run_options = parser.add_argument_group(title=RUN)
     length_options = run_options.add_mutually_exclusive_group()
     _add_server_option(container=length_options, name="steps")
@@ -80,7 +80,7 @@ def add_run_options(parser: EcosimArgumentParser) -> None:
     )
     _add_server_option(container=run_options, name="pace")
     _add_server_option(container=run_options, name="restore-simulation-run")
-    parser.add_parameters(parameters=[DATABASE_TYPE_PARAMETER], environment_variables=os.environ)
+    parser.add_parameters(parameters=[DATABASE_TYPE_PARAMETER, *results_parameters], environment_variables=os.environ)
 
 
 class _OptionContainer(Protocol):
@@ -133,9 +133,19 @@ def _steps_of(steps: int | None, run_duration: Duration | None, step_size: int |
     return None if step_size is None else steps_of_duration(run_duration=run_duration, step_size_in_milliseconds=step_size)
 
 
-def _delta_t_of(simulation_config_file: Path) -> int | None:
+def setup_of(simulation_config_file: Path) -> dict[str, Any] | None:
+    """The setup of simulation.json, None if it cannot be read, which the check names."""
     try:
-        return int(read_json_file(file=simulation_config_file)["setup"]["delta_t"])
+        setup = read_json_file(file=simulation_config_file)["setup"]
     except (OSError, ValueError, KeyError, TypeError):
-        # the check names what is wrong with the file
+        return None
+    return setup if isinstance(setup, dict) else None
+
+
+def _delta_t_of(simulation_config_file: Path) -> int | None:
+    setup = setup_of(simulation_config_file=simulation_config_file) or {}
+    try:
+        return int(setup["delta_t"])
+    except (KeyError, TypeError, ValueError):
+        # the check names a missing or a wrong delta_t
         return None

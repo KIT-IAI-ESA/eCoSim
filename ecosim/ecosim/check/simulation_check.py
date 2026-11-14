@@ -7,7 +7,7 @@ from typing import Iterator
 
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import ServerConfig
-from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 
 from ecosim.check.by_hand_check import by_hand_warnings
 from ecosim.check.checked_simulator import CheckedSimulator
@@ -34,7 +34,8 @@ class SimulationCheck:
     length_is_known: bool
 
     @staticmethod
-    def of_simulation(simulation: SimulationFolder, run_options: RunOptions) -> SimulationCheck:
+    def of_simulation(simulation: SimulationFolder, run_options: RunOptions, before_a_run: bool = False) -> SimulationCheck:
+        """Before a run, a Pyro5 object that nothing listens on is a problem, as the run would fail."""
         with _without_the_log_of_the_readers():
             # the port of a run, which the clients get as well
             port = get_free_port()
@@ -43,7 +44,7 @@ class SimulationCheck:
             findings = Findings()
             findings.add(simulation_file.findings)
             findings.add(server_side.findings)
-            simulators = _checked_simulators(simulation=simulation, server_side=server_side, port=port, findings=findings)
+            simulators = _checked_simulators(simulation=simulation, server_side=server_side, port=port, findings=findings, before_a_run=before_a_run)
             findings.warnings += by_hand_warnings(server_config_file=simulation.server_config, simulators=simulators)
         return SimulationCheck(
             findings=findings,
@@ -55,33 +56,47 @@ class SimulationCheck:
         )
 
 
-def _checked_simulators(simulation: SimulationFolder, server_side: ServerSideCheck, port: int, findings: Findings) -> list[CheckedSimulator]:
-    if not server_side.clients:
-        return []
+def simulators_of(simulation: SimulationFolder, clients: list[ClientSimulatorConfig]) -> tuple[list[CheckedSimulator], Findings]:
+    """The folder and the client of each simulator, all that a run needs to start the clients."""
     folders = SimulatorFolderCheck.of_folder(
         simulator_dir=simulation.simulator_dir,
-        client_ids=[client.client_id for client in server_side.clients],
+        client_ids=[client.client_id for client in clients],
         simulation_config_file=simulation.simulation_config,
     )
-    findings.add(folders.findings)
-    simulators = []
-    for client in (client for client in server_side.clients if client.client_id in folders.client_types):
-        directory, client_type = folders.client_types[client.client_id]
+    simulators = [
+        CheckedSimulator(
+            directory=folders.client_types[client.client_id][0],
+            client_type=folders.client_types[client.client_id][1],
+            input_count=len(client.input_interfaces()),
+            output_count=len(client.output_interfaces()),
+        )
+        for client in clients
+        if client.client_id in folders.client_types
+    ]
+    return simulators, folders.findings
+
+
+def _checked_simulators(
+    simulation: SimulationFolder,
+    server_side: ServerSideCheck,
+    port: int,
+    findings: Findings,
+    before_a_run: bool,
+) -> list[CheckedSimulator]:
+    if not server_side.clients:
+        return []
+    simulators, folder_findings = simulators_of(simulation=simulation, clients=server_side.clients)
+    findings.add(folder_findings)
+    clients = {client.client_id: client for client in server_side.clients}
+    for simulator in simulators:
         findings.add(
             simulator_findings(
-                directory=directory,
-                client_type=client_type,
-                client=client,
+                directory=simulator.directory,
+                client_type=simulator.client_type,
+                client=clients[simulator.directory.client_id],
                 simulation_config=server_side.simulation_config,
                 port=port,
-            ),
-        )
-        simulators.append(
-            CheckedSimulator(
-                directory=directory,
-                client_type=client_type,
-                input_count=len(client.input_interfaces()),
-                output_count=len(client.output_interfaces()),
+                before_a_run=before_a_run,
             ),
         )
     return simulators

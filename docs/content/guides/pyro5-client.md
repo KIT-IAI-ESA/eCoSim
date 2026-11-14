@@ -98,5 +98,8 @@ makes sure the client reaches the object:
 - `pyro_host` and `pyro_port` in `preferences.ini` are the same host and port, and no firewall blocks the port
 - several Pyro objects on one host use different ports
 
+`ecosim run` starts the Pyro5 client, not the Pyro object. `ecosim check` warns when nothing listens on
+`pyro_host` and `pyro_port` yet, see [Run a simulation](run-a-simulation.md).
+
 `localhost` as `pyro_host` only works if the client runs on the same machine as the Pyro object. On an HPC
 cluster that is most likely not the case, see [HPC cluster](hpc-cluster.md#pyro5-simulators).

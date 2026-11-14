@@ -61,6 +61,60 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 | --- | --- | --- | --- |
 | `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. If neither sets it, file. |
 
+## ecosim run
+
+`ecosim run`: Runs a simulation on this computer. It checks the simulation, starts the server and a client for every simulator, shows the progress, and stops every part when one of them fails or on Ctrl-C. Each part writes its output to a log file in the run folder. The options after -- go to ecosim-server.
+
+```shell
+ecosim run building --steps 100
+ecosim run building --duration 365d --step-size 1h
+ecosim run building --steps 100 --database-type postgres -- --database-schema run_2
+```
+
+**Positional arguments**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `SIMULATION` |  |  | The simulation folder, which holds server/ and Modules/. Without it, the current folder. |
+
+**Options**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
+| `--no-check` |  | flag | Starts without checking the simulation first. |
+
+**Config files**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--simulation-config FILE` |  |  | The simulation config, instead of SIMULATION/server/simulation.json. |
+| `--server-config FILE` |  |  | The server config, instead of SIMULATION/server/preferences.ini. |
+| `--simulator-dir FOLDER` |  |  | The folder with one folder for each simulator, instead of SIMULATION/Modules. |
+
+**Run**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run it is the number of steps of the whole run. |
+| `--duration DURATION` |  |  | How much simulated time the run covers, like 90min, 12h or 365d, instead of --steps. It has to be a whole number of steps. |
+| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s. A number without a unit is milliseconds. Overrides setup.delta_t in the simulation config. |
+| `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
+| `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
+
+**Results**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. If neither sets it, file. |
+| `--results FOLDER` |  |  | The run folder for the results and the logs. Without it, a new folder in SIMULATION/results named after the start time, or with --restore-simulation-run the newest one there. |
+
+**Server connection**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--port PORT` |  |  | The port the server listens on. Without it, a free port. |
+
 ## Server
 
 `ecosim-server`: Runs a simulation. Waits until one client per simulator is connected. Stores the results in files or in PostgreSQL.

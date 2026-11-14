@@ -65,7 +65,15 @@ Two FMUs or model files of different kinds in one folder stop the job before any
    ```
 
    It reads the FMU and the start values and starts nothing. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
-7. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
+7. In the same shell and folder, check the whole simulation with the type of results and the length of the job:
+
+   ```shell
+   uv run ecosim check .. --database-type postgres --steps 100
+   ```
+
+   It lists every mistake in the config files, the simulator folders and the start values that would stop the
+   job, see [Run a simulation](run-a-simulation.md#check-the-simulation).
+8. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
 The first run creates the PostgreSQL data directory `test` next to the scripts. Other users on the same
