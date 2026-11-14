@@ -42,7 +42,7 @@ if ! psql -w -lqt | cut -d \| -f 1 | grep -wq sim_control; then
     createdb -w sim_control
 fi
 
-mpirun --bind-to core --map-by core uv run "$ECOSIM_DIR/ecosim-hpc/ecosim_hpc/main.py" --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --simulator-dir ../Modules/ --steps 100 --database-schema temp_schema --database-drop-existing-schema
+mpirun --bind-to core --map-by core uv run ecosim-hpc --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --simulator-dir ../Modules/ --steps 100 --database-schema temp_schema --database-drop-existing-schema
 
 
 pg_ctl stop -D $PG_SERVER_DIR

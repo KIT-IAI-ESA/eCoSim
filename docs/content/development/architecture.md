@@ -167,8 +167,9 @@ Each deployable subproject declares a console script:
 | `ecosim-client-fmu-v3` | `ecosim_client_fmu_v3.main:main` |
 | `ecosim-client-matlab` | `ecosim_client_matlab.main:main` |
 | `ecosim-client-pyro5` | `ecosim_client_pyro5.main:main` |
+| `ecosim-hpc` | `ecosim_hpc.main:main` |
 
-`ecosim-hpc` is started through `ecosim_hpc/main.py` instead — see the [HPC notes](tech/hpc-cheat-sheet.md).
+`ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
 an `AppConfigParameter` with a group, which `--help` and the [command-line reference](../reference/command-line.md) show
