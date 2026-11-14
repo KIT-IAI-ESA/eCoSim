@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -17,10 +16,12 @@ from ecosim_common.communication.data.server_interface_settings import (
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_common.tech.datetime.readable_duration import readable_duration
 from ecosim_common.tech.datetime.readable_period import readable_period
+from ecosim_common.tech.json.read_json_file import read_json_file
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.connection_check import check_connections
+from ecosim_server.config.simulation_config_keys import missing_key_problems
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,13 @@ class SimulationConfig:
         restore: bool = False,
     ) -> SimulationConfig:
         config = SimulationConfig._load_config(simulation_config_file)
+        problems = missing_key_problems(
+            raw_config=config,
+            simulation_config_file=simulation_config_file,
+            has_step_size_override=step_size_override is not None,
+        )
+        if problems:
+            raise ValueError("\n".join(problems))
         check_connections(raw_simulators=config["simulators"], raw_logical_delays=config["logical_delays"])
         clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(
             config,
@@ -103,9 +111,8 @@ class SimulationConfig:
 
     @staticmethod
     def _load_config(simulation_config_file: Path) -> dict[str, Any]:
-        with open(simulation_config_file) as file:
-            config: dict[str, Any] = json.load(file)
-            return config
+        config: dict[str, Any] = read_json_file(file=simulation_config_file)
+        return config
 
     def client_simulator_config_for(
         self,

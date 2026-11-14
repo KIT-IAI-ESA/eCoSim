@@ -33,8 +33,8 @@ first entry of `fmc_file` and `fmu_file`.
 """
 INTERFACE_FILES_TEXT = """## Interface files
 
-The `.fmc` file named by `fmc_file` is a JSON file with the interfaces of the model. Its path is
-relative to the ini file. The `house.fmc` of the example above:
+The `.fmc` file named by `fmc_file` is a JSON file with the interfaces of the model, saved as UTF-8. Its
+path is relative to the ini file. The `house.fmc` of the example above:
 
 ```json
 {

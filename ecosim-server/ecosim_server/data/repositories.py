@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from ecosim_common.config.database_type import DatabaseType
+from sqlalchemy.exc import OperationalError
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.server_statistics_repository import ServerTimeMeasurementRepository
@@ -36,7 +37,13 @@ def create_repositories(
 
     match server_config.database.type:
         case DatabaseType.POSTGRES:
-            return RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+            try:
+                return RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+            except OperationalError as error:
+                raise ConnectionError(
+                    f"Cannot use PostgreSQL at {server_config.database.server_location()}: {str(error.orig).splitlines()[0]}. "
+                    + "To write the results as files instead, pass --database-type file",
+                ) from error
         case DatabaseType.FILE:
             return RepositoriesFileBased.create(server_config=server_config, simulation_config=simulation_config)
         case _:
