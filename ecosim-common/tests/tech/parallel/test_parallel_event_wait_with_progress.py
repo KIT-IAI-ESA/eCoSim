@@ -68,6 +68,35 @@ def test_raises_when_the_abort_condition_becomes_true() -> None:
         )
 
 
+def test_a_long_progress_interval_does_not_delay_the_abort() -> None:
+    event = ParallelEvent.thread()
+    abort_time = time.monotonic() + 0.1
+
+    with pytest.raises(WaitAbortedError):
+        event.wait_with_progress(
+            progress_interval_in_seconds=10,
+            abort=lambda: time.monotonic() >= abort_time,
+            abort_check_interval_in_seconds=0.05,
+        )
+
+    assert time.monotonic() - abort_time < 5
+
+
+def test_checking_the_abort_more_often_does_not_call_on_progress_more_often() -> None:
+    event = ParallelEvent.thread()
+    progress_calls: list[int] = []
+
+    event.wait_with_progress(
+        timeout_in_seconds=0.35,
+        progress_interval_in_seconds=0.2,
+        on_progress=lambda: progress_calls.append(1),
+        abort=lambda: False,
+        abort_check_interval_in_seconds=0.01,
+    )
+
+    assert len(progress_calls) == 1
+
+
 def test_waits_without_a_timeout_until_the_event_is_set() -> None:
     event = ParallelEvent.thread()
     threading.Timer(0.1, event.set).start()

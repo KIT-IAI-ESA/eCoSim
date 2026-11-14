@@ -134,7 +134,7 @@ class SimulationExecutor:
         self,
         store_default_values_in_history: bool = True,
     ) -> None:
-        SimulationExecutor.logger.info(
+        SimulationExecutor.logger.debug(
             "Starting simulation on all clients and wait for successful start",
         )
         with self._subscribe_to(MessageType.SIMULATION_START) as subscription:
@@ -158,9 +158,18 @@ class SimulationExecutor:
                 timeout_in_seconds=self._response_timeouts.start_response_timeout_in_seconds,
             )
             if message is None:
-                SimulationExecutor.logger.info("Still waiting for all clients to start their simulation")
+                self._log_models_not_started()
                 continue
             self._handle_simulation_started(message, store_default_values_in_history)
+
+    def _log_models_not_started(self) -> None:
+        not_started_client_ids = self._client_communication.not_started_client_ids()
+        progress_logger.info(
+            "Still waiting for %s of %s models to start: %s",
+            len(not_started_client_ids),
+            len(self._client_communication.all_client_ids()),
+            ", ".join(str(client_id) for client_id in not_started_client_ids),
+        )
 
     def _handle_simulation_started(
         self,

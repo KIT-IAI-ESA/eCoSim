@@ -38,6 +38,9 @@ class ClientState:
             return None
         return self.connection.address
 
+    def is_ready(self) -> bool:
+        return self.connected and self.ready_for_simulation
+
     def close_connection(self) -> None:
         if self.connection is not None:
             self.connection.close()
