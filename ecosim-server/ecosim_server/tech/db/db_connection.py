@@ -25,15 +25,17 @@ class DBConnection:
         db_config: DatabaseConfig,
         base_model: Any,
     ) -> DBConnection:
-        db_url = db_config.generate_sqlalchemy_db_url()
-        schema = db_config.schema
-        db_engine = create_engine(db_url).execution_options(schema_translate_map={None: schema})
         return DBConnection(
-            _db_url=db_url,
+            _db_url=db_config.generate_sqlalchemy_db_url(),
             _base_model=base_model,
-            _db_engine=db_engine,
-            default_schema=schema,
+            _db_engine=DBConnection.engine_of(db_config),
+            default_schema=db_config.schema,
         )
+
+    @staticmethod
+    def engine_of(db_config: DatabaseConfig) -> Engine:
+        """An engine that puts a table without a schema into the schema of the config. It creates nothing."""
+        return create_engine(db_config.generate_sqlalchemy_db_url()).execution_options(schema_translate_map={None: db_config.schema})
 
     def __post_init__(self) -> None:
         self._base_model.metadata.create_all(self._db_engine)
