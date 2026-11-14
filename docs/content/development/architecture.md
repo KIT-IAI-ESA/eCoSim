@@ -62,7 +62,7 @@ The Python modules are internal and can change: the supported way to use eCoSim 
 | `communication/socket` | `TCPSocket` — transport over a plain TCP socket |
 | `communication/binary_message` | Framing: header, message assembly |
 | `communication/data` | The payloads: meta data, interface settings, step requests |
-| `config` | `AppConfig` (CLI parsing), `ConfigParser` (ini files), `DatabaseType`, interface ids |
+| `config` | `AppConfig` and `EcosimArgumentParser` (command-line options), `ConfigParser` (ini files), `DatabaseType`, interface ids |
 | `client` | `Client` — the base class every client subproject specialises |
 | `simulation` | Interface identity: `InterfaceId`, `ModelInterfaceId`, `SimulatorInterfaceId` |
 | `tech` | Infrastructure: logging, threading, json, datetime |
@@ -169,3 +169,9 @@ Each deployable subproject declares a console script:
 | `ecosim-client-pyro5` | `ecosim_client_pyro5.main:main` |
 
 `ecosim-hpc` is started through `ecosim_hpc/main.py` instead — see the [HPC notes](tech/hpc-cheat-sheet.md).
+
+Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
+an `AppConfigParameter` with a group, which `--help` and the [command-line reference](../reference/command-line.md) show
+as a section. The server's options are in `ecosim_server/config/cli_parameters.py` and `database_cli_parameters.py`, so
+`ecosim-hpc` and other commands can reuse them. The `transform` of a parameter converts and checks its value, so a bad
+value stops the command with a short usage error and exit code 2.

@@ -1,23 +1,21 @@
+from typing import override
+
 from ecosim_common.client.config.cli_arguments import CLIArguments
 from ecosim_common.config.app_config import AppConfigParameter
 
 
 class FMPyCliArguments(CLIArguments):
-    def __init__(
-        self,
-        additional_parameters: list[AppConfigParameter] | None = None,
-    ) -> None:
-        super().__init__(
-            additional_parameters=(additional_parameters or [])
-            + [
-                AppConfigParameter(
-                    name="validate-fmu-file-only",
-                    required=False,
-                    is_flag=True,
-                    help_text="Only validate the FMU file and the interfaces of the .fmc file - no client will be started.",
-                ),
-            ],
-        )
+    @classmethod
+    @override
+    def parameters(cls) -> list[AppConfigParameter]:
+        return [
+            *super().parameters(),
+            AppConfigParameter(
+                name="validate-fmu-file-only",
+                is_flag=True,
+                help_text="Only check the FMU and the .fmc file against each other, then exit. Starts no client.",
+            ),
+        ]
 
     def validate_fmu_file_only(self) -> bool:
         return self.get_additional_parameter("validate-fmu-file-only") is True

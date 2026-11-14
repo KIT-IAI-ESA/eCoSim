@@ -1,57 +1,59 @@
 from pathlib import Path
+from typing import Sequence
 
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
-from ecosim_common.config.option_values import choice_name, port_number
+from ecosim_common.config.console_script import ConsoleScript
+from ecosim_common.config.option_values import port_number
+from ecosim_common.config.shared_parameters import COMMUNICATION_PROTOCOL_PARAMETER, DEBUG_PARAMETER, SERVER_CONNECTION
 
 
 class CLIArguments(AppConfig):
     def __init__(
         self,
-        additional_parameters: list[AppConfigParameter] | None = None,
+        console_script: ConsoleScript,
+        passed_arguments: Sequence[str] | None = None,
     ) -> None:
         super().__init__(
-            cli_description="This is a client of eCoSim.",
-            parameters=[
-                AppConfigParameter(
-                    name="config-file",
-                    required=True,
-                    help_text="The path to the config file. This must be relative to the call path or it can be an absolute path.",
-                ),
-                AppConfigParameter(
-                    name="debug",
-                    is_flag=True,
-                    help_text="enabling debug mode (more logs)",
-                ),
-                AppConfigParameter(
-                    name="server-host",
-                    help_text="Override the server host.",
-                ),
-                AppConfigParameter(
-                    name="server-port",
-                    transform=port_number,
-                    help_text="Override the port of the server.",
-                ),
-                AppConfigParameter(
-                    name="image-renderer-port",
-                    required=False,
-                    default_value=None,
-                    transform=port_number,
-                    help_text="The port for the image renderer socket on the target server. If not set no connection will be opened.",
-                ),
-                AppConfigParameter(
-                    name="communication-protocol",
-                    required=False,
-                    default_value=None,  # NOTE: the actual default value is specified in ClientConfig
-                    transform=choice_name,
-                    choices=tuple(protocol.serialized for protocol in CommunicationProtocol),
-                    help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
-                    + f"Possible: {[p.name for p in CommunicationProtocol]}",
-                ),
-            ]
-            + (additional_parameters or []),
+            console_script=console_script,
+            parameters=self.parameters(),
+            passed_arguments=passed_arguments,
         )
+
+    @classmethod
+    def parameters(cls) -> list[AppConfigParameter]:
+        return [
+            AppConfigParameter(
+                name="config-file",
+                required=True,
+                metavar="FILE",
+                help_text="The client's config file, usually preferences.ini in the folder of the model. "
+                + "A relative path starts in the current folder.",
+            ),
+            DEBUG_PARAMETER,
+            AppConfigParameter(
+                name="server-host",
+                group=SERVER_CONNECTION,
+                metavar="HOST",
+                help_text="The host name or IP address of the server. Overrides ip in the [server] section of the config file.",
+            ),
+            AppConfigParameter(
+                name="server-port",
+                group=SERVER_CONNECTION,
+                transform=port_number,
+                metavar="PORT",
+                help_text="The port of the server. Overrides port in the [server] section of the config file.",
+            ),
+            AppConfigParameter(
+                name="image-renderer-port",
+                group=SERVER_CONNECTION,
+                transform=port_number,
+                metavar="PORT",
+                help_text="The port of the server's image rendering socket. Without it, the client does not connect to it.",
+            ),
+            COMMUNICATION_PROTOCOL_PARAMETER,
+        ]
 
     def config_file(self) -> Path:
         path: Path = Path(self._args.config_file)
