@@ -76,6 +76,9 @@ class ShutdownManager:
             return
         signal.signal(signal.SIGINT, self.__interrupt_signal_handler)
         signal.signal(signal.SIGTERM, self.__terminate_signal_handler)
+        # a stop that Windows sends to a process group arrives as SIGBREAK, not as SIGTERM
+        if sys.platform == "win32":
+            signal.signal(signal.SIGBREAK, self.__terminate_signal_handler)
         ShutdownManager._signal_handlers_installed = True
 
     # noinspection PyUnusedLocal
@@ -158,3 +161,5 @@ class ShutdownManager:
         ShutdownManager._is_shutdown_in_this_process = False
         signal.signal(signal.SIGINT, signal.default_int_handler)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        if sys.platform == "win32":
+            signal.signal(signal.SIGBREAK, signal.SIG_DFL)
