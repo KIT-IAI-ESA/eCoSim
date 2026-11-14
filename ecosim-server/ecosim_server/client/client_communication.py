@@ -217,6 +217,12 @@ class ClientCommunication:
     def simulation_stopped(self, client_id: ClientID) -> None:
         self._client_states.simulation_stopped(client_id)
 
+    def waiting_for_client_ids(self) -> Tuple[ClientID, ...]:
+        return self._client_states.waiting_for_client_ids()
+
+    def not_started_client_ids(self) -> Tuple[ClientID, ...]:
+        return self._client_states.not_started_client_ids()
+
     def have_all_clients_started_simulation(self) -> bool:
         return self._client_states.have_all_clients_started_simulation()
 

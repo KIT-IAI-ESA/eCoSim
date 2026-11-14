@@ -25,24 +25,38 @@ class ESPChannelConnector:
         connected: bool = False
         transport = self._communication_protocol.serialized
         channel: ESPChannel = ESPChannel.for_protocol(self._communication_protocol, connection_address)
+        failed_attempts = 0
         while not connected and (time.time() - start_time) < timeout_in_seconds:
             try:
                 channel.connect()
                 connected = channel.is_connected()
             except Exception as e:
-                ESPChannelConnector._logger.warning(
-                    "Cannot connect to %s via %s - trying in sum for %ss. Error: %s",
-                    connection_address,
-                    transport,
-                    timeout_in_seconds,
-                    e,
+                failed_attempts += 1
+                self._log_failed_attempt(
+                    connection_address=connection_address,
+                    failed_attempts=failed_attempts,
+                    error=e,
+                    timeout_in_seconds=timeout_in_seconds,
                 )
                 time.sleep(1)
 
         if not connected:
             raise ConnectionError(f"Could not connect to {connection_address} via {transport}")
-        ESPChannelConnector._logger.info("Connected to %s via %s successfully.", connection_address, transport)
+        ESPChannelConnector._logger.info("Connected to the server at %s via %s", connection_address, transport)
         return channel
+
+    def _log_failed_attempt(self, connection_address: ConnectionAddress, failed_attempts: int, error: Exception, timeout_in_seconds: int) -> None:
+        transport = self._communication_protocol.serialized
+        # a client that starts before the server listens is normal, so the retries are no warning
+        if failed_attempts == 1:
+            ESPChannelConnector._logger.info(
+                "Cannot connect to the server at %s via %s yet (%s), trying again for up to %s s",
+                connection_address,
+                transport,
+                error,
+                timeout_in_seconds,
+            )
+        ESPChannelConnector._logger.debug("Attempt %s to connect to %s via %s failed: %s", failed_attempts, connection_address, transport, error)
 
     def listener(
         self,

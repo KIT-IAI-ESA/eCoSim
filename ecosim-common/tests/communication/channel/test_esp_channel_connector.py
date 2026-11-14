@@ -15,11 +15,23 @@ def test_failed_tcp_connection_names_the_transport_and_the_address(caplog: pytes
     with pytest.raises(ConnectionError) as error:
         connector.connect(connection_address=address, timeout_in_seconds=1)
 
-    warning = next(record.getMessage() for record in caplog.records if record.levelname == "WARNING")
-    for message in (str(error.value), warning):
+    first_failure = next(record.getMessage() for record in caplog.records if record.name == "ESPChannelConnector" and record.levelname == "INFO")
+    for message in (str(error.value), first_failure):
         assert "tcp_socket" in message
         assert str(address) in message
         assert "dask" not in message.lower()
+
+
+def test_a_server_that_does_not_listen_yet_is_reported_once_and_not_for_every_attempt(caplog: pytest.LogCaptureFixture) -> None:
+    connector = ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET)
+
+    with pytest.raises(ConnectionError):
+        # room for a second attempt where a refused connect takes 2 s, as on Windows
+        connector.connect(connection_address=generate_unused_connection_address(), timeout_in_seconds=4)
+
+    records = [record for record in caplog.records if record.name == "ESPChannelConnector"]
+    assert len([record for record in records if record.levelname == "DEBUG"]) >= 2, "the connector tried only once"
+    assert [record.levelname for record in records if record.levelname != "DEBUG"] == ["INFO"]
 
 
 def test_successful_tcp_connection_names_the_transport_and_the_address(caplog: pytest.LogCaptureFixture) -> None:
@@ -29,4 +41,4 @@ def test_successful_tcp_connection_names_the_transport_and_the_address(caplog: p
 
         ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET).connect(connection_address=address)
 
-    assert f"Connected to {address} via tcp_socket" in caplog.text
+    assert f"Connected to the server at {address} via tcp_socket" in caplog.text

@@ -108,7 +108,7 @@ class Client(ShutdownListener):
         if self._was_started.is_set():
             Client.logger.warning("Client already started, but 'start' called again. This should not happen in normal operation.")
         self._was_started.set()
-        Client.logger.info(
+        Client.logger.debug(
             "Starting to connect to %s:%s",
             self._client_config.server_config().server_address.ip,
             self._client_config.server_config().server_address.port,
@@ -144,7 +144,7 @@ class Client(ShutdownListener):
         except ConnectionError as e:
             self.on_app_shutdown()
             raise e
-        Client.logger.info(
+        Client.logger.debug(
             "Connected to socket successfully: %s:%s",
             self._client_config.server_config().server_address.ip,
             self._client_config.server_config().server_address.port,

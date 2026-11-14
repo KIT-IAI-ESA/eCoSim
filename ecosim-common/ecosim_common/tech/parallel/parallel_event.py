@@ -74,33 +74,47 @@ class ParallelEvent:
         timeout_in_seconds: float | None = None,
         abort: Callable[[], bool] | None = None,
         abort_message: str | None = None,
+        abort_check_interval_in_seconds: float = 1.0,
     ) -> bool:
         """
         Blocks until 'event' is set. Returns False if 'timeout_in_seconds' passed before that happened.
 
         The event does the waiting, so no thread spins. 'on_progress' is called every
-        'progress_interval_in_seconds' - it is meant for logging, not for doing work. If 'abort' becomes true
-        while waiting, a 'WaitAbortedError' is raised.
+        'progress_interval_in_seconds' - it is meant for logging, not for doing work. 'abort' is checked every
+        'abort_check_interval_in_seconds'. If it becomes true while waiting, a 'WaitAbortedError' is raised.
         """
         deadline = None if timeout_in_seconds is None else time.monotonic() + timeout_in_seconds
-        while not self.wait(timeout=self._next_interval(deadline, progress_interval_in_seconds)):
+        next_progress = time.monotonic() + progress_interval_in_seconds
+        while not self.wait(
+            timeout=self._next_interval(
+                deadline=deadline,
+                next_progress=next_progress,
+                abort_check_interval_in_seconds=abort_check_interval_in_seconds,
+            ),
+        ):
             if abort is not None and abort():
                 raise WaitAbortedError(abort_message)
-            if deadline is not None and time.monotonic() >= deadline:
+            now = time.monotonic()
+            if deadline is not None and now >= deadline:
                 return False
-            if on_progress is not None:
-                on_progress()
+            if now >= next_progress:
+                if on_progress is not None:
+                    on_progress()
+                next_progress = now + progress_interval_in_seconds
         return True
 
     @staticmethod
     def _next_interval(
         deadline: float | None,
-        progress_interval_in_seconds: float,
+        next_progress: float,
+        abort_check_interval_in_seconds: float,
     ) -> float:
         """Waits at most until the deadline, so a long progress interval cannot overshoot the timeout."""
-        if deadline is None:
-            return progress_interval_in_seconds
-        return max(0.0, min(progress_interval_in_seconds, deadline - time.monotonic()))
+        now = time.monotonic()
+        interval = min(abort_check_interval_in_seconds, next_progress - now)
+        if deadline is not None:
+            interval = min(interval, deadline - now)
+        return max(0.0, interval)
 
     def set_state(self, state: bool) -> None:
         self._event().set() if state else self._event().clear()
