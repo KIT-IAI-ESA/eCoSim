@@ -74,6 +74,18 @@ def test_a_connection_to_a_missing_interface_is_rejected(tmp_path: Path) -> None
     assert "simulator 'house', interface 'T': simulator 'weather' has no interface 'missing'" in message
 
 
+def test_the_clients_of_a_config_with_a_broken_connection_can_still_be_read(tmp_path: Path) -> None:
+    file = config_file(
+        tmp_path,
+        create_simulator("weather", create_output("T_out")),
+        create_simulator("house", create_input("T", simulator="0", interface="missing")),
+    )
+
+    clients = SimulationConfig.clients_of_file(simulation_config_file=file)
+
+    assert [client.simulator_name for client in clients] == ["weather", "house"]
+
+
 @pytest.mark.parametrize("delay_path", [[], ["1"]])
 def test_an_interface_connected_to_itself_is_rejected(tmp_path: Path, delay_path: list[str]) -> None:
     message = error_of(tmp_path, create_simulator("house", create_input("T", simulator="0", interface="T", delay_path=delay_path)))
