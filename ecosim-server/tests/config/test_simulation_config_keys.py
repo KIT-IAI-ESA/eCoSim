@@ -15,17 +15,20 @@ FILE = Path("server/simulation.json")
 def _a_complete_config() -> dict[str, Any]:
     weather = create_simulator("weather", create_output("T_out"))
     house = create_simulator("house", create_input("T_out", simulator="0", interface="T_out"))
-    return {"setup": {"delta_t": "900000"}, "simulators": [weather, house], "logical_delays": []}
+    return {"setup": {"delta_t": "900000", "steps": 96}, "simulators": [weather, house], "logical_delays": []}
 
 
 def test_a_complete_config_has_no_problems() -> None:
-    assert missing_key_problems(raw_config=_a_complete_config(), simulation_config_file=FILE, has_step_size_override=False) == []
+    assert (
+        missing_key_problems(raw_config=_a_complete_config(), simulation_config_file=FILE, has_step_size_override=False, has_steps_override=False)
+        == []
+    )
 
 
 def test_every_missing_key_is_listed_with_the_file() -> None:
     raw_config: dict[str, Any] = {"simulators": []}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == [
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
         f'{FILE} has no key "setup".',
         f'{FILE} has no key "logical_delays". Write "logical_delays": [] if the simulation has none.',
     ]
@@ -34,7 +37,7 @@ def test_every_missing_key_is_listed_with_the_file() -> None:
 def test_a_delta_t_below_1_is_a_problem_with_its_value() -> None:
     raw_config = {**_a_complete_config(), "setup": {"delta_t": "0"}}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == [
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
         f"{FILE}: setup.delta_t must be a whole number of at least 1, not '0'.",
     ]
 
@@ -42,15 +45,15 @@ def test_a_delta_t_below_1_is_a_problem_with_its_value() -> None:
 def test_a_missing_delta_t_says_how_to_set_the_step_size() -> None:
     raw_config = {**_a_complete_config(), "setup": {}}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == [
-        f'{FILE}: setup has no key "delta_t". Set it to the step size in milliseconds or pass --step-size.',
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
+        f'{FILE}: setup has no key "delta_t". Write the step size in milliseconds, like "delta_t": "900000", or pass --step-size.',
     ]
 
 
 def test_a_delta_t_written_with_a_zero_fraction_is_a_whole_number() -> None:
     raw_config = {**_a_complete_config(), "setup": {"delta_t": 900000.0}}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == []
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == []
 
 
 def test_a_simulator_and_an_interface_with_a_missing_key_are_listed() -> None:
@@ -58,7 +61,7 @@ def test_a_simulator_and_an_interface_with_a_missing_key_are_listed() -> None:
     del house["model"]
     raw_config = {**_a_complete_config(), "simulators": [house]}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == [
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
         f'{FILE}: simulator house has no key "model".',
         f'{FILE}: simulator house, interface T_out has no key "type".',
     ]
@@ -69,11 +72,19 @@ def test_the_results_need_only_the_simulators_and_their_interfaces() -> None:
     assert simulator_key_problems(raw_config={"setup": {}}, simulation_config_file=FILE) == [f'{FILE} has no key "simulators".']
 
 
+def test_a_number_of_steps_below_1_is_named_with_its_value() -> None:
+    raw_config = {**_a_complete_config(), "setup": {"delta_t": "900000", "steps": 0}}
+
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=False) == [
+        f"{FILE}: setup.steps must be a whole number of at least 1, not '0'.",
+    ]
+
+
 def test_every_key_that_the_loader_reads_is_known() -> None:
     sender = create_simulator("sender", {**create_output("sent"), "unit": "K", "description": "", "required": "false"})
     receiver = create_simulator("receiver", create_input("delayed", simulator="0", interface="sent", delay_path=["1"]))
     raw_config = {
-        "setup": {"delta_t": "900000", "start_date": "2023-01-01T00:00:00.000Z"},
+        "setup": {"delta_t": "900000", "steps": 96, "start_date": "2023-01-01T00:00:00.000Z"},
         "simulators": [sender, receiver],
         "logical_delays": [create_logical_delay("receiver", "delayed")],
     }

@@ -43,7 +43,7 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run. |
+| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run, the steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
@@ -172,7 +172,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run. |
+| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run, the steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
