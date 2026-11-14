@@ -60,6 +60,7 @@ class Client(ShutdownListener):
     _image_renderer_service: SimulationRendererService | None = field(default=None)
     # restored steps count too
     completed_steps: int = field(init=False, default=0)
+    _reason_not_to_start: str | None = field(init=False, default=None)
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
@@ -135,6 +136,8 @@ class Client(ShutdownListener):
         steps = readable_count(count=self.completed_steps, noun="step")
         if self._is_finished:
             return f"{self.client_id} finished after {steps}."
+        if self._reason_not_to_start is not None:
+            return f"{self.client_id} did not start the simulation. The error above says why."
         if self.completed_steps == 0:
             return f"{self.client_id}: the connection to the server ended before the simulation started. The server output says why."
         return f"{self.client_id}: the connection to the server ended after {steps}, before the simulation was finished."
@@ -273,7 +276,14 @@ class Client(ShutdownListener):
         for line in mismatch.lines(fmc_file=self._client_config.simulator_config().fmc_file):
             Client.logger.warning("%s", line)
         self._execution_config.set_server_interface_settings(server_interface_settings)
+        self._reason_not_to_start = self._reason_the_model_cannot_run(server_interface_settings=server_interface_settings)
+        if self._reason_not_to_start is not None:
+            Client.logger.error("%s This client does not start the simulation.", self._reason_not_to_start)
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
+
+    def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
+        """Why the model cannot run the interfaces of the simulation config, if the client can tell before the start."""
+        return None
 
     def _handle_simulation_setup(
         self,
@@ -292,6 +302,10 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Handling start simulation")
+        if self._reason_not_to_start is not None:
+            # the server waits for every start answer, so it notices the closed connection at once and fails the run
+            self._channel.close()
+            return
         data: ClientSimStepData = self.on_simulation_start()
         self._channel.send(
             ESPChannelMessageJson.answer_with_payload(
