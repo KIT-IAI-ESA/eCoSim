@@ -166,7 +166,6 @@
   ],
   "logical_delays": [
     {
-      "id": "1",
       "delay": "1",
       "output_connections": [
         {
@@ -183,7 +182,6 @@
     }
   ],
   "setup": {
-    "delta_t": "60000",
-    "real-time": "false"
+    "delta_t": "60000"
   }
 }

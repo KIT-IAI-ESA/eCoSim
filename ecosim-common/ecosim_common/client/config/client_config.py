@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, override
 
 from ecosim_common.client.config.client_type import ClientType
+from ecosim_common.client.config.interface_file_keys import repeated_name_warnings, unknown_key_warnings
 from ecosim_common.client.config.interface_mismatch import InterfaceMismatch
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
@@ -259,6 +260,11 @@ class ClientInterfaceConfig:
             # on HPC only the log shows the error of a client
             ClientConfig.logger.error("%s", one_line_message(error=error))
             raise
+        for warning in [
+            *unknown_key_warnings(raw_interfaces=fmc_json, fmc_file=fmc_file_absolute),
+            *repeated_name_warnings(raw_interfaces=fmc_json, fmc_file=fmc_file_absolute),
+        ]:
+            ClientConfig.logger.warning("%s", warning)
         input_interfaces = fmc_json.get("inputs", [])
         output_interfaces = fmc_json.get("outputs", [])
         for input_interface in input_interfaces:

@@ -117,7 +117,6 @@
         {
           "name": "Pe_gen_B_1",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -125,7 +124,6 @@
         {
           "name": "Pe_load_B_1",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -139,7 +137,6 @@
         {
           "name": "Pe_gen_B_2",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -147,7 +144,6 @@
         {
           "name": "Pe_load_B_2",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -161,7 +157,6 @@
         {
           "name": "Pe_gen_B_3",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -169,7 +164,6 @@
         {
           "name": "Pe_load_B_3",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -183,7 +177,6 @@
         {
           "name": "Pe_gen_B_4",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""
@@ -191,7 +184,6 @@
         {
           "name": "Pe_load_B_4",
           "type": "Output",
-          "report": "true",
           "required": "false",
           "unit": "",
           "description": ""

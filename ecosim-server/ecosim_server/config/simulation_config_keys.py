@@ -1,13 +1,28 @@
 from argparse import ArgumentTypeError
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.tech.close_name import closest_name, did_you_mean
+from ecosim_common.tech.json.unknown_json_keys import unknown_key_warnings_of_entries, unknown_key_warnings_of_object
+
+DEFAULT_START_DATE = "2024-01-01T00:00:00.000Z"
+TOP_LEVEL_KEYS = ("setup", "simulators", "logical_delays")
+SETUP_KEYS = ("delta_t", "start_date")
+# the keys the loader reads, by the kind of entry that has them
+READ_KEYS = {
+    "simulator": ("name", "model", "interfaces"),
+    "interface": ("name", "type", "unit", "description", "required", "connected_to"),
+    "connection": ("simulator", "interface", "delay_path"),
+    "logical delay": ("delay", "output_connections"),
+    "output connection": ("destination_simulator_name", "destination_interface_name", "start_value"),
+}
 
 
 def missing_key_problems(raw_config: dict[str, Any], simulation_config_file: Path, has_step_size_override: bool) -> list[str]:
     file = simulation_config_file
-    problems = [_missing_top_level_key(file=file, key=key) for key in ("setup", "simulators", "logical_delays") if key not in raw_config]
+    problems = [_missing_top_level_key(file=file, key=key) for key in TOP_LEVEL_KEYS if key not in raw_config]
     if isinstance(raw_config.get("setup"), dict) and not has_step_size_override:
         problems += _delta_t_problems(file=file, setup=raw_config["setup"])
     return problems + _problems_of_simulators(file=file, simulators=raw_config.get("simulators"))
@@ -18,6 +33,47 @@ def simulator_key_problems(raw_config: Any, simulation_config_file: Path) -> lis
     if not isinstance(raw_config, dict) or "simulators" not in raw_config:
         return [_missing_top_level_key(file=file, key="simulators")]
     return _problems_of_simulators(file=file, simulators=raw_config["simulators"])
+
+
+def unknown_key_warnings(raw_config: dict[str, Any], simulation_config_file: Path) -> list[str]:
+    """One warning for each key that nothing reads, counted per kind of entry, for a config without missing keys."""
+    file = simulation_config_file
+    entries_by_noun = _entries_by_noun(raw_config=raw_config)
+    setup = raw_config["setup"] if isinstance(raw_config["setup"], dict) else {}
+    return [
+        *unknown_key_warnings_of_object(where=str(file), raw_object=raw_config, read_keys=TOP_LEVEL_KEYS),
+        *[_setup_warning(file=file, key=key, setup=setup) for key in setup if key not in SETUP_KEYS],
+        *[
+            warning
+            for noun, read_keys in READ_KEYS.items()
+            for warning in unknown_key_warnings_of_entries(where=str(file), noun=noun, entries=entries_by_noun[noun], read_keys=read_keys)
+        ],
+    ]
+
+
+def _setup_warning(file: Path, key: str, setup: dict[str, Any]) -> str:
+    # a run without start_date still starts, but at a date the simulation may not expect
+    starts_at_the_default = closest_name(name=key, known_names=SETUP_KEYS) == "start_date" and "start_date" not in setup
+    default = f" Without it the run starts at {datetime.fromisoformat(DEFAULT_START_DATE):%Y-%m-%d %H:%M} UTC." if starts_at_the_default else ""
+    return f'{file}: setup has the key "{key}", which nothing reads.{did_you_mean(name=key, known_names=SETUP_KEYS)}{default}'
+
+
+def _entries_by_noun(raw_config: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    simulators = _entries_of(value=raw_config["simulators"])
+    interfaces = [interface for simulator in simulators for interface in _entries_of(value=simulator.get("interfaces"))]
+    delays = _entries_of(value=raw_config["logical_delays"])
+    return {
+        "simulator": simulators,
+        "interface": interfaces,
+        "connection": [connection for interface in interfaces for connection in _entries_of(value=interface.get("connected_to"))],
+        "logical delay": delays,
+        "output connection": [connection for delay in delays for connection in _entries_of(value=delay.get("output_connections"))],
+    }
+
+
+def _entries_of(value: Any) -> list[dict[str, Any]]:
+    # an entry of another type is a problem that the loader names
+    return [entry for entry in value if isinstance(entry, dict)] if isinstance(value, list) else []
 
 
 def _problems_of_simulators(file: Path, simulators: Any) -> list[str]:
