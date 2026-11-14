@@ -79,6 +79,9 @@ module = [
     "cloudpickle.*",
     "testcontainers",
     "testcontainers.*",
+    # pandas is not typed, ecosim_server.results imports it
+    "pandas",
+    "pandas.*",
 ]
 ignore_missing_imports = true
 
