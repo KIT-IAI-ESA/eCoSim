@@ -42,3 +42,7 @@ def fmu3_fmc_path() -> Path:
 
 def python_room_config_path() -> Path:
     return resource_path_file("python/room/preferences.ini")
+
+
+def python_counter_config_path() -> Path:
+    return resource_path_file("python/counter/preferences.ini")

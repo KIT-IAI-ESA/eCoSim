@@ -27,6 +27,7 @@ dependencies = [
     "ecosim-common-fmpy==0.14.0",
     "ecosim-server==0.14.0",
     "ecosim-client-pyro5==0.14.0",
+    "ecosim-client-python==0.14.0",
 ]
 
 [build-system]
@@ -44,6 +45,7 @@ ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 ecosim-client-matlab = { path = "../ecosim-client-matlab", editable = true }
 ecosim-client-pyro5 = { path = "../ecosim-client-pyro5", editable = true }
+ecosim-client-python = { path = "../ecosim-client-python", editable = true }
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [project.optional-dependencies]
@@ -88,7 +90,7 @@ omit = ["*/tests/*"]
 exclude_lines = []
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5","../ecosim-test-common",]
+mypy_path = ["../ecosim-common", "../ecosim-common-fmpy", "../ecosim-server", "../ecosim-client-fmu-v2", "../ecosim-client-fmu-v3", "../ecosim-client-matlab", "../ecosim-client-pyro5", "../ecosim-client-python", "../ecosim-test-common",]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
