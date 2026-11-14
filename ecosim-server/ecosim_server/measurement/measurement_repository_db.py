@@ -58,7 +58,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
         interface_name_to_column_name: dict[str, str],
         interface_name_to_json_column_name: dict[str, str],
     ) -> type:
-        table_name = f"module_{client_config.simulator_name.lower()}"
+        table_name = MeasurementRepositoryDB.table_name_of(simulator_name=client_config.simulator_name)
 
         attributes = {
             "__tablename__": table_name,
@@ -91,6 +91,10 @@ class MeasurementRepositoryDB(MeasurementRepository):
             column_name = MeasurementRepositoryDB.json_column_name_of_server_interface(interface)
             interface_name_to_json_column_name[interface.name] = column_name
         return interface_name_to_json_column_name
+
+    @staticmethod
+    def table_name_of(simulator_name: str) -> str:
+        return f"module_{simulator_name.lower()}"
 
     @staticmethod
     def column_name_of_server_interface(interface: ModelInterfaceServer) -> str:

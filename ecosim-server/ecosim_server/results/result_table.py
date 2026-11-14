@@ -17,7 +17,7 @@ class ResultTable:
     """The results of a run as one table: one row per step, one column per interface of a simulator."""
 
     columns: tuple[ResultColumn, ...]
-    # the end of each step, in the time zone of the run's start date
+    # the end of each step, in the time zone of the start date, or in UTC from PostgreSQL
     times: tuple[datetime, ...]
     rows: tuple[tuple[ColumnValue, ...], ...]
     # None if the storage holds no state, for example a folder with copied result files only
