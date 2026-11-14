@@ -7,6 +7,7 @@ from ecosim_common.client.config.client_type import ClientType
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
@@ -154,12 +155,35 @@ def test_as_config_file_content() -> None:
 [server]
 ip = localhost
 port = 222
-communication_protocol = tcp_socket
+communication_protocol = TCP_SOCKET
 
 [simulator]
 simulator_name = simulator
 model_name = model
-fmc_file = fmc_file
+fmc_file = [fmc_file]
 type = fmu_3
 """.strip()
     )
+
+
+def test_a_written_client_config_reads_back_the_same(tmp_path: Path) -> None:
+    server_config = ServerConfig(
+        server_address=ConnectionAddress(ip="localhost", port=1234),
+        communication_protocol=CommunicationProtocol.DASK,
+    )
+    simulator_config = SimulatorConfig(simulator_name="house", model_name="house", fmc_file="house.fmc", type=ClientType.FMU_2)
+    config_file = tmp_path / "preferences.ini"
+    config_file.write_text(
+        SimpleClientConfig(
+            _server_config=server_config,
+            _simulator_config=simulator_config,
+            _interfaces_config=ClientInterfaceConfig(interfaces=[]),
+            _extra_sections=[],
+        ).as_config_file_content(),
+        encoding="utf-8",
+    )
+
+    config_parser = ConfigParser(path=config_file)
+
+    assert ServerConfig.of_config_parser(config=config_parser) == server_config
+    assert SimulatorConfig.of_config_parser(config=config_parser) == simulator_config
