@@ -4,6 +4,7 @@ from typing import ClassVar, Dict, List, assert_never
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
+from ecosim_common.client.early_end_reason import early_end_reason
 from ecosim_common.client.renderer.rendering_socket_client import RenderingSocketClient
 from ecosim_common.client.renderer.simulation_renderer_service import (
     SimulationRendererService,
@@ -41,6 +42,7 @@ from ecosim_common.tech.datetime.date_time_to_millis import (
     date_time_to_millis_since_unix_epoch,
 )
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message_with_type
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.readable_count import readable_count
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -61,6 +63,8 @@ class Client(ShutdownListener):
     # restored steps count too
     completed_steps: int = field(init=False, default=0)
     _reason_not_to_start: str | None = field(init=False, default=None)
+    _last_handled_message_type: MessageType | None = field(init=False, default=None)
+    _where_the_model_failed: str | None = field(init=False, default=None)
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
@@ -138,9 +142,18 @@ class Client(ShutdownListener):
             return f"{self.client_id} finished after {steps}."
         if self._reason_not_to_start is not None:
             return f"{self.client_id} did not start the simulation. The error above says why."
+        if self._where_the_model_failed is not None:
+            return f"{self.client_id}: the model failed {self._where_the_model_failed}. The error above says why."
+        return f"{self.client_id}: {self._why_the_connection_ended()}"
+
+    def _why_the_connection_ended(self) -> str:
+        reason = early_end_reason(last_handled_message_type=self._last_handled_message_type, client_id=self.client_id)
+        if reason is not None:
+            return reason
         if self.completed_steps == 0:
-            return f"{self.client_id}: the connection to the server ended before the simulation started. The server output says why."
-        return f"{self.client_id}: the connection to the server ended after {steps}, before the simulation was finished."
+            return "the connection to the server ended before the simulation started. The server output says why."
+        steps = readable_count(count=self.completed_steps, noun="step")
+        return f"the connection to the server ended after {steps}, before the simulation was finished."
 
     def exit_code(self) -> int:
         # only a fully handled SIMULATION_STOP sets it
@@ -205,6 +218,9 @@ class Client(ShutdownListener):
                 Client.logger.error("Unknown message type: '%s'", message_type)
             case _:
                 assert_never(message_type)
+        # a ping says nothing about how far the run got
+        if message_type is not MessageType.PING:
+            self._last_handled_message_type = message_type
 
     def on_app_shutdown(self) -> None:
         if self._channel_or_none is None:
@@ -306,7 +322,11 @@ class Client(ShutdownListener):
             # the server waits for every start answer, so it notices the closed connection at once and fails the run
             self._channel.close()
             return
-        data: ClientSimStepData = self.on_simulation_start()
+        try:
+            data: ClientSimStepData = self.on_simulation_start()
+        except Exception as error:
+            self._log_model_failure(where="at the start of the simulation", error=error)
+            raise
         self._channel.send(
             ESPChannelMessageJson.answer_with_payload(
                 request_message=message,
@@ -326,7 +346,7 @@ class Client(ShutdownListener):
         received_inputs = self._protocol_interface_value_to_dict(
             simulation_step_request.inputs,
         )
-        data = self.on_simulation_step(
+        data = self._run_model_step(
             received_inputs=received_inputs,
             step_size_in_seconds=self._execution_config.step_size_in_seconds(),
         )
@@ -337,6 +357,22 @@ class Client(ShutdownListener):
                 payload=data,
             ),
         )
+
+    def _run_model_step(
+        self,
+        received_inputs: dict[InterfaceId, InterfaceValue],
+        step_size_in_seconds: float,
+    ) -> ClientSimStepData:
+        try:
+            return self.on_simulation_step(received_inputs=received_inputs, step_size_in_seconds=step_size_in_seconds)
+        except Exception as error:
+            # counted from 0, as the server counts the steps
+            self._log_model_failure(where=f"in step {self.completed_steps}", error=error)
+            raise
+
+    def _log_model_failure(self, where: str, error: Exception) -> None:
+        self._where_the_model_failed = where
+        Client.logger.error("%s: the model failed %s: %s", self.client_id, where, one_line_message_with_type(error=error))
 
     def _protocol_interface_value_to_dict(
         self,
@@ -379,7 +415,7 @@ class Client(ShutdownListener):
                     raise RuntimeError(error_message)
             values = self._protocol_interface_value_to_dict(filtered_inputs)
             current_timestamp = date_time_to_millis_since_unix_epoch(step_datetime)
-            last_simulation_step_data = self.on_simulation_step(
+            last_simulation_step_data = self._run_model_step(
                 received_inputs=values,
                 step_size_in_seconds=(current_timestamp - last_timestamp) / 1000,
             )

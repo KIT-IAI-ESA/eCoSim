@@ -60,7 +60,8 @@ class ESPLogger:
         message: str,
         *args: object,
     ) -> None:
-        self._logger.exception(message, *args)
+        # like an error, with the traceback only for debug logging, so the message has to name the error
+        self._logger.error(message, *args, exc_info=self.is_debug_enabled)
 
     def warning(
         self,

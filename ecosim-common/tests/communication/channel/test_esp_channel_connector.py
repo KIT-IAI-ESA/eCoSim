@@ -22,6 +22,19 @@ def test_failed_tcp_connection_names_the_transport_and_the_address(caplog: pytes
         assert "dask" not in message.lower()
 
 
+def test_a_client_without_a_server_is_told_to_start_it_or_to_check_the_address() -> None:
+    address = generate_unused_connection_address()
+    connector = ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET)
+
+    with pytest.raises(ConnectionError) as error:
+        connector.connect(connection_address=address, timeout_in_seconds=1)
+
+    assert str(error.value) == (
+        f"No server answered at {address} via tcp_socket within 1 s. Start the server first, or check ip and port in the [server] section "
+        + "of the client config, or --server-host and --server-port if you passed them."
+    )
+
+
 def test_a_server_that_does_not_listen_yet_is_reported_once_and_not_for_every_attempt(caplog: pytest.LogCaptureFixture) -> None:
     connector = ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET)
 

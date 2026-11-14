@@ -129,18 +129,16 @@ class SimulationConfig:
         self,
         client_id: ClientID,
         client_interface_ids: ModelInterfaceIds,
-    ) -> bool:
+    ) -> List[str]:
+        """The names of the required interfaces that the client does not list."""
         client_simulation_config = self.client_simulator_config_for(client_id)
         if client_simulation_config is None:
-            SimulationConfig.logger.error("Client %s does not have a config.", client_id)
-            return False
-        defined_interfaces = client_simulation_config.interfaces
-
-        for defined_interface in defined_interfaces:
-            if defined_interface.required and defined_interface.model_interface_id not in client_interface_ids.interfaces:
-                SimulationConfig.logger.error("Client %s does not contain required interface %s", client_id, defined_interface.name)
-                return False
-        return True
+            return []
+        return [
+            interface.name
+            for interface in client_simulation_config.interfaces
+            if interface.required and interface.model_interface_id not in client_interface_ids.interfaces
+        ]
 
     def connected_output_interfaces_by_simulator_interface_id(
         self,

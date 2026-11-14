@@ -1,3 +1,4 @@
+import logging
 import socket
 from contextlib import contextmanager
 from typing import Iterator
@@ -48,18 +49,35 @@ def test_a_raising_handler_closes_the_channel(channel_and_peer: tuple[ESPChannel
     assert listen_blocking_bounded(channel=peer, timeout_in_seconds=WAIT_TIMEOUT_IN_SECONDS) is None, "the peer was not told that the channel closed"
 
 
-def test_the_swallowed_error_of_a_handler_is_logged_with_its_traceback(
-    channel_and_peer: tuple[ESPChannel, ESPChannel],
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+def _log_of_a_raising_handler(channel_and_peer: tuple[ESPChannel, ESPChannel], caplog: pytest.LogCaptureFixture) -> str:
     channel, peer = channel_and_peer
     channel.listen_on_message_async(on_message=RaisingMessageHandler())
 
     peer.send(simple_message())
 
     assert finishes_in_time(blocking_call=channel.wait_for_finish), "the listen thread died and left the channel open"
-    assert "Traceback" in caplog.text
-    assert RaisingMessageHandler.ERROR_MESSAGE in caplog.text
+    return caplog.text
+
+
+def test_the_swallowed_error_of_a_handler_is_logged_in_one_line_without_debug(
+    channel_and_peer: tuple[ESPChannel, ESPChannel],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO)
+
+    log = _log_of_a_raising_handler(channel_and_peer=channel_and_peer, caplog=caplog)
+
+    assert RaisingMessageHandler.ERROR_MESSAGE in log
+    assert "Traceback" not in log
+
+
+def test_the_swallowed_error_of_a_handler_is_logged_with_its_traceback_with_debug(
+    channel_and_peer: tuple[ESPChannel, ESPChannel],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    assert "Traceback" in _log_of_a_raising_handler(channel_and_peer=channel_and_peer, caplog=caplog)
 
 
 def test_a_receive_timeout_raises_and_leaves_the_channel_usable(channel_and_peer: tuple[ESPChannel, ESPChannel]) -> None:
