@@ -4,15 +4,7 @@ from pathlib import Path
 import pytest
 from ecosim_common.client.config.simulator_directory import SimulatorDirectory, SimulatorDirectorySearch
 from ecosim_common.config.client_id import ClientID
-
-
-def write_simulator_directory(directory: Path, client_id: ClientID, model_file: str | None) -> None:
-    directory.mkdir()
-    (directory / "preferences.ini").write_text(
-        f"[simulator]\nsimulator_name={client_id.simulator_name}\nmodel_name={client_id.model_name}\nfmc_file=[model.fmc]\ntype=fmu\n",
-    )
-    if model_file is not None:
-        (directory / model_file).touch()
+from ecosim_test_common.test_data.generate_simulator_directory import write_simulator_directory
 
 
 def test_two_simulators_of_one_model_each_get_their_own_directory(tmp_path: Path) -> None:
@@ -116,7 +108,7 @@ def test_the_search_lists_every_unusable_directory_with_the_reason(tmp_path: Pat
     }
     assert "copy.ini" in search.unreadable[tmp_path / "copies"]
     assert "model_name" in search.unreadable[tmp_path / "no_model_name"]
-    assert [directory.path for directory in search.without_model_file] == [tmp_path / "weather"]
+    assert [directory.path for directory in search.without_model] == [tmp_path / "weather"]
     assert search.missing == [heating]
 
 
@@ -146,3 +138,17 @@ def test_the_model_files_are_the_python_fmu_and_matlab_files_of_the_directory_in
     simulator_directory = SimulatorDirectory.find_for_simulators(simulators_directory=tmp_path, client_ids=[house])[house]
 
     assert [model_file.name for model_file in simulator_directory.model_files()] == ["house.fmu", "model.py", "setup.m"]
+
+
+def test_a_python_model_named_in_the_ini_needs_no_model_file_in_the_directory(tmp_path: Path) -> None:
+    room = ClientID(model_name="room", simulator_name="room")
+    write_simulator_directory(
+        directory=tmp_path / "room",
+        client_id=room,
+        model_file=None,
+        extra_ini_text="[python]\nmodel=building_models.room:Room\n",
+    )
+
+    simulator_directories = SimulatorDirectory.find_for_simulators(simulators_directory=tmp_path, client_ids=[room])
+
+    assert simulator_directories[room].path == tmp_path / "room"
