@@ -22,7 +22,8 @@ cd ecosim
 
 eCoSim is installed from source. The repository holds one uv project per package, and
 `uv run --project <folder>` creates the environment of that folder the first time it is used, so
-there is no separate install step. The [quick start](quick-start.md) works this way.
+there is no separate install step. The [quick start](quick-start.md) runs `uv run` in
+`simulation_examples`, which works the same way.
 
 To set up all packages at once, run `python dev/init_dev.py` in the repository root. It creates the
 environment of every package with its development tools and installs the pre-commit hooks, see
