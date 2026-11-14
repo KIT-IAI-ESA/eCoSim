@@ -136,9 +136,9 @@ class ConfigParser:
         try:
             return self._config.get(section, option)
         except configparser.NoSectionError as e:
-            raise ConfigParserException(f"{self.config_file} has no section [{section}]") from e
+            raise MissingSectionOrKeyException(f"{self.config_file} has no section [{section}]") from e
         except configparser.NoOptionError as e:
-            raise ConfigParserException(f"{self.config_file} has no key {option} in [{section}]") from e
+            raise MissingSectionOrKeyException(f"{self.config_file} has no key {option} in [{section}]") from e
 
     def extract_extra_sections(self) -> List[str]:
         return ConfigParser.extract_extra_sections_from_config_file(self.config_file)
@@ -249,3 +249,7 @@ class ConfigParserException(Exception):
         message: str | None,
     ) -> None:
         super().__init__(message)
+
+
+class MissingSectionOrKeyException(ConfigParserException):
+    pass

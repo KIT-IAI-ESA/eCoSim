@@ -1,7 +1,9 @@
+import logging
 from pathlib import Path
 
 import pytest
 from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
+from ecosim_common.config.config_parser import ConfigParserException
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -138,3 +140,65 @@ def test_the_database_port_option_overrides_an_empty_port_in_the_config_file(tmp
     )
 
     assert config.database.port == 5433
+
+
+def test_results_as_files_from_the_options_log_no_default_of_the_config_file(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG, logger="ConfigParser")
+
+    generate_server_config_from_file_and_cli_arguments(
+        config_file=str(write_server_config_file(directory=tmp_path)),
+        database_type=DatabaseType.FILE.serialized,
+        database_directory=str(tmp_path / "results"),
+    )
+
+    assert [message for message in caplog.messages if "'database." in message] == []
+
+
+def test_results_in_postgres_from_the_options_log_no_default_of_the_config_file(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG, logger="ConfigParser")
+
+    generate_server_config_from_file_and_cli_arguments(
+        config_file=str(write_server_config_file(directory=tmp_path)),
+        database_type=DatabaseType.POSTGRES.serialized,
+    )
+
+    assert [message for message in caplog.messages if "'database." in message] == []
+
+
+def test_results_as_files_need_no_database_section(tmp_path: Path) -> None:
+    server_config_file = tmp_path / "preferences.ini"
+    server_config_file.write_text("[server]\nport=1234\n", encoding="utf-8")
+
+    config = generate_server_config_from_file_and_cli_arguments(config_file=str(server_config_file), database_type=DatabaseType.FILE.serialized)
+
+    assert config.database.type is DatabaseType.FILE
+
+
+def test_results_as_files_do_not_read_the_postgres_keys(tmp_path: Path) -> None:
+    server_config_file = tmp_path / "preferences.ini"
+    server_config_file.write_text("[server]\nport=1234\n[database]\ntype=file\ndirectory=results\nport=abc\n", encoding="utf-8")
+
+    config = ServerConfig.of_file(file=server_config_file)
+
+    assert config.database.directory == Path("results")
+
+
+def test_postgres_results_without_a_database_section_name_the_file_and_the_way_to_files(tmp_path: Path) -> None:
+    server_config_file = tmp_path / "preferences.ini"
+    server_config_file.write_text("[server]\nport=1234\n", encoding="utf-8")
+
+    with pytest.raises(ConfigParserException) as error_info:
+        ServerConfig.of_file(file=server_config_file)
+
+    expected = f"{server_config_file} has no section [database]. PostgreSQL results need it. To write the results as files, pass --database-type file"
+    assert str(error_info.value) == expected
+
+
+def test_a_database_port_that_is_no_whole_number_is_not_called_missing(tmp_path: Path) -> None:
+    server_config_file = tmp_path / "preferences.ini"
+    server_config_file.write_text("[server]\nport=1234\n[database]\nserver=localhost\nport=abc\nssl=false\nusername=x\n", encoding="utf-8")
+
+    with pytest.raises(ConfigParserException) as error_info:
+        ServerConfig.of_file(file=server_config_file)
+
+    assert str(error_info.value) == f"{server_config_file}: port in [database] has to be a whole number, not 'abc'"
