@@ -23,6 +23,7 @@ repository root.
 ecosim new my_simulation house.fmu occupancy.fmu weather.fmu --duration 1y --start-date 2023-01-01
 ecosim new my_simulation models --step-size 1min --steps 200
 ecosim new two_houses weather.fmu house=house.fmu house2=house.fmu
+ecosim new plant_simulation plant.fmu controller.fmu --connect controller.T=plant.T_out --logical-delay controller.T=293.15
 ```
 
 **Positional arguments**
@@ -46,6 +47,13 @@ ecosim new two_houses weather.fmu house=house.fmu house2=house.fmu
 | `--duration DURATION` |  |  | How much simulated time the simulation covers, like 12h, 30d or 1y, where 1y is 365 days. Without it and --steps, 1d. |
 | `--steps N` |  |  | How many steps the simulation runs, instead of --duration. |
 | `--start-date DATE` |  |  | When the simulated time starts, like 2023-01-01 or 2023-01-01T06:00+01:00. A time without an offset is UTC. The results of the first step are one step later. Without it, 2024-01-01. |
+
+**Connections**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--connect INPUT=OUTPUT` |  |  | Connects an input to an output of another name, like house.T_out=weather.T_dry. Can be given several times. |
+| `--logical-delay INPUT[=START]` |  |  | Gives a connected input the value of the step before, which breaks a loop of models that feed each other. START is its value in the first step, by default its start value in the FMU. Can be given several times. |
 
 **Results**
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
@@ -32,6 +33,7 @@ class HouseSimulation:
         port: int,
         steps: int = HouseSimulationData.STEPS,
         simulation_config_file: Path = HouseSimulationData.SIMULATION_CONFIG_FILE,
+        client_config_file: Callable[[str], Path] = HouseSimulationData.client_config_file,
     ) -> HouseSimulation:
         simulation_config = SimulationConfig.of_config_file_and_params(
             simulation_config_file=simulation_config_file,
@@ -52,7 +54,7 @@ class HouseSimulation:
         )
         clients = {
             module: FMU2Client.create(
-                config_parser=ConfigParser(HouseSimulationData.client_config_file(module)),
+                config_parser=ConfigParser(client_config_file(module)),
                 config_override=override,
             )
             for module in HouseSimulationData.MODULES

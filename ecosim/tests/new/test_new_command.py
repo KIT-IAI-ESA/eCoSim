@@ -6,7 +6,7 @@ import fmpy
 import pytest
 from ecosim.new.new_command import main
 from ecosim_server.measurement.postgres_name_check import MAXIMUM_SIMULATOR_NAME_IN_BYTES
-from ecosim_test_common.resources.resource_utils import fmu2_model_path
+from ecosim_test_common.resources.resource_utils import fmu2_model_path, resource_path_file
 from ecosim_test_common.test_data.generate_changed_fmu import generate_fmu_without_binaries_for
 
 
@@ -106,4 +106,20 @@ def test_a_model_name_that_postgres_cannot_hold_is_refused_before_anything_is_wr
         f"The model name {long_name} has {len(long_name)} characters, but PostgreSQL takes at most {MAXIMUM_SIMULATOR_NAME_IN_BYTES}. "
         + f"Give it a shorter name, like {long_name[:16]}={fmu2_model_path()}"
     )
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_new_writes_nothing_when_a_loop_is_left_open(tmp_path: Path) -> None:
+    # the model descriptions are the same in the builds of every platform
+    house_fmus = resource_path_file("fmu_v2/models/house/linux")
+    connections = [
+        "--connect",
+        "heating.T_room=house.room_temperature",
+        "--connect",
+        "house.heating_heatExchanger_control_signal=heating.heating_control_signal",
+    ]
+
+    with pytest.raises(ValueError, match="heating and house feed each other"):
+        main(passed_arguments=[str(tmp_path / "simulation"), str(house_fmus / "house.fmu"), str(house_fmus / "heating.fmu"), *connections])
+
     assert list(tmp_path.iterdir()) == []
