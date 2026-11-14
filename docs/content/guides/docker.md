@@ -95,7 +95,8 @@ cat results/simulation_state.jsonl
 
 Expected: one `module_*.jsonl` per simulator, each with one line per simulation step (60 lines for
 `--steps=60`), a `server_time_measurement.jsonl` with the runtimes the server prints as
-`SERVER MEASUREMENT`, and a `simulation_state.jsonl` that ends with `{"state": "Finished"}`.
+`SERVER MEASUREMENT`, a `simulation_state.jsonl` that ends with `{"state": "Finished"}`, and a copy of the
+run's `simulation.json`.
 
 Every line is one JSON object. A measurement of the `house` simulator, shortened to one interface:
 

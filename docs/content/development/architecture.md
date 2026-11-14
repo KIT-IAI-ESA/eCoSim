@@ -155,6 +155,8 @@ Both are exercised end to end by the [Docker example](../guides/docker.md). The 
 the difference. The implementations are in `data/`, `measurement/`, `simulation/state/` and `tech/db/`.
 `tech/db/` also holds what they share: the database connection and base classes, the PostgreSQL setup and
 `FileRepository`. The final state is stored as `finished` in the database and as `Finished` in the file backend.
+The file backend also copies the run's `simulation.json` into its directory, so the results can be read without the
+original config. It copies nothing into the folder of the config itself, so no other config there is replaced.
 
 ## Entry points
 
