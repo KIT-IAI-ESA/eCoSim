@@ -91,6 +91,14 @@ Read in addition by `ecosim-client-pyro5`.
 | `pyro` | `pyro_port` | string | required |
 | `pyro` | `pyro_object_name` | string | required |
 
+## Python client
+
+Read in addition by `ecosim-client-python`. `model` names the module and the class of the model, for example `room:Room`. The folder of the ini file is searched first, then the installed packages. See the [Python client](../guides/python-client.md) guide.
+
+| Section | Key | Type | Default |
+| --- | --- | --- | --- |
+| `python` | `model` | string | required |
+
 ## Client types
 
 `type` in the `[simulator]` section takes one of these values, in upper or lower case:
@@ -101,6 +109,7 @@ Read in addition by `ecosim-client-pyro5`.
 | `fmu_3` | `fmu3` |
 | `matlab` |  |
 | `pyro5` | `pyro` |
+| `python` |  |
 
 Any other value stops the client with `Unknown client type`. The value does not choose how the model
 runs, the command does: `ecosim-client-fmu-v2` runs its FMU whatever `type` says.
@@ -227,8 +236,8 @@ The interface files and `simulators` in the simulation config describe an interf
 | `description` | optional | optional | Free text |
 | `connected_to` | not read | required on inputs | A list with one entry: the output the input gets its value from |
 
-- `name` in the model is the variable of the FMU, the key in the dictionaries of the Pyro object or
-  the variable in the MATLAB workspace.
+- `name` in the model is the variable of the FMU, the key in the dictionaries of the Python model or
+  the Pyro object, or the variable in the MATLAB workspace.
 - `required` in `simulation.json`: the run fails with `does not full-fill interface requirements` if
   the `.fmc` file does not list the interface. Without it, the client logs a mismatch error instead.
 - `required` in the `.fmc` file only counts for inputs: the client logs a mismatch error if

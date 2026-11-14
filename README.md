@@ -78,7 +78,8 @@ The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/doc
 - Guides: [Docker](https://ecosim.easimov.com/docs/guides/docker),
   [HPC cluster](https://ecosim.easimov.com/docs/guides/hpc-cluster),
   [MATLAB client](https://ecosim.easimov.com/docs/guides/matlab-client),
-  [Pyro5 client](https://ecosim.easimov.com/docs/guides/pyro5-client)
+  [Pyro5 client](https://ecosim.easimov.com/docs/guides/pyro5-client),
+  [Python client](https://ecosim.easimov.com/docs/guides/python-client)
 - Reference: [command line](https://ecosim.easimov.com/docs/reference/command-line),
   [configuration files](https://ecosim.easimov.com/docs/reference/configuration-files)
 

@@ -58,4 +58,11 @@ GROUPS = [
         "Read in addition by `ecosim-client-pyro5`.",
         "ecosim-client-pyro5/ecosim_client_pyro5/pyro_config.py",
     ),
+    (
+        "Python client",
+        "Read in addition by `ecosim-client-python`. `model` names the module and the class of the model, "
+        "for example `room:Room`. The folder of the ini file is searched first, then the installed packages. "
+        "See the [Python client](../guides/python-client.md) guide.",
+        "ecosim-client-python/ecosim_client_python/python_config.py",
+    ),
 ]

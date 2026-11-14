@@ -1,0 +1,1 @@
+{"inputs": [{"name": "heating_power", "unit": "W", "required": "true"}], "outputs": [{"name": "temperature", "unit": "degC"}]}

@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecosim-client-python"
+version = "0.14.0"
+description = "The client for Python models of the eCoSim project"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = [
+    "ecosim-common==0.14.0",
+]
+
+[project.scripts]
+ecosim-client-python = "ecosim_client_python.main:main"
+
+[project.urls]
+Documentation = "https://ecosim.easimov.com/docs"
+Source = "https://github.com/KIT-IAI-ESA/eCoSim"
+Issues = "https://github.com/KIT-IAI-ESA/eCoSim/issues"
+Changelog = "https://ecosim.easimov.com/docs/development/release-history"
+
+[tool.setuptools.package-data]
+ecosim_client_python = ["py.typed"]
+
+[tool.uv.sources]
+ecosim-common = { path = "../ecosim-common", editable = true }
+ecosim-test-common = { path = "../ecosim-test-common", editable = true }
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-html==4.2.0",
+    "mypy==2.3.0",
+    "uv==0.13.7",
+    "ecosim-test-common==0.14.0",
+]
+
+[tool.pytest.ini_options]
+timeout = 120
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=ecosim_client_python",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--junitxml=report.xml",
+    "-v",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["ecosim_client_python"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = []
+
+[tool.mypy]
+mypy_path = ["../ecosim-common", "../ecosim-test-common"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    # mypy_path includes the sources of ecosim-common, so its untyped imports need the same overrides
+    "art",
+    "cloudpickle",
+    "cloudpickle.*",
+    "dask",
+    "dask.*",
+]
+ignore_missing_imports = true

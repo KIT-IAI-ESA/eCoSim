@@ -655,6 +655,26 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [[package]]
+name = "ecosim-client-python"
+version = "0.14.0"
+source = { editable = "../ecosim-client-python" }
+dependencies = [
+    { name = "ecosim-common" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-test-common", marker = "extra == 'dev'", editable = "../ecosim-test-common" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = "==9.1.1" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.1.0" },
+    { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
+    { name = "uv", marker = "extra == 'dev'", specifier = "==0.13.7" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "ecosim-common"
 version = "0.14.0"
 source = { editable = "../ecosim-common" }
@@ -915,6 +935,7 @@ dependencies = [
     { name = "ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab" },
     { name = "ecosim-client-pyro5" },
+    { name = "ecosim-client-python" },
     { name = "ecosim-common" },
     { name = "ecosim-common-fmpy" },
     { name = "ecosim-hpc" },
@@ -941,6 +962,7 @@ requires-dist = [
     { name = "ecosim-client-fmu-v3", editable = "../ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab", editable = "../ecosim-client-matlab" },
     { name = "ecosim-client-pyro5", editable = "../ecosim-client-pyro5" },
+    { name = "ecosim-client-python", editable = "../ecosim-client-python" },
     { name = "ecosim-common", editable = "../ecosim-common" },
     { name = "ecosim-common-fmpy", editable = "../ecosim-common-fmpy" },
     { name = "ecosim-hpc", editable = "../ecosim-hpc" },

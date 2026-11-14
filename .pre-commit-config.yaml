@@ -82,6 +82,13 @@ repos:
         pass_filenames: false
         types: [ python ]
       - id: mypy
+        name: mypy (ecosim-client-python)
+        entry: python dev/run_mypy.py ecosim-client-python
+        language: system
+        files: ^ecosim-client-python/
+        pass_filenames: false
+        types: [ python ]
+      - id: mypy
         name: mypy (ecosim-hpc)
         entry: python dev/run_mypy.py ecosim-hpc
         language: system
@@ -141,7 +148,7 @@ repos:
       - id: validate-pyproject
         files: (^|/)pyproject\.toml$
         # the client classifiers are fixed with the client rework
-        exclude: ^ecosim-client-
+        exclude: ^ecosim-client-(fmu-v2|fmu-v3|matlab|pyro5)/
 
   - repo: https://github.com/betterleaks/betterleaks
     rev: v1.10.0

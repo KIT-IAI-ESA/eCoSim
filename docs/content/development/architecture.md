@@ -2,7 +2,7 @@
 
 ## Subprojects
 
-Ten independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.venv`, and
+Eleven independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.venv`, and
 `dev/config.py:SUBPROJECTS` is the list the tooling iterates over.
 
 | Subproject | Import package | Purpose |
@@ -14,6 +14,7 @@ Ten independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.
 | `ecosim-client-fmu-v3` | `ecosim_client_fmu_v3` | Client for FMI 3.0 models |
 | `ecosim-client-matlab` | `ecosim_client_matlab` | Client for Matlab models |
 | `ecosim-client-pyro5` | `ecosim_client_pyro5` | Client bridging via Pyro5 (e.g. pandapower) |
+| `ecosim-client-python` | `ecosim_client_python` | Client for Python models that run in the process of the client |
 | `ecosim-hpc` | `ecosim_hpc` | HPC entry point and client manager |
 | `ecosim-test-common` | `ecosim_test_common` | Shared fixtures, test data and FMU resources |
 | `integration-tests` | `integration_tests` | Cross-package tests, needs the others installed |
@@ -27,6 +28,7 @@ An arrow points from a subproject to one it depends on. Every subproject also de
 flowchart TD
   tests[integration-tests] --> hpc[ecosim-hpc]
   tests --> testcommon[ecosim-test-common]
+  tests --> python[ecosim-client-python]
   hpc --> server[ecosim-server]
   hpc --> fmu2[ecosim-client-fmu-v2]
   hpc --> fmu3[ecosim-client-fmu-v3]
@@ -96,7 +98,8 @@ main.py               the console script
 ```
 
 The FMU clients name the last one `fmu2_simulator_config.py` / `fmu3_simulator_config.py`; the
-others use `matlab_config.py` and `pyro_config.py`.
+others use `matlab_config.py`, `pyro_config.py` and `python_config.py`. The Python client also has
+`python_model.py`, which calls the model, and `model_import.py`, which imports it.
 
 ## Communication
 
@@ -173,6 +176,7 @@ Each deployable subproject declares a console script:
 | `ecosim-client-fmu-v3` | `ecosim_client_fmu_v3.main:main` |
 | `ecosim-client-matlab` | `ecosim_client_matlab.main:main` |
 | `ecosim-client-pyro5` | `ecosim_client_pyro5.main:main` |
+| `ecosim-client-python` | `ecosim_client_python.main:main` |
 | `ecosim-hpc` | `ecosim_hpc.main:main` |
 
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
