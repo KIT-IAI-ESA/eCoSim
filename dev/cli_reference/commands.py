@@ -2,7 +2,7 @@
 
 import argparse
 import importlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -10,13 +10,16 @@ from typing import Any
 class Command:
     title: str
     # modules with a CONSOLE_SCRIPT, one for each command of the section
-    console_script_modules: list[str]
+    console_script_modules: list[str] = field(default_factory=list)
     # "package.module.Class" of the AppConfig with the options
-    arguments: str
+    arguments: str = ""
+    # "package.module.build_parser" of an ecosim command, instead of the two above
+    build_parser: str = ""
     note: str = ""
 
 
 COMMANDS = [
+    Command(title="ecosim check", build_parser="ecosim.check.check_command.build_parser"),
     Command(
         title="Server",
         console_script_modules=["ecosim_server.config.cli_arguments"],
@@ -50,6 +53,8 @@ def load(target: str) -> Any:
 
 
 def parsers_of(command: Command) -> list[argparse.ArgumentParser]:
+    if command.build_parser:
+        return [load(command.build_parser)()]
     create_parser = load("ecosim_common.config.app_config.AppConfig").create_parser
     parameters = load(command.arguments).parameters()
     return [

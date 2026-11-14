@@ -80,6 +80,14 @@ class AppConfigParameter:
     def to_parsed_arg_name(self) -> str:
         return self.name.replace("-", "_")
 
+    def to_passed_arguments(self, value: Any) -> list[str]:
+        """The arguments that pass a parsed value on to another command, like from ecosim run to ecosim-server."""
+        if self.is_flag:
+            return [self.to_cli_variable()] if value else []
+        if value is None:
+            return []
+        return [self.to_cli_variable(), str(value).lower() if isinstance(value, bool) else str(value)]
+
     def argparse_settings(self, environment_variables: Mapping[str, str]) -> dict[str, Any]:
         if self.is_flag:
             return {"action": "store_true", "default": self._flag_default(environment_variables), "help": self.help_text}

@@ -1,7 +1,7 @@
 [project]
-name = "ecosim"
+name = "ecosim-dev"
 version = "0.14.0"
-description = "The core eCoSim project"
+description = "The development tools of the eCoSim repository"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]

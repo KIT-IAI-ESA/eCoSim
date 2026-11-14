@@ -89,6 +89,14 @@ repos:
         pass_filenames: false
         types: [ python ]
       - id: mypy
+        name: mypy (ecosim)
+        entry: python dev/run_mypy.py ecosim
+        language: system
+        # the next character of ecosim-server/ and the other subprojects is a hyphen
+        files: ^ecosim/
+        pass_filenames: false
+        types: [ python ]
+      - id: mypy
         name: mypy (ecosim-hpc)
         entry: python dev/run_mypy.py ecosim-hpc
         language: system

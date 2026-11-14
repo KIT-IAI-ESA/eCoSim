@@ -23,7 +23,8 @@ def project_table(project: Path) -> dict[str, Any]:
 def internal_pins(project: Path) -> list[str]:
     table = project_table(project)
     requirements = chain(table.get("dependencies", []), *table.get("optional-dependencies", {}).values())
-    return [requirement for requirement in requirements if requirement.startswith("ecosim-")]
+    # "ecosim==", "ecosim-common==" and "ecosim-server[pandas]=="
+    return [requirement for requirement in requirements if requirement.startswith("ecosim")]
 
 
 def test_sets_every_version_field_and_internal_pin(tmp_path: Path) -> None:
@@ -53,3 +54,9 @@ def test_leaves_other_packages_pinned_to_the_same_version_alone() -> None:
     pinned = pin_internal_packages(pyproject=pyproject, packages=["ecosim-common"], version=NEW_VERSION)
 
     assert pinned == '"ecosim-common==9.9.9",\n"ecosim-common-fmpy==0.14.0",\n"ruff==0.14.0",\n'
+
+
+def test_a_pin_with_extras_keeps_them() -> None:
+    pinned = pin_internal_packages(pyproject='"ecosim-server[pandas]==0.14.0",\n', packages=["ecosim-server"], version=NEW_VERSION)
+
+    assert pinned == '"ecosim-server[pandas]==9.9.9",\n'

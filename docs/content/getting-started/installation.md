@@ -32,6 +32,7 @@ environment of every package with its development tools and installs the pre-com
 
 | Package | Command | Purpose |
 | --- | --- | --- |
+| `ecosim` | `ecosim` | One command for a simulation on one computer: `ecosim check` checks it. It brings the server, both FMU clients and the Python client |
 | `ecosim-server` | `ecosim-server` | The simulation server: state, repositories, measurements |
 | `ecosim-client-fmu-v2` | `ecosim-client-fmu-v2` | Client for FMI 2.0 models |
 | `ecosim-client-fmu-v3` | `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
@@ -44,8 +45,17 @@ environment of every package with its development tools and installs the pre-com
 Every command lists its options with `--help` and prints its version with `--version`. The
 [command-line reference](../reference/command-line.md) has the same lists.
 
-`simulation_examples/` is a uv project that installs the server, the FMI 2.0 client, the Python client and
-`ecosim-hpc` together. The examples use it.
+`ecosim` is the package to start with, since a simulation runs on one computer with nothing else installed. Its extras add
+the Pyro5 client, `ecosim[pyro5]`, and pandas for the results, `ecosim[pandas]`. The MATLAB client needs Python 3.12
+and an environment of its own, see the [MATLAB client](../guides/matlab-client.md).
+
+`simulation_examples/` is a uv project that installs `ecosim`, the server, the clients and `ecosim-hpc` together. The
+examples use it, so `uv run ecosim check building` works there. To have the `ecosim` command in every folder, install
+it from the clone as a uv tool:
+
+```shell
+uv tool install --editable ./ecosim
+```
 
 To work on eCoSim itself, see [Project setup](../development/project-setup.md).
 

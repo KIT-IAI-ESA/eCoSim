@@ -134,6 +134,15 @@ class ConfigParser:
     def sections(self) -> List[str]:
         return self._config.sections()
 
+    def options(
+        self,
+        section: str,
+    ) -> List[str]:
+        """The keys of a section in lower case, as the getters read them. Empty for a missing section."""
+        if not self._config.has_section(section):
+            return []
+        return self._config.options(section)
+
     def get_section(
         self,
         section: str,
@@ -154,9 +163,9 @@ class ConfigParser:
         try:
             return self._config.get(section, option)
         except configparser.NoSectionError as e:
-            raise MissingSectionOrKeyException(f"{self.config_file} has no section [{section}]") from e
+            raise MissingSectionOrKeyException(f"{self.config_file} has no section [{section}]", section=section) from e
         except configparser.NoOptionError as e:
-            raise MissingSectionOrKeyException(f"{self.config_file} has no key {option} in [{section}]") from e
+            raise MissingSectionOrKeyException(f"{self.config_file} has no key {option} in [{section}]", section=section, option=option) from e
 
     def extract_extra_sections(self) -> List[str]:
         return ConfigParser.extract_extra_sections_from_config_file(self.config_file)
@@ -265,8 +274,13 @@ class ConfigParserException(Exception):
     def __init__(
         self,
         message: str | None,
+        section: str | None = None,
+        option: str | None = None,
     ) -> None:
         super().__init__(message)
+        # so a caller can look for a close section or key without reading the message
+        self.section = section
+        self.option = option
 
 
 class MissingSectionOrKeyException(ConfigParserException):

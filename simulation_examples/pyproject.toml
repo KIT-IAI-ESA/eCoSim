@@ -14,6 +14,7 @@ requires-python = ">=3.12"
 classifiers = ["Private :: Do Not Upload"]
 
 dependencies = [
+    "ecosim==0.14.0",
     "ecosim-client-fmu-v2==0.14.0",
     "ecosim-client-python==0.14.0",
     "ecosim-common==0.14.0",
@@ -27,6 +28,7 @@ dependencies = [
 py-modules=[]
 
 [tool.uv.sources]
+ecosim = { path = "../ecosim", editable = true }
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
@@ -34,4 +36,4 @@ ecosim-client-python = { path = "../ecosim-client-python", editable = true }
 ecosim-hpc = { path = "../ecosim-hpc", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim-common", "../ecosim-server", "../ecosim-client-python", "../ecosim-hpc"]
+mypy_path = ["../ecosim", "../ecosim-common", "../ecosim-server", "../ecosim-client-python", "../ecosim-hpc"]

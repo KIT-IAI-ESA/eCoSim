@@ -191,6 +191,16 @@ def test_postgres_results_without_a_database_section_show_the_file_and_the_way_t
     assert message.endswith(". PostgreSQL results need it. To write the results as files, pass --database-type file")
 
 
+def test_a_missing_postgres_key_keeps_its_section_and_key_for_a_hint(tmp_path: Path) -> None:
+    server_config_file = tmp_path / "preferences.ini"
+    server_config_file.write_text("[server]\nport=1234\n[database]\nserver=localhost\nport=5432\nssl=false\n", encoding="utf-8")
+
+    with pytest.raises(ConfigParserException) as error_info:
+        ServerConfig.of_file(file=server_config_file)
+
+    assert (error_info.value.section, error_info.value.option) == ("database", "username")
+
+
 def test_a_database_port_that_is_not_a_whole_number_is_not_called_missing(tmp_path: Path) -> None:
     server_config_file = tmp_path / "preferences.ini"
     server_config_file.write_text("[server]\nport=1234\n[database]\nserver=localhost\nport=abc\nssl=false\nusername=x\n", encoding="utf-8")

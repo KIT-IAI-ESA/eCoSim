@@ -144,3 +144,23 @@ def test_a_choice_is_accepted_in_any_letter_case() -> None:
     )
 
     assert app_config._args.protocol == "tcp_socket"
+
+
+@pytest.mark.parametrize(
+    "parameter, given",
+    [
+        (AppConfigParameter(name="steps", transform=ConfigParser.positive_whole_number, help_text="steps"), ["--steps", "35040"]),
+        (AppConfigParameter(name="pace", transform=ConfigParser.number_from_zero_to_one, help_text="pace"), ["--pace", "0.5"]),
+        (AppConfigParameter(name="ssl", transform=ConfigParser.true_or_false, help_text="ssl"), ["--ssl", "false"]),
+        (AppConfigParameter(name="name", help_text="name"), []),
+        (AppConfigParameter(name="debug", is_flag=True, help_text="debug"), ["--debug"]),
+        (AppConfigParameter(name="debug", is_flag=True, help_text="debug"), []),
+    ],
+)
+def test_a_parsed_value_passes_on_as_arguments_that_parse_to_the_same_value(parameter: AppConfigParameter, given: list[str]) -> None:
+    first = AppConfig(passed_arguments=given, console_script=CONSOLE_SCRIPT, parameters=[parameter])
+    value = getattr(first._args, parameter.to_parsed_arg_name())
+
+    second = AppConfig(passed_arguments=parameter.to_passed_arguments(value), console_script=CONSOLE_SCRIPT, parameters=[parameter])
+
+    assert getattr(second._args, parameter.to_parsed_arg_name()) == value

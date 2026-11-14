@@ -1,6 +1,6 @@
 import argparse
 
-from cli_reference.commands import Command
+from cli_reference.commands import Command, parsers_of
 from cli_reference.options import Option, collect_sections
 from generate_cli_reference import examples_of, render_command, render_row
 
@@ -42,11 +42,11 @@ def test_an_option_keeps_how_the_help_shows_its_value_and_its_default() -> None:
 
 def test_a_positional_argument_is_written_without_dashes() -> None:
     parser = argparse.ArgumentParser(prog="ecosim run")
-    parser.add_argument("study", metavar="STUDY", help="The study folder.")
+    parser.add_argument("simulation", metavar="SIMULATION", help="The simulation folder.")
 
     positional = collect_sections(parser)[0].options[0]
 
-    assert render_row(positional) == "| `STUDY` | yes |  | The study folder. |"
+    assert render_row(positional) == "| `SIMULATION` | yes |  | The simulation folder. |"
 
 
 def test_render_row() -> None:
@@ -73,3 +73,9 @@ def test_a_command_has_its_description_its_examples_and_a_table_for_each_section
     assert "See the guide." in lines
     assert lines[lines.index("```shell") + 1] == "ecosim-test --config-file a.ini \\"
     assert lines[lines.index("**Config files**") + 4] == "| `--config-file FILE` | yes |  | Path to the config file. |"
+
+
+def test_an_ecosim_command_is_read_from_the_parser_its_module_builds() -> None:
+    parsers = parsers_of(command=Command(title="Test", build_parser="test_generate_cli_reference.create_sample_parser"))
+
+    assert [parser.prog for parser in parsers] == ["ecosim-test"]
