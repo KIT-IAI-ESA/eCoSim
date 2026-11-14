@@ -301,7 +301,7 @@ class Client(ShutdownListener):
         self,
         message: ESPChannelMessage,
     ) -> None:
-        Client.logger.info("Handling simulation step")
+        Client.logger.debug("Handling simulation step")
         simulation_step_request: SimulationStepRequest = message.payload(
             SimulationStepRequest,
         )

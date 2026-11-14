@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Iterable, List, Tuple
+from typing import Callable, Iterable, List, Tuple
 
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
 from ecosim_common.communication.correlation_id import CorrelationId
@@ -18,11 +18,13 @@ from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
+from ecosim_server.progress_logger import progress_logger
 from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.current_step_data import CurrentStepData
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory, RestoreData
 from ecosim_server.simulation.rendering.rendering_socket import RenderingSocket
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
+from ecosim_server.simulation.step_progress import StepProgress
 
 
 class SimulationExecutor:
@@ -39,6 +41,7 @@ class SimulationExecutor:
         server_measurement: ServerTimeMeasurement,
         client_communication: ClientCommunication,
         response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+        clock: Callable[[], float] = time.monotonic,
     ):
         self.simulation_config = simulation_config
         self._server_config = server_config
@@ -67,6 +70,7 @@ class SimulationExecutor:
         self._rendering_socket: RenderingSocket | None = None
         self._rendering_interval: int | None = self._server_config.server.image_renderer_interval
         self._step_message_client_ids: Tuple[ClientID, ...] = simulation_config.client_ids()
+        self._step_progress = StepProgress(_simulation_config=simulation_config, _clock=clock)
 
     def execute(
         self,
@@ -283,17 +287,24 @@ class SimulationExecutor:
 
     def _execute_steps(self) -> None:
         self.logger.debug("Executing steps")
+        self._step_progress.start(first_step=self._current_step)
         with self._client_communication.subscribe(
             client_ids=self._step_message_client_ids,
             message_types=(MessageType.SIMULATION_STEP,),
         ) as subscription:
             while self._current_step < self.simulation_config.steps:
-                self.logger.info("Step %s: Executing step", self._current_step)
+                self.logger.debug("Step %s: Executing step", self._current_step)
                 self._current_step_data.reset_for_new_step(step=self._current_step)
                 self._execute_logical_delays()
                 self._execute_step(subscription)
                 self._handle_image_renderer()
                 self._current_step += 1
+                self._report_completed_step()
+
+    def _report_completed_step(self) -> None:
+        line = self._step_progress.step_completed(completed_steps=self._current_step)
+        if line is not None:
+            progress_logger.info("%s", line)
 
     def _execute_step(
         self,
@@ -310,7 +321,7 @@ class SimulationExecutor:
         self.logger.debug("Step %s: Execute logical delays", self._current_step)
         with self._current_step_data.logical_delays_by_delay_step().transaction() as delays_by_delay_step:
             for delayed_time_steps in sorted(delays_by_delay_step.keys()):
-                self.logger.info("Step %s: Execute logical delays at '%s'", self._current_step, delayed_time_steps)
+                self.logger.debug("Step %s: Execute logical delays at '%s'", self._current_step, delayed_time_steps)
                 for logical_delay_connection in delays_by_delay_step[delayed_time_steps].connections:
                     delayed_value = logical_delay_connection.take_next_value()
                     self.logger.debug(

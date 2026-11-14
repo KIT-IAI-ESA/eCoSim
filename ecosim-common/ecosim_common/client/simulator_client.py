@@ -140,7 +140,7 @@ class SimulatorClient(Client, ABC):
                 self._set_input_float_matrix(interface_id, value)
             else:
                 self._set_input_float(interface_id, value)
-        self.logger.info(
+        self.logger.debug(
             "Executing next step (current_simulation_time=%s | step_size=%s)...",
             self._current_simulation_time,
             step_size_in_seconds,
