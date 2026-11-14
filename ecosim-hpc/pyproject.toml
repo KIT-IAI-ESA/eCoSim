@@ -33,6 +33,9 @@ dependencies = [
 requires = ["setuptools==84.2.1", "build"]
 build-backend = "setuptools.build_meta"
 
+[project.scripts]
+ecosim-hpc = "ecosim_hpc.main:main"
+
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
