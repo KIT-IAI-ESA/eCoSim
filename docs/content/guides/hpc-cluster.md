@@ -5,8 +5,8 @@ description: Run the building example on bwUniCluster with SLURM and Dask-MPI.
 
 # HPC cluster
 
-The `simulation_examples/building_hpc` example runs the building simulation on bwUniCluster through
-`ecosim_hpc/main.py`. One job script is submitted to SLURM, the cluster's queuing system, and starts
+The `simulation_examples/building_hpc` example runs the building simulation on bwUniCluster with the
+`ecosim-hpc` command. One job script is submitted to SLURM, the cluster's queuing system, and starts
 everything with `mpirun`. Dask-MPI then turns the MPI ranks into a Dask cluster:
 
 - rank 0 is the Dask scheduler
@@ -28,7 +28,7 @@ The example has these scripts in `building_hpc/Executable/`:
 `server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
 are empty, so the server logs in as your cluster user with the password from `test.pgpass`, see below.
 
-A simulator's directory in `Modules/` holds one model only, because `ecosim_hpc/main.py` chooses the client
+A simulator's directory in `Modules/` holds one model only, because `ecosim-hpc` chooses the client
 by the files in it: an FMU client for each `.fmu` file, the Pyro5 client for `.py` files and the MATLAB
 client for `.m` files.
 
@@ -52,6 +52,10 @@ client for `.m` files.
 5. Edit `ECOSIM_DIR` in `clusterRunHPC.sh` as well.
 6. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
+
+The job script passes `--debug`, so the SLURM file `slurm-<job id>.out` gets every message of every step.
+`grep -v ' - DEBUG - ' slurm-<job id>.out` shows the file without the debug messages, as a run without
+`--debug` would write it.
 
 The first run creates the PostgreSQL data directory `test` next to the scripts. Other users on the same
 node can reach this PostgreSQL server, so it only lets in logins with a password. The script creates a
@@ -105,4 +109,4 @@ pg_ctl stop -D test
 ## See also
 
 - [HPC cheat sheet](../development/tech/hpc-cheat-sheet.md): batch and interactive mode with Dask-MPI
-- [Command-line options](../reference/command-line.md#hpc) of the HPC entry point
+- [Command-line options](../reference/command-line.md#hpc) of `ecosim-hpc`

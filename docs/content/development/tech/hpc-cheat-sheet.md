@@ -26,7 +26,7 @@ The same run without SLURM and PostgreSQL, on a machine with `mpirun`, in the sa
 to `simulation_results/`:
 
 ```shell
-mpirun -np 4 uv run ../../../ecosim-hpc/ecosim_hpc/main.py \
+mpirun -np 4 uv run ecosim-hpc \
   --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
   --simulator-dir ../Modules/ --steps 100 --database-type file
 ```
@@ -56,7 +56,7 @@ writes. In `simulation_examples/building_hpc/Executable`:
 2. Start the simulation once `scheduler.json` exists:
 
    ```shell
-   uv run ../../../ecosim-hpc/ecosim_hpc/main.py --interactive \
+   uv run ecosim-hpc --interactive \
      --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
      --simulator-dir ../Modules/ --steps 100 --database-type file
    ```
