@@ -6,14 +6,12 @@ Usage: uv run --project simulation_examples python dev/generate_cli_reference.py
 
 import argparse
 import importlib
-import io
 import sys
-from contextlib import redirect_stdout, suppress
+import textwrap
 from dataclasses import dataclass
-from functools import partial
-from typing import Any, Callable
-from unittest import mock
+from typing import Any
 
+from cli_reference_options import Option, collect_sections
 from config import REPO_ROOT, write_or_check
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "command-line.md"
@@ -26,88 +24,55 @@ description: Every option of the eCoSim server, the clients and the HPC entry po
 
 # Command-line options
 
-These tables come from the option definitions in the code. A wrong value stops the command at once with exit code 2
-and a short message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
+These tables come from the option definitions in the code, the same that `--help` shows. Every command also takes
+`--help` and `--version`. A misspelt option or a wrong value stops the command at once with exit code 2 and a short
+message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
 """
 TABLE_HEADER = ["| Option | Required | Default | Description |", "| --- | --- | --- | --- |"]
+
+
+@dataclass(frozen=True)
+class Command:
+    title: str
+    # modules with a CONSOLE_SCRIPT, one for each command of the section
+    console_script_modules: list[str]
+    # "package.module.Class" of the AppConfig with the options
+    arguments: str
+    note: str = ""
+
+
 COMMANDS = [
-    (
-        "Server",
-        "ecosim-server",
-        "Starts the server, which owns the clock and the data flow of a simulation.",
-        "ecosim_server.config.cli_arguments.CLIArguments",
+    Command(
+        title="Server",
+        console_script_modules=["ecosim_server.config.cli_arguments"],
+        arguments="ecosim_server.config.cli_arguments.CLIArguments",
     ),
-    (
-        "FMU clients",
-        "ecosim-client-fmu-v2, ecosim-client-fmu-v3",
-        "Connect an FMI 2.0 or FMI 3.0 model to the server.",
-        "ecosim_common_fmpy.config.fmpy_cli_arguments.FMPyCliArguments",
+    Command(
+        title="FMU clients",
+        console_script_modules=["ecosim_client_fmu_v2.main", "ecosim_client_fmu_v3.main"],
+        arguments="ecosim_common_fmpy.config.fmpy_cli_arguments.FMPyCliArguments",
     ),
-    (
-        "MATLAB and Pyro5 clients",
-        "ecosim-client-matlab, ecosim-client-pyro5",
-        "Connect a MATLAB model or a Python model served over Pyro5.",
-        "ecosim_common.client.config.cli_arguments.CLIArguments",
+    Command(
+        title="MATLAB and Pyro5 clients",
+        console_script_modules=["ecosim_client_matlab.main", "ecosim_client_pyro5.main"],
+        arguments="ecosim_common.client.config.cli_arguments.CLIArguments",
+        note="See the [MATLAB client](../guides/matlab-client.md) and the [Pyro5 client](../guides/pyro5-client.md) guides.",
     ),
-    (
-        "HPC",
-        "python ecosim_hpc/main.py",
-        "Runs server and clients on a Dask cluster. The communication protocol is always `DASK`. Batch mode, the default, needs `mpirun`; "
-        "`--interactive` connects to a running Dask scheduler. See the [HPC cluster](../guides/hpc-cluster.md) guide.",
-        "ecosim_hpc.config.cli_arguments.HPCServerCliArguments",
+    Command(
+        title="HPC",
+        console_script_modules=["ecosim_hpc.config.cli_arguments"],
+        arguments="ecosim_hpc.config.cli_arguments.HPCServerCliArguments",
+        note="See the [HPC cluster](../guides/hpc-cluster.md) guide.",
     ),
 ]
 
 
-@dataclass(frozen=True)
-class Option:
-    name: str
-    required: bool
-    flag: bool
-    default: Any
-    help: str
-
-
-def to_option(name: str, settings: dict[str, Any]) -> Option:
-    return Option(
-        name=name.lstrip("-"),
-        required=bool(settings.get("required", False)),
-        flag=settings.get("action") == "store_true",
-        default=settings.get("default"),
-        # argparse help texts write a literal % as %%
-        help=str(settings.get("help", "")).replace("%%", "%"),
-    )
-
-
-def recorder(options: list[Option], original: Callable[..., Any]) -> Callable[..., Any]:
-    def record(parser: argparse.ArgumentParser, *names: str, **settings: Any) -> Any:
-        if names[0] != "-h":
-            options.append(to_option(names[0], settings))
-        return original(parser, *names, **settings)
-
-    return record
-
-
-def collect_options(build: Callable[[], object]) -> list[Option]:
-    """Record the options a CLI class adds while handling --help."""
-    options: list[Option] = []
-    record = recorder(options, argparse.ArgumentParser.add_argument)
-    with (
-        mock.patch.object(argparse.ArgumentParser, "add_argument", record),
-        mock.patch.object(sys, "argv", ["ecosim", "--help"]),
-        redirect_stdout(io.StringIO()),
-        suppress(SystemExit),
-    ):
-        build()
-    return options
-
-
-def create(target: str) -> object:
-    """Instantiate "package.module.Class"."""
+def load(target: str) -> Any:
+    """Import "package.module.Name"."""
     module, name = target.rsplit(".", 1)
-    return getattr(importlib.import_module(module), name)()
+    return getattr(importlib.import_module(module), name)
 
 
 def render_row(option: Option) -> str:
@@ -118,26 +83,45 @@ def render_row(option: Option) -> str:
     else:
         default = f"`{option.default}`"
     required = "yes" if option.required else ""
+    value = f" {option.value}" if option.value else ""
     # | would end the table cell and < would start an HTML tag
     description = option.help.replace("|", "\\|").replace("<", "&lt;")
-    return f"| `--{option.name}` | {required} | {default} | {description} |"
+    return f"| `{option.name}{value}` | {required} | {default} | {description} |"
 
 
-def render_page(sections: list[tuple[str, str, str, list[Option]]]) -> str:
-    lines = [HEADER]
-    for title, command, intro, options in sections:
-        lines += [f"## {title}", "", f"`{command}`", "", intro, "", *TABLE_HEADER]
-        lines += [render_row(option) for option in options]
-        lines.append("")
-    return "\n".join(lines)
+def examples_of(epilog: str | None) -> list[str]:
+    """The example commands at the end of the help, without their indent."""
+    if not epilog or not epilog.startswith("examples:"):
+        return []
+    return textwrap.dedent(epilog.removeprefix("examples:").strip("\n")).splitlines()
+
+
+def render_command(command: Command, parsers: list[argparse.ArgumentParser]) -> list[str]:
+    lines = [f"## {command.title}", ""]
+    lines += [line for parser in parsers for line in (f"`{parser.prog}`: {parser.description}", "")]
+    lines += [command.note, ""] if command.note else []
+    examples = [example for parser in parsers for example in examples_of(parser.epilog)]
+    lines += ["```shell", *examples, "```", ""] if examples else []
+    for section in collect_sections(parsers[0]):
+        lines += [f"**{section.title.capitalize()}**", "", *TABLE_HEADER, *(render_row(option) for option in section.options), ""]
+    return lines
+
+
+def render_page(commands: list[list[str]]) -> str:
+    return "\n".join([HEADER, *(line for command in commands for line in command)])
 
 
 def main(arguments: list[str]) -> int:
-    sections = []
-    for title, command, intro, target in COMMANDS:
-        options = collect_options(partial(create, target))
-        sections.append((title, command, intro, options))
-    return write_or_check(PAGE, render_page(sections), "--check" in arguments)
+    create_parser = load("ecosim_common.config.app_config.create_parser")
+    rendered = []
+    for command in COMMANDS:
+        parameters = load(command.arguments).parameters()
+        console_scripts = [load(f"{module}.CONSOLE_SCRIPT") for module in command.console_script_modules]
+        parsers = [
+            create_parser(console_script=console_script, parameters=parameters, environment_variables={}) for console_script in console_scripts
+        ]
+        rendered.append(render_command(command=command, parsers=parsers))
+    return write_or_check(PAGE, render_page(rendered), "--check" in arguments)
 
 
 if __name__ == "__main__":

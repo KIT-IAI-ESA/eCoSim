@@ -1,42 +1,71 @@
 import argparse
 
-from generate_cli_reference import Option, collect_options, render_page, render_row
+from cli_reference_options import Option, collect_sections
+from generate_cli_reference import Command, examples_of, render_command, render_row
 
 
-def build_sample() -> object:
-    parser = argparse.ArgumentParser(description="sample")
-    parser.add_argument("--config-file", required=True, help="Path to the config file.")
+def a_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="ecosim-test",
+        description="Tests.",
+        epilog="examples:\n  ecosim-test --config-file a.ini \\\n      --debug",
+    )
+    parser.add_argument("--version", action="version", version="1.0")
     parser.add_argument("--debug", action="store_true", default=False, help="More logs")
-    parser.add_argument("--pace", default="1.0", help="Pace, 1 means 100%%")
-    return parser.parse_args()
+    files = parser.add_argument_group("config files")
+    files.add_argument("--config-file", required=True, metavar="FILE", help="Path to the config file.")
+    run = parser.add_argument_group("run")
+    run.add_argument("--pace", default="1", metavar="NUMBER", help="Pace, 1 means 100%%")
+    run.add_argument("--database-type", choices=["postgres", "file"], help="Type")
+    return parser
 
 
-def test_collect_options_records_every_option_except_help() -> None:
-    options = collect_options(build_sample)
+def test_the_options_of_argument_groups_are_collected_under_their_titles() -> None:
+    sections = collect_sections(a_parser())
 
-    assert [option.name for option in options] == ["config-file", "debug", "pace"]
-    assert options[0].required
-    assert options[1].flag
-    assert options[2] == Option("pace", False, False, "1.0", "Pace, 1 means 100%")
+    assert [(section.title, [option.name for option in section.options]) for section in sections] == [
+        ("options", ["--debug"]),
+        ("config files", ["--config-file"]),
+        ("run", ["--pace", "--database-type"]),
+    ]
 
 
-def test_collect_options_restores_argparse() -> None:
-    before = argparse.ArgumentParser.add_argument
+def test_an_option_keeps_how_the_help_shows_its_value_and_its_default() -> None:
+    run = collect_sections(a_parser())[-1]
 
-    collect_options(build_sample)
+    assert run.options == [
+        Option(name="--pace", value="NUMBER", required=False, flag=False, default="1", help="Pace, 1 means 100%"),
+        Option(name="--database-type", value="{postgres,file}", required=False, flag=False, default=None, help="Type"),
+    ]
 
-    assert argparse.ArgumentParser.add_argument is before
+
+def test_a_positional_argument_is_written_without_dashes() -> None:
+    parser = argparse.ArgumentParser(prog="ecosim run")
+    parser.add_argument("study", metavar="STUDY", help="The study folder.")
+
+    positional = collect_sections(parser)[0].options[0]
+
+    assert render_row(positional) == "| `STUDY` | yes |  | The study folder. |"
 
 
 def test_render_row() -> None:
-    assert render_row(Option("pace", False, False, "1.0", "a | b")) == "| `--pace` |  | `1.0` | a \\| b |"
-    assert render_row(Option("debug", False, True, False, "x")) == "| `--debug` |  | flag | x |"
-    assert render_row(Option("steps", True, False, None, "n")) == "| `--steps` | yes |  | n |"
+    pace = Option(name="--pace", value="NUMBER", required=False, flag=False, default="1", help="a | b")
+    debug = Option(name="--debug", value="", required=False, flag=True, default=False, help="x")
+    steps = Option(name="--steps", value="N", required=True, flag=False, default=None, help="n")
+
+    assert render_row(pace) == "| `--pace NUMBER` |  | `1` | a \\| b |"
+    assert render_row(debug) == "| `--debug` |  | flag | x |"
+    assert render_row(steps) == "| `--steps N` | yes |  | n |"
 
 
-def test_render_page_has_one_table_per_command() -> None:
-    page = render_page([("Server", "ecosim-server", "Starts the server.", [Option("steps", True, False, None, "n")])])
+def test_the_examples_keep_their_continuation_lines() -> None:
+    assert examples_of(a_parser().epilog) == ["ecosim-test --config-file a.ini \\", "    --debug"]
 
-    assert "## Server" in page
-    assert "`ecosim-server`" in page
-    assert "| `--steps` | yes |  | n |" in page
+
+def test_a_command_has_its_description_its_examples_and_a_table_for_each_section() -> None:
+    lines = render_command(command=Command(title="Test", console_script_modules=[], arguments="", note="See the guide."), parsers=[a_parser()])
+
+    assert lines[:4] == ["## Test", "", "`ecosim-test`: Tests.", ""]
+    assert "See the guide." in lines
+    assert lines[lines.index("```shell") + 1] == "ecosim-test --config-file a.ini \\"
+    assert lines[lines.index("**Config files**") + 4] == "| `--config-file FILE` | yes |  | Path to the config file. |"

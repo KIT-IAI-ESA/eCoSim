@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import os
-import sys
 from dataclasses import dataclass
-from typing import Any, Callable, List
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from ecosim_common.config import config_parser
+from ecosim_common.config.argument_parser import EcosimArgumentParser
+from ecosim_common.config.console_script import ConsoleScript
 
 
 class AppConfig(object):
@@ -21,62 +22,62 @@ class AppConfig(object):
 
     def __init__(
         self,
-        cli_description: str,
-        parameters: List[AppConfigParameter],
-        environment_variables: dict[str, str] | None = None,
-        passed_arguments: List[Any] | None = None,
-    ):
-        if environment_variables is None:
-            environment_variables = dict(os.environ)
-        if passed_arguments is None:
-            passed_arguments = sys.argv[1:]
-        self._parser = argparse.ArgumentParser(description=cli_description)
-        for parameter in parameters:
-            if parameter.is_flag is False:
-                self._add_string(environment_variables, parameter)
-            else:
-                self._add_flag(environment_variables, parameter)
-        self._args = self._parser.parse_args(passed_arguments)
-
-    def _add_string(
-        self,
-        overrides: dict[str, str],
-        parameter: AppConfigParameter,
+        console_script: ConsoleScript,
+        parameters: Sequence[AppConfigParameter],
+        environment_variables: Mapping[str, str] | None = None,
+        passed_arguments: Sequence[str] | None = None,
     ) -> None:
-        string_value: str | None = None
-        if parameter.enable_environment_variable:
-            string_value = overrides.get(parameter.to_environment_variable())
-        if string_value is None:
-            string_value = parameter.default_value
-        self._parser.add_argument(
-            parameter.to_cli_variable(),
-            type=parameter.transform or str,
-            choices=parameter.choices,
-            required=parameter.required,
-            help=parameter.help_text,
-            default=string_value,
+        parser = create_parser(
+            console_script=console_script,
+            parameters=parameters,
+            environment_variables=os.environ if environment_variables is None else environment_variables,
         )
-
-    def _add_flag(
-        self,
-        overrides: dict[str, str],
-        parameter: AppConfigParameter,
-    ) -> None:
-        default_value: bool | None = None
-        if parameter.enable_environment_variable:
-            default_value = parameter.to_environment_variable() in overrides
-        default_value = default_value or config_parser.ConfigParser.config_string_to_bool(
-            parameter.default_value or "False",
-        )
-        self._parser.add_argument(
-            parameter.to_cli_variable(),
-            help=parameter.help_text,
-            default=default_value,
-            action="store_true",
-        )
+        # None reads sys.argv
+        self._args = parser.parse_args(passed_arguments)
 
 
-@dataclass
+def create_parser(
+    console_script: ConsoleScript,
+    parameters: Sequence[AppConfigParameter],
+    environment_variables: Mapping[str, str],
+) -> EcosimArgumentParser:
+    parser = EcosimArgumentParser(
+        prog=console_script.name,
+        usage=short_usage(parameters),
+        description=console_script.description,
+        epilog=console_script.examples_text(),
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {console_script.version()}")
+    add_parameters(parser=parser, parameters=parameters, environment_variables=environment_variables)
+    return parser
+
+
+def add_parameters(
+    parser: argparse.ArgumentParser,
+    parameters: Iterable[AppConfigParameter],
+    environment_variables: Mapping[str, str],
+) -> None:
+    """Adds the parameters to a parser or to a subcommand's parser, each under the title of its group."""
+    parameters_by_group: dict[str | None, list[AppConfigParameter]] = {}
+    for parameter in parameters:
+        parameters_by_group.setdefault(parameter.group, []).append(parameter)
+    for group, grouped_parameters in parameters_by_group.items():
+        container = parser if group is None else parser.add_argument_group(title=group)
+        for parameter in grouped_parameters:
+            container.add_argument(parameter.to_cli_variable(), **parameter.argparse_settings(environment_variables))
+
+
+def short_usage(parameters: Iterable[AppConfigParameter]) -> str:
+    """The usage line names only the required options, --help lists the others."""
+    required = [
+        f"{parameter.to_cli_variable()} {parameter.metavar or parameter.to_parsed_arg_name().upper()}"
+        for parameter in parameters
+        if parameter.required
+    ]
+    return " ".join(["%(prog)s", *required, "[options]"])
+
+
+@dataclass(frozen=True)
 class AppConfigParameter:
     name: str
     help_text: str
@@ -90,6 +91,10 @@ class AppConfigParameter:
     transform: Callable[[str], Any] | None = None
     # compared with the value after the transform
     choices: tuple[str, ...] | None = None
+    # what the help shows for the value, like FILE or PORT
+    metavar: str | None = None
+    # the section of the help, None for the general options
+    group: str | None = None
 
     def to_environment_variable(self) -> str:
         name = self.name.replace("-", "_").upper()
@@ -102,3 +107,25 @@ class AppConfigParameter:
 
     def to_parsed_arg_name(self) -> str:
         return self.name.replace("-", "_")
+
+    def argparse_settings(self, environment_variables: Mapping[str, str]) -> dict[str, Any]:
+        if self.is_flag:
+            return {"action": "store_true", "default": self._flag_default(environment_variables), "help": self.help_text}
+        return {
+            "required": self.required,
+            "default": self._default(environment_variables),
+            "type": self.transform,
+            "choices": self.choices,
+            "metavar": self.metavar,
+            "help": self.help_text,
+        }
+
+    def _default(self, environment_variables: Mapping[str, str]) -> str | None:
+        if self.enable_environment_variable and self.to_environment_variable() in environment_variables:
+            return environment_variables[self.to_environment_variable()]
+        return self.default_value
+
+    def _flag_default(self, environment_variables: Mapping[str, str]) -> bool:
+        if self.enable_environment_variable and self.to_environment_variable() in environment_variables:
+            return True
+        return config_parser.ConfigParser.config_string_to_bool(self.default_value or "False")
