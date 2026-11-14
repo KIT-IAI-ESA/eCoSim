@@ -40,7 +40,7 @@ class SimulationConfig:
     @staticmethod
     def of_config_file_and_params(
         simulation_config_file: Path,
-        steps: int,
+        steps: int | None,
         step_size_override: int | None = None,
         pace: float = 1.0,
         restore: bool = False,
@@ -50,12 +50,20 @@ class SimulationConfig:
             raw_config=config,
             simulation_config_file=simulation_config_file,
             has_step_size_override=step_size_override is not None,
+            has_steps_override=steps is not None,
         )
         if problems:
             raise ValueError("\n".join(problems))
         # before the checks below, because a misspelt key like connected-to is often what makes them fail
         for warning in unknown_key_warnings(raw_config=config, simulation_config_file=simulation_config_file):
             SimulationConfig.logger.warning("%s", warning)
+        if steps is not None and "steps" in config["setup"]:
+            SimulationConfig.logger.info(
+                '--steps %s overrides "steps": %s in the setup of %s.',
+                steps,
+                config["setup"]["steps"],
+                simulation_config_file,
+            )
         check_connections(raw_simulators=config["simulators"], raw_logical_delays=config["logical_delays"])
         clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(
             config,
@@ -68,7 +76,7 @@ class SimulationConfig:
         ]
         return SimulationConfig(
             clients=clients,
-            steps=steps,
+            steps=steps if steps is not None else int(config["setup"]["steps"]),
             step_size_in_ms=step_size_override if step_size_override is not None else int(config["setup"]["delta_t"]),
             pace=pace,
             start_date=SimulationConfig._parse_start_date(
