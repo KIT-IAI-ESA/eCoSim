@@ -18,6 +18,7 @@ from ecosim_common.communication.channel.esp_channel_message import ESPChannelMe
 from ecosim_common.communication.dask.channel_connection_registry import ChannelConnectionRegistry
 from ecosim_common.communication.dask.channel_endpoint import ChannelEndpoint
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -176,8 +177,8 @@ class DaskChannel(ESPChannel, ShutdownListener):
                 message = self.listen_blocking()
                 if message is not None:
                     on_message(message)
-        except Exception:
-            DaskChannel._logger.exception("Receive loop on %s failed -> closing the channel", self._inbox_name())
+        except Exception as error:
+            DaskChannel._logger.exception("Receive loop on %s failed, closing the channel: %s", self._inbox_name(), one_line_message(error=error))
         finally:
             self._stop_listening_and_close()
 

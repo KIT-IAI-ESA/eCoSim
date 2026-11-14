@@ -1,3 +1,4 @@
+import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -16,7 +17,10 @@ from integration_tests.test_data.server_client.simple_test_client import SimpleT
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer
 
 
-def test_failed_run_ends_the_healthy_client_as_failed_and_sets_the_state_to_failed(communication_protocol: CommunicationProtocol) -> None:
+def test_failed_run_ends_the_healthy_client_as_failed_and_sets_the_state_to_failed(
+    communication_protocol: CommunicationProtocol,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     port = get_free_port()
     server = SimpleTestServer.for_client_ids(
         communication_protocol=communication_protocol,
@@ -47,4 +51,6 @@ def test_failed_run_ends_the_healthy_client_as_failed_and_sets_the_state_to_fail
 
     assert finishes_in_time(blocking_call=healthy_client.wait_until_finished)
     assert healthy_client.exit_code() == ShutdownManager.FAILED_RUN_EXIT_CODE
+    # the run failed because of the other client, so this one does not blame its own model
+    assert any(message.startswith(f"{HEALTHY}: the connection to the server ended") for message in caplog.messages)
     assert server.simulation_state_repository().current() == SimulationState.FAILED

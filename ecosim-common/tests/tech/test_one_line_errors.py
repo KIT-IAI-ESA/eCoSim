@@ -2,7 +2,7 @@ import errno
 import os
 
 import pytest
-from ecosim_common.tech.one_line_errors import DEBUG_HINT, exits_with_one_line_errors, one_line_message
+from ecosim_common.tech.one_line_errors import DEBUG_HINT, exits_with_one_line_errors, one_line_message, one_line_message_with_type
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
 from ecosim_test_common.test_data.raising_main import RaisingMain
@@ -80,3 +80,15 @@ def test_a_socket_error_drops_the_error_number() -> None:
     error = OSError(errno.EADDRINUSE, "Cannot listen on localhost:1234: Address already in use")
 
     assert one_line_message(error=error) == "Cannot listen on localhost:1234: Address already in use"
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (ZeroDivisionError("float division by zero"), "ZeroDivisionError: float division by zero"),
+        (KeyError("T_out"), "KeyError: 'T_out'"),
+        (TimeoutError(), "TimeoutError"),
+    ],
+)
+def test_the_message_with_type_names_the_type_once(error: Exception, message: str) -> None:
+    assert one_line_message_with_type(error=error) == message
