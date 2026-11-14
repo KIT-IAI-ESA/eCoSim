@@ -11,6 +11,7 @@ from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 from typing_extensions import override
 
@@ -141,5 +142,5 @@ class FMU3Client(SimulatorClient):
         self.logger.debug("        ->> freeing instance...")
         try:
             self._fmu_instance.freeInstance()
-        except Exception:
-            self.logger.exception("Freeing the FMU instance failed.")
+        except Exception as error:
+            self.logger.exception("Freeing the FMU instance failed: %s", one_line_message(error=error))

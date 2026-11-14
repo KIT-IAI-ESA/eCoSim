@@ -109,7 +109,14 @@ stops it right away:
 ecosim-client-python: error: The model room:Rom could not be loaded: module 'room' has no attribute 'Rom' (run with --debug for the full traceback)
 ```
 
-`initialize()` runs later, when the simulation starts. An error there stops the client too.
+`initialize()` runs later, when the simulation starts. An error there or in `do_step()` stops the client too.
+Its log names the error and the step, and its last line points to that line:
+
+```text
+room#room: the model failed in step 2: ZeroDivisionError: float division by zero
+```
+
+With `--debug`, the log also shows the line of the model code that failed.
 
 ## Move a model from the Pyro5 client
 

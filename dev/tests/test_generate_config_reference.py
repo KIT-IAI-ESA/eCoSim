@@ -57,6 +57,12 @@ def test_render_keys_marks_required_keys() -> None:
     assert "| `server` | `port` | integer | required |" in table
 
 
+def test_a_key_read_only_for_postgres_results_is_required_only_for_postgres() -> None:
+    source = 'def _for_postgres(config):\n    host = config.get_string("database", "server")\n'
+
+    assert render_keys(extract_keys(source, ENUMS)).splitlines()[-1] == "| `database` | `server` | string | required for PostgreSQL |"
+
+
 def test_render_keys_writes_out_an_empty_default() -> None:
     key = Key(section="database", key="password", type="string", default="")
 

@@ -41,6 +41,12 @@ def one_line_message(error: Exception) -> str:
     return f"{type(error).__name__}: {message}" if isinstance(error, KeyError) else message
 
 
+def one_line_message_with_type(error: Exception) -> str:
+    """The message after the type of the error, as Python shows it, for errors in code like a model, where the type matters."""
+    message = one_line_message(error=error)
+    return message if message.startswith(type(error).__name__) else f"{type(error).__name__}: {message}"
+
+
 def _error_line(program_name: str, error: Exception) -> str:
     message = one_line_message(error=error)
     separator = "\n" if "\n" in message else " "
