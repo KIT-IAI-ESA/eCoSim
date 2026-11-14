@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Tuple, assert_never, override
+from typing import Iterable, Tuple, assert_never, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
@@ -13,6 +13,7 @@ from ecosim_server.client.client_state import ClientState
 from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
+from ecosim_server.progress_logger import progress_logger
 
 
 @dataclass
@@ -128,17 +129,20 @@ class ClientStates(ShutdownListener):
             client_states[client_id].simulation_started = True
             self._update_events(client_states)
 
-    def _log_progress(
-        self,
-        description: str,
-        is_done: Callable[[ClientState], bool],
-    ) -> None:
-        states = self._client_states.values()
-        ClientStates._logger.info(
-            "Waiting for all clients %s: %s/%s",
-            description,
-            sum(1 for state in states if is_done(state)),
-            len(states),
+    def waiting_for_client_ids(self) -> Tuple[ClientID, ...]:
+        return self.lost_client_ids(client_ids=self._client_ids)
+
+    def not_started_client_ids(self) -> Tuple[ClientID, ...]:
+        states = self._client_states.get_snapshot()
+        return tuple(client_id for client_id in self._client_ids if not states[client_id].simulation_started)
+
+    def _log_waiting_for_clients(self) -> None:
+        waiting_for_client_ids = self.waiting_for_client_ids()
+        progress_logger.info(
+            "Still waiting for %s of %s clients to connect: %s",
+            len(waiting_for_client_ids),
+            len(self._client_ids),
+            ", ".join(str(client_id) for client_id in waiting_for_client_ids),
         )
 
     def have_all_clients_started_simulation(self) -> bool:
@@ -160,14 +164,14 @@ class ClientStates(ShutdownListener):
 
     def are_all_clients_connected_and_ready(self) -> bool:
         with self._client_states.transaction() as client_states:
-            return all((state.connected and state.ready_for_simulation) for state in client_states.values())
+            return all(state.is_ready() for state in client_states.values())
 
     def lost_client_ids(
         self,
         client_ids: Iterable[ClientID],
     ) -> Tuple[ClientID, ...]:
         states = self._client_states.get_snapshot()
-        return tuple(client_id for client_id in client_ids if not (states[client_id].connected and states[client_id].ready_for_simulation))
+        return tuple(client_id for client_id in client_ids if not states[client_id].is_ready())
 
     def set_client_ready_for_simulation(
         self,
@@ -188,8 +192,8 @@ class ClientStates(ShutdownListener):
 
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self._all_clients_ready_for_simulation.wait_with_progress(
-            progress_interval_in_seconds=1.0,
-            on_progress=lambda: self._log_progress("to connect", lambda state: state.connected and state.ready_for_simulation),
+            progress_interval_in_seconds=5.0,
+            on_progress=self._log_waiting_for_clients,
             abort=lambda: self._shutdown_triggered,
             abort_message="Shutdown was triggered during waiting for all clients to connect",
         )
@@ -215,5 +219,5 @@ class ClientStates(ShutdownListener):
     def _update_events(self, client_states: dict[ClientID, ClientState]) -> None:
         states = tuple(client_states.values())
         self._all_clients_started_simulation_event.set_state(all(state.simulation_started for state in states))
-        self._all_clients_ready_for_simulation.set_state(all((state.connected and state.ready_for_simulation) for state in states))
+        self._all_clients_ready_for_simulation.set_state(all(state.is_ready() for state in states))
         self._all_clients_stopped_simulation_event.set_state(all((state.stopped_simulation or not state.connected) for state in states))

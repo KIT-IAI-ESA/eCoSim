@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import partial
-from typing import ClassVar, override
+from typing import ClassVar, Tuple, override
 
 from ecosim_common.communication.channel.esp_channel import ConnectionData, ESPChannel
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
@@ -90,7 +90,7 @@ class Server(ShutdownListener):
         self._server_config.print_config_for_start_up()
         self._start_listening()
         self._wait_for_all_clients_connected_and_ready()
-        self._logger.info("All clients connected - starting simulation")
+        self._logger.info("All clients connected, starting the simulation")
         self._server_state.set_simulation_state(SimulationState.READY)
         self._simulation_executor.execute(rendering_socket=self._rendering_socket)
         self._stop_image_renderer_socket()
@@ -107,7 +107,7 @@ class Server(ShutdownListener):
         )
 
     def _wait_for_all_clients_connected_and_ready(self) -> None:
-        self._logger.info("Waiting for all clients to connect...")
+        self._logger.info("Waiting for %s to connect", Server._clients_text(count=len(self._simulation_config.clients)))
         self._client_communication.wait_for_all_clients_connected_and_ready()
 
     def print_measurement_statistics(self) -> None:
@@ -237,9 +237,12 @@ class Server(ShutdownListener):
                 client_id = client_config.client_id()
                 if not client_communication.add_if_needed(client_config, connection):
                     Server._logger.warning(
-                        "Client %s from %s was not expected to connect - it has no needed model/simulator.",
-                        client_id,
-                        connection.address,
+                        "%s",
+                        Server.turned_away_warning(
+                            simulation_config=simulation_config,
+                            client_id=client_id,
+                            waiting_for_client_ids=client_communication.waiting_for_client_ids(),
+                        ),
                     )
                     connection.close()
                     return
@@ -254,7 +257,7 @@ class Server(ShutdownListener):
                 while server_running_event.is_set():
                     received_message = connection.receive()
                     if received_message is None:
-                        Server._logger.warning("Received 'none' from client %s -> this is the closing signal -> ending this connection", client_id)
+                        Server.log_closed_connection(server_running_event=server_running_event, client_id=client_id)
                         client_communication.set_client_connected_state(client_id=client_id, connected=False)
                         return
                     client_communication.add_message_from_client(client_id, received_message)
@@ -264,6 +267,31 @@ class Server(ShutdownListener):
                 if client_id:
                     client_communication.reset_state(client_id)
                 raise e
+
+    @staticmethod
+    def why_the_client_is_turned_away(simulation_config: SimulationConfig, client_id: ClientID) -> str:
+        if client_id in simulation_config.client_ids():
+            return f"Client {client_id} is already connected, so the server closed the second connection"
+        return f"Client {client_id} is not in the simulation config, so the server closed its connection"
+
+    @staticmethod
+    def turned_away_warning(simulation_config: SimulationConfig, client_id: ClientID, waiting_for_client_ids: Tuple[ClientID, ...]) -> str:
+        reason = Server.why_the_client_is_turned_away(simulation_config=simulation_config, client_id=client_id)
+        if len(waiting_for_client_ids) == 0:
+            return reason
+        return f"{reason}. Still waiting for: {', '.join(str(waiting_client_id) for waiting_client_id in waiting_for_client_ids)}"
+
+    @staticmethod
+    def log_closed_connection(server_running_event: ParallelEvent, client_id: ClientID) -> None:
+        # once the run ends, every client closes its connection, so only a closing during the run is a warning
+        if server_running_event.is_set():
+            Server._logger.warning("Client %s closed the connection", client_id)
+            return
+        Server._logger.debug("Client %s closed the connection", client_id)
+
+    @staticmethod
+    def _clients_text(count: int) -> str:
+        return "1 client" if count == 1 else f"{count} clients"
 
     @staticmethod
     def _on_new_channel(
