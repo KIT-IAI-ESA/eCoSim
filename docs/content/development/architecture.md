@@ -174,6 +174,9 @@ Each deployable subproject declares a console script:
 
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
+Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`. Without `--debug`,
+an error that ends the command prints one line on stderr instead of a traceback, and the command exits with code 1.
+
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
 an `AppConfigParameter` with a group. `--help` and the [command-line reference](../reference/command-line.md) show a
 group as a section. The server's options are in `ecosim_server/config/cli_parameters.py` and

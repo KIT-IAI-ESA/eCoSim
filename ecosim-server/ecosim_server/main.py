@@ -2,6 +2,7 @@ import logging
 from typing import Sequence
 
 from ecosim_common.tech.logger.logger import init_logger
+from ecosim_common.tech.one_line_errors import exits_with_one_line_errors
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CONSOLE_SCRIPT, CLIArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -11,6 +12,7 @@ from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurem
 from ecosim_server.server import Server
 
 
+@exits_with_one_line_errors(program_name=CONSOLE_SCRIPT.name)
 def main(passed_arguments: Sequence[str] | None = None) -> None:
     args = CLIArguments(passed_arguments=passed_arguments)
     CONSOLE_SCRIPT.print_banner()

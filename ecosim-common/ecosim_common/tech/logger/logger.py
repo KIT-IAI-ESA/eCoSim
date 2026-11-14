@@ -53,6 +53,10 @@ class ESPLogger:
     ) -> None:
         if not self._logger.isEnabledFor(logging.ERROR):
             return
+        # the stack of the logging call helps to debug, in a normal run it buries the message
+        if not self.is_debug_enabled:
+            self._logger.error(message, *args)
+            return
         stack_trace = "".join(traceback.format_stack())
         self._logger.error(
             "%s\n           Stack trace: %s",

@@ -13,6 +13,7 @@ from ecosim_common.communication.data.simulation_setup_message import Simulation
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.readable_count import readable_count
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
@@ -85,9 +86,9 @@ class Server(ShutdownListener):
             # a signal reaches only the main thread, so the server thread of ecosim-hpc fails on what the shutdown closed
             stopped_by_a_signal = self._client_communication.is_shutdown_triggered() and not self._force_stopped
             if not stopped_by_a_signal:
-                self._failure_reason = str(error) or type(error).__name__
+                self._failure_reason = one_line_message(error=error)
             log_the_failure = self._logger.debug if self._force_stopped or stopped_by_a_signal else self._logger.error
-            log_the_failure("The run failed: %s -> closing the client connections and the server", error)
+            log_the_failure("The run failed: %s -> closing the client connections and the server", one_line_message(error=error))
             # a connection that ends before SIMULATION_STOP makes the client exit as failed
             for client_id in self._client_communication.all_client_ids():
                 self._client_communication.reset_state(client_id)

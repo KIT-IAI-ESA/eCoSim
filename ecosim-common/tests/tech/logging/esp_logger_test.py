@@ -36,7 +36,7 @@ def test_logger_created_before_init_logger_follows_the_info_level() -> None:
 
 
 def _messages_of_test_logger(caplog: pytest.LogCaptureFixture) -> list[str]:
-    # an error appends the stack trace below the message
+    # with debug logging, an error appends the stack trace
     return [record.getMessage().splitlines()[0] for record in caplog.records if record.name == "TestLogger"]
 
 
@@ -86,3 +86,19 @@ def test_two_parameters_are_inserted_into_the_message(caplog: pytest.LogCaptureF
         "info - with 333 ccc parameters",
         "debug - with 444 ddd parameters",
     ]
+
+
+def test_an_error_has_no_stack_trace_without_debug(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO)
+
+    ESPLogger("TestLogger").error("The FMU has no input %s", "T_out")
+
+    assert [record.getMessage() for record in caplog.records if record.name == "TestLogger"] == ["The FMU has no input T_out"]
+
+
+def test_an_error_has_the_stack_trace_with_debug(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    ESPLogger("TestLogger").error("The FMU has no input %s", "T_out")
+
+    assert "Stack trace:" in caplog.records[-1].getMessage()

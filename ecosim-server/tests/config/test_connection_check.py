@@ -5,6 +5,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server import main as server_main
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources.config_files import config_file_path, config_file_path_str
@@ -130,7 +131,11 @@ def test_the_test_configs_are_accepted(file_name: str) -> None:
     assert SimulationConfig.of_config_file_and_params(simulation_config_file=config_file_path(file_name), steps=1).clients
 
 
-def test_the_server_does_not_start_with_an_invalid_connection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_server_does_not_start_with_an_invalid_connection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     file = config_file(
         tmp_path,
         create_simulator("weather", create_output("T_out")),
@@ -142,7 +147,9 @@ def test_the_server_does_not_start_with_an_invalid_connection(tmp_path: Path, mo
     server = MagicMock()
     monkeypatch.setattr(server_main, "Server", server)
 
-    with pytest.raises(RuntimeError, match="simulator index '-1'"):
+    with pytest.raises(SystemExit) as exit_info:
         server_main.main(passed_arguments=arguments)
 
+    assert exit_info.value.code == ShutdownManager.FAILED_RUN_EXIT_CODE
+    assert "simulator index '-1'" in capsys.readouterr().err
     server.assert_not_called()

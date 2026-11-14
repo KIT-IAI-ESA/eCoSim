@@ -6,6 +6,7 @@ from ecosim_common.client.config.cli_arguments import CLIArguments
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.console_script import ConsoleScript
 from ecosim_common.tech.logger.logger import ESPLogger, init_logger
+from ecosim_common.tech.one_line_errors import exits_with_one_line_errors
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 
 from ecosim_client_matlab.matlab_client import MatlabClient
@@ -18,6 +19,7 @@ CONSOLE_SCRIPT = ConsoleScript(
 )
 
 
+@exits_with_one_line_errors(program_name=CONSOLE_SCRIPT.name)
 def main(passed_arguments: Sequence[str] | None = None) -> None:
     args = CLIArguments(console_script=CONSOLE_SCRIPT, passed_arguments=passed_arguments)
     CONSOLE_SCRIPT.print_banner()

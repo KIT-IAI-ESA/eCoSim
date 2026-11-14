@@ -3,6 +3,7 @@ from typing import Sequence
 
 from ecosim_common.tech.dask.init_dask import init_dask
 from ecosim_common.tech.logger.logger import init_logger
+from ecosim_common.tech.one_line_errors import exits_with_one_line_errors
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_hpc import client_manager_config
 from ecosim_hpc.config.cli_arguments import CONSOLE_SCRIPT, HPCServerCliArguments
@@ -13,6 +14,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import create_repositories
 
 
+@exits_with_one_line_errors(program_name=CONSOLE_SCRIPT.name)
 def main(passed_arguments: Sequence[str] | None = None) -> None:
     cli_arguments = HPCServerCliArguments(passed_arguments=passed_arguments)
     dask_client = connect_or_start_dask_cluster(cli_arguments)
