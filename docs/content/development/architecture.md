@@ -7,7 +7,7 @@ Twelve independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and
 
 | Subproject | Import package | Purpose |
 | --- | --- | --- |
-| `ecosim` | `ecosim` | The `ecosim` command, which checks a simulation and runs it on one computer |
+| `ecosim` | `ecosim` | The `ecosim` command, which checks a simulation, runs it on one computer and shows its results |
 | `ecosim-common` | `ecosim_common` | Shared abstractions: config, communication, simulation primitives |
 | `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for the FMU clients and `ecosim-hpc` |
 | `ecosim-server` | `ecosim_server` | The simulation server: state, repositories, measurements |
@@ -94,6 +94,7 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 | `check/` | `ecosim check`: `SimulationCheck` loads a simulation with the readers of the server and the clients and keeps every problem |
 | `run_folder.py` | `RunFolder`: the folder of one run, `SIMULATION/results/<start time>/` with the results, a copy of `simulation.json` and `logs/` |
 | `run/` | `ecosim run`: `LocalRun` starts the server and the clients, each in a process group of its own, and `RunWatch` stops all of them when one fails or on a signal |
+| `results/` | `ecosim results`: finds the results that a folder or a server config names, reads them with `ecosim_server.results` and prints the overview or writes the CSV file |
 
 ### `ecosim_server`
 

@@ -67,6 +67,7 @@ Checked building: 3 simulators, no problems.
 Run 2026-11-14_12-59-25: 100 steps of 15 min, from 2023-01-01 00:00 to 2023-01-02 01:00 UTC.
 Started the server and 3 clients. Logs: building/results/2026-11-14_12-59-25/logs
 Finished after 2.5 s. Results: files in building/results/2026-11-14_12-59-25
+Read them with: uv run ecosim results building
 ```
 
 `ecosim run` checks the simulation, picks a free port, starts the server and a client for each simulator and waits until
@@ -92,6 +93,9 @@ to the first one. `--results FOLDER` sets the folder.
 | `simulation.json` | a copy of the simulation config of the run |
 | `logs/server.log`, `logs/<simulator>.log` | everything each part printed |
 
+`ecosim results building` shows the results of the newest run, and writes them to a CSV file with `--csv`, see
+[Read the results](results.md).
+
 The warnings of a model, like those of the house FMU at its first step, are only in its log. With `--debug` the logs
 have every message, also one for each step.
 
@@ -105,6 +109,8 @@ uv run ecosim run building --steps 100 --database-type postgres -- --database-sc
 
 Each PostgreSQL run needs a schema of its own. The server stops if the schema is there from an earlier run, so give
 every run a new name with `--database-schema`, or add `--database-drop-existing-schema` to replace the old results.
+The last line of a finished run is the command that reads its results, see
+[Results in PostgreSQL](results.md#results-in-postgresql).
 
 ## Stop and continue a run
 

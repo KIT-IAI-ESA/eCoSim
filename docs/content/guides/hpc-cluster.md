@@ -128,14 +128,20 @@ folders need modules with different names, see [On an HPC cluster](python-client
 
 After the run, the PostgreSQL database `sim_control` is in the directory `test` next to the scripts.
 The script's `--database-schema` puts the tables into the schema `temp_schema`, and its
-`--database-drop-existing-schema` makes the next run replace them. `psql` reads the password from
-`test.pgpass`:
+`--database-drop-existing-schema` makes the next run replace them. `ecosim results` shows the steps and every
+output, and writes them to `results.csv`, see [Read the results](results.md). `psql` is there for your own
+queries. Both read the password from `test.pgpass`. In `building_hpc/Executable`, with your `ECOSIM_DIR` as in
+`clusterRunHPC.sh`:
 
 ```shell
 module load devel/miniforge/25.3.1-python-3.12
 conda activate eCoSim
+ECOSIM_DIR="$HOME/ecosim"
+source "$ECOSIM_DIR/simulation_examples/.venv/bin/activate"
 export PGPASSFILE="$PWD/test.pgpass"
 pg_ctl start -D test -l test/logfile -o "-F -p 5432"
+uv run ecosim results --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
+    --database-schema temp_schema --csv results.csv
 psql -d sim_control
 # \dt temp_schema.* lists the tables; run your queries, then leave psql with \q
 pg_ctl stop -D test
