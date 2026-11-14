@@ -23,6 +23,7 @@ def simulator_findings(
     client: ClientSimulatorConfig,
     simulation_config: SimulationConfig | None,
     port: int,
+    before_a_run: bool,
 ) -> Findings:
     """What the client reads at its start and compares with the simulation config."""
     ini_file = directory.config_parser.config_file
@@ -33,7 +34,13 @@ def simulator_findings(
     except Exception as error:
         return Findings(problems=[problem_of_ini_file(error=error, ini_file=ini_file)])
     settings = client.to_server_interface_settings()
-    checked_model = model_check(directory=directory, client_type=client_type, client_config=client_config, server_interface_settings=settings)
+    checked_model = model_check(
+        directory=directory,
+        client_type=client_type,
+        client_config=client_config,
+        server_interface_settings=settings,
+        before_a_run=before_a_run,
+    )
     findings = Findings(warnings=_fmc_file_warnings(fmc_file=ini_file.parent / client_config.simulator_config().fmc_file))
     findings.add(checked_model.findings)
     findings.add(

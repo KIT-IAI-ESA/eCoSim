@@ -45,6 +45,11 @@ class ESPLogger:
         self._logger = logging.getLogger(name)
 
     @property
+    def name(self) -> str:
+        # the name in each line of the log, which ecosim run looks for
+        return self._name
+
+    @property
     def is_debug_enabled(self) -> bool:
         return self._logger.isEnabledFor(logging.DEBUG)
 

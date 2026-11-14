@@ -110,6 +110,7 @@ class PostgresTech(DbTechAbstract):
         if not self.server_config.database.drop_existing_schema:
             raise RuntimeError(
                 f"Schema '{schema}' already exists from an earlier run. Use --database-schema NAME for another schema or "
-                + "--database-drop-existing-schema to delete the old results. Use --restore-simulation-run to continue that run.",
+                + "--database-drop-existing-schema to delete the old results. Use --restore-simulation-run to continue that run. "
+                + "With ecosim run, the first two go after --.",
             )
         connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))

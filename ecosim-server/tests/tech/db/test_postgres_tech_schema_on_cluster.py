@@ -37,7 +37,8 @@ def test_an_existing_schema_fails_with_the_options_to_go_on(plain_cluster: Postg
 
     assert str(error_info.value) == (
         "Schema 'sim_control' already exists from an earlier run. Use --database-schema NAME for another schema or "
-        + "--database-drop-existing-schema to delete the old results. Use --restore-simulation-run to continue that run."
+        + "--database-drop-existing-schema to delete the old results. Use --restore-simulation-run to continue that run. "
+        + "With ecosim run, the first two go after --."
     )
 
 

@@ -27,6 +27,7 @@ def model_check(
     client_type: ClientType,
     client_config: ClientConfig,
     server_interface_settings: ServerInterfaceSettings,
+    before_a_run: bool,
 ) -> ModelCheck:
     match client_type:
         case ClientType.FMU_2 | ClientType.FMU_3:
@@ -34,7 +35,7 @@ def model_check(
         case ClientType.Matlab:
             return ModelCheck(findings=_matlab_findings(directory=directory))
         case ClientType.Pyro5:
-            return ModelCheck(findings=_pyro_findings(directory=directory))
+            return ModelCheck(findings=_pyro_findings(directory=directory, before_a_run=before_a_run))
         case ClientType.Python:
             return ModelCheck(findings=_python_findings(directory=directory))
         case _:
@@ -52,7 +53,7 @@ def _matlab_findings(directory: SimulatorDirectory) -> Findings:
     return Findings()
 
 
-def _pyro_findings(directory: SimulatorDirectory) -> Findings:
+def _pyro_findings(directory: SimulatorDirectory, before_a_run: bool) -> Findings:
     config_parser = directory.config_parser
     try:
         installed = importlib.util.find_spec("ecosim_client_pyro5") is not None
@@ -67,7 +68,8 @@ def _pyro_findings(directory: SimulatorDirectory) -> Findings:
         # the Pyro5 object runs on its own, its client only connects to it
         socket.create_connection(address=(host, port), timeout=1).close()
     except OSError:
-        findings.warnings.append(f"{directory.path}: nothing listens on {host}:{port} yet. Start the Pyro5 object before the run.")
+        nothing_listens = f"{directory.path}: nothing listens on {host}:{port} yet. Start the Pyro5 object before the run."
+        (findings.problems if before_a_run else findings.warnings).append(nothing_listens)
     return findings
 
 

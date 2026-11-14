@@ -5,10 +5,15 @@ the Python client, so a local run needs nothing else.
 
 ```shell
 ecosim check building
+ecosim run building --steps 100
 ```
 
 `ecosim check` reads a simulation as a run would: the simulation config, the server config and the folder of every
 simulator with its model. It lists every problem with its file and names the closest name for a typo.
+
+`ecosim run` checks the simulation, starts the server and a client for each simulator on this computer and shows the
+progress. Each run gets a folder of its own in `building/results` with the results and a log for each part. Ctrl-C
+stops every part, and the last line says how to continue the run.
 
 A simulation folder holds `server/simulation.json`, `server/preferences.ini` and one folder for each simulator in
 `Modules/`, like `simulation_examples/building` in the repository.

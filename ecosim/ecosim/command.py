@@ -14,7 +14,10 @@ class Command:
 
 
 # in the order of a day with eCoSim, which is also the order of the help
-COMMANDS = (Command(name="check", summary="Check a simulation folder before a run", module="ecosim.check.check_command"),)
+COMMANDS = (
+    Command(name="check", summary="Check a simulation folder before a run", module="ecosim.check.check_command"),
+    Command(name="run", summary="Run a simulation on this computer: the server and every client", module="ecosim.run.run_command"),
+)
 
 
 def command_parser(name: str, description: str, examples: tuple[str, ...]) -> EcosimArgumentParser:

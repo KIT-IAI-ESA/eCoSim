@@ -6,7 +6,7 @@ from ecosim_common.tech.port_utils import get_free_port
 from ecosim_test_common.test_data.building_simulation import write_building_simulation
 from ecosim_test_common.test_data.generate_changed_fmu import generate_fmu_without_binaries_for
 
-from tests.check.simulation_changes import add_room_simulator, change_json_file, check_of, interface_named, replace_in_file
+from tests.simulation_changes import add_room_simulator, change_json_file, check_of, interface_named, replace_in_file
 
 
 @pytest.fixture

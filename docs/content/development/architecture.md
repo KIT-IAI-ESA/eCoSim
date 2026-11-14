@@ -92,6 +92,8 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 | `server_arguments.py` | The arguments a command gives `ecosim-server`, with the options after `--` |
 | `report_lines.py` | The lines that several commands print: the table of the simulators and the length of a run |
 | `check/` | `ecosim check`: `SimulationCheck` loads a simulation with the readers of the server and the clients and keeps every problem |
+| `run_folder.py` | `RunFolder`: the folder of one run, `SIMULATION/results/<start time>/` with the results, a copy of `simulation.json` and `logs/` |
+| `run/` | `ecosim run`: `LocalRun` starts the server and the clients, each in a process group of its own, and `RunWatch` stops all of them when one fails or on a signal |
 
 ### `ecosim_server`
 

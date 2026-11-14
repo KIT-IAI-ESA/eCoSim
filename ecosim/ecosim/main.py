@@ -45,7 +45,8 @@ def run(command: Command, passed_arguments: Sequence[str]) -> int:
 
 def unknown_command_message(name: str) -> str:
     names = [command.name for command in COMMANDS]
-    hint = did_you_mean(name=name, known_names=names) or f" The commands are {', '.join(names)}."
+    # the names of the commands are short and few, so a swap of two letters is close enough
+    hint = did_you_mean(name=name, known_names=names, cutoff=0.6) or f" The commands are {', '.join(names)}."
     return f"'{name}' is not a command.{hint}"
 
 
@@ -63,3 +64,7 @@ def help_text() -> str:
             "Run 'ecosim COMMAND --help' for the options of a command.",
         ],
     )
+
+
+if __name__ == "__main__":
+    main()
