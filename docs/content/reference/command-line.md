@@ -8,9 +8,9 @@ description: Every option of the eCoSim server, the clients and the HPC command.
 # Command-line options
 
 These tables come from the option definitions in the code. `--help` shows the same. Every command also takes
-`--help` and `--version`. A misspelled option or a wrong value stops the command with exit code 2 and a short
-message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
-For a misspelled option the message suggests the closest one.
+`--help` and `--version`. A misspelled option or a wrong value stops the command with a short message, for
+example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`. For a misspelled
+option the message suggests the closest one. The [exit codes](#exit-codes) are at the end of the page.
 
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
@@ -30,7 +30,7 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--debug` |  | flag | More log messages, to find a problem. |
+| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
 
 **Config files**
 
@@ -97,7 +97,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
-| `--debug` |  | flag | More log messages, to find a problem. |
+| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
 | `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other, then exit. Starts no client. |
 
 **Server connection**
@@ -127,7 +127,7 @@ ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
-| `--debug` |  | flag | More log messages, to find a problem. |
+| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
 
 **Server connection**
 
@@ -155,7 +155,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--debug` |  | flag | More log messages, to find a problem. |
+| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
 
 **Config files**
 
@@ -211,3 +211,22 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 | `--scheduler-file FILE` |  | `scheduler.json` | The file the Dask scheduler wrote, used with --interactive. |
 | `--network-interface NAME` |  |  | The network interface of the Dask scheduler and the workers with mpirun, for example ib0. |
 | `--threads-per-worker N` |  | `2` | The threads of each Dask worker with mpirun. A job with one worker needs at least 2. |
+
+## Exit codes
+
+Every command ends with one of these codes. Without `--debug`, an error ends the command with one line that says
+what went wrong, for example:
+
+```text
+ecosim-server: error: No such file or directory: /home/user/building/Executable/../server/simulaton.json (run with --debug for the full traceback)
+```
+
+With `--debug`, the command shows the full traceback instead.
+
+| Code | When |
+| --- | --- |
+| 0 | the run finished, or `--validate-fmu-file-only` found no problem |
+| 1 | the run failed, or the command stopped on an error |
+| 2 | an option is missing or has a wrong value |
+| 33 | Ctrl-C (SIGINT) during a run |
+| 44 | SIGTERM, for example from `docker stop` or at the end of a SLURM job |
