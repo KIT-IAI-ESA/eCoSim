@@ -48,29 +48,45 @@ class SimulationFolder:
                 + "Give the folder that holds server/ and Modules/, or the file with --simulation-config."
             )
         if not self.path.is_dir():
-            return f"the folder {self.path} does not exist.{did_you_mean(name=self.path.name, known_names=_folders_next_to(path=self.path))}"
+            return missing_folder_message(folder=self.path)
         if self.simulation_config.is_file():
             return None
         if self.simulation_config != self.path / SIMULATION_CONFIG:
             return f"the simulation config {self.simulation_config} does not exist"
-        hint = self._hint_to_the_simulation_above(command_name=command_name) or self._hint_to_the_simulations_in_it(command_name=command_name)
-        return f"{self.name} is not a simulation folder: it has no {SIMULATION_CONFIG}.{hint}"
+        return f"{self.name} is not a simulation folder: it has no {SIMULATION_CONFIG}." + hint_to_a_simulation(
+            folder=self.path,
+            command_name=command_name,
+        )
 
-    def _hint_to_the_simulation_above(self, command_name: str) -> str:
-        # users of the old quick start are in building/Executable
-        parent = self.path.resolve().parent
-        if not (parent / SIMULATION_CONFIG).is_file():
-            return ""
-        return f" The simulation is the folder above it, so run '{_program_text()} {command_name} {os.path.relpath(parent)}'."
 
-    def _hint_to_the_simulations_in_it(self, command_name: str) -> str:
-        simulations = sorted(os.path.relpath(folder) for folder in self.path.iterdir() if (folder / SIMULATION_CONFIG).is_file())
-        if not simulations:
-            return ""
-        command = f"'{_program_text()} {command_name} {simulations[0]}'"
-        if len(simulations) == 1:
-            return f" It holds the simulation {simulations[0]}, so run {command}."
-        return f" It holds the simulations {', '.join(simulations[:-1])} and {simulations[-1]}, so run for example {command}."
+def missing_folder_message(folder: Path) -> str:
+    return f"the folder {folder} does not exist.{did_you_mean(name=folder.name, known_names=_folders_next_to(path=folder))}"
+
+
+def hint_to_a_simulation(folder: Path, command_name: str) -> str:
+    """The simulation above the folder or the simulations in it, empty if there is none."""
+    return _hint_to_the_simulation_above(folder=folder, command_name=command_name) or _hint_to_the_simulations_in_it(
+        folder=folder,
+        command_name=command_name,
+    )
+
+
+def _hint_to_the_simulation_above(folder: Path, command_name: str) -> str:
+    # users of the old quick start are in building/Executable
+    parent = folder.resolve().parent
+    if not (parent / SIMULATION_CONFIG).is_file():
+        return ""
+    return f" The simulation is the folder above it, so run '{_program_text()} {command_name} {os.path.relpath(parent)}'."
+
+
+def _hint_to_the_simulations_in_it(folder: Path, command_name: str) -> str:
+    simulations = sorted(os.path.relpath(simulation) for simulation in folder.iterdir() if (simulation / SIMULATION_CONFIG).is_file())
+    if not simulations:
+        return ""
+    command = f"'{_program_text()} {command_name} {simulations[0]}'"
+    if len(simulations) == 1:
+        return f" It holds the simulation {simulations[0]}, so run {command}."
+    return f" It holds the simulations {', '.join(simulations[:-1])} and {simulations[-1]}, so run for example {command}."
 
 
 def _program_text() -> str:

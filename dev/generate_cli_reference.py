@@ -62,7 +62,9 @@ def render_command(command: Command, parsers: list[argparse.ArgumentParser]) -> 
     examples = [example for parser in parsers for example in examples_of(parser.epilog)]
     lines += ["```shell", *examples, "```", ""] if examples else []
     for section in collect_sections(parsers[0]):
-        lines += [f"**{section.title.capitalize()}**", "", *TABLE_HEADER, *(render_row(option) for option in section.options), ""]
+        # only the first letter, so that a name like PostgreSQL stays as it is
+        title = section.title[:1].upper() + section.title[1:]
+        lines += [f"**{title}**", "", *TABLE_HEADER, *(render_row(option) for option in section.options), ""]
     return lines
 
 

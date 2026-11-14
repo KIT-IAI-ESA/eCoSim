@@ -21,6 +21,7 @@ class Command:
 COMMANDS = [
     Command(title="ecosim check", build_parser="ecosim.check.check_command.build_parser"),
     Command(title="ecosim run", build_parser="ecosim.run.run_command.build_parser"),
+    Command(title="ecosim results", build_parser="ecosim.results.results_command.build_parser"),
     Command(
         title="Server",
         console_script_modules=["ecosim_server.config.cli_arguments"],

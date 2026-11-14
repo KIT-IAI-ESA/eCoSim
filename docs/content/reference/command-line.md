@@ -115,6 +115,52 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 | --- | --- | --- | --- |
 | `--port PORT` |  |  | The port the server listens on. Without it, a free port. |
 
+## ecosim results
+
+`ecosim results`: Shows the results of a run: its state, the steps, the simulated period, and the minimum, mean and maximum of every output. With --csv it writes them as one table, with a time column and a column for each interface, named after the simulator and the interface, like house.T_indoor. It only reads.
+
+```shell
+ecosim results building
+ecosim results building --csv results.csv
+ecosim results building --interface house.T_indoor --interface weather --csv temperatures.csv
+ecosim results --server-config building/server/preferences.ini --database-schema run_2
+```
+
+**Positional arguments**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `FOLDER` |  |  | A simulation folder for its newest run, a run folder, or a folder of result files. Without it, the current folder. |
+
+**Options**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
+| `--simulation-config FILE` |  |  | The simulation config of the run. Only needed for results in PostgreSQL, or for a folder without a copy of it. |
+
+**Table**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--inputs` |  | flag | Show the inputs too. They are copies of the outputs they are connected to. |
+| `--interface NAME` |  |  | Show only this column. A simulator, like house, or an array, like source.y, picks all its columns. Can be given more than once. |
+| `--csv FILE` |  |  | Write the shown columns to this CSV file. |
+
+**Results in PostgreSQL**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--server-config FILE` |  |  | The server config of the run, instead of FOLDER. Its [database] section says where the results are. |
+| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the config file. If neither sets it, postgres. |
+| `--database-host HOST` |  |  | The host of the PostgreSQL server. Overrides server in the [database] section of the config file. |
+| `--database-port PORT` |  |  | The port of the PostgreSQL server. Overrides port in the [database] section of the config file. |
+| `--database-user USER` |  |  | The PostgreSQL user. Overrides username in the [database] section of the config file. |
+| `--database-user-password PASSWORD` |  |  | The password of the PostgreSQL user. Other users on a shared machine can see it in the process list. Without it, the password comes from the config file, PGPASSWORD or a password file. |
+| `--database-name NAME` |  |  | The PostgreSQL database. Default: sim_control. |
+| `--database-schema NAME` |  |  | The PostgreSQL schema of the result tables. Default: sim_control. |
+| `--database-ssl {true,false}` |  |  | true connects to PostgreSQL with sslmode=require, false with sslmode=disable. Overrides ssl in the [database] section of the config file. |
+
 ## Server
 
 `ecosim-server`: Runs a simulation. Waits until one client per simulator is connected. Stores the results in files or in PostgreSQL.

@@ -18,7 +18,7 @@ def test_no_command_shows_the_help(capsys: pytest.CaptureFixture[str]) -> None:
     assert capsys.readouterr().out.startswith("usage: ecosim")
 
 
-@pytest.mark.parametrize("misspelt, command", [("chekc", "check"), ("rnu", "run")])
+@pytest.mark.parametrize("misspelt, command", [("chekc", "check"), ("rnu", "run"), ("resluts", "results")])
 def test_a_misspelt_command_names_the_closest_command(misspelt: str, command: str, capsys: pytest.CaptureFixture[str]) -> None:
     assert run_command(arguments=[misspelt, "building"]) == 2
 

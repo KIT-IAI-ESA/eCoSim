@@ -6,12 +6,12 @@ from ecosim.run.local_run import RunOutcome
 from ecosim.run.run_watch import RunEnd
 
 
-def summary_lines(outcome: RunOutcome, results_location: str, restore_command: str) -> list[str]:
+def summary_lines(outcome: RunOutcome, results_location: str, restore_command: str, read_command: str) -> list[str]:
     """What to do next. The server log ends with the summary of the server."""
     duration = readable_duration(seconds=outcome.seconds)
     match outcome.end:
         case RunEnd.FINISHED:
-            return [f"Finished after {duration}. Results: {results_location}"]
+            return [f"Finished after {duration}. Results: {results_location}", f"Read them with: {read_command}"]
         case RunEnd.FAILED:
             return [f"Failed after {duration}. The results so far: {results_location}"]
         case RunEnd.INTERRUPTED | RunEnd.TERMINATED:

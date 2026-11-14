@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ecosim"
 version = "0.14.0"
-description = "One command for eCoSim: check a simulation and run it on this computer"
+description = "One command for eCoSim: check a simulation, run it on this computer and show its results"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"

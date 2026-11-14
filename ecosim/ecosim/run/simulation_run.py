@@ -13,7 +13,8 @@ from ecosim_server.config.server_config import DatabaseConfig, ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 
 from ecosim.check.checked_simulator import CheckedSimulator
-from ecosim.report_lines import length_line, shown_path, with_shown_paths
+from ecosim.report_lines import command_text, length_line, shown_path, with_shown_paths
+from ecosim.results.read_command import read_command_of_run
 from ecosim.run.local_run import LocalRun, RunOutcome
 from ecosim.run.part_programs import client_program, server_program
 from ecosim.run.run_part import PartToStart
@@ -50,9 +51,7 @@ class SimulationRun:
         self._prepare_the_run_folder(database=database)
         self._print_the_start(simulation_config=simulation_config)
         outcome = self._execute_with_temporary_files(local_run=local_run)
-        results_location = database.results_location() if database is not None else str(self.run_folder.path)
-        for line in summary_lines(outcome=outcome, results_location=results_location, restore_command=restore_command):
-            print(with_shown_paths(text=line))
+        self._print_the_summary(outcome=outcome, database=database, restore_command=restore_command)
         return outcome.exit_code
 
     def _prepare_the_run_folder(self, database: DatabaseConfig | None) -> None:
@@ -85,6 +84,19 @@ class SimulationRun:
             f"Started the server and {readable_count(count=len(self.simulators), noun='client')}. Logs: {shown_path(path=self.run_folder.logs)}",
             flush=True,
         )
+
+    def _print_the_summary(self, outcome: RunOutcome, database: DatabaseConfig | None, restore_command: str) -> None:
+        results_location = database.results_location() if database is not None else str(self.run_folder.path)
+        server_options = self.run_options.server_options
+        read_command = read_command_of_run(simulation=self.simulation, run_folder=self.run_folder, database=database, server_options=server_options)
+        lines = summary_lines(
+            outcome=outcome,
+            results_location=results_location,
+            restore_command=restore_command,
+            read_command=command_text(arguments=read_command),
+        )
+        for line in lines:
+            print(with_shown_paths(text=line))
 
     def _client(self, simulator: CheckedSimulator) -> PartToStart:
         command = [

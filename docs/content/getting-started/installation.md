@@ -32,7 +32,7 @@ environment of every package with its development tools and installs the pre-com
 
 | Package | Command | Purpose |
 | --- | --- | --- |
-| `ecosim` | `ecosim` | One command for a simulation on one computer: `ecosim check` checks it and `ecosim run` runs it. It brings the server, both FMU clients and the Python client |
+| `ecosim` | `ecosim` | One command for a simulation on one computer: `ecosim check` checks it, `ecosim run` runs it and `ecosim results` shows its results. It brings the server, both FMU clients and the Python client |
 | `ecosim-server` | `ecosim-server` | The simulation server: state, repositories, measurements |
 | `ecosim-client-fmu-v2` | `ecosim-client-fmu-v2` | Client for FMI 2.0 models |
 | `ecosim-client-fmu-v3` | `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
