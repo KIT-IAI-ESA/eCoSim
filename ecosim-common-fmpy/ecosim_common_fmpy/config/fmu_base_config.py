@@ -76,18 +76,28 @@ class FMUBaseConfig:
         self.ensure_interfaces_exist(model_description=model_description, input_names=input_names, output_names=output_names)
 
     def ensure_interfaces_exist(self, model_description: ModelDescription, input_names: list[str], output_names: list[str]) -> None:
-        fmu_inputs = [variable.name for variable in model_description.modelVariables if variable.causality == "input"]
-        fmu_outputs = [variable.name for variable in model_description.modelVariables if variable.causality == "output"]
-        missing_inputs = [name for name in input_names if name not in fmu_inputs]
-        missing_outputs = [name for name in output_names if name not in fmu_outputs]
-        missing = []
-        if missing_inputs:
-            missing.append(f"no input {', '.join(missing_inputs)}")
-        if missing_outputs:
-            missing.append(f"no output {', '.join(missing_outputs)}")
-        if missing:
-            hints = _hints(missing_inputs=missing_inputs, missing_outputs=missing_outputs, fmu_inputs=fmu_inputs, fmu_outputs=fmu_outputs)
-            raise ValueError(" ".join([f"The FMU {self.fmu_file} has {' and '.join(missing)}.", *hints]))
+        missing_inputs, missing_outputs = FMUBaseConfig.missing_interfaces(
+            model_description=model_description,
+            input_names=input_names,
+            output_names=output_names,
+        )
+        if not missing_inputs and not missing_outputs:
+            return
+        missing = [f"no {kind} {', '.join(names)}" for kind, names in (("input", missing_inputs), ("output", missing_outputs)) if names]
+        hints = _hints(
+            missing_inputs=missing_inputs,
+            missing_outputs=missing_outputs,
+            fmu_inputs=_variable_names(model_description=model_description, causality="input"),
+            fmu_outputs=_variable_names(model_description=model_description, causality="output"),
+        )
+        raise ValueError(" ".join([f"The FMU {self.fmu_file} has {' and '.join(missing)}.", *hints]))
+
+    @staticmethod
+    def missing_interfaces(model_description: ModelDescription, input_names: list[str], output_names: list[str]) -> tuple[list[str], list[str]]:
+        """The inputs and the outputs that the FMU does not have."""
+        fmu_inputs = _variable_names(model_description=model_description, causality="input")
+        fmu_outputs = _variable_names(model_description=model_description, causality="output")
+        return [name for name in input_names if name not in fmu_inputs], [name for name in output_names if name not in fmu_outputs]
 
     def ensure_fmu_is_supported(self, model_description: ModelDescription, interface_names: list[str], fmi_major_version: int) -> None:
         if model_description.fmiMajorVersion != fmi_major_version:
@@ -105,6 +115,10 @@ class FMUBaseConfig:
                 f"The FMU {self.fmu_file} is FMI {model_description.fmiVersion}, which eCoSim supports with {supported_type} variables only, "
                 + f"but these interfaces are not {supported_type}: {', '.join(other_types)}.",
             )
+
+
+def _variable_names(model_description: ModelDescription, causality: str) -> list[str]:
+    return [variable.name for variable in model_description.modelVariables if variable.causality == causality]
 
 
 def _hints(missing_inputs: list[str], missing_outputs: list[str], fmu_inputs: list[str], fmu_outputs: list[str]) -> list[str]:

@@ -1,20 +1,25 @@
 from typing import Any
 
 from ecosim_common.config.interface_type import InterfaceType
+from ecosim_common.tech.close_name import did_you_mean
 
 _NOT_LISTED = "no logical delay in its delay_path lists it in output_connections, so it would never get a value"
 
 
 def check_connections(raw_simulators: list[dict[str, Any]], raw_logical_delays: list[dict[str, Any]]) -> None:
-    problems = [
+    problems = connection_problems(raw_simulators=raw_simulators, raw_logical_delays=raw_logical_delays)
+    if problems:
+        lines = "\n".join(f"- {problem}" for problem in problems)
+        raise RuntimeError(f"The simulation config has invalid connections:\n{lines}")
+
+
+def connection_problems(raw_simulators: list[dict[str, Any]], raw_logical_delays: list[dict[str, Any]]) -> list[str]:
+    return [
         f"simulator '{simulator['name']}', interface '{interface['name']}': {problem}"
         for own_index, simulator in enumerate(raw_simulators)
         for interface in simulator["interfaces"]
         for problem in _problems_of_interface(interface=interface, own_index=own_index, simulators=raw_simulators, delays=raw_logical_delays)
     ]
-    if problems:
-        lines = "\n".join(f"- {problem}" for problem in problems)
-        raise RuntimeError(f"The simulation config has invalid connections:\n{lines}")
 
 
 def _problems_of_interface(interface: dict[str, Any], own_index: int, simulators: list[dict[str, Any]], delays: list[dict[str, Any]]) -> list[str]:
@@ -49,9 +54,20 @@ def _problem_of_target(connection: dict[str, Any], own_interface: dict[str, Any]
     if target_index is None:
         return f"simulator index '{connection.get('simulator')}' is not between 0 and {len(simulators) - 1}"
     simulator = simulators[target_index]
-    if not _interfaces_named(simulator=simulator, name=connection.get("interface")):
-        return f"simulator '{simulator['name']}' has no interface '{connection.get('interface')}'"
+    name = connection.get("interface")
+    if not _interfaces_named(simulator=simulator, name=name):
+        hint = did_you_mean(name=str(name), known_names=_names_to_suggest(own_interface=own_interface, simulator=simulator))
+        return f"simulator '{simulator['name']}' has no interface '{name}'" + (f".{hint}" if hint else "")
     return _problem_of_link(connection=connection, own_interface=own_interface, simulator=simulator, is_own_simulator=target_index == own_index)
+
+
+def _names_to_suggest(own_interface: dict[str, Any], simulator: dict[str, Any]) -> list[str]:
+    # an input takes its value from an output, and no interface is connected to itself
+    return [
+        interface["name"]
+        for interface in simulator["interfaces"]
+        if interface is not own_interface and not (_is_input(own_interface) and _is_input(interface))
+    ]
 
 
 def _target_index(raw_index: Any, simulator_count: int) -> int | None:
