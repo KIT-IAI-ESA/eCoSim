@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import functools
 import json
 from enum import Enum
 from types import UnionType
@@ -48,8 +49,14 @@ class DataclassJsonConverter:
         entry_type: type,
         data: dict[str, Any],
     ) -> Any:
-        field_types = get_type_hints(entry_type)
+        field_types = DataclassJsonConverter._field_types_of(entry_type)
         return entry_type(**{name: DataclassJsonConverter._of_value(field_types.get(name), value) for name, value in data.items()})
+
+    @staticmethod
+    @functools.cache
+    def _field_types_of(entry_type: type) -> dict[str, Any]:
+        # get_type_hints evaluates the annotations on every call, which made reading a long results file slow
+        return get_type_hints(entry_type)
 
     @staticmethod
     def _of_value(
