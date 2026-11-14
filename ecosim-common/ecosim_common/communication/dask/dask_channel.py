@@ -113,7 +113,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
             self._channel_registry().stop_listening()
         if self._connected.is_set():
             self._signal_close()
-        DaskChannel._logger.info("Connection to Dask client %s closed.", self._connection_address)
+        DaskChannel._logger.debug("Connection to Dask client %s closed.", self._connection_address)
 
     @contextmanager
     def _tolerating_a_lost_scheduler(self) -> Iterator[None]:
@@ -203,7 +203,7 @@ class DaskChannel(ESPChannel, ShutdownListener):
     ) -> ESPChannelMessage | None:
         message: ReceivedBinaryMessage | None = self._receive_without_timeout() if timeout_in_seconds is None else self._receive(timeout_in_seconds)
         if not message:
-            DaskChannel._logger.info("Receive on %s ended without a message -> finishing the channel", self._inbox_name())
+            DaskChannel._logger.debug("Receive on %s ended without a message -> finishing the channel", self._inbox_name())
             self._is_finished.set()
             return None
         return message.to_esp_channel_message()

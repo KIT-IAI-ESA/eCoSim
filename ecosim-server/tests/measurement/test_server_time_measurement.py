@@ -129,3 +129,16 @@ def test_put_persists_every_measurement_of_a_normal_run() -> None:
         ServerTimeMeasurementType.SIMULATION_STOP,
         ServerTimeMeasurementType.SERVER_UPTIME,
     }
+
+
+def test_a_restored_run_shows_its_restore_time_instead_of_a_start_time() -> None:
+    measurement = _measurement()
+    for measurement_type in (
+        ServerTimeMeasurementType.RESTORE_SIMULATION_RUN,
+        ServerTimeMeasurementType.SIMULATION_EXECUTION,
+        ServerTimeMeasurementType.SIMULATION_STOP,
+        ServerTimeMeasurementType.SERVER_UPTIME,
+    ):
+        _measured(measurement=measurement, type=measurement_type)
+
+    assert list(measurement.statistics_values()) == ["Restore time", "Simulation execution time", "Simulation stop time", "Server uptime"]

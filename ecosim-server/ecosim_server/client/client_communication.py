@@ -176,6 +176,13 @@ class ClientCommunication:
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self._client_states.wait_for_all_clients_connected_and_ready()
 
+    def stop_waiting_for_clients(self) -> None:
+        # ends the wait as a shutdown does, but leaves the other parts running
+        self._client_states.on_app_shutdown()
+
+    def is_shutdown_triggered(self) -> bool:
+        return self._client_states.is_shutdown_triggered()
+
     def add_if_needed(
         self,
         client_config: ClientMetaData,

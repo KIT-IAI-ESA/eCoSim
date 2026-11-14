@@ -66,23 +66,18 @@ class ServerTimeMeasurement:
         return f"{int(hours)}h {int(minutes)}m {seconds:.3f}s (= {total_seconds:.3f}s total)"
 
     def print_statistics(self) -> None:
-        GlobalLogger.print_values(
-            header="SERVER MEASUREMENT",
-            value_pairs={
-                "Simulation start time": self._run_time_hh_mm_ss(
-                    ServerTimeMeasurementType.SIMULATION_START,
-                ),
-                "Simulation execution time": self._run_time_hh_mm_ss(
-                    ServerTimeMeasurementType.SIMULATION_EXECUTION,
-                ),
-                "Simulation stop time": self._run_time_hh_mm_ss(
-                    ServerTimeMeasurementType.SIMULATION_STOP,
-                ),
-                "Server uptime": self._run_time_hh_mm_ss(
-                    ServerTimeMeasurementType.SERVER_UPTIME,
-                ),
-            },
-        )
+        GlobalLogger.print_values(header="SERVER MEASUREMENT", value_pairs=self.statistics_values())
+
+    def statistics_values(self) -> dict[str, str | None]:
+        labels = {
+            ServerTimeMeasurementType.SIMULATION_START: "Simulation start time",
+            ServerTimeMeasurementType.RESTORE_SIMULATION_RUN: "Restore time",
+            ServerTimeMeasurementType.SIMULATION_EXECUTION: "Simulation execution time",
+            ServerTimeMeasurementType.SIMULATION_STOP: "Simulation stop time",
+            ServerTimeMeasurementType.SERVER_UPTIME: "Server uptime",
+        }
+        # a restored run has a restore time instead of a start time
+        return {label: self._run_time_hh_mm_ss(measurement_type) for measurement_type, label in labels.items() if self.was_measured(measurement_type)}
 
     def _run_time_in_seconds(
         self,

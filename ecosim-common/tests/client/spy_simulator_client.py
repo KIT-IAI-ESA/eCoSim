@@ -6,11 +6,14 @@ from typing import override
 
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.channel.esp_channel import ESPChannel
+from ecosim_common.communication.channel.message_data import MessageData
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
 from ecosim_common.communication.message_type import MessageType
+from ecosim_common.config.client_id import ClientID
 from ecosim_test_common.bounded_wait import finishes_in_time
 from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
+from ecosim_test_common.test_data.manual_clock import ManualClock
 from ecosim_test_common.test_data.single_connection_server import SingleConnectionServer
 from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 
@@ -23,6 +26,9 @@ class SpySimulatorClient(SimulatorClient):
     step_blocks: bool = field(default=False)
     step_block_started: threading.Event = field(default_factory=threading.Event)
     step_block_end: threading.Event = field(default_factory=threading.Event)
+    seconds_per_model_step: float = field(default=0.0)
+    # the client measures the model time with this clock, and the steps of this spy move it
+    _clock: ManualClock = field(default_factory=ManualClock)
 
     @staticmethod
     def create(
@@ -35,16 +41,26 @@ class SpySimulatorClient(SimulatorClient):
         )
 
     @staticmethod
-    def of_ended_run(message_types: list[MessageType], initialize_fails: bool = False, stop_fails: bool = False) -> SpySimulatorClient:
+    def of_ended_run(
+        message_types: list[MessageType],
+        payloads: dict[MessageType, MessageData] | None = None,
+        initialize_fails: bool = False,
+        stop_fails: bool = False,
+        seconds_per_model_step: float = 0.0,
+    ) -> SpySimulatorClient:
         """The client after a server sent it these messages and closed the connection."""
         server = SingleConnectionServer.listen()
         client = SpySimulatorClient(
-            _client_config=generate_mocked_client_config(server_address=server.address()),
+            _client_config=generate_mocked_client_config(
+                server_address=server.address(),
+                client_id=ClientID(model_name="house", simulator_name="house"),
+            ),
             initialize_fails=initialize_fails,
             stop_fails=stop_fails,
+            seconds_per_model_step=seconds_per_model_step,
         )
         client.start()
-        server.serve_and_close(message_types=message_types)
+        server.serve_and_close(message_types=message_types, payloads=payloads)
         assert finishes_in_time(blocking_call=client.wait_until_finished), "the client kept waiting after the server closed the connection"
         return client
 
@@ -70,6 +86,7 @@ class SpySimulatorClient(SimulatorClient):
     @override
     def _on_do_step(self, step_size_in_seconds: float) -> None:
         self.calls.append(f"step of {step_size_in_seconds} at {self._current_simulation_time}")
+        self._clock.advance(seconds=self.seconds_per_model_step)
         if self.step_blocks:
             self.step_block_started.set()
             self.step_block_end.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)

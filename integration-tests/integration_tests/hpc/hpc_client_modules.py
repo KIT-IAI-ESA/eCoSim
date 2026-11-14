@@ -58,6 +58,22 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
     return ClientID(model_name=directory.name, simulator_name=kind.value)
 
 
+def write_fmu2_module_that_names_a_missing_fmu(simulator_dir: Path) -> ClientID:
+    directory = simulator_dir / "missing_fmu2_model"
+    directory.mkdir()
+    # the FMU in the folder gives the client type, the missing one in the ini stops the client on its worker
+    shutil.copy(fmu2_model_path(), directory)
+    shutil.copy(fmu2_fmc_path(), directory)
+    write_client_ini(
+        directory=directory,
+        client_type="fmu2",
+        model_name=directory.name,
+        fmc_file=fmu2_fmc_path().name,
+        extra_sections={"fmu": {"fmu_file": "[missing.fmu]"}},
+    )
+    return ClientID(model_name=directory.name, simulator_name=ClientKind.FMU2.value)
+
+
 def write_broken_fmu2_module(simulator_dir: Path) -> ClientID:
     directory = simulator_dir / "broken_fmu2_model"
     directory.mkdir()

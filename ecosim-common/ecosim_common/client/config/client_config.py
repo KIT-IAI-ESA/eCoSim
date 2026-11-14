@@ -22,6 +22,7 @@ from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.optional_access import if_exists
+from ecosim_common.tech.readable_count import readable_count
 
 
 class ClientConfig(ABC):
@@ -63,17 +64,23 @@ class ClientConfig(ABC):
         )
 
     def print_to_info(self) -> None:
-        GlobalLogger.print_values(
-            header="CLIENT CONFIG",
-            value_pairs={
-                "Simulator name": self.simulator_config().simulator_name,
-                "Model name": self.simulator_config().model_name,
-                "Simulation type": self.type(),
-                "Server address": self.server_config().server_address,
-                "Image renderer port": self.server_config().image_renderer_port if self.server_config().image_renderer_port else "N/A",
-                "Provided interfaces": self.interfaces_config().interfaces,
-            },
-        )
+        GlobalLogger.print_values(header="CLIENT CONFIG", value_pairs=self.start_up_values(list_every_interface=ClientConfig.logger.is_debug_enabled))
+
+    def start_up_values(self, list_every_interface: bool) -> dict[str, object]:
+        interfaces_config = self.interfaces_config()
+        value_pairs: dict[str, object] = {
+            "Simulator name": self.simulator_config().simulator_name,
+            "Model name": self.simulator_config().model_name,
+            "Simulation type": self.type().serialized,
+            "Server address": f"{self.server_config().server_address}",
+            "Interfaces": f"{readable_count(count=len(interfaces_config.input_interface_names()), noun='input')}, "
+            + readable_count(count=len(interfaces_config.output_interface_names()), noun="output"),
+        }
+        if self.server_config().image_renderer_port:
+            value_pairs["Image renderer port"] = self.server_config().image_renderer_port
+        if list_every_interface:
+            value_pairs["Provided interfaces"] = interfaces_config.interfaces
+        return value_pairs
 
     @abstractmethod
     def as_config_file_content(self) -> str:
