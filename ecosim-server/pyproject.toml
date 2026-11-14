@@ -40,9 +40,13 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
 [project.optional-dependencies]
+pandas = [
+    "pandas==2.3.3",
+]
 dev = [
     "ecosim-test-common==0.14.0",
     "mypy==2.3.0",
+    "pandas==2.3.3",
     "pip==26.3",
     "pytest-cov==7.1.0",
     "pytest-html==4.2.0",
@@ -97,5 +101,8 @@ module = [
     "distributed.protocol",
     "cloudpickle",
     "cloudpickle.*",
+    # Ignore pandas library (not typed)
+    "pandas",
+    "pandas.*",
 ]
 ignore_missing_imports = true

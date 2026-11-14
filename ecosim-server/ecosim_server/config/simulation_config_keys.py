@@ -10,11 +10,21 @@ def missing_key_problems(raw_config: dict[str, Any], simulation_config_file: Pat
     problems = [_missing_top_level_key(file=file, key=key) for key in ("setup", "simulators", "logical_delays") if key not in raw_config]
     if isinstance(raw_config.get("setup"), dict) and not has_step_size_override:
         problems += _delta_t_problems(file=file, setup=raw_config["setup"])
-    simulators = raw_config.get("simulators")
-    if isinstance(simulators, list):
-        for index, simulator in enumerate(simulators):
-            problems += _simulator_problems(file=file, simulator=simulator, index=index)
-    return problems
+    return problems + _problems_of_simulators(file=file, simulators=raw_config.get("simulators"))
+
+
+def simulator_key_problems(raw_config: Any, simulation_config_file: Path) -> list[str]:
+    """Every key of the simulators and their interfaces that is missing, for a reader that needs nothing else."""
+    file = simulation_config_file
+    if not isinstance(raw_config, dict) or "simulators" not in raw_config:
+        return [_missing_top_level_key(file=file, key="simulators")]
+    return _problems_of_simulators(file=file, simulators=raw_config["simulators"])
+
+
+def _problems_of_simulators(file: Path, simulators: Any) -> list[str]:
+    if not isinstance(simulators, list):
+        return []
+    return [problem for index, simulator in enumerate(simulators) for problem in _simulator_problems(file=file, simulator=simulator, index=index)]
 
 
 def _missing_top_level_key(file: Path, key: str) -> str:
