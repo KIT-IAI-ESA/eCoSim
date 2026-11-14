@@ -20,7 +20,8 @@ stops every part, and the last line says how to continue the run.
 mean and maximum of every output. `--csv results.csv` writes them as one table.
 
 A simulation folder holds `server/simulation.json`, `server/preferences.ini` and one folder for each simulator in
-`Modules/`, like `simulation_examples/building` in the repository.
+`Modules/`, like `simulation_examples/building` in the repository. `ecosim new my_simulation house.fmu weather.fmu` writes
+such a folder from FMU files, connects the inputs and outputs that have the same name and checks the simulation at the end.
 
 The extras add the Pyro5 client (`ecosim[pyro5]`) and pandas for the results (`ecosim[pandas]`). The MATLAB client
 needs Python 3.12 and is installed on its own, see the MATLAB client guide.

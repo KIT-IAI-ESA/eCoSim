@@ -77,3 +77,8 @@ def command_text(arguments: Sequence[str]) -> str:
 def with_shown_paths(text: str) -> str:
     """The paths inside the current folder relative to it, since the loaders name absolute paths."""
     return text.replace(f"{Path.cwd()}{os.sep}", "")
+
+
+def and_joined(texts: Sequence[str]) -> str:
+    """Like 'a, b and c'."""
+    return texts[0] if len(texts) == 1 else f"{', '.join(texts[:-1])} and {texts[-1]}"

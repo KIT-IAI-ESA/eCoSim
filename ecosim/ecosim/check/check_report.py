@@ -14,8 +14,12 @@ def report_lines(check: SimulationCheck, simulation: SimulationFolder, check_com
     lines += simulator_lines(simulators=check.simulators)
     lines += findings_lines(findings=check.findings)
     if problems:
-        lines.append(f"Fix {'it' if len(problems) == 1 else 'them'} and run the check again: {check_command}")
+        lines.append(fix_line(problems=problems, check_command=check_command))
     return [with_shown_paths(text=line) for line in lines]
+
+
+def fix_line(problems: list[str], check_command: str) -> str:
+    return f"Fix {'it' if len(problems) == 1 else 'them'} and run the check again: {check_command}"
 
 
 def summary_line(check: SimulationCheck, simulation: SimulationFolder) -> str:
