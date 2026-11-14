@@ -30,7 +30,7 @@ Node.js 24 or newer, or Docker with the script below.
 - or install and build in one step from the repository root: `python dev/build_docs.py`
     - it uses npm, or a pinned `node:24` image in Docker if npm is not installed
     - `--npm` or `--docker` picks one; the files in `docs/` stay yours with either
-    - `--serve` serves it with live reload on `http://localhost:3000/ecosim-os/` instead of building
+    - `--serve` serves it with live reload on `http://localhost:3000/` instead of building
 - a new page has to be added to `docs/sidebars.ts`
 
 ### Generated reference

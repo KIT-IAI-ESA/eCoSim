@@ -7,7 +7,7 @@ Questions, bug reports and pull requests are welcome. Everyone taking part follo
 
 Open an issue. For a bug, say what you ran (the command and the config files, or a small example),
 what you expected and what happened, and add the log of the run with `--debug`. The
-[documentation](https://mekkyz.github.io/ecosim-os/) covers many setup problems, so a quick look
+[documentation](https://ecosim.easimov.com/docs) covers many setup problems, so a quick look
 there first often helps.
 
 A security problem doesn't belong in a public issue, see [SECURITY.md](SECURITY.md).
@@ -25,7 +25,7 @@ A security problem doesn't belong in a public issue, see [SECURITY.md](SECURITY.
 ## Development setup
 
 The development pages are in `docs/content/development/` and on the
-[documentation site](https://mekkyz.github.io/ecosim-os/development/project-setup).
+[documentation site](https://ecosim.easimov.com/docs/development/project-setup).
 
 - [Project setup](docs/content/development/project-setup.md): install uv, set up the environments and the pre-commit hook
 - [Architecture](docs/content/development/architecture.md): the subprojects and how they work together

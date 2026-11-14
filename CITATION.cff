@@ -27,8 +27,8 @@ authors:
     affiliation: "Scientific Computing Center, Karlsruhe Institute of Technology, Karlsruhe, Germany"
     email: glen.hunter@kit.edu
 license: Apache-2.0
-repository-code: "https://github.com/mekkyz/ecosim-os"
-url: "https://mekkyz.github.io/ecosim-os/"
+repository-code: "https://github.com/KIT-IAI-ESA/eCoSim"
+url: "https://ecosim.easimov.com/"
 version: 0.14.0
 keywords:
   - co-simulation

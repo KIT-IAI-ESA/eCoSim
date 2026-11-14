@@ -2,8 +2,8 @@
 
 A co-simulation framework for energy systems.
 
-[![tests](https://github.com/mekkyz/ecosim-os/actions/workflows/tests.yml/badge.svg)](https://github.com/mekkyz/ecosim-os/actions/workflows/tests.yml)
-[![docs](https://github.com/mekkyz/ecosim-os/actions/workflows/docs.yml/badge.svg)](https://mekkyz.github.io/ecosim-os/)
+[![tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml)
+[![docs](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/docs.yml/badge.svg)](https://ecosim.easimov.com/docs)
 
 eCoSim couples independent simulation models, such as a house, its heating and the weather, into one
 co-simulation. A server owns the clock and the data flow. Each model runs in its own client, and for
@@ -37,13 +37,13 @@ eCoSim is installed from source. You need Python 3.12 or newer and [uv](https://
 The MATLAB client needs exactly Python 3.12.
 
 ```shell
-git clone https://github.com/mekkyz/ecosim-os.git
-cd ecosim-os
+git clone https://github.com/KIT-IAI-ESA/ecosim.git
+cd ecosim
 ```
 
 Each package is its own uv project. `uv run --project <folder>` creates the environment of that
 folder the first time it is used, so there is no separate install step. See
-[Installation](https://mekkyz.github.io/ecosim-os/getting-started/installation) for the details.
+[Installation](https://ecosim.easimov.com/docs/getting-started/installation) for the details.
 
 ## Quick start
 
@@ -68,19 +68,19 @@ wait
 ```
 
 When the simulation is finished, the server and the clients exit, and `results/` holds the outputs
-of each model as JSON lines. The [quick start](https://mekkyz.github.io/ecosim-os/getting-started/quick-start)
+of each model as JSON lines. The [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start)
 explains the results and the files of the example.
 
 ## Documentation
 
-The documentation is at [mekkyz.github.io/ecosim-os](https://mekkyz.github.io/ecosim-os/).
+The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/docs).
 
-- Guides: [Docker](https://mekkyz.github.io/ecosim-os/guides/docker),
-  [HPC cluster](https://mekkyz.github.io/ecosim-os/guides/hpc-cluster),
-  [MATLAB client](https://mekkyz.github.io/ecosim-os/guides/matlab-client),
-  [Pyro5 client](https://mekkyz.github.io/ecosim-os/guides/pyro5-client)
-- Reference: [command line](https://mekkyz.github.io/ecosim-os/reference/command-line),
-  [configuration files](https://mekkyz.github.io/ecosim-os/reference/configuration-files)
+- Guides: [Docker](https://ecosim.easimov.com/docs/guides/docker),
+  [HPC cluster](https://ecosim.easimov.com/docs/guides/hpc-cluster),
+  [MATLAB client](https://ecosim.easimov.com/docs/guides/matlab-client),
+  [Pyro5 client](https://ecosim.easimov.com/docs/guides/pyro5-client)
+- Reference: [command line](https://ecosim.easimov.com/docs/reference/command-line),
+  [configuration files](https://ecosim.easimov.com/docs/reference/configuration-files)
 
 ## Development
 

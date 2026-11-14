@@ -4,7 +4,7 @@ import styles from "./styles.module.css";
 
 export default function NavbarLogo(): ReactNode {
   return (
-    <Link to="/" className={styles.brand}>
+    <Link to="/docs" className={styles.brand}>
       <span className={styles.wordmark}>
         <span className="brand-e">e</span>CoSim
       </span>
