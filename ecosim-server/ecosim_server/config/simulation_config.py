@@ -21,7 +21,7 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.connection_check import check_connections
-from ecosim_server.config.simulation_config_keys import missing_key_problems
+from ecosim_server.config.simulation_config_keys import missing_key_problems, simulator_key_problems
 
 
 @dataclass(frozen=True)
@@ -98,7 +98,12 @@ class SimulationConfig:
 
     @staticmethod
     def clients_of_file(simulation_config_file: Path) -> List[ClientSimulatorConfig]:
-        return SimulationConfig._load_all_clients(SimulationConfig._load_config(simulation_config_file))
+        # without the connection check, because reading the results of a run must not fail on a broken connection
+        config = SimulationConfig._load_config(simulation_config_file)
+        problems = simulator_key_problems(raw_config=config, simulation_config_file=simulation_config_file)
+        if problems:
+            raise ValueError("\n".join(problems))
+        return SimulationConfig._load_all_clients(config)
 
     @staticmethod
     def _load_all_clients(server_config: dict[str, Any]) -> List[ClientSimulatorConfig]:

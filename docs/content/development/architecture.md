@@ -52,6 +52,8 @@ has to happen in every `pyproject.toml` at once.
 
 The Python modules are internal and can change: the supported way to use eCoSim is the
 [command line](../reference/command-line.md) and the [configuration files](../reference/configuration-files.md).
+The one exception is `ecosim_server.results`, which reads the results of a run as one table. Scripts use its names
+(`read_results`, `ResultTable`, `ResultColumn`), so keep them as they are.
 
 ### `ecosim_common`
 
@@ -78,6 +80,7 @@ The Python modules are internal and can change: the supported way to use eCoSim 
 | `simulation/` | `SimulationExecutor`, the step loop and its progress line, value history, restore |
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |
 | `measurement/` | `MeasurementRepository` — the simulation results |
+| `results/` | `read_results`, which gives the stored results of a run as one table with a column per interface. `to_data_frame()` needs the extra `ecosim-server[pandas]` |
 | `data/` | `Repositories` — the aggregate the rest of the server is given |
 | `tech/db/` | SQLAlchemy and file backends |
 | `config/` | `CLIArguments`, `ServerConfig`, `SimulationConfig` |

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from ecosim_server.config.simulation_config_keys import missing_key_problems
+from ecosim_server.config.simulation_config_keys import missing_key_problems, simulator_key_problems
 from ecosim_test_common.test_data.generate_simulation_file import create_input, create_output, create_simulator
 
 FILE = Path("server/simulation.json")
@@ -58,3 +58,8 @@ def test_a_simulator_and_an_interface_with_a_missing_key_are_listed() -> None:
         f'{FILE}: simulator house has no key "model".',
         f'{FILE}: simulator house, interface T_out has no key "type".',
     ]
+
+
+def test_the_results_need_only_the_simulators_and_their_interfaces() -> None:
+    assert simulator_key_problems(raw_config={"simulators": _a_complete_config()["simulators"]}, simulation_config_file=FILE) == []
+    assert simulator_key_problems(raw_config={"setup": {}}, simulation_config_file=FILE) == [f'{FILE} has no key "simulators".']
