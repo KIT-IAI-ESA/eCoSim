@@ -65,10 +65,11 @@ class ClientConfig(ABC):
             model_name=self.simulator_config().model_name,
         )
 
-    def print_to_info(self) -> None:
-        GlobalLogger.print_values(header="CLIENT CONFIG", value_pairs=self.start_up_values(list_every_interface=ClientConfig.logger.is_debug_enabled))
+    def print_to_info(self, start_values: list[str]) -> None:
+        value_pairs = self.start_up_values(list_every_interface=ClientConfig.logger.is_debug_enabled, start_values=start_values)
+        GlobalLogger.print_values(header="CLIENT CONFIG", value_pairs=value_pairs)
 
-    def start_up_values(self, list_every_interface: bool) -> dict[str, object]:
+    def start_up_values(self, list_every_interface: bool, start_values: list[str]) -> dict[str, object]:
         interfaces_config = self.interfaces_config()
         value_pairs: dict[str, object] = {
             "Simulator name": self.simulator_config().simulator_name,
@@ -82,6 +83,9 @@ class ClientConfig(ABC):
             value_pairs["Image renderer port"] = self.server_config().image_renderer_port
         if list_every_interface:
             value_pairs["Provided interfaces"] = interfaces_config.interfaces
+        # always every value, since the log is the only place that says which values a run had
+        if start_values:
+            value_pairs["Start values"] = start_values
         return value_pairs
 
     @abstractmethod

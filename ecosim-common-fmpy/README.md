@@ -2,7 +2,7 @@
 
 Code shared by the eCoSim clients for FMI 2.0 and FMI 3.0 models. They run the models with fmpy.
 
-- the `fmu_file` setting
+- the `fmu_file` setting and the `[start_values]` section
 - the `--validate-fmu-file-only` option
 - a fix for a threading problem in lxml
 

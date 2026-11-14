@@ -10,6 +10,7 @@ from ecosim_client_fmu_v3.fmu3_variable_type import FMU3VariableType
 from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_common_fmpy.config.start_values import StartValues
 from ecosim_common_fmpy.tech.read_model_description import read_model_description
 from fmpy.fmi3 import FMU3Slave
 from fmpy.model_description import ModelDescription, ScalarVariable
@@ -25,6 +26,7 @@ class FMU3SimulatorConfig:
     _model_description: ModelDescription
     _input_scalar_by_name: Dict[str, ScalarVariable]
     _output_scalar_by_name: Dict[str, ScalarVariable]
+    start_values: StartValues
 
     @classmethod
     def of(
@@ -41,6 +43,7 @@ class FMU3SimulatorConfig:
             output_names=output_names,
             fmi_major_version=3,
         )
+        start_values = fmu_config.start_values(model_description=model_description, input_names=input_names)
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
         return FMU3SimulatorConfig(
@@ -50,6 +53,7 @@ class FMU3SimulatorConfig:
             _model_description=model_description,
             _input_scalar_by_name={var.name: var for var in input_variables},
             _output_scalar_by_name={var.name: var for var in output_variables},
+            start_values=start_values,
         )
 
     def reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:

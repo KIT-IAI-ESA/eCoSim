@@ -49,8 +49,13 @@ class FMU3Client(SimulatorClient):
         start_time: float = 0.0,
     ) -> None:
         self._fmu_instance.instantiate()
+        self._simulation_config.start_values.set_on(self._fmu_instance)
         self._fmu_instance.enterInitializationMode(startTime=start_time)
         self._fmu_instance.exitInitializationMode()
+
+    @override
+    def _start_values_for_start_up(self) -> list[str]:
+        return self._simulation_config.start_values.as_lines()
 
     @override
     def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
