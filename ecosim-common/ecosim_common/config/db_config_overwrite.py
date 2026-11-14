@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 from ecosim_common.config.database_type import DatabaseType
 
@@ -7,7 +8,7 @@ from ecosim_common.config.database_type import DatabaseType
 @dataclass(frozen=True)
 class DbConfigOverwrite:
     _host: str | None = None
-    _port: str | None = None
+    _port: int | None = None
     _user: str | None = None
     _user_password: str | None = field(default=None, repr=False)
     _name: str | None = None
@@ -25,9 +26,10 @@ class DbConfigOverwrite:
 
     def port(
         self,
-        default: str,
-    ) -> str:
-        return self._port or default
+        read_default: Callable[[], int],
+    ) -> int:
+        # read only without the option, so an empty port in the config file does not matter then
+        return self._port or read_default()
 
     def user(
         self,

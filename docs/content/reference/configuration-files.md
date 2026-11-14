@@ -40,7 +40,7 @@ Other users on a shared machine can see `--database-user-password` in the proces
 | `server` | `communication_protocol` | one of `DASK`, `TCP_SOCKET` | `TCP_SOCKET` |
 | `server` | `port` | integer | required |
 | `database` | `server` | string | required |
-| `database` | `port` | string | required |
+| `database` | `port` | integer | required |
 | `database` | `ssl` | boolean | required |
 | `database` | `username` | string | required |
 | `database` | `password` | string | empty |

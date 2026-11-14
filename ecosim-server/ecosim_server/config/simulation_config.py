@@ -55,7 +55,7 @@ class SimulationConfig:
         return SimulationConfig(
             clients=clients,
             steps=steps,
-            step_size_in_ms=step_size_override if step_size_override else int(config["setup"]["delta_t"]),
+            step_size_in_ms=step_size_override if step_size_override is not None else int(config["setup"]["delta_t"]),
             pace=pace,
             start_date=SimulationConfig._parse_start_date(
                 config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),

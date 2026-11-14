@@ -26,8 +26,10 @@ description: Every option of the eCoSim server, the clients and the HPC entry po
 
 # Command-line options
 
-These tables come from the option definitions in the code. After changing an option, run
-`uv run --project simulation_examples python dev/generate_cli_reference.py` in the repository root.
+These tables come from the option definitions in the code. A wrong value stops the command at once with exit code 2
+and a short message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
+After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
+repository root.
 """
 TABLE_HEADER = ["| Option | Required | Default | Description |", "| --- | --- | --- | --- |"]
 COMMANDS = [

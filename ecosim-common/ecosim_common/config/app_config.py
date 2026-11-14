@@ -37,14 +37,6 @@ class AppConfig(object):
             else:
                 self._add_flag(environment_variables, parameter)
         self._args = self._parser.parse_args(passed_arguments)
-        for parameter in parameters:
-            if not parameter.transform or getattr(self._args, parameter.to_parsed_arg_name()) is None:
-                continue
-            setattr(
-                self._args,
-                parameter.to_parsed_arg_name(),
-                parameter.transform(getattr(self._args, parameter.to_parsed_arg_name())),
-            )
 
     def _add_string(
         self,
@@ -58,7 +50,8 @@ class AppConfig(object):
             string_value = parameter.default_value
         self._parser.add_argument(
             parameter.to_cli_variable(),
-            type=str,
+            type=parameter.transform or str,
+            choices=parameter.choices,
             required=parameter.required,
             help=parameter.help_text,
             default=string_value,
@@ -93,7 +86,10 @@ class AppConfigParameter:
     enable_environment_variable: bool = False
     environment_variable_prefix: str | None = None
     default_value: str | None = None
+    # converts the text, an argparse.ArgumentTypeError from it becomes a usage error with exit code 2
     transform: Callable[[str], Any] | None = None
+    # compared with the value after the transform
+    choices: tuple[str, ...] | None = None
 
     def to_environment_variable(self) -> str:
         name = self.name.replace("-", "_").upper()

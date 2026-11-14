@@ -3,6 +3,7 @@ from pathlib import Path
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+from ecosim_common.config.option_values import choice_name, port_number
 
 
 class CLIArguments(AppConfig):
@@ -29,20 +30,22 @@ class CLIArguments(AppConfig):
                 ),
                 AppConfigParameter(
                     name="server-port",
-                    transform=lambda x: int(x),
+                    transform=port_number,
                     help_text="Override the port of the server.",
                 ),
                 AppConfigParameter(
                     name="image-renderer-port",
                     required=False,
                     default_value=None,
-                    transform=lambda x: int(x),
+                    transform=port_number,
                     help_text="The port for the image renderer socket on the target server. If not set no connection will be opened.",
                 ),
                 AppConfigParameter(
                     name="communication-protocol",
                     required=False,
                     default_value=None,  # NOTE: the actual default value is specified in ClientConfig
+                    transform=choice_name,
+                    choices=tuple(protocol.serialized for protocol in CommunicationProtocol),
                     help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
                     + f"Possible: {[p.name for p in CommunicationProtocol]}",
                 ),
