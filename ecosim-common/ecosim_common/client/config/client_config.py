@@ -167,7 +167,7 @@ class ServerConfig:
 [server]
 ip = {self.server_address.ip}
 port = {self.server_address.port}
-communication_protocol = {self.communication_protocol.serialized}
+communication_protocol = {self.communication_protocol.name}
         """
         ).strip()
 
@@ -210,7 +210,7 @@ class SimulatorConfig:
 [simulator]
 simulator_name = {self.simulator_name}
 model_name = {self.model_name}
-fmc_file = {self.fmc_file}
+fmc_file = [{self.fmc_file}]
 type = {self.type.serialized}
         """
         ).strip()
