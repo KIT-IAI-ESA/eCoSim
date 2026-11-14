@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, override
 
 from ecosim_common.client.config.client_type import ClientType
+from ecosim_common.client.config.interface_mismatch import InterfaceMismatch
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_meta_data import ClientMetaData
@@ -17,7 +18,6 @@ from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_client import ModelInterfaceClient
-from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.tech.json.read_json_file import read_json_file
 from ecosim_common.tech.logger.global_logger import GlobalLogger
@@ -291,9 +291,6 @@ class ClientInterfaceConfig:
     def all_interfaces_to_protocol_json_string(self) -> str:
         return json.dumps(self.interfaces, default=asdict)
 
-    def _required_input_interface_names(self) -> List[str]:
-        return [interface.name for interface in self.interfaces if interface.required and interface.type == InterfaceType.INPUT]
-
     def input_interface_names(self, only_required: bool = False) -> List[str]:
         if only_required:
             return [interface.name for interface in self.interfaces if interface.type == InterfaceType.INPUT and interface.required]
@@ -305,30 +302,16 @@ class ClientInterfaceConfig:
     def validate_config_with_server(
         self,
         server_config: ServerInterfaceSettings,
-    ) -> bool:
-        return (
-            self._all_required_inputs_are_matched_by_actual(server_config.inputs)
-            and self._all_actual_inputs_are_in_config(server_config.inputs)
-            and self._all_actual_outputs_are_in_config(server_config.outputs)
+    ) -> InterfaceMismatch:
+        input_names = self.input_interface_names()
+        output_names = self.output_interface_names()
+        return InterfaceMismatch(
+            inputs_not_in_fmc=[name for name in server_config.inputs if name not in input_names],
+            outputs_not_in_fmc=[name for name in server_config.outputs if name not in output_names],
+            required_inputs_not_connected=[name for name in self.input_interface_names(only_required=True) if name not in server_config.inputs],
+            fmc_inputs=input_names,
+            fmc_outputs=output_names,
         )
-
-    def _all_required_inputs_are_matched_by_actual(
-        self,
-        actual_inputs: List[InterfaceId],
-    ) -> bool:
-        return all(required_input in actual_inputs for required_input in self._required_input_interface_names())
-
-    def _all_actual_inputs_are_in_config(
-        self,
-        actual_inputs: List[InterfaceId],
-    ) -> bool:
-        return all(actual_input in self.input_interface_names() for actual_input in actual_inputs)
-
-    def _all_actual_outputs_are_in_config(
-        self,
-        actual_outputs: List[InterfaceId],
-    ) -> bool:
-        return all(actual_output in self.output_interface_names() for actual_output in actual_outputs)
 
 
 @dataclass

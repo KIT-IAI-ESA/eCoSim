@@ -4,6 +4,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import override
 
+from ecosim_common.client.config.client_config import SimulatorConfig
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.message_data import MessageData
@@ -42,6 +43,7 @@ class SpySimulatorClient(SimulatorClient):
         payloads: dict[MessageType, MessageData] | None = None,
         initialize_fails: bool = False,
         stop_fails: bool = False,
+        simulator_config: SimulatorConfig | None = None,
     ) -> SpySimulatorClient:
         """The client after a server sent it these messages and closed the connection."""
         server = SingleConnectionServer.listen()
@@ -49,6 +51,7 @@ class SpySimulatorClient(SimulatorClient):
             _client_config=generate_mocked_client_config(
                 server_address=server.address(),
                 client_id=ClientID(model_name="house", simulator_name="house"),
+                simulator_config=simulator_config,
             ),
             initialize_fails=initialize_fails,
             stop_fails=stop_fails,
