@@ -7,7 +7,7 @@ description: What eCoSim is and how a co-simulation runs.
 # <span className="brand-e">e</span>CoSim
 
 eCoSim couples independent simulation models into one co-simulation. A **server** owns the clock
-and the data flow; one **client** per model advances it step by step.
+and the data flow. One **client** per model advances it step by step.
 
 ```mermaid
 flowchart LR
@@ -17,9 +17,10 @@ flowchart LR
   ventilation -- control signals --> house
 ```
 
-Models are plugged in through a client for FMI 2.0, FMI 3.0, MATLAB, Python or Pyro5. The server stores the
-results in PostgreSQL/TimescaleDB or as JSON lines on disk. For many simulations at once, `ecosim-hpc`
-runs server and clients on a Dask cluster.
+Models are plugged in through a client for FMI 2.0, FMI 3.0, MATLAB, Python or Pyro5. The server
+stores the results in PostgreSQL/TimescaleDB or as JSON lines on disk. On one computer, the `ecosim`
+command writes a simulation from FMUs, checks it, runs it and shows its results. For many simulations at
+once, `ecosim-hpc` runs server and clients on a Dask cluster.
 
 ## How a simulation runs
 
@@ -35,6 +36,8 @@ The [architecture](development/architecture.md) page describes the messages and 
 ## Where to go next
 
 - [Quick start](getting-started/quick-start.md): run the building example in a few minutes
-- [Guides](guides/docker.md): Docker, an HPC cluster, the MATLAB and the Pyro5 client
+- [Your own models](getting-started/your-own-models.md): write a simulation from your FMUs
+- [Guides](guides/run-a-simulation.md): run a simulation, read the results, Docker, an HPC cluster, the MATLAB,
+  the Pyro5 and the Python client
 - [Reference](reference/command-line.md): every command-line option and config key
 - [Development](development/project-setup.md): set up the repository, architecture, tests

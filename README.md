@@ -28,7 +28,8 @@ flowchart LR
 
 Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models. A Python model
 runs in the client itself or is served over Pyro5. The server stores the results in PostgreSQL/TimescaleDB
-or as JSON lines on disk. For many simulations at once, `ecosim-hpc` runs the server and the clients on a
+or as JSON lines on disk. On one computer, the `ecosim` command writes a simulation from FMUs, checks it, runs
+it and shows its results. For many simulations at once, `ecosim-hpc` runs the server and the clients on a
 Dask cluster.
 
 ## Quick start
@@ -41,42 +42,37 @@ cd ecosim
 ```
 
 The building example couples three FMI 2.0 models for 100 steps and writes the results as files, so
-no database is needed. Start the server:
+no database is needed. Check it, run it and look at its results:
 
 ```shell
-cd simulation_examples/building/Executable
-uv run --project ../.. ecosim-server --server-config ../server/preferences.ini \
-    --simulation-config ../server/simulation.json --steps 100 \
-    --database-type file --database-directory results
+cd simulation_examples
+uv run ecosim check building
+uv run ecosim run building --steps 100
+uv run ecosim results building
 ```
 
-The first run creates the environment, which takes a moment. The server then waits for the
-clients. In a second terminal, in the same folder, start them:
+The first `uv run` creates the environment, which takes a moment. `ecosim run` starts the server and
+a client for each model, and writes the results and the logs into a new folder in `building/results`.
+`ecosim results` shows the smallest, the mean and the largest value of each output. The
+[quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) explains each step, and
+goes on with a parameter of the house and a simulation made from FMUs.
 
-```shell
-for module in house occupancy weather; do
-    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../Modules/$module/preferences.ini" &
-done
-wait
-```
+## What it looks like
 
-When the simulation is finished, the server and the clients exit, and `results/` holds the outputs
-of each model as JSON lines. The [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start)
-explains the results and the files of the example.
+A real run of the three commands, with the waits shortened.
 
-## What the server prints
-
-A real run of the quick start, with the waits shortened. The clients run in the second terminal.
-
-<img alt="The server terminal of the quick start: the settings, the wait for the three clients, the 100 steps and the measurement at the end" src="docs/static/img/readme/quick-start-server.svg" width="100%">
+<img alt="A terminal with the three commands of the quick start: the check finds no problems, the run finishes after a few seconds, and the results table lists the smallest, the mean and the largest value of each output" src="docs/static/img/readme/quick-start.svg" width="100%">
 
 ## Documentation
 
 The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/docs).
 
-- [Installation](https://ecosim.easimov.com/docs/getting-started/installation) and the
-  [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start)
-- Guides: [Docker](https://ecosim.easimov.com/docs/guides/docker),
+- [Installation](https://ecosim.easimov.com/docs/getting-started/installation), the
+  [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) and
+  [your own models](https://ecosim.easimov.com/docs/getting-started/your-own-models)
+- Guides: [Run a simulation](https://ecosim.easimov.com/docs/guides/run-a-simulation),
+  [Read the results](https://ecosim.easimov.com/docs/guides/results),
+  [Docker](https://ecosim.easimov.com/docs/guides/docker),
   [HPC cluster](https://ecosim.easimov.com/docs/guides/hpc-cluster),
   [MATLAB client](https://ecosim.easimov.com/docs/guides/matlab-client),
   [Pyro5 client](https://ecosim.easimov.com/docs/guides/pyro5-client),
