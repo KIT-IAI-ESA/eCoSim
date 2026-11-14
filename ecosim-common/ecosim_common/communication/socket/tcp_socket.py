@@ -95,9 +95,8 @@ class TCPSocket(ESPChannel, ShutdownListener):
             self._internal_socket.bind((connection_address.ip, connection_address.port))
             self._connection_address = connection_address
         except socket.error as e:
-            TCPSocket._logger.error("Something went wrong binding to %s: %s", connection_address, e)
             self._bound.clear()
-            raise e
+            raise OSError(e.errno, f"Cannot listen on {connection_address}: {e.strerror}") from e
 
     def _bind_and_listen(self) -> None:
         try:

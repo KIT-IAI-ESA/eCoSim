@@ -126,8 +126,8 @@ first entry of `fmc_file` and `fmu_file`.
 
 ## Interface files
 
-The `.fmc` file named by `fmc_file` is a JSON file with the interfaces of the model. Its path is
-relative to the ini file. The `house.fmc` of the example above:
+The `.fmc` file named by `fmc_file` is a JSON file with the interfaces of the model, saved as UTF-8. Its
+path is relative to the ini file. The `house.fmc` of the example above:
 
 ```json
 {
@@ -161,6 +161,9 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   and the stored results. The models always start at time 0.
   It needs a time zone offset (`Z` or `+01:00`). A value without one is rejected when the config is
   loaded.
+
+Save the file as UTF-8, like the `.fmc` files. The server stops with `is not saved as UTF-8` for a file in
+another encoding, for example one saved as ANSI on Windows.
 
 The building example, shortened to its first simulator and two of its interfaces:
 

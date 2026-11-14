@@ -45,6 +45,17 @@ def test_listening_on_a_busy_port_leaves_nothing_behind() -> None:
     assert not busy_listener.is_listening_on_connection_event().is_set()
 
 
+def test_a_busy_port_names_the_address() -> None:
+    with socket.create_server((LOOPBACK_IP, 0)) as occupant:
+        busy_address = ConnectionAddress(ip=LOOPBACK_IP, port=occupant.getsockname()[1])
+        busy_listener = TCPSocket(_internal_socket=socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM), _connection_address=busy_address)
+
+        with pytest.raises(OSError) as error:
+            busy_listener.listen_on_connection_loop_async(channel_handler=ignore_connection)
+
+    assert str(error.value.strerror).startswith(f"Cannot listen on {busy_address}: ")
+
+
 def test_second_listen_call_changes_nothing(listener: TCPSocket) -> None:
     threads_before = set(threading.enumerate())
 

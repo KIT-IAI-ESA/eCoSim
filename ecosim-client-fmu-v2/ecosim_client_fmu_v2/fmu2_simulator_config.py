@@ -60,6 +60,9 @@ class FMU2SimulatorConfig:
     def read_model_description(cls, fmu_config: FMUBaseConfig) -> ModelDescription:
         try:
             return read_model_description(file=fmu_config.fmu_file)
+        except FileNotFoundError:
+            # reading a missing file again cannot help
+            raise
         except Exception as first_exception:
             nano_seconds = time.time_ns()
             today = datetime.now()
