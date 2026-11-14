@@ -62,7 +62,7 @@ def generate_server_config(
 def write_server_config_file(
     directory: Path,
     host: str = DEFAULT_HOST,
-    port: int = DEFAULT_DATABASE_PORT,
+    port: int | str = DEFAULT_DATABASE_PORT,
     username: str = DEFAULT_DATABASE_USERNAME,
     password: str | None = DEFAULT_DATABASE_PASSWORD,
     ssl: bool = False,

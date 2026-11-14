@@ -157,7 +157,7 @@ class DatabaseConfig:
     ) -> DatabaseConfig:
         return cls(
             host=db_overwrite.host(default=config.get_string("database", "server")),
-            port=int(db_overwrite.port(default=config.get_string("database", "port"))),
+            port=db_overwrite.port(read_default=lambda: config.get_int("database", "port")),
             ssl=db_overwrite.ssl(default=config.get_bool("database", "ssl")),
             name=db_overwrite.name(default="sim_control"),
             schema=db_overwrite.schema(default="sim_control"),
