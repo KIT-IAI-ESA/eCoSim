@@ -3,6 +3,10 @@
 SERVER_INTRO = r"""The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.
 `ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.
 
+The `[database]` keys `server`, `port`, `ssl`, `username` and `password` are read only for results in PostgreSQL, the
+default. For results as files (`type=file` here, or `--database-type file`), the section can be left out or hold only
+`type` and `directory`.
+
 The database password comes from the first of these that has one:
 
 1. `--database-user-password`

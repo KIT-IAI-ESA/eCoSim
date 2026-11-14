@@ -9,7 +9,7 @@ from sqlalchemy import URL
 
 from ecosim_common.communication.channel.connection_address import ConnectionAddress
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
-from ecosim_common.config.config_parser import ConfigParser
+from ecosim_common.config.config_parser import ConfigParser, ConfigParserException, MissingSectionOrKeyException
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -159,6 +159,34 @@ class DatabaseConfig:
         config: ConfigParser,
         db_overwrite: DbConfigOverwrite = DbConfigOverwrite(),
     ) -> DatabaseConfig:
+        database_type = db_overwrite.type(read_default=lambda: DatabaseType.of(config.get_string("database", "type", DatabaseType.POSTGRES.value)))
+        if database_type is DatabaseType.FILE:
+            directory = db_overwrite.directory(
+                read_default=lambda: Path(config.get_string("database", "directory", DatabaseConfig._default_directory.name)),
+            )
+            return cls.for_files(directory=directory, drop_existing_schema=db_overwrite.drop_existing_schema(False))
+        try:
+            return cls._for_postgres(config=config, db_overwrite=db_overwrite)
+        except MissingSectionOrKeyException as error:
+            raise ConfigParserException(f"{error}. PostgreSQL results need it. To write the results as files, pass --database-type file") from error
+
+    @classmethod
+    def for_files(cls, directory: Path, drop_existing_schema: bool = False) -> DatabaseConfig:
+        # results as files connect to no database, so they need none of its keys
+        return cls(
+            host="",
+            port=0,
+            ssl=False,
+            drop_existing_schema=drop_existing_schema,
+            username="",
+            password="",
+            schema="sim_control",
+            type=DatabaseType.FILE,
+            directory=directory,
+        )
+
+    @classmethod
+    def _for_postgres(cls, config: ConfigParser, db_overwrite: DbConfigOverwrite) -> DatabaseConfig:
         return cls(
             host=db_overwrite.host(default=config.get_string("database", "server")),
             port=db_overwrite.port(read_default=lambda: config.get_int("database", "port")),
@@ -172,8 +200,9 @@ class DatabaseConfig:
                 default=config.get_string("database", "password", default=""),
             ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
-            type=db_overwrite.type(default=DatabaseType.of(config.get_string("database", "type", DatabaseType.POSTGRES.value))),
-            directory=db_overwrite.directory(default=Path(config.get_string("database", "directory", DatabaseConfig._default_directory.name))),
+            type=DatabaseType.POSTGRES,
+            # PostgreSQL writes no result files, so the server config is not read for a results folder
+            directory=db_overwrite.directory(read_default=lambda: DatabaseConfig._default_directory),
         )
 
     def generate_sqlalchemy_db_url(self) -> URL:

@@ -154,10 +154,9 @@ results end up.
 
 ### file
 
-- `type=file` and `directory=/results` in `server_config.ini` select the file based repositories.
-  `--database-type=file` and `--database-directory=...` do the same on the command line.
-- The `[database]` keys `server`, `port`, `username`, `password` and `ssl` are read even for
-  `type=file`, so they are present but empty.
+- `type=file` and `directory=/results` in `server_config.ini` select the file based repositories. They are all
+  the `[database]` section needs for results as files. `--database-type=file` and `--database-directory=...` do
+  the same on the command line.
 - The repositories append to their files, so a second run adds its results to the ones that are
   already there. Delete `results` in between to start clean.
 - The server container runs as root, so with a rootful Docker daemon the files in `results` belong

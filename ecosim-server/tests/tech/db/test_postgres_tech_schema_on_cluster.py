@@ -29,6 +29,18 @@ def test_an_existing_schema_without_the_flag_raises_and_keeps_its_tables(plain_c
     assert plain_cluster.fetch_value(query=TABLE_QUERY, parameter="marker", database=name) is not None
 
 
+def test_an_existing_schema_names_the_options_to_go_on(plain_cluster: PostgresTestCluster) -> None:
+    name = _database_with_a_schema_of_an_earlier_run(plain_cluster)
+
+    with pytest.raises(RuntimeError) as error_info:
+        PostgresTech(plain_cluster.server_config(database_name=name)).init_db()
+
+    assert str(error_info.value) == (
+        "Schema 'sim_control' already exists from an earlier run. Store this run in another schema with --database-schema NAME, "
+        + "delete the old results with --database-drop-existing-schema, or continue that run with --restore-simulation-run."
+    )
+
+
 def test_an_existing_schema_with_the_flag_is_dropped_and_recreated(plain_cluster: PostgresTestCluster) -> None:
     name = _database_with_a_schema_of_an_earlier_run(plain_cluster)
 

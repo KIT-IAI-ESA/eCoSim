@@ -17,6 +17,10 @@ After changing a config reader, run `uv run python dev/generate_config_reference
 The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.
 `ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.
 
+The `[database]` keys `server`, `port`, `ssl`, `username` and `password` are read only for results in PostgreSQL, the
+default. For results as files (`type=file` here, or `--database-type file`), the section can be left out or hold only
+`type` and `directory`.
+
 The database password comes from the first of these that has one:
 
 1. `--database-user-password`
@@ -39,13 +43,13 @@ Other users on a shared machine can see `--database-user-password` in the proces
 | `server` | `host` | string | `localhost` |
 | `server` | `communication_protocol` | one of `DASK`, `TCP_SOCKET` | `TCP_SOCKET` |
 | `server` | `port` | integer | required |
+| `database` | `type` | string | `postgres` |
+| `database` | `directory` | string | `simulation_results` |
 | `database` | `server` | string | required |
 | `database` | `port` | integer | required |
 | `database` | `ssl` | boolean | required |
 | `database` | `username` | string | required |
 | `database` | `password` | string | empty |
-| `database` | `type` | string | `postgres` |
-| `database` | `directory` | string | `simulation_results` |
 
 ## All clients
 
