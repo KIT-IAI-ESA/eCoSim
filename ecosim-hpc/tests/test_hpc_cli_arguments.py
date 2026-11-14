@@ -42,9 +42,14 @@ def test_absolute_scheduler_file_overrides_the_call_path(
 @pytest.mark.parametrize("threads_per_worker", ["0", "-1"])
 def test_threads_per_worker_must_be_positive(
     esp_monkey_patch: ESPMonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
     threads_per_worker: str,
 ) -> None:
     esp_monkey_patch.set_sys_arg("--threads-per-worker", threads_per_worker)
 
-    with pytest.raises(ValueError, match="--threads-per-worker"):
+    with pytest.raises(SystemExit) as exit_info:
         HPCServerCliArguments()
+
+    assert exit_info.value.code == 2
+    error_line = capsys.readouterr().err.splitlines()[-1]
+    assert error_line.endswith(f"error: argument --threads-per-worker: must be a whole number of at least 1, not '{threads_per_worker}'")

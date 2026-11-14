@@ -114,8 +114,10 @@ def test_the_database_type_can_be_overwritten_to_postgres() -> None:
 
 
 def test_an_unknown_database_type_fails() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SystemExit) as exit_info:
         generate_server_config_from_file_and_cli_arguments(database_type="mysql")
+
+    assert exit_info.value.code == 2
 
 
 def test_the_default_database_directory_is_used_if_the_config_file_has_none() -> None:
@@ -126,3 +128,16 @@ def test_the_database_directory_can_be_overwritten() -> None:
     config = generate_server_config_from_file_and_cli_arguments(database_directory="/tmp/ecosim_results")
 
     assert config.database.directory == Path("/tmp/ecosim_results")
+
+
+def test_the_database_port_option_overrides_the_config_file() -> None:
+    assert generate_server_config_from_file_and_cli_arguments(database_port="5433").database.port == 5433
+
+
+def test_the_database_port_option_overrides_an_empty_port_in_the_config_file(tmp_path: Path) -> None:
+    config = generate_server_config_from_file_and_cli_arguments(
+        config_file=str(write_server_config_file(directory=tmp_path, port="")),
+        database_port="5433",
+    )
+
+    assert config.database.port == 5433

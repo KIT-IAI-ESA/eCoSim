@@ -3,6 +3,7 @@ from pathlib import Path
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfigParameter
+from ecosim_common.config.option_values import positive_whole_number
 from ecosim_server.config.cli_arguments import CLIArguments
 
 
@@ -46,7 +47,7 @@ class HPCServerCliArguments(CLIArguments):
                 AppConfigParameter(
                     name="threads-per-worker",
                     default_value=str(self.DEFAULT_THREADS_PER_WORKER),
-                    transform=self._parse_positive_thread_count,
+                    transform=positive_whole_number,
                     help_text="Batch mode only: the number of threads of each Dask worker. A job with only one worker needs at least 2.",
                 ),
             ],
@@ -66,10 +67,3 @@ class HPCServerCliArguments(CLIArguments):
 
     def threads_per_worker(self) -> int:
         return self._args.threads_per_worker
-
-    @staticmethod
-    def _parse_positive_thread_count(value: str) -> int:
-        threads_per_worker = int(value)
-        if threads_per_worker < 1:
-            raise ValueError(f"--threads-per-worker must be at least 1, not {value}.")
-        return threads_per_worker

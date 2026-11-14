@@ -7,9 +7,9 @@ from typing import Any, List
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
-from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
+from ecosim_common.config.option_values import choice_name, number_from_zero_to_one, port_number, positive_whole_number, true_or_false
 
 
 class CLIArguments(AppConfig):
@@ -38,25 +38,25 @@ class CLIArguments(AppConfig):
                 ),
                 AppConfigParameter(
                     name="port",
-                    transform=lambda x: int(x),
+                    transform=port_number,
                     help_text="The port for the server. Note: this will override any port in config files.",
                 ),
                 AppConfigParameter(
                     name="steps",
                     required=True,
-                    transform=lambda x: int(x),
+                    transform=positive_whole_number,
                     help_text="The number of steps that the simulation should run.",
                 ),
                 AppConfigParameter(
                     name="step-size",
-                    transform=lambda x: int(x),
+                    transform=positive_whole_number,
                     help_text="The step size in milliseconds.",
                 ),
                 AppConfigParameter(
                     name="pace",
                     required=False,
                     default_value="1.0",
-                    transform=lambda x: float(x),
+                    transform=number_from_zero_to_one,
                     help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%%, 0.7 means 70%%",
                 ),
                 AppConfigParameter(
@@ -70,6 +70,7 @@ class CLIArguments(AppConfig):
                 ),
                 AppConfigParameter(
                     name="database-port",
+                    transform=port_number,
                     help_text="The database port",
                 ),
                 AppConfigParameter(
@@ -93,7 +94,7 @@ class CLIArguments(AppConfig):
                     name="database-ssl",
                     # without a default, the ssl key of the config file decides unless the option is given
                     default_value=None,
-                    transform=lambda x: ConfigParser.config_string_to_bool(x),
+                    transform=true_or_false,
                     help_text="If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. "
                     + "Note: this will override the ssl key in config files.",
                 ),
@@ -101,6 +102,8 @@ class CLIArguments(AppConfig):
                     name="database-type",
                     required=False,
                     default_value=None,  # NOTE: the actual default value is specified in DatabaseConfig
+                    transform=choice_name,
+                    choices=tuple(member.serialized for member in DatabaseType),
                     help_text=f"Where the simulation results are stored. Default: {DatabaseType.POSTGRES.value}. "
                     + f"Possible: {[member.value for member in DatabaseType]}. Note: this will override the type in config files.",
                 ),
@@ -121,14 +124,14 @@ class CLIArguments(AppConfig):
                     name="image-renderer-port",
                     default_value=None,
                     required=False,
-                    transform=lambda x: int(x),
+                    transform=port_number,
                     help_text="The port for the image renderer socket. If not set no image rendering socket will be opened.",
                 ),
                 AppConfigParameter(
                     name="image-renderer-interval",
                     default_value=None,
                     required=False,
-                    transform=lambda x: int(x),
+                    transform=positive_whole_number,
                     help_text="The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. "
                     + "If not set no images will be sent.",
                 ),
@@ -145,6 +148,8 @@ class CLIArguments(AppConfig):
                     name="communication-protocol",
                     required=False,
                     default_value=None,  # NOTE: the actual default value is specified in ServerConfig
+                    transform=choice_name,
+                    choices=tuple(protocol.serialized for protocol in CommunicationProtocol),
                     help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
                     + f"Possible: {[p.name for p in CommunicationProtocol]}",
                 ),

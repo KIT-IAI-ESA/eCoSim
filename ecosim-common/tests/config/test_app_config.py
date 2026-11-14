@@ -1,6 +1,8 @@
 from datetime import datetime
 
+import pytest
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+from ecosim_common.config.option_values import choice_name, positive_whole_number
 
 # ruff: noqa: SLF001  # a lot of tests inspect internal data of app_config -> so access to internal data is not restricted
 
@@ -114,3 +116,25 @@ def test_app_config_passed_argument_override() -> None:
         ],
     )
     assert app_config._args.value_override == "333"
+
+
+def test_a_value_the_transform_rejects_ends_in_a_usage_error(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        AppConfig(
+            passed_arguments=["--steps", "abc"],
+            cli_description="CLI description",
+            parameters=[AppConfigParameter(name="steps", transform=positive_whole_number, help_text="steps")],
+        )
+
+    assert exit_info.value.code == 2
+    assert capsys.readouterr().err.splitlines()[-1].endswith("error: argument --steps: must be a whole number of at least 1, not 'abc'")
+
+
+def test_a_choice_is_accepted_in_any_letter_case() -> None:
+    app_config = AppConfig(
+        passed_arguments=["--protocol", "TCP-SOCKET"],
+        cli_description="CLI description",
+        parameters=[AppConfigParameter(name="protocol", transform=choice_name, choices=("dask", "tcp_socket"), help_text="protocol")],
+    )
+
+    assert app_config._args.protocol == "tcp_socket"
