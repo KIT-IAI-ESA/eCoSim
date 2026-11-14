@@ -21,7 +21,7 @@ from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.logger.global_logger import GlobalLogger
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.connection_check import check_connections
-from ecosim_server.config.simulation_config_keys import missing_key_problems, simulator_key_problems
+from ecosim_server.config.simulation_config_keys import DEFAULT_START_DATE, missing_key_problems, simulator_key_problems, unknown_key_warnings
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,9 @@ class SimulationConfig:
         )
         if problems:
             raise ValueError("\n".join(problems))
+        # before the checks below, because a misspelt key like connected-to is often what makes them fail
+        for warning in unknown_key_warnings(raw_config=config, simulation_config_file=simulation_config_file):
+            SimulationConfig.logger.warning("%s", warning)
         check_connections(raw_simulators=config["simulators"], raw_logical_delays=config["logical_delays"])
         clients: List[ClientSimulatorConfig] = SimulationConfig._load_all_clients(
             config,
@@ -69,7 +72,7 @@ class SimulationConfig:
             step_size_in_ms=step_size_override if step_size_override is not None else int(config["setup"]["delta_t"]),
             pace=pace,
             start_date=SimulationConfig._parse_start_date(
-                config["setup"].get("start_date", "2024-01-01T00:00:00.000Z"),
+                config["setup"].get("start_date", DEFAULT_START_DATE),
             ),
             logical_delays=logical_delays,
             restore=restore,

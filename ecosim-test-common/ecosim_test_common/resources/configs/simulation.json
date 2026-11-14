@@ -166,7 +166,6 @@
   ],
   "logical_delays": [
     {
-      "id": "1",
       "delay": "1",
       "output_connections": [
         {
