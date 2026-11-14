@@ -38,6 +38,6 @@ def create_repositories(
         case DatabaseType.POSTGRES:
             return RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
         case DatabaseType.FILE:
-            return RepositoriesFileBased.create(server_config=server_config)
+            return RepositoriesFileBased.create(server_config=server_config, simulation_config=simulation_config)
         case _:
             raise Exception(f"Unsupported database type '{server_config.database.type}' for the repositories")

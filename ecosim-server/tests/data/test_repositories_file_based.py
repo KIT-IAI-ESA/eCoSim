@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime
+import os
 import pickle
+import shutil
 from pathlib import Path
 
 import distributed
@@ -13,8 +15,9 @@ from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.measurement_repository_file import MeasurementRepositoryFile
 from ecosim_server.simulation.state.simulation_state_repository_file import SimulationStateRepositoryFile
 from ecosim_server.tech.db.server_time_measurement_repository_file import ServerTimeMeasurementRepositoryFile
+from ecosim_test_common.resources.config_files import config_file_path
 from tests.data.generate_server_config import generate_server_config
-from tests.data.generate_simulation_config import HOUSE, WEATHER
+from tests.data.generate_simulation_config import HOUSE, WEATHER, generate_simulation_config_from_file
 
 TIMESTAMP = datetime.datetime(2026, 8, 26, 10, 0, 0, tzinfo=datetime.timezone.utc)
 
@@ -22,6 +25,7 @@ TIMESTAMP = datetime.datetime(2026, 8, 26, 10, 0, 0, tzinfo=datetime.timezone.ut
 def generate_file_based_repositories(
     directory: Path,
     communication_protocol: CommunicationProtocol = CommunicationProtocol.TCP_SOCKET,
+    simulation_json: Path = config_file_path("simulation.json"),
 ) -> RepositoriesFileBased:
     return RepositoriesFileBased.create(
         server_config=generate_server_config(
@@ -29,6 +33,7 @@ def generate_file_based_repositories(
             database_type=DatabaseType.FILE,
             database_directory=directory,
         ),
+        simulation_config=generate_simulation_config_from_file(simulation_json=simulation_json),
     )
 
 
@@ -68,6 +73,33 @@ def test_the_measurement_file_is_named_after_the_simulator(tmp_path: Path) -> No
     repositories = generate_file_based_repositories(tmp_path)
 
     assert repositories.measurement_repository(HOUSE).file_path().name == "module_house.jsonl"
+
+
+def test_the_simulation_config_of_the_run_is_copied_into_the_directory(tmp_path: Path) -> None:
+    generate_file_based_repositories(tmp_path)
+
+    assert (tmp_path / "simulation.json").read_bytes() == config_file_path("simulation.json").read_bytes()
+
+
+def test_results_written_next_to_the_simulation_config_leave_it_unchanged(tmp_path: Path) -> None:
+    simulation_json = tmp_path / "simulation.json"
+    shutil.copyfile(src=config_file_path("simulation.json"), dst=simulation_json)
+    # long ago, because a write right after the copy can keep the same time
+    os.utime(path=simulation_json, ns=(0, 0))
+
+    generate_file_based_repositories(tmp_path, simulation_json=simulation_json)
+
+    assert simulation_json.stat().st_mtime_ns == 0
+
+
+def test_a_simulation_json_next_to_the_config_of_the_run_is_not_replaced(tmp_path: Path) -> None:
+    shutil.copyfile(src=config_file_path("simulation.json"), dst=tmp_path / "simulation.json")
+    simulation_bergwald_json = tmp_path / "simulation_bergwald.json"
+    shutil.copyfile(src=config_file_path("simulation_bergwald.json"), dst=simulation_bergwald_json)
+
+    generate_file_based_repositories(tmp_path, simulation_json=simulation_bergwald_json)
+
+    assert (tmp_path / "simulation.json").read_bytes() == config_file_path("simulation.json").read_bytes()
 
 
 def test_the_repositories_survive_a_pickle_round_trip(

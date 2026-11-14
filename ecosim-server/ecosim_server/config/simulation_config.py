@@ -32,6 +32,8 @@ class SimulationConfig:
     logical_delays: List[LogicalDelay]
     pace: float = 1.0
     restore: bool = False
+    # None when the config was not read from a file
+    config_file: Path | None = None
 
     @staticmethod
     def of_config_file_and_params(
@@ -62,6 +64,7 @@ class SimulationConfig:
             ),
             logical_delays=logical_delays,
             restore=restore,
+            config_file=simulation_config_file,
         )
 
     @staticmethod
@@ -83,6 +86,11 @@ class SimulationConfig:
             if client.client_id in all_client_ids:
                 raise Exception(f"Duplicate simulator id in config: {client.client_id}")
             all_client_ids.append(client.client_id)
+
+    @staticmethod
+    def clients_of_file(simulation_config_file: Path) -> List[ClientSimulatorConfig]:
+        # without the connection check, because reading the results of a run must not fail on a broken connection
+        return SimulationConfig._load_all_clients(SimulationConfig._load_config(simulation_config_file))
 
     @staticmethod
     def _load_all_clients(server_config: dict[str, Any]) -> List[ClientSimulatorConfig]:

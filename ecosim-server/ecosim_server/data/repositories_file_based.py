@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import override
@@ -8,6 +9,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.parallel.parallel_lock import ParallelLock
 from ecosim_server.config.server_config import ServerConfig
+from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.measurement_repository_file import MeasurementRepositoryFile
 from ecosim_server.simulation.state.simulation_state_repository_file import SimulationStateRepositoryFile
@@ -26,10 +28,11 @@ class RepositoriesFileBased(Repositories):
     @staticmethod
     def create(
         server_config: ServerConfig,
+        simulation_config: SimulationConfig,
     ) -> RepositoriesFileBased:
         directory = server_config.database.directory
         communication_protocol = server_config.server.communication_protocol
-        return RepositoriesFileBased(
+        repositories = RepositoriesFileBased(
             _directory=directory,
             _communication_protocol=communication_protocol,
             _measurement_repository_creation_lock=ParallelLock.for_protocol(communication_protocol),
@@ -42,6 +45,17 @@ class RepositoriesFileBased(Repositories):
                 communication_protocol=communication_protocol,
             ),
         )
+        RepositoriesFileBased._copy_simulation_config(directory=directory, simulation_config=simulation_config)
+        return repositories
+
+    @staticmethod
+    def _copy_simulation_config(directory: Path, simulation_config: SimulationConfig) -> None:
+        # with the copy the results can be read without the original config, also after the folder was moved
+        source = simulation_config.config_file
+        # a simulation.json next to the config may be another config, so that folder gets no copy
+        if source is None or directory.samefile(source.parent):
+            return
+        shutil.copyfile(src=source, dst=directory / "simulation.json")
 
     @override
     def measurement_repository(
