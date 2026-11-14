@@ -9,16 +9,11 @@ RUN uv tool install pex==2.100.7
 COPY ecosim-common ${BUILD_DIR}/ecosim-common
 COPY ecosim-test-common ${BUILD_DIR}/ecosim-test-common
 COPY ecosim-common-fmpy ${BUILD_DIR}/ecosim-common-fmpy
-RUN find ${BUILD_DIR} -name .venv -maxdepth 3 -type d -prune -exec rm -rf {} +
-RUN find ${BUILD_DIR} -name dist -maxdepth 3 -type d -prune -exec rm -rf {} +
 
 RUN cd ${BUILD_DIR}/ecosim-common && uv sync
 
-# the copying (and venv deleting) of the actual source dir is done later
-# so the tasks above can be cached and reused across different runs
+# the actual source dir is copied later, so the tasks above can be cached and reused across different runs
 COPY ${SOURCE_DIR} ${BUILD_DIR}/${SOURCE_DIR}
-RUN rm -rf ${BUILD_DIR}/${SOURCE_DIR}/.venv
-RUN rm -rf ${BUILD_DIR}/${SOURCE_DIR}/dist
 
 WORKDIR ${BUILD_DIR}/${SOURCE_DIR}
 RUN uv sync

@@ -1,0 +1,8 @@
+# local environments, build output and caches of the subprojects, the image builds its own
+**/.venv
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/htmlcov
