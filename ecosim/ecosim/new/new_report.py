@@ -8,6 +8,7 @@ from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
 
 from ecosim.check.check_report import findings_lines, fix_line
 from ecosim.check.simulation_check import SimulationCheck
+from ecosim.new.delayed_input import DelayedInput, StartValue
 from ecosim.new.interface_address import InterfaceAddress
 from ecosim.new.simulation_length import SimulationLength
 from ecosim.new.simulation_model import SimulationModel, input_at, output_at
@@ -23,6 +24,7 @@ class NewReport:
     simulation: SimulationFolder
     models: list[SimulationModel]
     wiring: Wiring
+    delayed: list[DelayedInput]
     length: SimulationLength
     check: SimulationCheck
 
@@ -62,14 +64,19 @@ class NewReport:
         return lines
 
     def _connection_line(self, connection: Connection, width: int) -> str:
-        """Like '    weatherBus_TDryBul  <-  weatherBus.TDryBul'."""
-        line = f"    {connection.input.name:<{width}}  <-  {connection.output.name}"
+        """Like '    T_room  <-  room_temperature   (given with --connect, one step later, starts at 293.15)'."""
+        notes = [] if connection.matched_by_name else ["given with --connect"]
+        delayed_input = next((delayed_input for delayed_input in self.delayed if delayed_input.input == connection.input), None)
+        if delayed_input is not None:
+            # a start value of 0 K from the FMU is easy to miss otherwise
+            notes.append(f"one step later, starts at {_start_value_text(start_value=delayed_input.start_value)}")
         input_unit = input_at(models=self.models, address=connection.input).unit
         output_unit = output_at(models=self.models, address=connection.output).unit
         # nothing converts units, so a connection between two units is worth a look
         if input_unit and output_unit and input_unit != output_unit:
-            return f"{line}   (the output is in {output_unit}, the input in {input_unit})"
-        return line
+            notes.append(f"the output is in {output_unit}, the input in {input_unit}")
+        line = f"    {connection.input.name:<{width}}  <-  {connection.output.name}"
+        return f"{line}   ({', '.join(notes)})" if notes else line
 
     def _open_input_lines(self) -> list[str]:
         if not self.wiring.open_inputs:
@@ -81,7 +88,8 @@ class NewReport:
         outputs = open_input.outputs_with_its_name
         of_its_size = [output for output in outputs if sizes_fit(models=self.models, input_address=open_input.input, output_address=output)]
         if len(of_its_size) > 1:
-            return f"{len(of_its_size)} outputs have this name: {and_joined(texts=[str(output) for output in of_its_size])}."
+            outputs_text = and_joined(texts=[str(output) for output in of_its_size])
+            return f"{len(of_its_size)} outputs have this name: {outputs_text}. Choose one with --connect {open_input.input}={of_its_size[0]}"
         if outputs:
             input_size = value_count(interface=input_at(models=self.models, address=open_input.input))
             output_values = readable_count(count=value_count(interface=output_at(models=self.models, address=outputs[0])), noun="value")
@@ -92,7 +100,10 @@ class NewReport:
         outputs = [output for model in self.models if model.name != address.model for output in model.output_addresses()]
         # inputs and outputs share patterns, like Float64_discrete_input and Float64_discrete_output, which a lower cutoff would suggest
         closest = closest_name(name=address.name, known_names=[output.name for output in outputs], cutoff=0.9)
-        return "" if closest is None else f" Did you mean {next(output for output in outputs if output.name == closest)}?"
+        if closest is None:
+            return ""
+        output = next(output for output in outputs if output.name == closest)
+        return f" Did you mean {output}? Then add --connect {address}={output}"
 
     def _left_out_lines(self) -> list[str]:
         lines = [_left_out_line(model=model) for model in self.models if model.interfaces.skipped]
@@ -113,3 +124,8 @@ def _left_out_line(model: SimulationModel) -> str:
     client = client_type_text(client_type=model.interfaces.client_type())
     supported_type = FMUBaseConfig.supported_type(fmi_major_version=int(model.interfaces.fmi_version.split(".")[0]))
     return f"  {model.name}: {variables}, since the {client} client exchanges {supported_type} variables only."
+
+
+def _start_value_text(start_value: StartValue) -> str:
+    values = start_value if isinstance(start_value, list) else [start_value]
+    return ", ".join(str(int(value)) if value.is_integer() else str(value) for value in values)

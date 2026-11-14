@@ -7,8 +7,8 @@ from ecosim.new.simulation_model import SimulationModel
 from ecosim_common_fmpy.config.fmu_interfaces import FMUInterface, FMUInterfaces
 
 
-def create_interface(name: str, unit: str = "", shape: tuple[int, ...] = ()) -> FMUInterface:
-    return FMUInterface(name=name, unit=unit, description="", start="0", shape=shape)
+def create_interface(name: str, unit: str = "", shape: tuple[int, ...] = (), start: str = "0") -> FMUInterface:
+    return FMUInterface(name=name, unit=unit, description="", start=start, shape=shape)
 
 
 def create_model(name: str, inputs: Sequence[str | FMUInterface] = (), outputs: Sequence[str | FMUInterface] = ()) -> SimulationModel:

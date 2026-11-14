@@ -7,8 +7,8 @@ description: Write a simulation folder from your FMUs with one command.
 
 `ecosim new` writes a simulation folder from FMU files: a folder for each model with the FMU, its `.fmc` file and its
 client config, and `server/` with the server config and `simulation.json`. It connects the inputs and outputs that
-have the same name, and at the end it checks the simulation as `ecosim check` does. The files are the ones you would
-write by hand, so you can change them later.
+have the same name, `--connect` connects others, and at the end it checks the simulation as `ecosim check` does. The
+files are the ones you would write by hand, so you can change them later.
 
 The commands below run in `simulation_examples`, where `uv run` finds the `ecosim` command. The three FMUs of the
 building example make the same simulation as the hand-written files:
@@ -70,9 +70,10 @@ only connected to an input that takes as many values. A connection between two u
 in the list. Nothing converts the values.
 
 Every other input keeps the start value of its FMU. It is listed with the reason, and with the closest name of an
-output if one is very close. Four FMUs whose names do not all match, from the tests in
-`ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/`, in `linux` or `windows`. The commands below
-leave out that folder:
+output if one is very close. Four FMUs whose names do not all match, a house with a heating and a ventilation that
+control its room temperature. They are FMUs of the tests in
+`ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/`, in `linux` or `windows`, and the commands
+below leave out that folder:
 
 ```shell
 uv run ecosim new house_simulation weather.fmu house.fmu heating.fmu ventilation.fmu --step-size 1min --steps 200
@@ -92,9 +93,9 @@ Connections:
   house <- ventilation, 1 connection
     ventilation_pressure_control_signal  <-  ventilation_pressure_control_signal
 Not connected, so these inputs keep the start value of their FMU:
-  house.dir_sol_iradiance: no output of another model has this name. Did you mean weather.dir_sol_irradiance?
+  house.dir_sol_iradiance: no output of another model has this name. Did you mean weather.dir_sol_irradiance? Then add --connect house.dir_sol_iradiance=weather.dir_sol_irradiance
   house.heating_heatExchanger_control_signal: no output of another model has this name.
-  house.vetnilation_valve_control_signal: no output of another model has this name. Did you mean ventilation.ventilation_valve_control_signal?
+  house.vetnilation_valve_control_signal: no output of another model has this name. Did you mean ventilation.ventilation_valve_control_signal? Then add --connect house.vetnilation_valve_control_signal=ventilation.ventilation_valve_control_signal
   heating.T_room: no output of another model has this name.
   ventilation.T_room: no output of another model has this name.
 After a change, check it with: uv run ecosim check house_simulation
@@ -102,8 +103,52 @@ Run it with: uv run ecosim run house_simulation
 ```
 
 The table counts the inputs that `simulation.json` connects, as `ecosim check` does. An input that is not connected
-is in the `.fmc` file, but not in `simulation.json`. To connect it later, add it to its simulator in
+is in the `.fmc` file, but not in `simulation.json`. To connect it in an existing simulation, add it to its simulator in
 `simulation.json` with `connected_to`, see [Configuration files](../reference/configuration-files.md#simulation-config).
+
+## Other names and loops
+
+`--connect INPUT=OUTPUT` connects an input to an output of another name, like
+`--connect heating.T_room=house.room_temperature`. It replaces the match by name. Give it once for each input.
+
+The house and its two controllers then feed each other: the house needs the signals of the controllers, and the
+controllers need the room temperature of the house. The server starts a model in a step only when all its inputs
+have a value, so it could start none of them. `ecosim new` finds such a loop and stops before it writes anything:
+
+```shell
+uv run ecosim new house_simulation weather.fmu house.fmu heating.fmu ventilation.fmu --step-size 1min --steps 200 \
+    --connect house.dir_sol_iradiance=weather.dir_sol_irradiance \
+    --connect house.heating_heatExchanger_control_signal=heating.heating_control_signal \
+    --connect house.vetnilation_valve_control_signal=ventilation.ventilation_valve_control_signal \
+    --connect heating.T_room=house.room_temperature --connect ventilation.T_room=house.room_temperature
+```
+
+```text
+ecosim new: error: heating, house and ventilation feed each other, so the server could start none of them:
+  house.ventilation_pressure_control_signal  <-  ventilation.ventilation_pressure_control_signal
+  house.heating_heatExchanger_control_signal  <-  heating.heating_control_signal
+  house.vetnilation_valve_control_signal  <-  ventilation.ventilation_valve_control_signal
+  heating.T_room  <-  house.room_temperature
+  ventilation.T_room  <-  house.room_temperature
+Give inputs the value of the step before to break the loop, for example:
+  --logical-delay heating.T_room --logical-delay ventilation.T_room
+(run with --debug for the full traceback)
+```
+
+`--logical-delay INPUT` gives a connected input the value of the step before, which breaks the loop. In the first
+step the input gets the start value of the FMU, or the one after `=`, like `--logical-delay heating.T_room=293.15`.
+An FMI 3.0 array takes one number for each value, like `=1,2,3`. With the two delays the simulation is written, and the
+list shows each delayed input with its start value:
+
+```text
+  heating <- house, 1 connection
+    T_room  <-  room_temperature   (given with --connect, one step later, starts at 293.15)
+  ventilation <- house, 1 connection
+    T_room  <-  room_temperature   (given with --connect, one step later, starts at 293.15)
+```
+
+Check the start value. The controllers of this example start at 0 K in their FMUs, so without `=293.15` their
+first steps differ. An input connected to an output of its own model always needs a logical delay.
 
 ## What goes into the files
 

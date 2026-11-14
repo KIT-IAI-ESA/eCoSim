@@ -13,6 +13,8 @@ from ecosim_server.config.cli_parameters import RUN, SERVER_ADDRESS_PARAMETERS
 
 from ecosim.check.simulation_check import SimulationCheck
 from ecosim.command import command_parser
+from ecosim.new.delayed_input import DelayedInput
+from ecosim.new.loops import ensure_no_loop
 from ecosim.new.new_report import NewReport
 from ecosim.new.simulation_file import SimulationFile
 from ecosim.new.new_simulation_files import NewSimulationFiles, ensure_the_folder_is_new
@@ -35,6 +37,7 @@ def build_parser() -> EcosimArgumentParser:
             "ecosim new my_simulation house.fmu occupancy.fmu weather.fmu --duration 1y --start-date 2023-01-01",
             "ecosim new my_simulation models --step-size 1min --steps 200",
             "ecosim new two_houses weather.fmu house=house.fmu house2=house.fmu",
+            "ecosim new plant_simulation plant.fmu controller.fmu --connect controller.T=plant.T_out --logical-delay controller.T=293.15",
         ),
     )
     # the simulation is required here, the FMUs follow it, and nothing goes to the server
@@ -48,8 +51,26 @@ def build_parser() -> EcosimArgumentParser:
     )
     parser.add_parameters(parameters=[DEBUG_PARAMETER], environment_variables=os.environ)
     _add_length_options(parser=parser)
+    _add_connection_options(parser=parser)
     parser.add_parameters(parameters=_server_parameters(), environment_variables=os.environ)
     return parser
+
+
+def _add_connection_options(parser: EcosimArgumentParser) -> None:
+    connection_options = parser.add_argument_group(title="connections")
+    connection_options.add_argument(
+        "--connect",
+        action="append",
+        metavar="INPUT=OUTPUT",
+        help="Connects an input to an output of another name, like house.T_out=weather.T_dry. Can be given several times.",
+    )
+    connection_options.add_argument(
+        "--logical-delay",
+        action="append",
+        metavar="INPUT[=START]",
+        help="Gives a connected input the value of the step before, which breaks a loop of models that feed each other. "
+        + "START is its value in the first step, by default its start value in the FMU. Can be given several times.",
+    )
 
 
 def _add_length_options(parser: EcosimArgumentParser) -> None:
@@ -112,15 +133,21 @@ def main(passed_arguments: Sequence[str]) -> int:
     ensure_the_folder_is_new(simulation=simulation)
     length = _length_of(options=options, parser=parser)
     models = SimulationModel.of_arguments(arguments=options.fmus)
-    wiring = Wiring.of_models(models=models)
+    wiring = Wiring.of_models(models=models, given_connections=options.connect or [])
+    delayed = DelayedInput.of_texts(texts=options.logical_delay or [], models=models, wiring=wiring)
+    ensure_no_loop(connections=wiring.connections, delayed=delayed)
     new_simulation_files = NewSimulationFiles(
         port=options.port,
         database_type=DatabaseType.of(options.database_type),
         database_directory=options.database_directory,
     )
-    new_simulation_files.write(simulation=simulation, models=models, simulation_file=SimulationFile(models=models, wiring=wiring, length=length))
+    new_simulation_files.write(
+        simulation=simulation,
+        models=models,
+        simulation_file=SimulationFile(models=models, wiring=wiring, delayed=delayed, length=length),
+    )
     check = SimulationCheck.of_simulation(simulation=simulation, run_options=_run_options_of_the_check(debug=options.debug))
-    print("\n".join(NewReport(simulation=simulation, models=models, wiring=wiring, length=length, check=check).lines()))
+    print("\n".join(NewReport(simulation=simulation, models=models, wiring=wiring, delayed=delayed, length=length, check=check).lines()))
     return 1 if check.findings.problems else 0
 
 

@@ -20,7 +20,7 @@ def _write(simulation: Path, models: list[SimulationModel]) -> None:
     NewSimulationFiles(port=1234, database_type=DatabaseType.FILE, database_directory="results").write(
         simulation=SimulationFolder.of_path(path=simulation),
         models=models,
-        simulation_file=SimulationFile(models=models, wiring=Wiring.of_models(models=models), length=length),
+        simulation_file=SimulationFile(models=models, wiring=Wiring.of_models(models=models, given_connections=[]), delayed=[], length=length),
     )
 
 
