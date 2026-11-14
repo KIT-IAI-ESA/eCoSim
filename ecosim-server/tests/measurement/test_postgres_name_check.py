@@ -9,7 +9,7 @@ from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import create_repositories
-from ecosim_server.measurement.postgres_name_check import check_names_fit_postgres_storage
+from ecosim_server.measurement.postgres_name_check import check_names_fit_postgres_storage, postgres_name_problems
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from ecosim_test_common.resources.config_files import config_file_path
 from tests.data.generate_postgres_name_config import START_DATE, error_of, generate_client_simulator_config, generate_simulation_config
@@ -55,6 +55,14 @@ def test_all_problems_are_reported_together() -> None:
     assert LONG_NAME in message
     assert "simulators 'T', 't'" in message
     assert "interfaces 'A', 'a'" in message
+
+
+def test_the_postgres_name_problems_are_returned_without_raising() -> None:
+    simulation_config = generate_simulation_config(
+        clients=[generate_client_simulator_config(simulator_name="house", interfaces=[("A", INPUT), ("a", INPUT)])],
+    )
+
+    assert postgres_name_problems(simulation_config=simulation_config) == ["simulator 'house': interfaces 'A', 'a' would share one column"]
 
 
 @pytest.mark.parametrize("file_name", ["simulation.json", "simulation_bergwald.json", "simulation_without_start_date.json"])

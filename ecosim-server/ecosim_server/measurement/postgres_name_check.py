@@ -15,11 +15,15 @@ BIND_NAME_TRANSLATION = str.maketrans(dict(dialect.statement_compiler.bindname_e
 
 
 def check_names_fit_postgres_storage(simulation_config: SimulationConfig) -> None:
-    clients = simulation_config.clients
-    problems = [*_problems_of_simulator_names(clients), *[problem for client in clients for problem in _problems_of_interface_names(client)]]
+    problems = postgres_name_problems(simulation_config=simulation_config)
     if problems:
         lines = "\n".join(f"- {problem}" for problem in problems)
         raise RuntimeError(f"The simulation config has names the PostgreSQL storage cannot hold:\n{lines}")
+
+
+def postgres_name_problems(simulation_config: SimulationConfig) -> list[str]:
+    clients = simulation_config.clients
+    return [*_problems_of_simulator_names(clients), *[problem for client in clients for problem in _problems_of_interface_names(client)]]
 
 
 def _problems_of_simulator_names(clients: list[ClientSimulatorConfig]) -> list[str]:
