@@ -74,7 +74,7 @@ The Python modules are internal and can change: the supported way to use eCoSim 
 | --- | --- |
 | `main.py`, `server.py`, `server_state.py` | Entry point and the server lifecycle |
 | `client/` | One `ClientConnection` per client, message buffer and subscriptions |
-| `simulation/` | `SimulationExecutor`, the step loop, value history, restore |
+| `simulation/` | `SimulationExecutor`, the step loop and its progress line, value history, restore |
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |
 | `measurement/` | `MeasurementRepository` — the simulation results |
 | `data/` | `Repositories` — the aggregate the rest of the server is given |

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import partial
@@ -27,6 +28,7 @@ from ecosim_server.server_state import ServerState
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.simulation_executor import SimulationExecutor
 from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
+from ecosim_test_common.test_data.manual_clock import ManualClock
 from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
 from tests.data.generate_postgres_name_config import generate_client_simulator_config
 from tests.data.generate_server_config import generate_server_config
@@ -52,6 +54,14 @@ def lose_connection(client: FakeClient, _message: ESPChannelMessage) -> None:
 def answer_after(delay_in_seconds: float) -> MessageReaction:
     def reaction(client: FakeClient, message: ESPChannelMessage) -> None:
         threading.Timer(interval=delay_in_seconds, function=answer, args=(client, message)).start()
+
+    return reaction
+
+
+def answer_after_advancing(clock: ManualClock, seconds: float) -> MessageReaction:
+    def reaction(client: FakeClient, message: ESPChannelMessage) -> None:
+        clock.advance(seconds=seconds)
+        answer(client=client, message=message)
 
     return reaction
 
@@ -118,11 +128,13 @@ def executor_with_clients(
     reactions_by_client: dict[ClientID, dict[MessageType, MessageReaction]],
     restore: bool = False,
     response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+    clock: Callable[[], float] = time.monotonic,
 ) -> tuple[SimulationExecutor, List[FakeClient]]:
     return executor_for_simulation_config(
         simulation_config=_simulation_config(client_ids=tuple(reactions_by_client), restore=restore),
         reactions_by_client=reactions_by_client,
         response_timeouts=response_timeouts,
+        clock=clock,
     )
 
 
@@ -130,6 +142,7 @@ def executor_for_simulation_config(
     simulation_config: SimulationConfig,
     reactions_by_client: dict[ClientID, dict[MessageType, MessageReaction]],
     response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+    clock: Callable[[], float] = time.monotonic,
 ) -> tuple[SimulationExecutor, List[FakeClient]]:
     server_config = generate_server_config()
     communication = ClientCommunication.of(server_config=server_config, simulation_config=simulation_config)
@@ -146,6 +159,7 @@ def executor_for_simulation_config(
         server_measurement=MagicMock(spec=ServerTimeMeasurement),
         client_communication=communication,
         response_timeouts=response_timeouts,
+        clock=clock,
     )
     return executor, fake_clients
 
@@ -154,8 +168,14 @@ def executor_with_client(
     reactions: dict[MessageType, MessageReaction],
     restore: bool = False,
     response_timeouts: ResponseTimeouts = ResponseTimeouts(),
+    clock: Callable[[], float] = time.monotonic,
 ) -> tuple[SimulationExecutor, FakeClient]:
-    executor, fake_clients = executor_with_clients(reactions_by_client={CLIENT_ID: reactions}, restore=restore, response_timeouts=response_timeouts)
+    executor, fake_clients = executor_with_clients(
+        reactions_by_client={CLIENT_ID: reactions},
+        restore=restore,
+        response_timeouts=response_timeouts,
+        clock=clock,
+    )
     return executor, fake_clients[0]
 
 
