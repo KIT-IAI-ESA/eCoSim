@@ -13,8 +13,8 @@ binaries and the scripts need bash.
 ## 1. Get the source
 
 ```shell
-git clone https://github.com/mekkyz/ecosim-os.git
-cd ecosim-os/simulation_examples/building/Executable
+git clone https://github.com/KIT-IAI-ESA/ecosim.git
+cd ecosim/simulation_examples/building/Executable
 ```
 
 ## 2. Check the database encoding

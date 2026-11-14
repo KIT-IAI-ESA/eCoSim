@@ -2,7 +2,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
-const repository = "https://github.com/mekkyz/ecosim-os";
+const repository = "https://github.com/KIT-IAI-ESA/eCoSim";
 
 const config: Config = {
   title: "eCoSim",
@@ -13,8 +13,8 @@ const config: Config = {
     v4: true,
   },
 
-  url: "https://mekkyz.github.io",
-  baseUrl: "/ecosim-os/",
+  url: "https://ecosim.easimov.com",
+  baseUrl: "/",
   trailingSlash: false,
 
   onBrokenLinks: "throw",
@@ -46,7 +46,7 @@ const config: Config = {
       {
         docs: {
           path: "content",
-          routeBasePath: "/",
+          routeBasePath: "docs",
           sidebarPath: "./sidebars.ts",
           editUrl: `${repository}/edit/main/docs/`,
           numberPrefixParser: false,

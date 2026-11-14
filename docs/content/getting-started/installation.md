@@ -16,8 +16,8 @@ description: Requirements, and how to get eCoSim from source.
 ## Get the source
 
 ```shell
-git clone https://github.com/mekkyz/ecosim-os.git
-cd ecosim-os
+git clone https://github.com/KIT-IAI-ESA/ecosim.git
+cd ecosim
 ```
 
 eCoSim is installed from source. The repository holds one uv project per package, and
@@ -50,5 +50,5 @@ To work on eCoSim itself, see [Project setup](../development/project-setup.md).
 The server and the clients talk without a login and without encryption, so anyone who can reach the
 server port can join a run. By default the server only listens on `localhost`. When you set another
 host, run eCoSim only in a network you trust, for example inside a cluster job or behind a firewall.
-The [security policy](https://github.com/mekkyz/ecosim-os/blob/main/SECURITY.md) says how to report
+The [security policy](https://github.com/KIT-IAI-ESA/eCoSim/blob/main/SECURITY.md) says how to report
 a security problem.

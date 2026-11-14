@@ -20,8 +20,8 @@ You need [uv](https://docs.astral.sh/uv/). It also downloads Python 3.12 if it i
 ## 1. Get the source
 
 ```shell
-git clone https://github.com/mekkyz/ecosim-os.git
-cd ecosim-os/simulation_examples/building/Executable
+git clone https://github.com/KIT-IAI-ESA/ecosim.git
+cd ecosim/simulation_examples/building/Executable
 ```
 
 ## 2. Start the server

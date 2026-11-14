@@ -49,10 +49,10 @@ dev = [
 ]
 
 [project.urls]
-Documentation = "https://mekkyz.github.io/ecosim-os/"
-Source = "https://github.com/mekkyz/ecosim-os"
-Issues = "https://github.com/mekkyz/ecosim-os/issues"
-Changelog = "https://mekkyz.github.io/ecosim-os/development/release-history"
+Documentation = "https://ecosim.easimov.com/docs"
+Source = "https://github.com/KIT-IAI-ESA/eCoSim"
+Issues = "https://github.com/KIT-IAI-ESA/eCoSim/issues"
+Changelog = "https://ecosim.easimov.com/docs/development/release-history"
 
 [tool.mypy]
 mypy_path = ["../ecosim-common", "../ecosim-test-common"]
