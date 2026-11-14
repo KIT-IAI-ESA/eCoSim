@@ -47,7 +47,9 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   It needs a time zone offset (`Z` or `+01:00`). A value without one is rejected when the config is
   loaded.
 
-Save the file as UTF-8, like the `.fmc` files.
+Save the file as UTF-8, like the `.fmc` files. The server stops with `is not saved as UTF-8` for a file in
+another encoding, for example one saved as ANSI on Windows. The server logs a warning for each key it does
+not read. If the key is close to one it reads, like `start-date` for `start_date`, the warning names that key.
 
 The building example, shortened to its first simulator and two of its interfaces:
 """
