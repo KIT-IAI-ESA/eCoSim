@@ -46,7 +46,9 @@ class HPCServerCliArguments(CLIArguments):
                 group=CONFIG_FILES,
                 required=True,
                 metavar="FOLDER",
-                help_text="The folder with one folder per simulator, usually Modules.",
+                help_text="The folder with one folder per simulator, usually Modules. A simulator's folder holds one model, "
+                + "which chooses its client: the Python client if the ini file has model in [python], "
+                + "else the FMU client for the FMI version of the .fmu file, the MATLAB client for .m files or the Pyro5 client for .py files.",
             ),
             AppConfigParameter(
                 name="interactive",

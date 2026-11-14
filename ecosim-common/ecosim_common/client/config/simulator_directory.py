@@ -21,14 +21,14 @@ class SimulatorDirectory:
 
     @staticmethod
     def find_for_simulators(simulators_directory: Path, client_ids: list[ClientID]) -> dict[ClientID, SimulatorDirectory]:
-        """Raises before any client starts, naming every simulator that has no directory or no model file in it."""
+        """Raises before any client starts, naming every simulator that has no directory or no model in it."""
         search = SimulatorDirectorySearch.of(simulators_directory=simulators_directory, client_ids=client_ids)
         SimulatorDirectory._ensure_every_directory_can_be_used(search=search)
         missing = ", ".join(str(client_id) for client_id in client_ids if client_id not in search.found)
         if missing:
             raise RuntimeError(
-                f"No directory in {simulators_directory} with an ini file and a .py, .fmu or .m file "
-                + f"for these simulators (model#simulator): {missing}",
+                f"No directory in {simulators_directory} with an ini file and a model for these simulators (model#simulator): {missing}. "
+                + "A model is an .fmu, .m or .py file, or model = <module>:<class> in the [python] section of the ini file.",
             )
         return search.found
 
@@ -54,8 +54,12 @@ class SimulatorDirectory:
     def model_files(self) -> list[Path]:
         return sorted(model_file for pattern in ("*.py", "*.fmu", "*.m") for model_file in self.path.glob(pattern))
 
-    def has_a_model_file(self) -> bool:
-        return len(self.model_files()) > 0
+    def has_a_model(self) -> bool:
+        return self.names_a_python_model() or len(self.model_files()) > 0
+
+    def names_a_python_model(self) -> bool:
+        """The module of the model can also be installed, so the directory needs no .py file."""
+        return self.config_parser.contains("python", "model")
 
 
 @dataclass(frozen=True)
@@ -64,7 +68,7 @@ class SimulatorDirectorySearch:
     unconfigured: list[SimulatorDirectory]
     shared: dict[ClientID, list[SimulatorDirectory]]
     unreadable: dict[Path, str]
-    without_model_file: list[SimulatorDirectory]
+    without_model: list[SimulatorDirectory]
     missing: list[ClientID]
 
     @staticmethod
@@ -86,11 +90,11 @@ class SimulatorDirectorySearch:
         configured = SimulatorDirectorySearch._configured_by_simulator(directories=directories, client_ids=client_ids)
         single_directory_by_simulator = {client_id: candidates[0] for client_id, candidates in configured.items() if len(candidates) == 1}
         return SimulatorDirectorySearch(
-            found={client_id: directory for client_id, directory in single_directory_by_simulator.items() if directory.has_a_model_file()},
+            found={client_id: directory for client_id, directory in single_directory_by_simulator.items() if directory.has_a_model()},
             unconfigured=[directory for directory in directories if directory.client_id not in client_ids],
             shared={client_id: candidates for client_id, candidates in configured.items() if len(candidates) > 1},
             unreadable=unreadable,
-            without_model_file=[directory for directory in single_directory_by_simulator.values() if not directory.has_a_model_file()],
+            without_model=[directory for directory in single_directory_by_simulator.values() if not directory.has_a_model()],
             missing=[client_id for client_id in client_ids if client_id not in configured],
         )
 

@@ -34,13 +34,14 @@ flowchart TD
   hpc --> fmu3[ecosim-client-fmu-v3]
   hpc --> matlab[ecosim-client-matlab]
   hpc --> pyro[ecosim-client-pyro5]
+  hpc --> python
   hpc --> fmpy[ecosim-common-fmpy]
   fmu2 --> fmpy
   fmu3 --> fmpy
 ```
 
 - `ecosim-common` depends on no other subproject; everything else depends on it
-- the two FMU clients use `ecosim-common-fmpy`, and `ecosim-hpc` reads the model descriptions of its FMUs with it
+- the two FMU clients use `ecosim-common-fmpy`, and `ecosim-hpc` chooses the client of each simulator with its `client_type_of`
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster
