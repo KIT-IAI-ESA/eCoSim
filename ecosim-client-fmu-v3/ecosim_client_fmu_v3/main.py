@@ -3,6 +3,7 @@ import sys
 from time import sleep
 
 from ecosim_common.config import config_parser
+from ecosim_common.config.console_script import ConsoleScript
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
@@ -13,12 +14,22 @@ from ecosim_common.tech.banner import print_banner
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 
 
+CONSOLE_SCRIPT = ConsoleScript(
+    name="ecosim-client-fmu-v3",
+    description="Runs an FMI 3.0 model, an FMU, for the eCoSim server. Start the server first.",
+    examples=(
+        "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini",
+        "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate-fmu-file-only",
+    ),
+)
+
+
 def main() -> None:
     print_banner()
     print(f"FMUv3 Client - {get_module_version('ecosim_client_fmu_v3')}")
     sleep(0.5)
 
-    args = FMPyCliArguments()
+    args = FMPyCliArguments(console_script=CONSOLE_SCRIPT)
 
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
     ShutdownManager().init()

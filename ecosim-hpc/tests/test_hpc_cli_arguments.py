@@ -53,3 +53,24 @@ def test_threads_per_worker_must_be_positive(
     assert exit_info.value.code == 2
     error_line = capsys.readouterr().err.splitlines()[-1]
     assert error_line.endswith(f"error: argument --threads-per-worker: must be a whole number of at least 1, not '{threads_per_worker}'")
+
+
+def test_ecosim_hpc_has_no_communication_protocol_option(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        HPCServerCliArguments(
+            passed_arguments=[
+                "--server-config",
+                "server.ini",
+                "--simulation-config",
+                "simulation.json",
+                "--simulator-dir",
+                "Modules",
+                "--steps",
+                "1",
+                "--communication-protocol",
+                "dask",
+            ],
+        )
+
+    assert exit_info.value.code == 2
+    assert capsys.readouterr().err.splitlines()[-1] == "ecosim-hpc: error: unrecognized arguments: --communication-protocol dask"

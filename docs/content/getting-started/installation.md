@@ -40,6 +40,9 @@ environment of every package with its development tools and installs the pre-com
 | `ecosim-hpc` | `mpirun python ecosim_hpc/main.py` | Runs server and clients on a Dask cluster, see the [HPC cluster](../guides/hpc-cluster.md) |
 | `ecosim-common`, `ecosim-common-fmpy` | | Shared code |
 
+Every command lists its options with `--help` and prints its version with `--version`. The
+[command-line reference](../reference/command-line.md) has the same lists.
+
 `simulation_examples/` is a uv project that installs the server, the FMI 2.0 client and `ecosim-hpc`
 together. The examples use it.
 

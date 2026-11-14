@@ -1,161 +1,54 @@
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List
+from typing import Sequence
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+from ecosim_common.config.console_script import ConsoleScript
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.db_config_overwrite import DbConfigOverwrite
-from ecosim_common.config.option_values import choice_name, number_from_zero_to_one, port_number, positive_whole_number, true_or_false
+from ecosim_common.config.shared_parameters import COMMUNICATION_PROTOCOL_PARAMETER, DEBUG_PARAMETER
+from ecosim_server.config.cli_parameters import CONFIG_FILE_PARAMETERS, IMAGE_RENDERING_PARAMETERS, RUN_PARAMETERS, SERVER_ADDRESS_PARAMETERS
+from ecosim_server.config.database_cli_parameters import DATABASE_PARAMETERS
+
+CONSOLE_SCRIPT = ConsoleScript(
+    name="ecosim-server",
+    description="Runs a simulation. The server waits until every simulator of the simulation config is connected, "
+    + "then steps them all and stores the results in files or in PostgreSQL.",
+    examples=(
+        "ecosim-server --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
+        + "    --steps 100 --database-type file --database-directory results",
+        "ecosim-server --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
+        + "    --steps 35040 --step-size 900000 --restore-simulation-run",
+    ),
+)
 
 
 class CLIArguments(AppConfig):
     def __init__(
         self,
-        passed_arguments: List[Any] | None = None,
-        additional_parameters: list[AppConfigParameter] | None = None,
-    ):
+        passed_arguments: Sequence[str] | None = None,
+        console_script: ConsoleScript = CONSOLE_SCRIPT,
+    ) -> None:
         super().__init__(
-            passed_arguments=passed_arguments or sys.argv[1:],
-            cli_description="This is the server of eCoSim.",
-            parameters=[
-                AppConfigParameter(
-                    name="server-config",
-                    required=True,
-                    help_text="The path to the config file. This must be relative to the call path or it can be an absolute path.",
-                ),
-                AppConfigParameter(
-                    name="simulation-config",
-                    required=True,
-                    help_text="The path to the simulation config file. This must be relative to the call path or it can be an absolute path.",
-                ),
-                AppConfigParameter(
-                    name="host",
-                    help_text="The host for the server. Note: this will override any settings in config files.",
-                ),
-                AppConfigParameter(
-                    name="port",
-                    transform=port_number,
-                    help_text="The port for the server. Note: this will override any port in config files.",
-                ),
-                AppConfigParameter(
-                    name="steps",
-                    required=True,
-                    transform=positive_whole_number,
-                    help_text="The number of steps that the simulation should run.",
-                ),
-                AppConfigParameter(
-                    name="step-size",
-                    transform=positive_whole_number,
-                    help_text="The step size in milliseconds.",
-                ),
-                AppConfigParameter(
-                    name="pace",
-                    required=False,
-                    default_value="1.0",
-                    transform=number_from_zero_to_one,
-                    help_text="The execution pace - the value must be between 0 and 1. E.g. 1 means 100%%, 0.7 means 70%%",
-                ),
-                AppConfigParameter(
-                    name="debug",
-                    is_flag=True,
-                    help_text="enabling debug mode (more logs)",
-                ),
-                AppConfigParameter(
-                    name="database-host",
-                    help_text="The database host",
-                ),
-                AppConfigParameter(
-                    name="database-port",
-                    transform=port_number,
-                    help_text="The database port",
-                ),
-                AppConfigParameter(
-                    name="database-user",
-                    help_text="The database user",
-                ),
-                AppConfigParameter(
-                    name="database-user-password",
-                    help_text="The database user password. WARNING: other users on a shared machine can see this option in the process list. "
-                    + "Without it, the password comes from the config file, PGPASSWORD or a password file.",
-                ),
-                AppConfigParameter(
-                    name="database-name",
-                    help_text="The name of the database",
-                ),
-                AppConfigParameter(
-                    name="database-schema",
-                    help_text="The name of the database schema",
-                ),
-                AppConfigParameter(
-                    name="database-ssl",
-                    # without a default, the ssl key of the config file decides unless the option is given
-                    default_value=None,
-                    transform=true_or_false,
-                    help_text="If the connection to the DB uses SSL: 'true' connects with sslmode=require, 'false' with sslmode=disable. "
-                    + "Note: this will override the ssl key in config files.",
-                ),
-                AppConfigParameter(
-                    name="database-type",
-                    required=False,
-                    default_value=None,  # NOTE: the actual default value is specified in DatabaseConfig
-                    transform=choice_name,
-                    choices=tuple(member.serialized for member in DatabaseType),
-                    help_text=f"Where the simulation results are stored. Default: {DatabaseType.POSTGRES.value}. "
-                    + f"Possible: {[member.value for member in DatabaseType]}. Note: this will override the type in config files.",
-                ),
-                AppConfigParameter(
-                    name="database-directory",
-                    required=False,
-                    default_value=None,  # NOTE: the actual default value is specified in DatabaseConfig
-                    help_text="The directory the simulation results are written to if the database type is "
-                    + f"'{DatabaseType.FILE.value}'. Note: this will override the directory in config files.",
-                ),
-                AppConfigParameter(
-                    name="database-drop-existing-schema",
-                    is_flag=True,
-                    help_text="This will drop existing schemas - WARNING: you can lose data with this option, this is mainly a development option. "
-                    + "With --restore-simulation-run the schema is kept.",
-                ),
-                AppConfigParameter(
-                    name="image-renderer-port",
-                    default_value=None,
-                    required=False,
-                    transform=port_number,
-                    help_text="The port for the image renderer socket. If not set no image rendering socket will be opened.",
-                ),
-                AppConfigParameter(
-                    name="image-renderer-interval",
-                    default_value=None,
-                    required=False,
-                    transform=positive_whole_number,
-                    help_text="The interval (in time_steps) that the images will be rendered and sent over the image rendering socket. "
-                    + "If not set no images will be sent.",
-                ),
-                AppConfigParameter(
-                    name="restore-simulation-run",
-                    default_value=None,
-                    required=False,
-                    is_flag=True,
-                    help_text="If this flag is used, a possible previous aborted simulation run will be restored. If there is no previous "
-                    + "simulation run, the simulation is executed normally. A restore needs the unchanged configuration: the stored results "
-                    + "are mapped to steps with the current step size and start date.",
-                ),
-                AppConfigParameter(
-                    name="communication-protocol",
-                    required=False,
-                    default_value=None,  # NOTE: the actual default value is specified in ServerConfig
-                    transform=choice_name,
-                    choices=tuple(protocol.serialized for protocol in CommunicationProtocol),
-                    help_text=f"The communication protocol to use between client and server. Default: {CommunicationProtocol.TCP_SOCKET}. "
-                    + f"Possible: {[p.name for p in CommunicationProtocol]}",
-                ),
-            ]
-            + (additional_parameters or []),
+            console_script=console_script,
+            parameters=self.parameters(),
+            passed_arguments=passed_arguments,
         )
+
+    @classmethod
+    def parameters(cls) -> list[AppConfigParameter]:
+        return [
+            DEBUG_PARAMETER,
+            *CONFIG_FILE_PARAMETERS,
+            *RUN_PARAMETERS,
+            *DATABASE_PARAMETERS,
+            *SERVER_ADDRESS_PARAMETERS,
+            COMMUNICATION_PROTOCOL_PARAMETER,
+            *IMAGE_RENDERING_PARAMETERS,
+        ]
 
     def server_config(self) -> Path:
         path: Path = Path(self._args.server_config)
