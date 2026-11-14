@@ -68,9 +68,9 @@ The interface files and `simulators` in the simulation config describe an interf
 - `name` in the model is the variable of the FMU, the key in the dictionaries of the Python model or
   the Pyro object, or the variable in the MATLAB workspace.
 - `required` in `simulation.json`: the run fails with `does not full-fill interface requirements` if
-  the `.fmc` file does not list the interface. Without it, the client logs a mismatch error instead.
-- `required` in the `.fmc` file only counts for inputs: the client logs a mismatch error if
-  `simulation.json` does not list the input.
+  the `.fmc` file does not list the interface. Without it, the client logs a warning that names it.
+- `required` in the `.fmc` file only counts for inputs: the client logs a warning that names the input
+  if `simulation.json` does not connect it.
 - `connected_to` holds `simulator`, the position of the output's simulator in `simulators`, counting
   from 0, and `interface`, the `name` of the output. `simulator` can be a number or a string.
 - The run only uses the interfaces in `simulation.json`, so the `.fmc` file may list more.

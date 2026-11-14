@@ -269,19 +269,10 @@ class Client(ShutdownListener):
             ServerInterfaceSettings,
         )
 
-        # check if config matches actual interfaces
-        config_validated = self._client_config.interfaces_config().validate_config_with_server(
-            server_interface_settings,
-        )
+        mismatch = self._client_config.interfaces_config().validate_config_with_server(server_config=server_interface_settings)
+        for line in mismatch.lines(fmc_file=self._client_config.simulator_config().fmc_file):
+            Client.logger.warning("%s", line)
         self._execution_config.set_server_interface_settings(server_interface_settings)
-
-        error_occurred = not config_validated
-        if error_occurred:
-            Client.logger.error(
-                "   ->> Could not validate the incoming input/output interfaces - there seems to be a mismatch "
-                "between the client interfaces and the interfaces the server requires",
-            )
-
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
     def _handle_simulation_setup(
