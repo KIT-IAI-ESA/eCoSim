@@ -68,12 +68,12 @@ class DbConfigOverwrite:
 
     def type(
         self,
-        default: DatabaseType,
+        read_default: Callable[[], DatabaseType],
     ) -> DatabaseType:
-        return self._type or default
+        return self._type or read_default()
 
     def directory(
         self,
-        default: Path,
+        read_default: Callable[[], Path],
     ) -> Path:
-        return self._directory or default
+        return self._directory or read_default()
