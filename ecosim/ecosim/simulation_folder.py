@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 from argparse import Namespace
 from dataclasses import dataclass
@@ -23,12 +24,22 @@ class SimulationFolder:
 
     @staticmethod
     def of_options(options: Namespace) -> SimulationFolder:
-        path = Path(options.simulation or ".")
+        layout = SimulationFolder.of_path(path=Path(options.simulation or "."))
+        return dataclasses.replace(
+            layout,
+            simulation_config=Path(options.simulation_config or layout.simulation_config),
+            server_config=Path(options.server_config or layout.server_config),
+            simulator_dir=Path(options.simulator_dir or layout.simulator_dir),
+        )
+
+    @staticmethod
+    def of_path(path: Path) -> SimulationFolder:
+        """A simulation in the layout of the examples, which ecosim new writes."""
         return SimulationFolder(
             path=path,
-            simulation_config=Path(options.simulation_config or path / SIMULATION_CONFIG),
-            server_config=Path(options.server_config or path / "server" / "preferences.ini"),
-            simulator_dir=Path(options.simulator_dir or path / "Modules"),
+            simulation_config=path / SIMULATION_CONFIG,
+            server_config=path / "server" / "preferences.ini",
+            simulator_dir=path / "Modules",
         )
 
     @property

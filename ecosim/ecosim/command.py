@@ -15,6 +15,7 @@ class Command:
 
 # in the order of a day with eCoSim, which is also the order of the help
 COMMANDS = (
+    Command(name="new", summary="Write a simulation folder from FMUs", module="ecosim.new.new_command"),
     Command(name="check", summary="Check a simulation folder before a run", module="ecosim.check.check_command"),
     Command(name="run", summary="Run a simulation on this computer: the server and every client", module="ecosim.run.run_command"),
     Command(name="results", summary="Show the results of a run, or write them to a CSV file", module="ecosim.results.results_command"),

@@ -37,7 +37,7 @@ def step_size_in_milliseconds(text: str) -> int:
     return duration(text).milliseconds
 
 
-def steps_of_duration(run_duration: Duration, step_size_in_milliseconds: int) -> int:
+def steps_of_duration(run_duration: Duration, step_size_in_milliseconds: int, length_name: str = "--duration") -> int:
     steps, rest = divmod(run_duration.milliseconds, step_size_in_milliseconds)
     if rest == 0:
         return steps
@@ -45,4 +45,4 @@ def steps_of_duration(run_duration: Duration, step_size_in_milliseconds: int) ->
         f"--steps {count} ({readable_duration(seconds=count * step_size_in_milliseconds / 1000)})" for count in (steps, steps + 1) if count > 0
     ]
     step_size = readable_duration(seconds=step_size_in_milliseconds / 1000)
-    raise ArgumentTypeError(f"--duration {run_duration.text} is not a whole number of steps of {step_size}. Use {' or '.join(nearest)}.")
+    raise ArgumentTypeError(f"{length_name} {run_duration.text} is not a whole number of steps of {step_size}. Use {' or '.join(nearest)}.")

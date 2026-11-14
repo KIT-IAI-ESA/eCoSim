@@ -15,6 +15,51 @@ option the message suggests the closest one. The [exit codes](#exit-codes) are a
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
 
+## ecosim new
+
+`ecosim new`: Writes a simulation folder from FMUs: a folder in Modules/ for each FMU with the FMU, its .fmc file and its client config, and server/ with the server config and simulation.json. An input is connected to the one output of another model with the same name, where '.' and '_' count as the same. Every other input keeps the start value of its FMU. At the end it checks the simulation as ecosim check does.
+
+```shell
+ecosim new my_simulation house.fmu occupancy.fmu weather.fmu --duration 1y --start-date 2023-01-01
+ecosim new my_simulation models --step-size 1min --steps 200
+ecosim new two_houses weather.fmu house=house.fmu house2=house.fmu
+```
+
+**Positional arguments**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `SIMULATION` | yes |  | The simulation folder to write. It must not exist yet, or be empty. |
+| `FMU` | yes |  | An FMU file, a folder whose .fmu files are all taken, or NAME=FILE to give the model another name than its file. |
+
+**Options**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
+
+**Run**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s. A number without a unit is milliseconds. Without it, 15min. |
+| `--duration DURATION` |  |  | How much simulated time the simulation covers, like 12h, 30d or 1y, where 1y is 365 days. Without it and --steps, 1d. |
+| `--steps N` |  |  | How many steps the simulation runs, instead of --duration. |
+| `--start-date DATE` |  |  | When the simulated time starts, like 2023-01-01 or 2023-01-01T06:00+01:00. A time without an offset is UTC. The results of the first step are one step later. Without it, 2024-01-01. |
+
+**Results**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--database-type {postgres,file}` |  | `file` | Where the results go, written to type in the [database] section of the server config. |
+| `--database-directory FOLDER` |  | `results/by_hand` | With --database-type file: the folder for the result files of a server started by hand, relative to the folder it starts in. ecosim run puts each run in a folder of its own in results instead. |
+
+**Server connection**
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--port PORT` |  | `1234` | The port of the server, written to the server config and to every client config. ecosim run picks a free one instead. |
+
 ## ecosim check
 
 `ecosim check`: Checks a simulation before a run: the simulation config, the server config and the folder of every simulator with its model. It reads them as a run with the same options would, lists every problem with its file, and names the closest name for a typo. It changes nothing and starts nothing. The options after -- are options of ecosim-server, which the check reads as well.

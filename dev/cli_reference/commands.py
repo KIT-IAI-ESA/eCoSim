@@ -19,6 +19,7 @@ class Command:
 
 
 COMMANDS = [
+    Command(title="ecosim new", build_parser="ecosim.new.new_command.build_parser"),
     Command(title="ecosim check", build_parser="ecosim.check.check_command.build_parser"),
     Command(title="ecosim run", build_parser="ecosim.run.run_command.build_parser"),
     Command(title="ecosim results", build_parser="ecosim.results.results_command.build_parser"),
