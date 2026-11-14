@@ -10,6 +10,8 @@ description: Every option of the eCoSim server, the clients and the HPC entry po
 These tables come from the option definitions in the code, the same that `--help` shows. Every command also takes
 `--help` and `--version`. A misspelt option or a wrong value stops the command at once with exit code 2 and a short
 message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
+For a misspelt option the message names the closest one.
+
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
 
