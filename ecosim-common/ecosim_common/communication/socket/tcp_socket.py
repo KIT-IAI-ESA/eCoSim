@@ -14,6 +14,7 @@ from ecosim_common.communication.channel.esp_channel import ChannelHandler, Conn
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.config.executing_platform import ExecutingPlatform
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 
@@ -205,8 +206,8 @@ class TCPSocket(ESPChannel, ShutdownListener):
                 message = self._listen_blocking()
                 if message is not None:
                     on_message(message)
-        except Exception:
-            TCPSocket._logger.exception("Receive loop on %s failed -> closing the channel", self._connection_address)
+        except Exception as error:
+            TCPSocket._logger.exception("Receive loop on %s failed, closing the channel: %s", self._connection_address, one_line_message(error=error))
         finally:
             self._listening.clear()
             self.close()

@@ -24,6 +24,7 @@ class SpySimulatorClient(SimulatorClient):
     calls: list[str] = field(default_factory=list)
     initialize_fails: bool = field(default=False)
     stop_fails: bool = field(default=False)
+    failing_step: int | None = field(default=None)
     step_blocks: bool = field(default=False)
     step_block_started: threading.Event = field(default_factory=threading.Event)
     step_block_end: threading.Event = field(default_factory=threading.Event)
@@ -46,19 +47,18 @@ class SpySimulatorClient(SimulatorClient):
         initialize_fails: bool = False,
         stop_fails: bool = False,
         model_problem: str | None = None,
+        failing_step: int | None = None,
+        client_id: ClientID = ClientID(model_name="house", simulator_name="house"),
         simulator_config: SimulatorConfig | None = None,
     ) -> SpySimulatorClient:
         """The client after a server sent it these messages and closed the connection."""
         server = SingleConnectionServer.listen()
         client = SpySimulatorClient(
-            _client_config=generate_mocked_client_config(
-                server_address=server.address(),
-                client_id=ClientID(model_name="house", simulator_name="house"),
-                simulator_config=simulator_config,
-            ),
+            _client_config=generate_mocked_client_config(server_address=server.address(), client_id=client_id, simulator_config=simulator_config),
             initialize_fails=initialize_fails,
             stop_fails=stop_fails,
             model_problem=model_problem,
+            failing_step=failing_step,
         )
         client.start()
         server.serve_and_close(message_types=message_types, payloads=payloads)
@@ -91,6 +91,8 @@ class SpySimulatorClient(SimulatorClient):
     @override
     def _on_do_step(self, step_size_in_seconds: float) -> None:
         self.calls.append(f"step of {step_size_in_seconds} at {self._current_simulation_time}")
+        if self.failing_step == self.completed_steps:
+            raise RuntimeError("step failed")
         if self.step_blocks:
             self.step_block_started.set()
             self.step_block_end.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)

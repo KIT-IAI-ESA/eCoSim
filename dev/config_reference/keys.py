@@ -22,6 +22,7 @@ class Key:
     key: str
     type: str
     default: str | None
+    postgres_only: bool = False
 
 
 def member_values(node: ast.ClassDef) -> dict[str, str]:
@@ -108,7 +109,13 @@ def default_argument(call: ast.Call, arguments: list[ast.expr]) -> ast.expr | No
     return None
 
 
-def to_key(call: ast.Call, enums: Enums, names: dict[str, str]) -> Key | None:
+def postgres_only_calls(tree: ast.AST) -> set[int]:
+    """The calls in a function named like _for_postgres, which reads the keys that only results in PostgreSQL need."""
+    functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.endswith("_for_postgres")]
+    return {id(node) for function in functions for node in ast.walk(function) if isinstance(node, ast.Call)}
+
+
+def to_key(call: ast.Call, enums: Enums, names: dict[str, str], postgres_only: bool) -> Key | None:
     getter = call.func.attr if isinstance(call.func, ast.Attribute) else ""
     arguments = call.args[1:] if getter == "get_enum" else call.args
     if getter not in GETTERS or len(arguments) < 2:
@@ -117,7 +124,7 @@ def to_key(call: ast.Call, enums: Enums, names: dict[str, str]) -> Key | None:
     if not isinstance(section, ast.Constant) or not isinstance(key, ast.Constant):
         return None  # section or key is only known at run time
     default = render_default(default_argument(call, arguments), enums, names)
-    return Key(str(section.value), str(key.value), key_type(getter, call, enums), default)
+    return Key(section=str(section.value), key=str(key.value), type=key_type(getter, call, enums), default=default, postgres_only=postgres_only)
 
 
 def extract_keys(source: str, enums: Enums) -> list[Key]:
@@ -126,21 +133,22 @@ def extract_keys(source: str, enums: Enums) -> list[Key]:
     names = constants(tree)
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
     calls.sort(key=lambda call: (call.lineno, call.col_offset))
+    postgres_calls = postgres_only_calls(tree)
     keys: dict[tuple[str, str], Key] = {}
-    for key in [to_key(call, enums, names) for call in calls]:
+    for key in [to_key(call, enums, names, postgres_only=id(call) in postgres_calls) for call in calls]:
         if key is not None:
             keys.setdefault((key.section, key.key), key)
     return list(keys.values())
 
 
-def default_cell(default: str | None) -> str:
+def default_cell(default: str | None, postgres_only: bool) -> str:
     if default is None:
-        return "required"
+        return "required for PostgreSQL" if postgres_only else "required"
     return f"`{default}`" if default else "empty"
 
 
 def render_keys(keys: list[Key]) -> str:
     lines = ["| Section | Key | Type | Default |", "| --- | --- | --- | --- |"]
     for key in keys:
-        lines.append(f"| `{key.section}` | `{key.key}` | {key.type} | {default_cell(key.default)} |")
+        lines.append(f"| `{key.section}` | `{key.key}` | {key.type} | {default_cell(default=key.default, postgres_only=key.postgres_only)} |")
     return "\n".join(lines)

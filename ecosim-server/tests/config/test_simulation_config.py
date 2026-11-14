@@ -3,12 +3,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+from ecosim_common.communication.data.model_interface_ids import ModelInterfaceIds
+from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ConnectedToData
 from ecosim_common.simulation.model_interface_id import ModelInterfaceId
 from ecosim_common.simulation.simulator_interface_id import SimulatorInterfaceId
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_test_common.resources.config_files import config_file_path
+from ecosim_test_common.test_data.generate_simulation_file import config_file, create_output, create_simulator
 
 
 def test_load() -> None:
@@ -347,3 +350,15 @@ def test_a_step_size_override_needs_no_delta_t(tmp_path: Path) -> None:
     config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1, step_size_override=1000)
 
     assert config.step_size_in_ms == 1000
+
+
+def test_the_required_interfaces_a_client_does_not_list_are_named(tmp_path: Path) -> None:
+    file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "required": "true"}, create_output("rain")))
+    simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
+
+    missing = simulation_config.validate_interfaces(
+        client_id=ClientID(model_name="weather", simulator_name="weather"),
+        client_interface_ids=ModelInterfaceIds(interfaces=[]),
+    )
+
+    assert missing == ["T_out"]

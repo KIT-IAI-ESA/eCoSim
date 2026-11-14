@@ -12,6 +12,7 @@ from ecosim_common.communication.data.model_interface_ids import ModelInterfaceI
 from ecosim_common.communication.data.simulation_setup_message import SimulationSetupMessage
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.tech.close_name import did_you_mean
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
@@ -197,12 +198,11 @@ class Server(ShutdownListener):
         connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
         message: ESPChannelMessage = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
         client_interfaces = message.payload(ModelInterfaceIds)
-        if not simulation_config.validate_interfaces(
-            client_id,
-            client_interfaces,
-        ):
-            raise Exception(
-                f"Client {connection.address} does not full-fill interface requirements. Please check previous logs for more details.",
+        missing = simulation_config.validate_interfaces(client_id=client_id, client_interface_ids=client_interfaces)
+        if missing:
+            raise RuntimeError(
+                f"The simulation config marks {', '.join(missing)} of {client_id} as required, "
+                + f"but its .fmc file does not list {'it' if len(missing) == 1 else 'them'}.",
             )
         Server._logger.debug("Successfully validated interfaces for client %s", connection.address)
         client_communication.interfaces_validated(client_id)
@@ -288,7 +288,8 @@ class Server(ShutdownListener):
     def _rejection_reason(simulation_config: SimulationConfig, client_id: ClientID) -> str:
         if client_id in simulation_config.client_ids():
             return f"Rejected a second connection of client {client_id}. It is already connected."
-        return f"Rejected client {client_id}. It is not in the simulation config."
+        hint = did_you_mean(name=str(client_id), known_names=[str(known_client_id) for known_client_id in simulation_config.client_ids()])
+        return f"Rejected client {client_id}. It is not in the simulation config.{hint}"
 
     @staticmethod
     def rejected_client_warning(simulation_config: SimulationConfig, client_id: ClientID, waiting_for_client_ids: Tuple[ClientID, ...]) -> str:
