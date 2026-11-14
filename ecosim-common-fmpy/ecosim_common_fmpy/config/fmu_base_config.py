@@ -26,6 +26,15 @@ class FMUBaseConfig:
             start_value_texts=StartValues.texts_of(config_parser),
         )
 
+    @staticmethod
+    def supported_type(fmi_major_version: int) -> str:
+        """The one variable type the FMU clients exchange."""
+        return "Real" if fmi_major_version == 2 else "Float64"
+
+    def as_string(self) -> str:
+        """The [fmu] section of an ini file next to the FMU, without the start values."""
+        return f"[fmu]\nfmu_file = [{self.fmu_file.name}]"
+
     def start_values(self, model_description: ModelDescription, input_names: list[str]) -> StartValues:
         return StartValues.of_texts(
             texts=self.start_value_texts,
@@ -85,7 +94,7 @@ class FMUBaseConfig:
             raise ValueError(
                 f"The FMU {self.fmu_file} is FMI {model_description.fmiVersion}, but this client runs FMI {fmi_major_version} FMUs only.",
             )
-        supported_type = "Real" if fmi_major_version == 2 else "Float64"
+        supported_type = FMUBaseConfig.supported_type(fmi_major_version=fmi_major_version)
         other_types = [
             f"{variable.name} ({variable.type})"
             for variable in model_description.modelVariables
