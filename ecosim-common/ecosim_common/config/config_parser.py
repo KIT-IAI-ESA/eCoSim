@@ -123,7 +123,7 @@ class ConfigParser:
         self,
         section: str,
         option: str,
-    ) -> int:
+    ) -> bool:
         return self._config.has_option(section, option)
 
     def _get(

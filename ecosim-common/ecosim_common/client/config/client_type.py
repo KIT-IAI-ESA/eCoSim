@@ -9,6 +9,7 @@ class ClientType(Enum):
     FMU_3 = ("fmu_3", ("fmu3",))
     Matlab = "matlab"
     Pyro5 = ("pyro5", ("pyro",))
+    Python = "python"
 
     def __init__(
         self,
@@ -34,6 +35,8 @@ class ClientType(Enum):
             return ClientType.Matlab
         if ClientType.Pyro5.matches_string(type):
             return ClientType.Pyro5
+        if ClientType.Python.matches_string(type):
+            return ClientType.Python
         raise TypeError(f"Unknown client type {type}")
 
     def matches_string(

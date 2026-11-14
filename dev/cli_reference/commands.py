@@ -27,10 +27,11 @@ COMMANDS = [
         arguments="ecosim_common_fmpy.config.fmpy_cli_arguments.FMPyCliArguments",
     ),
     Command(
-        title="MATLAB and Pyro5 clients",
-        console_script_modules=["ecosim_client_matlab.main", "ecosim_client_pyro5.main"],
+        title="MATLAB, Pyro5 and Python clients",
+        console_script_modules=["ecosim_client_matlab.main", "ecosim_client_pyro5.main", "ecosim_client_python.main"],
         arguments="ecosim_common.client.config.cli_arguments.CLIArguments",
-        note="See the [MATLAB client](../guides/matlab-client.md) and the [Pyro5 client](../guides/pyro5-client.md) guides.",
+        note="See the [MATLAB client](../guides/matlab-client.md), the [Pyro5 client](../guides/pyro5-client.md) "
+        + "and the [Python client](../guides/python-client.md) guides.",
     ),
     Command(
         title="HPC",

@@ -51,6 +51,7 @@ jobs:
           - ecosim-client-fmu-v3
           - ecosim-client-matlab
           - ecosim-client-pyro5
+          - ecosim-client-python
           - ecosim-hpc
         python: [ "3.12", "3.14" ]
         exclude:

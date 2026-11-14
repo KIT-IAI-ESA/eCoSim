@@ -8,6 +8,9 @@ description: Couple a Python model that runs in its own process.
 `ecosim-client-pyro5` couples a Python model that runs in its own process and is published as a
 [Pyro5](https://pyro5.readthedocs.io/) object, for example a pandapower grid.
 
+A model that can run in the same Python environment as eCoSim needs no Pyro5: the [Python client](python-client.md)
+runs it in the process of the client, with no daemon and no port.
+
 ## Configuration
 
 The `[pyro]` section of the client's `preferences.ini` tells the client where to find the object:
