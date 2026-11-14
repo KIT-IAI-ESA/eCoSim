@@ -1,5 +1,7 @@
 import ast
 
+from config_reference.start_values import START_VALUES_TEXT
+
 CLIENT_TYPES_INTRO = """## Client types
 
 `type` in the `[simulator]` section takes one of these values, in upper or lower case:
@@ -138,4 +140,4 @@ def render_client_types(client_types: list[list[str]]) -> str:
 
 
 def render_client_sections(client_types: list[list[str]]) -> str:
-    return "\n".join([CLIENT_TYPES_INTRO, render_client_types(client_types), CLIENT_TYPES_OUTRO, LISTS_TEXT, INTERFACE_FILES_TEXT])
+    return "\n".join([CLIENT_TYPES_INTRO, render_client_types(client_types), CLIENT_TYPES_OUTRO, LISTS_TEXT, START_VALUES_TEXT, INTERFACE_FILES_TEXT])

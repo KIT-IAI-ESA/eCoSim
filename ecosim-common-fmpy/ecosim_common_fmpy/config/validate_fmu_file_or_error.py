@@ -17,11 +17,15 @@ def validate_fmu_file_or_error(
     model_description = read_model_description(file=fmu2_config.fmu_file, validate=True)
     simulator_config = SimulatorConfig.of_config_parser(config)
     interface_config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=config.config_file.parent)
+    input_names = interface_config.input_interface_names()
     fmu2_config.ensure_model_runs_interfaces(
         model_description=model_description,
-        input_names=interface_config.input_interface_names(),
+        input_names=input_names,
         output_names=interface_config.output_interface_names(),
         fmi_major_version=fmi_major_version,
     )
+    start_values = fmu2_config.start_values(model_description=model_description, input_names=input_names)
     logger.info("Validating FMU file...completed. No errors found.")
+    for line in start_values.as_lines():
+        logger.info("Start value: %s", line)
     return

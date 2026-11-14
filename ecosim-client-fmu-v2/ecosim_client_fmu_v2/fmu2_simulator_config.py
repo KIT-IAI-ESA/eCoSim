@@ -11,6 +11,7 @@ import fmpy
 from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common_fmpy.config.fmu_base_config import FMUBaseConfig
+from ecosim_common_fmpy.config.start_values import StartValues
 from ecosim_common_fmpy.tech.read_model_description import read_model_description
 from fmpy.fmi2 import FMU2Slave
 from fmpy.model_description import ModelDescription
@@ -26,6 +27,7 @@ class FMU2SimulatorConfig:
     _input_value_references: Dict[str, Any]
     _output_value_references: Dict[str, Any]
     _simulator_name: str
+    _start_values: StartValues
 
     @classmethod
     def of(
@@ -43,6 +45,7 @@ class FMU2SimulatorConfig:
             output_names=output_names,
             fmi_major_version=2,
         )
+        start_values = fmu_config.start_values(model_description=model_description, input_names=input_names)
 
         input_variables = [v for v in model_description.modelVariables if v.causality == "input"]
         output_variables = [v for v in model_description.modelVariables if v.causality == "output"]
@@ -54,6 +57,7 @@ class FMU2SimulatorConfig:
             _output_value_references={var.name: var.valueReference for var in output_variables},
             _unzip_dir=unzip_dir,
             _fmu_config=fmu_config,
+            _start_values=start_values,
         )
 
     @classmethod
@@ -109,6 +113,9 @@ class FMU2SimulatorConfig:
 
     def unzip_dir(self) -> str:
         return self._unzip_dir
+
+    def start_values(self) -> StartValues:
+        return self._start_values
 
     def reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
         return self._fmu_config.reason_the_model_cannot_run(

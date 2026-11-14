@@ -71,10 +71,14 @@ class Client(ShutdownListener):
         cls.logger = ESPLogger(cls.__name__)
 
     def __post_init__(self) -> None:
-        self._client_config.print_to_info()
+        self._client_config.print_to_info(start_values=self._start_values_for_start_up())
         self._channel_connector = ESPChannelConnector(_communication_protocol=self._client_config.communication_protocol())
         self._was_started = ParallelEvent.for_communication_protocol(self._client_config.communication_protocol())
         ShutdownManager().register_listener(self)
+
+    def _start_values_for_start_up(self) -> list[str]:
+        """The values the model gets before its initialization, as name = value, for the start-up block."""
+        return []
 
     @property
     def _channel(self) -> ESPChannel:
