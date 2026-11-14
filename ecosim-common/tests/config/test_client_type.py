@@ -17,3 +17,8 @@ def test_match_fmu_without_version() -> None:
 def test_match_pyro_without_version() -> None:
     client_type = ClientType.of_string("pyro")
     assert client_type == ClientType.Pyro5
+
+
+def test_python_names_the_python_client_and_not_the_pyro5_client() -> None:
+    client_type = ClientType.of_string(type="Python")
+    assert client_type == ClientType.Python

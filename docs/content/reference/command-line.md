@@ -109,17 +109,20 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | `--image-renderer-port PORT` |  |  | The port of the server's image rendering socket. Without it, the client does not connect to it. |
 | `--communication-protocol {dask,tcp_socket}` |  |  | The protocol between the server and the clients, by default tcp_socket. Overrides communication_protocol in the [server] section of the config file. |
 
-## MATLAB and Pyro5 clients
+## MATLAB, Pyro5 and Python clients
 
 `ecosim-client-matlab`: Runs a model written as MATLAB scripts for the eCoSim server. Needs MATLAB and Python 3.12. Start the server first.
 
 `ecosim-client-pyro5`: Connects a Python model served by a Pyro5 daemon to the eCoSim server. Start the server and the Pyro5 daemon first.
 
-See the [MATLAB client](../guides/matlab-client.md) and the [Pyro5 client](../guides/pyro5-client.md) guides.
+`ecosim-client-python`: Runs a Python model in this process for the eCoSim server, with no Pyro5 daemon. The [python] section of the config file names the model. Start the server first.
+
+See the [MATLAB client](../guides/matlab-client.md), the [Pyro5 client](../guides/pyro5-client.md) and the [Python client](../guides/python-client.md) guides.
 
 ```shell
 ecosim-client-matlab --config-file Modules/battery/preferences.ini
 ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
+ecosim-client-python --config-file Modules/room/preferences.ini
 ```
 
 **Options**

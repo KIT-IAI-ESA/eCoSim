@@ -65,8 +65,8 @@ The interface files and `simulators` in the simulation config describe an interf
 | `description` | optional | optional | Free text |
 | `connected_to` | not read | required on inputs | A list with one entry: the output the input gets its value from |
 
-- `name` in the model is the variable of the FMU, the key in the dictionaries of the Pyro object or
-  the variable in the MATLAB workspace.
+- `name` in the model is the variable of the FMU, the key in the dictionaries of the Python model or
+  the Pyro object, or the variable in the MATLAB workspace.
 - `required` in `simulation.json`: the run fails with `does not full-fill interface requirements` if
   the `.fmc` file does not list the interface. Without it, the client logs a mismatch error instead.
 - `required` in the `.fmc` file only counts for inputs: the client logs a mismatch error if

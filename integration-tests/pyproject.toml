@@ -25,6 +25,7 @@ dependencies = [
     "ecosim-client-fmu-v2==0.14.0",
     "ecosim-client-matlab==0.14.0",
     "ecosim-client-pyro5==0.14.0",
+    "ecosim-client-python==0.14.0",
     "ecosim-common==0.14.0",
     "ecosim-common-fmpy==0.14.0",
     "ecosim-server==0.14.0",
@@ -51,6 +52,7 @@ ecosim-client-fmu-v3 = { path = "../ecosim-client-fmu-v3", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
 ecosim-client-matlab = { path = "../ecosim-client-matlab", editable = true }
 ecosim-client-pyro5 = { path = "../ecosim-client-pyro5", editable = true }
+ecosim-client-python = { path = "../ecosim-client-python", editable = true }
 ecosim-hpc = { path = "../ecosim-hpc", editable = true }
 ecosim-test-common = { path = "../ecosim-test-common", editable = true }
 
@@ -63,6 +65,7 @@ mypy_path = [
     "../ecosim-client-fmu-v3",
     "../ecosim-client-matlab",
     "../ecosim-client-pyro5",
+    "../ecosim-client-python",
     "../ecosim-hpc",
     "../ecosim-test-common",
 ]

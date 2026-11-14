@@ -38,3 +38,7 @@ def fmu3_model_path() -> Path:
 
 def fmu3_fmc_path() -> Path:
     return resource_path_file("integration/models/fmu3/configs/StateSpace.fmc")
+
+
+def python_room_config_path() -> Path:
+    return resource_path_file("python/room/preferences.ini")

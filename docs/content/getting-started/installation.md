@@ -37,14 +37,15 @@ environment of every package with its development tools and installs the pre-com
 | `ecosim-client-fmu-v3` | `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
 | `ecosim-client-matlab` | `ecosim-client-matlab` | Client for MATLAB models, see the [MATLAB client](../guides/matlab-client.md) |
 | `ecosim-client-pyro5` | `ecosim-client-pyro5` | Client for Python models served over Pyro5, see the [Pyro5 client](../guides/pyro5-client.md) |
+| `ecosim-client-python` | `ecosim-client-python` | Client for Python models that run in the process of the client, see the [Python client](../guides/python-client.md) |
 | `ecosim-hpc` | `ecosim-hpc`, started with `mpirun` | Runs server and clients on a Dask cluster, see the [HPC cluster](../guides/hpc-cluster.md) |
 | `ecosim-common`, `ecosim-common-fmpy` | | Shared code |
 
 Every command lists its options with `--help` and prints its version with `--version`. The
 [command-line reference](../reference/command-line.md) has the same lists.
 
-`simulation_examples/` is a uv project that installs the server, the FMI 2.0 client and `ecosim-hpc`
-together. The examples use it.
+`simulation_examples/` is a uv project that installs the server, the FMI 2.0 client, the Python client and
+`ecosim-hpc` together. The examples use it.
 
 To work on eCoSim itself, see [Project setup](../development/project-setup.md).
 
