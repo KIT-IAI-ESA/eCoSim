@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -352,7 +353,49 @@ def test_a_step_size_override_needs_no_delta_t(tmp_path: Path) -> None:
     assert config.step_size_in_ms == 1000
 
 
-def test_a_required_interface_that_the_client_does_not_list_is_missing(tmp_path: Path) -> None:
+def _a_file_with_setup(directory: Path, setup: dict[str, object]) -> Path:
+    file = directory / "simulation.json"
+    file.write_text(json.dumps({"setup": setup, "simulators": [], "logical_delays": []}), encoding="utf-8")
+    return file
+
+
+def test_the_steps_come_from_the_setup_without_the_steps_option(tmp_path: Path) -> None:
+    file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000", "steps": 96})
+
+    config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=None)
+
+    assert config.steps == 96
+
+
+def test_the_steps_option_overrides_the_steps_of_the_setup(tmp_path: Path) -> None:
+    file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000", "steps": 96})
+
+    config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=10)
+
+    assert config.steps == 10
+
+
+def test_the_log_says_that_the_steps_option_overrides_the_steps_of_the_setup(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000", "steps": 96})
+    caplog.set_level(logging.INFO, logger="SimulationConfig")
+
+    SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=10)
+
+    assert [(record.levelno, record.getMessage()) for record in caplog.records if record.name == "SimulationConfig"] == [
+        (logging.INFO, f'--steps 10 overrides "steps": 96 in the setup of {file}.'),
+    ]
+
+
+def test_a_config_without_steps_needs_the_steps_option(tmp_path: Path) -> None:
+    file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000"})
+
+    with pytest.raises(ValueError) as error_info:
+        SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=None)
+
+    assert str(error_info.value) == f'{file}: setup has no key "steps". Write how many steps the simulation runs, like "steps": 96, or pass --steps.'
+
+
+def test_the_required_interfaces_a_client_does_not_list_are_named(tmp_path: Path) -> None:
     file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "required": "true"}, create_output("rain")))
     simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
 

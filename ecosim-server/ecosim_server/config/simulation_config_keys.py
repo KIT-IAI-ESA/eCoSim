@@ -9,7 +9,7 @@ from ecosim_common.tech.json.unknown_json_keys import unknown_key_warnings_of_en
 
 DEFAULT_START_DATE = "2024-01-01T00:00:00.000Z"
 TOP_LEVEL_KEYS = ("setup", "simulators", "logical_delays")
-SETUP_KEYS = ("delta_t", "start_date")
+SETUP_KEYS = ("delta_t", "steps", "start_date")
 # the keys the loader reads, by the kind of entry that has them
 READ_KEYS = {
     "simulator": ("name", "model", "interfaces"),
@@ -20,11 +20,22 @@ READ_KEYS = {
 }
 
 
-def missing_key_problems(raw_config: dict[str, Any], simulation_config_file: Path, has_step_size_override: bool) -> list[str]:
+def missing_key_problems(
+    raw_config: dict[str, Any],
+    simulation_config_file: Path,
+    has_step_size_override: bool,
+    has_steps_override: bool,
+) -> list[str]:
+    """Every key the server needs and does not find, and a delta_t or steps it cannot use, one line each."""
     file = simulation_config_file
     problems = [_missing_top_level_key(file=file, key=key) for key in TOP_LEVEL_KEYS if key not in raw_config]
-    if isinstance(raw_config.get("setup"), dict) and not has_step_size_override:
-        problems += _delta_t_problems(file=file, setup=raw_config["setup"])
+    if isinstance(raw_config.get("setup"), dict):
+        problems += _setup_problems(
+            file=file,
+            setup=raw_config["setup"],
+            has_step_size_override=has_step_size_override,
+            has_steps_override=has_steps_override,
+        )
     return problems + _problems_of_simulators(file=file, simulators=raw_config.get("simulators"))
 
 
@@ -87,16 +98,28 @@ def _missing_top_level_key(file: Path, key: str) -> str:
     return f'{file} has no key "{key}".{how_to_add}'
 
 
-def _delta_t_problems(file: Path, setup: dict[str, Any]) -> list[str]:
-    if "delta_t" not in setup:
-        return [f'{file}: setup has no key "delta_t". Set it to the step size in milliseconds or pass --step-size.']
-    delta_t = setup["delta_t"]
-    if isinstance(delta_t, float) and delta_t.is_integer() and delta_t >= 1:
+def _setup_problems(file: Path, setup: dict[str, Any], has_step_size_override: bool, has_steps_override: bool) -> list[str]:
+    problems: list[str] = []
+    if not has_step_size_override:
+        how_to_add = 'Write the step size in milliseconds, like "delta_t": "900000", or pass --step-size.'
+        problems += _whole_number_problems(file=file, setup=setup, key="delta_t", how_to_add=how_to_add)
+    if not has_steps_override:
+        how_to_add = 'Write how many steps the simulation runs, like "steps": 96, or pass --steps.'
+        problems += _whole_number_problems(file=file, setup=setup, key="steps", how_to_add=how_to_add)
+    return problems
+
+
+def _whole_number_problems(file: Path, setup: dict[str, Any], key: str, how_to_add: str) -> list[str]:
+    if key not in setup:
+        return [f'{file}: setup has no key "{key}". {how_to_add}']
+    value = setup[key]
+    # the loader reads a JSON number like 900000.0 as 900000
+    if isinstance(value, float) and value.is_integer() and value >= 1:
         return []
     try:
-        ConfigParser.positive_whole_number(str(delta_t))
+        ConfigParser.positive_whole_number(str(value))
     except ArgumentTypeError as error:
-        return [f"{file}: setup.delta_t {error}."]
+        return [f"{file}: setup.{key} {error}."]
     return []
 
 

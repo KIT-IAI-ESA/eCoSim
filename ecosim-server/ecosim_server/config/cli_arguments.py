@@ -61,7 +61,7 @@ class CLIArguments(AppConfig):
             return path
         return Path.cwd() / path
 
-    def simulation_steps(self) -> int:
+    def simulation_steps(self) -> int | None:
         return self._args.steps
 
     def step_size_override(self) -> int | None:
