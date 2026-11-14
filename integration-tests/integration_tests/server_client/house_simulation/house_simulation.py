@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from ecosim_client_fmu_v2.fmu2_client import FMU2Client
 from ecosim_common.client.config.client_config import ClientConfigOverride
@@ -30,9 +31,10 @@ class HouseSimulation:
         host: str,
         port: int,
         steps: int = HouseSimulationData.STEPS,
+        simulation_config_file: Path = HouseSimulationData.SIMULATION_CONFIG_FILE,
     ) -> HouseSimulation:
         simulation_config = SimulationConfig.of_config_file_and_params(
-            simulation_config_file=HouseSimulationData.SIMULATION_CONFIG_FILE,
+            simulation_config_file=simulation_config_file,
             steps=steps,
         )
         server = generate_simple_test_server(

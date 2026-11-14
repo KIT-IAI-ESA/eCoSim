@@ -10,6 +10,7 @@ from ecosim_common.communication.channel.esp_channel import ESPChannel
 from ecosim_common.communication.channel.message_data import MessageData
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.protocol_interface_value import FloatMatrix, InterfaceValue
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_test_common.bounded_wait import finishes_in_time
@@ -26,6 +27,7 @@ class SpySimulatorClient(SimulatorClient):
     step_blocks: bool = field(default=False)
     step_block_started: threading.Event = field(default_factory=threading.Event)
     step_block_end: threading.Event = field(default_factory=threading.Event)
+    model_problem: str | None = field(default=None)
 
     @staticmethod
     def create(
@@ -43,6 +45,7 @@ class SpySimulatorClient(SimulatorClient):
         payloads: dict[MessageType, MessageData] | None = None,
         initialize_fails: bool = False,
         stop_fails: bool = False,
+        model_problem: str | None = None,
         simulator_config: SimulatorConfig | None = None,
     ) -> SpySimulatorClient:
         """The client after a server sent it these messages and closed the connection."""
@@ -55,11 +58,16 @@ class SpySimulatorClient(SimulatorClient):
             ),
             initialize_fails=initialize_fails,
             stop_fails=stop_fails,
+            model_problem=model_problem,
         )
         client.start()
         server.serve_and_close(message_types=message_types, payloads=payloads)
         assert finishes_in_time(blocking_call=client.wait_until_finished), "the client kept waiting after the server closed the connection"
         return client
+
+    @override
+    def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
+        return self.model_problem
 
     @override
     def _on_initialize_model(self, start_time: float) -> None:
