@@ -7,8 +7,9 @@ Usage: uv run --project simulation_examples python dev/generate_cli_reference.py
 import argparse
 import sys
 import textwrap
+from typing import Any
 
-from cli_reference.commands import COMMANDS, Command, parsers_of
+from cli_reference.commands import COMMANDS, Command, load, parsers_of
 from cli_reference.options import Option, collect_sections
 from config import REPO_ROOT, write_or_check
 
@@ -23,9 +24,9 @@ description: Every option of the eCoSim server, the clients and the HPC command.
 # Command-line options
 
 These tables come from the option definitions in the code. `--help` shows the same. Every command also takes
-`--help` and `--version`. A misspelled option or a wrong value stops the command with exit code 2 and a short
-message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
-For a misspelled option the message suggests the closest one.
+`--help` and `--version`. A misspelled option or a wrong value stops the command with a short message, for
+example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`. For a misspelled
+option the message suggests the closest one. The [exit codes](#exit-codes) are at the end of the page.
 
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
@@ -65,13 +66,40 @@ def render_command(command: Command, parsers: list[argparse.ArgumentParser]) -> 
     return lines
 
 
-def render_page(commands: list[list[str]]) -> str:
-    return "\n".join([HEADER, *(line for command in commands for line in command)])
+def render_exit_codes(shutdown_manager: Any) -> list[str]:
+    """The exit codes, from the constants of the ShutdownManager class."""
+    return [
+        "## Exit codes",
+        "",
+        "Every command ends with one of these codes. Without `--debug`, an error ends the command with one line that says",
+        "what went wrong, for example:",
+        "",
+        "```text",
+        "ecosim-server: error: No such file or directory: /home/user/building/Executable/../server/simulaton.json "
+        + "(run with --debug for the full traceback)",
+        "```",
+        "",
+        "With `--debug`, the command shows the full traceback instead.",
+        "",
+        "| Code | When |",
+        "| --- | --- |",
+        f"| {shutdown_manager.SUCCESS_EXIT_CODE} | the run finished, or `--validate-fmu-file-only` found no problem |",
+        f"| {shutdown_manager.FAILED_RUN_EXIT_CODE} | the run failed, or the command stopped on an error |",
+        "| 2 | an option is missing or has a wrong value |",
+        f"| {shutdown_manager.INTERRUPT_EXIT_CODE} | Ctrl-C (SIGINT) during a run |",
+        f"| {shutdown_manager.TERMINATE_EXIT_CODE} | SIGTERM, for example from `docker stop` or at the end of a SLURM job |",
+        "",
+    ]
+
+
+def render_page(commands: list[list[str]], exit_codes: list[str]) -> str:
+    return "\n".join([HEADER, *(line for command in commands for line in command), *exit_codes])
 
 
 def main(arguments: list[str]) -> int:
     rendered = [render_command(command=command, parsers=parsers_of(command=command)) for command in COMMANDS]
-    return write_or_check(PAGE, render_page(rendered), "--check" in arguments)
+    exit_codes = render_exit_codes(shutdown_manager=load("ecosim_common.tech.shutdown_manager.ShutdownManager"))
+    return write_or_check(PAGE, render_page(commands=rendered, exit_codes=exit_codes), "--check" in arguments)
 
 
 if __name__ == "__main__":

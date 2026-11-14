@@ -68,8 +68,9 @@ simulated period and where the results are. `clusterRun.sh` writes what each cli
 `log_client1` to `log_client3` instead.
 
 The job scripts pass `--debug`, so the output also has every message of every step. For 100 steps the
-SLURM file of `clusterRunHPC.sh` has about 10,000 lines. `grep -v ' - DEBUG - ' slurm-<job id>.out` shows
-the file without the debug messages, as a run without `--debug` would write it.
+SLURM file of `clusterRunHPC.sh` has about 10,000 lines. `grep -v ' - DEBUG - ' slurm-<job id>.out` leaves
+out the debug messages and shows the settings, the progress lines and the summary. An error keeps its full
+traceback there.
 
 ## Choose the network and the threads
 
