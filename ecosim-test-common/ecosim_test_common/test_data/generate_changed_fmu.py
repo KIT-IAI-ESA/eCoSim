@@ -17,6 +17,16 @@ def generate_fmu_without_co_simulation(fmu_file: Path, directory: Path) -> Path:
     return _copy_with(fmu_file=fmu_file, target=directory / fmu_file.name, model_description=model_description)
 
 
+def generate_fmu_without_binaries_for(fmu_file: Path, directory: Path, platform: str) -> Path:
+    """Copy of the FMU without its binary for the platform, like linux64."""
+    target = directory / fmu_file.name
+    with zipfile.ZipFile(fmu_file) as source, zipfile.ZipFile(target, mode="w") as copy:
+        for entry in source.infolist():
+            if not entry.filename.startswith(f"binaries/{platform}/"):
+                copy.writestr(zinfo_or_arcname=entry, data=source.read(entry))
+    return target
+
+
 def generate_fmi1_fmu(directory: Path) -> Path:
     """Writes an FMI 1.0 FMU with one input and no binary."""
     model_description = """<?xml version="1.0" encoding="UTF-8"?>

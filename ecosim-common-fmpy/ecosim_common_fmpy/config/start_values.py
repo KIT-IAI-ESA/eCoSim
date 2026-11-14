@@ -42,6 +42,11 @@ class StartValues:
             StartValues._logger.warning(warning)
         return StartValues(values=values)
 
+    @staticmethod
+    def problems_of(texts: dict[str, str], model_description: ModelDescription, input_names: list[str]) -> list[str]:
+        results = StartValues._start_values_or_problems(texts=texts, model_description=model_description, input_names=input_names)
+        return [f"{name}: {result}" for name, result in results.items() if isinstance(result, str)]
+
     def set_on(self, fmu_instance: Any) -> None:
         for start_value in self.values:
             start_value.set_on(fmu_instance)

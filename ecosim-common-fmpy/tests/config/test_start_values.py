@@ -125,6 +125,14 @@ def test_every_problem_is_listed_at_once() -> None:
     assert [line.split(":")[0].strip() for line in str(error.value).splitlines()[1:]] == ["unknown", "Float64_tunable_parameter", "time"]
 
 
+def test_a_check_gets_the_same_problems_as_a_list() -> None:
+    texts = {"Float64_tunable_parameter": "abc", "Float64_fixed_parameter": "1"}
+
+    problems = StartValues.problems_of(texts=texts, model_description=read_model_description(file=fmu2_model_path()), input_names=[])
+
+    assert problems == ["Float64_tunable_parameter: 'abc' is not a number"]
+
+
 @pytest.mark.parametrize("section", ["Start_Values", "start_value", "start values", "startvalues"])
 def test_a_misspelled_section_name_is_rejected(tmp_path: Path, section: str) -> None:
     file = tmp_path / "preferences.ini"

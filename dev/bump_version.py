@@ -28,7 +28,12 @@ def internal_package_names(root: Path) -> list[str]:
 
 def pin_internal_packages(pyproject: str, packages: list[str], version: str) -> str:
     for package in packages:
-        pyproject = re.sub(pattern=f'"{re.escape(package)}==[^"]*"', repl=f'"{package}=={version}"', string=pyproject)
+        # with its extras, like "ecosim-server[pandas]==0.14.0"
+        pyproject = re.sub(
+            pattern=f'"{re.escape(package)}(?P<extras>\\[[^]]*\\])?==[^"]*"',
+            repl=f'"{package}\\g<extras>=={version}"',
+            string=pyproject,
+        )
     return pyproject
 
 

@@ -1,0 +1,99 @@
+"""The model of a simulator, checked with the readers its client uses before it starts."""
+
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import socket
+import subprocess
+import sys
+from pathlib import Path
+from typing import assert_never
+
+from ecosim_client_python.python_config import PythonConfig
+from ecosim_common.client.config.client_config import ClientConfig
+from ecosim_common.client.config.client_type import ClientType
+from ecosim_common.client.config.simulator_directory import SimulatorDirectory
+from ecosim_common.communication.data.server_interface_settings import ServerInterfaceSettings
+
+from ecosim.check.findings import Findings, problem_of_ini_file, with_the_file
+from ecosim.check.fmu_check import ModelCheck, fmu_check
+
+SECONDS_FOR_THE_IMPORT = 60
+
+
+def model_check(
+    directory: SimulatorDirectory,
+    client_type: ClientType,
+    client_config: ClientConfig,
+    server_interface_settings: ServerInterfaceSettings,
+) -> ModelCheck:
+    match client_type:
+        case ClientType.FMU_2 | ClientType.FMU_3:
+            return fmu_check(directory=directory, client_config=client_config, server_interface_settings=server_interface_settings)
+        case ClientType.Matlab:
+            return ModelCheck(findings=_matlab_findings(directory=directory))
+        case ClientType.Pyro5:
+            return ModelCheck(findings=_pyro_findings(directory=directory))
+        case ClientType.Python:
+            return ModelCheck(findings=_python_findings(directory=directory))
+        case _:
+            assert_never(client_type)
+
+
+def _matlab_findings(directory: SimulatorDirectory) -> Findings:
+    # the MATLAB client needs Python 3.12, so it often has an environment of its own
+    if importlib.util.find_spec("ecosim_client_matlab") is None:
+        return Findings(warnings=[f"{directory.path}: [matlab] was not checked, because ecosim-client-matlab is not installed here."])
+    try:
+        importlib.import_module("ecosim_client_matlab.matlab_config").MatlabConfig(directory.config_parser)
+    except Exception as error:
+        return Findings(problems=[problem_of_ini_file(error=error, ini_file=directory.config_parser.config_file)])
+    return Findings()
+
+
+def _pyro_findings(directory: SimulatorDirectory) -> Findings:
+    config_parser = directory.config_parser
+    try:
+        installed = importlib.util.find_spec("ecosim_client_pyro5") is not None
+        if installed:
+            importlib.import_module("ecosim_client_pyro5.pyro_config").PyroConfig.of(config_parser)
+        host, port = config_parser.get_string("pyro", "pyro_host"), config_parser.get_int("pyro", "pyro_port")
+    except Exception as error:
+        return Findings(problems=[problem_of_ini_file(error=error, ini_file=config_parser.config_file)])
+    not_installed = f"{directory.path}: [pyro] was checked only for pyro_host and pyro_port, because ecosim-client-pyro5 is not installed here."
+    findings = Findings(warnings=[] if installed else [not_installed])
+    try:
+        # the Pyro5 object runs on its own, its client only connects to it
+        socket.create_connection(address=(host, port), timeout=1).close()
+    except OSError:
+        findings.warnings.append(f"{directory.path}: nothing listens on {host}:{port} yet. Start the Pyro5 object before the run.")
+    return findings
+
+
+def _python_findings(directory: SimulatorDirectory) -> Findings:
+    ini_file = directory.config_parser.config_file
+    try:
+        PythonConfig.of(config_parser=directory.config_parser)
+    except Exception as error:
+        return Findings(problems=[problem_of_ini_file(error=error, ini_file=ini_file)])
+    try:
+        problem = _python_model_import_problem(ini_file=ini_file)
+    except subprocess.TimeoutExpired:
+        return Findings(warnings=[f"{ini_file}: the import of the model took more than {SECONDS_FOR_THE_IMPORT} s, so it was not checked."])
+    return Findings(problems=[] if problem is None else [with_the_file(message=problem, file=ini_file)])
+
+
+def _python_model_import_problem(ini_file: Path) -> str | None:
+    # the import runs the code of the module, and two simulators can have modules of one name
+    imported = subprocess.run(
+        [sys.executable, "-P", "-m", "ecosim.check.python_model_import", str(ini_file.absolute())],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=SECONDS_FOR_THE_IMPORT,
+    )
+    if imported.returncode == 0:
+        return None
+    lines = imported.stdout.splitlines()
+    return lines[-1] if imported.returncode == 1 and lines else f"the import of the model ended with exit code {imported.returncode}."

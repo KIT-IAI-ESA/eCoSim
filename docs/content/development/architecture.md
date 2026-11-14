@@ -2,11 +2,12 @@
 
 ## Subprojects
 
-Eleven independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.venv`, and
+Twelve independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and `.venv`, and
 `dev/config.py:SUBPROJECTS` is the list the tooling iterates over.
 
 | Subproject | Import package | Purpose |
 | --- | --- | --- |
+| `ecosim` | `ecosim` | The `ecosim` command, which checks a simulation and runs it on one computer |
 | `ecosim-common` | `ecosim_common` | Shared abstractions: config, communication, simulation primitives |
 | `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for the FMU clients and `ecosim-hpc` |
 | `ecosim-server` | `ecosim_server` | The simulation server: state, repositories, measurements |
@@ -29,6 +30,11 @@ flowchart TD
   tests[integration-tests] --> hpc[ecosim-hpc]
   tests --> testcommon[ecosim-test-common]
   tests --> python[ecosim-client-python]
+  ecosim[ecosim] --> server
+  ecosim --> fmu2
+  ecosim --> fmu3
+  ecosim --> python
+  ecosim --> fmpy
   hpc --> server[ecosim-server]
   hpc --> fmu2[ecosim-client-fmu-v2]
   hpc --> fmu3[ecosim-client-fmu-v3]
@@ -45,6 +51,8 @@ flowchart TD
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster
+- `ecosim` depends on the server and on the clients that need no extra setup, so one install runs a simulation on one
+  computer. It reads the config files with their readers, so its check follows a changed rule at once
 - `integration-tests` depends on all of them, which is why it is excluded from `dev/run_unit_tests.py`
 
 Every internal dependency is pinned to the exact version (`ecosim-common==0.14.0`) and resolved
@@ -72,6 +80,18 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 | `simulation` | Interface identity: `InterfaceId`, `ModelInterfaceId`, `SimulatorInterfaceId` |
 | `tech` | Infrastructure: logging, threading, json, datetime |
 | `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |
+
+### `ecosim`
+
+| Module | Contains |
+| --- | --- |
+| `main.py`, `command.py` | The dispatcher and `COMMANDS`. A command is a module with `build_parser()` and `main(passed_arguments) -> int`, imported only when it runs, so `ecosim --help` needs neither the server nor fmpy |
+| `simulation_folder.py` | `SimulationFolder`: where the files of a simulation are |
+| `simulation_options.py`, `simulation_command_line.py` | The options the commands share, many of them the server's own, and `RunOptions` |
+| `run_length.py` | `--step-size` and `--duration` with a unit, like `15min` |
+| `server_arguments.py` | The arguments a command gives `ecosim-server`, with the options after `--` |
+| `report_lines.py` | The lines that several commands print: the table of the simulators and the length of a run |
+| `check/` | `ecosim check`: `SimulationCheck` loads a simulation with the readers of the server and the clients and keeps every problem |
 
 ### `ecosim_server`
 
@@ -172,6 +192,7 @@ Each deployable subproject declares a console script:
 
 | Command | Module |
 | --- | --- |
+| `ecosim` | `ecosim.main:main` |
 | `ecosim-server` | `ecosim_server.main:main` |
 | `ecosim-client-fmu-v2` | `ecosim_client_fmu_v2.main:main` |
 | `ecosim-client-fmu-v3` | `ecosim_client_fmu_v3.main:main` |
@@ -182,7 +203,8 @@ Each deployable subproject declares a console script:
 
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
-Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`. Without `--debug`,
+Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`, the `main` of each
+`ecosim` command through the dispatcher. Without `--debug`,
 an error prints one line on stderr instead of a traceback and the command exits with code 1.
 
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is

@@ -168,7 +168,11 @@ class DatabaseConfig:
         try:
             return cls._for_postgres(config=config, db_overwrite=db_overwrite)
         except MissingSectionOrKeyException as error:
-            raise ConfigParserException(f"{error}. PostgreSQL results need it. To write the results as files, pass --database-type file") from error
+            raise ConfigParserException(
+                f"{error}. PostgreSQL results need it. To write the results as files, pass --database-type file",
+                section=error.section,
+                option=error.option,
+            ) from error
 
     @classmethod
     def for_files(cls, directory: Path, drop_existing_schema: bool = False) -> DatabaseConfig:
