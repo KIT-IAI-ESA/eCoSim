@@ -67,7 +67,7 @@ The `preferences.ini` passed to a client with `--config-file`. `--server-host` a
 
 ## FMU clients
 
-Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up for an FMU of the other FMI version, for an input of the `.fmc` file that is not an input of the FMU, for an output of the `.fmc` file that is not an output of the FMU, and for a variable of a type they do not support. `--validate-fmu-file-only` reports the same. When a run starts, the clients also check the interfaces that `simulation.json` gives them. For one the FMU does not have, or one of a type they do not support, they do not start the simulation, and the run fails right away. An interface the FMU has but the `.fmc` file does not list only gives a warning. `ecosim-client-fmu-v2` supports Real variables only. `ecosim-client-fmu-v3` supports `Float64` variables only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter.
+Read in addition by `ecosim-client-fmu-v2` and `ecosim-client-fmu-v3`. `fmu_file` is relative to the ini file. Both clients stop at start-up for an FMU of the other FMI version, for an input of the `.fmc` file that is not an input of the FMU, for an output of the `.fmc` file that is not an output of the FMU, and for an interface of a type they do not support. `--validate-fmu-file-only` reports the same. When a run starts, the clients also check the interfaces that `simulation.json` gives them. For one the FMU does not have, or one of a type they do not support, they do not start the simulation, and the run fails right away. An interface the FMU has but the `.fmc` file does not list only gives a warning. `ecosim-client-fmu-v2` supports Real interfaces only. `ecosim-client-fmu-v3` supports `Float64` interfaces only: scalars and one-dimensional arrays with a fixed size or a size from a structural parameter. The optional `[start_values]` section sets parameters and other variables of the FMU before the run, see [start values](#start-values).
 
 | Section | Key | Type | Default |
 | --- | --- | --- | --- |
@@ -136,6 +136,42 @@ fmu_file = [house.fmu]
 
 Without brackets, as in `fmc_file = house.fmc`, the client stops with an error. The clients only read the
 first entry of `fmc_file` and `fmu_file`.
+
+## Start values
+
+The `preferences.ini` of an FMU client can set variables of the FMU in a `[start_values]` section, for
+example parameters, without exporting the FMU again. The client sets them after it loads the FMU and before
+the FMU initializes, so they count from the first step on:
+
+```ini
+[start_values]
+U_wall = 0.3
+zon5R1C.capMas.T = 291.15
+```
+
+- The key is the name of the variable in the FMU, in the same case. Two keys that differ only in case count
+  as the same key, and the client stops for them. A value is in the unit of the FMU, for example `K` for a
+  temperature. A comment goes on a line of its own.
+- A variable can be set if the FMU allows it before its initialization: a parameter, an input that is not in
+  the `.fmc` file, or another variable with `initial="exact"` or `"approx"` in `modelDescription.xml`, such as
+  the start value of a state. An input that is not in the `.fmc` file keeps the value for the whole run, as
+  long as `simulation.json` does not connect it either. With `"approx"`, the value is only the first guess of
+  an iteration, and the FMU calculates the real one.
+- Constants, variables the FMU calculates, the time, structural parameters and the inputs in the `.fmc` file
+  cannot be set.
+- `ecosim-client-fmu-v2` takes Real, Integer and Boolean variables. `ecosim-client-fmu-v3` takes Float32,
+  Float64, the Int and UInt types and Boolean, but no arrays. A Boolean is `true`, `false`, `yes` or `no`.
+- At start-up the client stops for a name the FMU does not have, a variable that cannot be set or has another
+  type, and a value that is not a number of that type or lies outside the `min` or `max` of the variable.
+  `--validate-fmu-file-only` reports the same. The values the FMU gets are listed under `Start values` in the
+  `CLIENT CONFIG` block at start-up.
+- A section with a name close to `start_values`, like `[Start_Values]`, stops the client too, since its values
+  would be left out without a word.
+- A tool can fix a parameter when it exports the FMU. If the FMU marks it as a constant, the client stops.
+  If the model only uses a parameter in some cases, a new value may change nothing, so check the effect on a
+  short run.
+- A restore with `--restore-simulation-run` needs the start values of the aborted run.
+- The MATLAB, Pyro5 and Python clients do not read `[start_values]`.
 
 ## Interface files
 

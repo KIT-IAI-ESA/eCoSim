@@ -98,7 +98,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
 | `--debug` |  | flag | Show debug messages and the full traceback of an error. |
-| `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other. Starts no client. |
+| `--validate-fmu-file-only` |  | flag | Only check the FMU, the .fmc file and the [start_values] of the client config. Starts no client. |
 
 **Server connection**
 

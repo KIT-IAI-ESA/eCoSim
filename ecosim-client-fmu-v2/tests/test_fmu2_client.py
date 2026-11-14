@@ -15,8 +15,8 @@ from ecosim_test_common.test_data.generate_client_config import generate_mocked_
 _FMU_FILE = resource_path() / "fmu_v2" / "test_fmus" / "Sub1_Linux.fmu"
 
 
-def _create_client() -> FMU2Client:
-    simulator_config = _create_simulator_config()
+def _create_client(start_value_texts: dict[str, str] | None = None) -> FMU2Client:
+    simulator_config = _create_simulator_config(start_value_texts=start_value_texts)
     return FMU2Client(
         _client_config=generate_mocked_client_config(),
         _channel_or_none=MagicMock(spec=ESPChannel),
@@ -25,15 +25,15 @@ def _create_client() -> FMU2Client:
     )
 
 
-def _create_simulator_config() -> FMU2SimulatorConfig:
-    fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE)
-    return FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["pos_2"], output_names=[])
+def _create_simulator_config(start_value_texts: dict[str, str] | None = None) -> FMU2SimulatorConfig:
+    fmu_config = FMUBaseConfig(fmu_file=_FMU_FILE, start_value_texts=start_value_texts or {})
+    return FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["pos_2"], output_names=["pos_1"])
 
 
-def _create_client_with_spy(fmu_instance: SpyFMUInstance, is_initialized: bool) -> FMU2Client:
+def _create_client_with_spy(fmu_instance: SpyFMUInstance, is_initialized: bool, start_value_texts: dict[str, str] | None = None) -> FMU2Client:
     return FMU2Client(
         _client_config=generate_mocked_client_config(),
-        _simulator_config=_create_simulator_config(),
+        _simulator_config=_create_simulator_config(start_value_texts=start_value_texts),
         _fmu_instance=fmu_instance,
         _is_initialized=is_initialized,
     )
@@ -99,3 +99,38 @@ def test_a_failing_free_still_removes_the_extracted_files() -> None:
     client.on_app_shutdown()
 
     assert not _unzip_dir(client).exists()
+
+
+@skip_unless_fmpy_loads(_FMU_FILE)
+def test_a_start_value_is_set_before_the_initialization_of_the_fmu() -> None:
+    client = _create_client(start_value_texts={"mass.s": "1.25"})
+
+    client._initialize_model()  # noqa: SLF001
+
+    # the position of the mass is the output pos_1, and a value set after the initialization would leave it at 0.5
+    assert client._get_model_output("pos_1") == 1.25  # noqa: SLF001
+    client.on_app_shutdown()
+
+
+def test_a_start_value_is_set_after_the_experiment_setup_and_before_the_initialization_mode() -> None:
+    # FMI 2.0 takes a value of a variable with initial="approx" only before enterInitializationMode
+    fmu_instance = SpyFMUInstance()
+    client = _create_client_with_spy(fmu_instance=fmu_instance, is_initialized=False, start_value_texts={"mass.s": "1.25"})
+
+    client._initialize_model()  # noqa: SLF001
+
+    assert fmu_instance.start_calls == [
+        "instantiate",
+        "setupExperiment",
+        "setReal [369098765] [1.25]",
+        "enterInitializationMode",
+        "exitInitializationMode",
+    ]
+    client.on_app_shutdown()
+
+
+def test_the_start_values_are_listed_with_their_unit_for_the_start_up_block() -> None:
+    client = _create_client_with_spy(fmu_instance=SpyFMUInstance(), is_initialized=False, start_value_texts={"mass.s": "1.25"})
+
+    assert client._start_values_for_start_up() == ["mass.s = 1.25 m"]  # noqa: SLF001
+    client.on_app_shutdown()

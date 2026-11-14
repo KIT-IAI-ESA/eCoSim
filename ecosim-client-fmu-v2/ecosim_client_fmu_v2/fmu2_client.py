@@ -53,8 +53,13 @@ class FMU2Client(SimulatorClient):
     ) -> None:
         self._fmu_instance.instantiate()
         self._fmu_instance.setupExperiment(startTime=start_time)
+        self._simulator_config.start_values().set_on(self._fmu_instance)
         self._fmu_instance.enterInitializationMode()
         self._fmu_instance.exitInitializationMode()
+
+    @override
+    def _start_values_for_start_up(self) -> list[str]:
+        return self._simulator_config.start_values().as_lines()
 
     @override
     def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:

@@ -1,3 +1,4 @@
+import logging
 import re
 import shutil
 import subprocess
@@ -96,3 +97,23 @@ def test_validation_fails_for_swapped_inputs_and_outputs(tmp_path: Path) -> None
 
     with pytest.raises(ValueError, match="has no input Float64_continuous_output and no output Float64_continuous_input"):
         validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)
+
+
+def test_validation_fails_for_a_start_value_the_fmu_does_not_have(tmp_path: Path) -> None:
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+    with open(config_directory / "feedthrough.ini", "a", encoding="utf-8") as config_file:
+        config_file.write("[start_values]\nFloat64_tunable_paramter = 2.5\n")
+
+    with pytest.raises(ValueError, match=re.escape("Float64_tunable_paramter: not a variable of the FMU. Did you mean Float64_tunable_parameter?")):
+        validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)
+
+
+def test_validation_lists_the_start_values_the_fmu_takes(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO, logger="ecosim_common_fmpy")
+    config_directory = shutil.copytree(src=fmu2_model_path().parent, dst=tmp_path / "fmu2") / "configs"
+    with open(config_directory / "feedthrough.ini", "a", encoding="utf-8") as config_file:
+        config_file.write("[start_values]\nFloat64_tunable_parameter = 2.5\n")
+
+    validate_fmu_file_or_error(config=ConfigParser(config_directory / "feedthrough.ini"), fmi_major_version=2)
+
+    assert "Start value: Float64_tunable_parameter = 2.5" in caplog.messages

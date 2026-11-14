@@ -24,6 +24,11 @@ class ConfigParser:
         self._config: configparser.ConfigParser = configparser.ConfigParser(interpolation=None)
         try:
             self._config.read(path)
+        except configparser.DuplicateOptionError as error:
+            raise ConfigParserException(
+                f"{path} has the key {error.option} twice in [{error.section}], the second time in line {error.lineno}. "
+                + "Keys ignore case, so two keys that differ only in case are the same key.",
+            ) from error
         except configparser.Error as error:
             raise ConfigParserException(self._unreadable_file_message(error=error)) from error
 
@@ -125,6 +130,21 @@ class ConfigParser:
         option: str,
     ) -> bool:
         return self._config.has_option(section, option)
+
+    def sections(self) -> List[str]:
+        return self._config.sections()
+
+    def get_section(
+        self,
+        section: str,
+    ) -> dict[str, str]:
+        """The keys as written, since the other getters ignore their case. Empty for a missing section."""
+        case_keeping_config = configparser.ConfigParser(interpolation=None)
+        case_keeping_config.optionxform = str  # type: ignore[assignment, method-assign]
+        case_keeping_config.read(self.config_file)
+        if not case_keeping_config.has_section(section):
+            return {}
+        return dict(case_keeping_config.items(section))
 
     def _get(
         self,

@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.close_name import closest_name
 from fmpy.model_description import ModelDescription
 
+from ecosim_common_fmpy.config.start_values import StartValues
+
 
 @dataclass(frozen=True)
 class FMUBaseConfig:
     fmu_file: Path
+    start_value_texts: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def of_config_parser(
@@ -20,6 +23,15 @@ class FMUBaseConfig:
         fmu_file = (config_parser.config_file.parent / config_parser.get_string_array("fmu", "fmu_file")[0]).absolute()
         return FMUBaseConfig(
             fmu_file=fmu_file,
+            start_value_texts=StartValues.texts_of(config_parser),
+        )
+
+    def start_values(self, model_description: ModelDescription, input_names: list[str]) -> StartValues:
+        return StartValues.of_texts(
+            texts=self.start_value_texts,
+            model_description=model_description,
+            input_names=input_names,
+            fmu_file=self.fmu_file,
         )
 
     def reason_the_model_cannot_run(
