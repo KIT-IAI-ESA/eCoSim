@@ -75,3 +75,10 @@ def test_an_fmu_input_that_the_fmc_file_does_not_list_is_no_problem_for_the_mode
     settings = ServerInterfaceSettings(inputs=["Float64_continuous_input"], outputs=["Float64_continuous_output"])
 
     assert feedthrough_config.reason_the_model_cannot_run(server_interface_settings=settings) is None
+
+
+def test_a_value_that_does_not_fit_an_fmi_3_integer_type_is_rejected() -> None:
+    fmu_config = FMUBaseConfig(fmu_file=_FEEDTHROUGH_FMU, start_value_texts={"UInt8_input": "300"})
+
+    with pytest.raises(ValueError, match=re.escape("UInt8_input: 300 does not fit into UInt8, which takes 0 to 255")):
+        FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[], output_names=[])
