@@ -11,7 +11,7 @@ class CLIArguments(AppConfig):
         additional_parameters: list[AppConfigParameter] | None = None,
     ) -> None:
         super().__init__(
-            cli_description="This is a client of eCoSimPy.",
+            cli_description="This is a client of eCoSim.",
             parameters=[
                 AppConfigParameter(
                     name="config-file",

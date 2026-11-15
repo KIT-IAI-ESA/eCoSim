@@ -1,10 +1,10 @@
 import logging
 from time import sleep
 
-from art import tprint
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_common.tech.banner import print_banner
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -14,7 +14,7 @@ from ecosim_server.server import Server
 
 
 def main() -> None:
-    tprint("eCoSimPy", font="tarty1", chr_ignore=True)
+    print_banner()
     print(f"Server - {get_module_version(name='ecosim-server')}")
     sleep(0.5)
 

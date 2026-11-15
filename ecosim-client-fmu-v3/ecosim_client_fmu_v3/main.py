@@ -2,19 +2,19 @@ import logging
 import sys
 from time import sleep
 
-from art import tprint
 from ecosim_common.config import config_parser
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_common_fmpy.config.fmpy_cli_arguments import FMPyCliArguments
 from ecosim_common_fmpy.config.validate_fmu_file_or_error import validate_fmu_file_or_error
+from ecosim_common.tech.banner import print_banner
 
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 
 
 def main() -> None:
-    tprint("eCoSimPy", font="tarty1", chr_ignore=True)
+    print_banner()
     print(f"FMUv3 Client - {get_module_version('ecosim_client_fmu_v3')}")
     sleep(0.5)
 
