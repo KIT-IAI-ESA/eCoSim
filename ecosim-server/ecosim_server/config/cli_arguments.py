@@ -20,7 +20,7 @@ class CLIArguments(AppConfig):
     ):
         super().__init__(
             passed_arguments=passed_arguments or sys.argv[1:],
-            cli_description="This is the server of eCoSimPy.",
+            cli_description="This is the server of eCoSim.",
             parameters=[
                 AppConfigParameter(
                     name="server-config",

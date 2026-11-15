@@ -2,18 +2,18 @@ import logging
 import sys
 from time import sleep
 
-from art import tprint
 from ecosim_common.client.config.cli_arguments import CLIArguments
 from ecosim_common.config import config_parser
 from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_common.tech.banner import print_banner
 
 from ecosim_client_pyro5.pyro_client import PyroClient
 
 
 def main() -> None:
-    tprint("eCoSimPy", font="tarty1", chr_ignore=True)
+    print_banner()
     print(f"Pyro5 Client - {get_module_version('ecosim_client_pyro5')}")
     sleep(0.5)
     args = CLIArguments()
