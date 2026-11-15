@@ -1,51 +1,43 @@
-# eCoSim
+<h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/wordmark-dark.png">
+  <img alt="eCoSim" src="docs/static/img/readme/wordmark-light.png" height="56">
+</picture>
+</h1>
 
 A co-simulation framework for energy systems.
 
 [![tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml)
 [![docs](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/docs.yml/badge.svg)](https://ecosim.easimov.com/docs)
+[![licence](https://img.shields.io/badge/licence-Apache%202.0-00876c)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.12%20%7C%203.14-00876c)](https://ecosim.easimov.com/docs/getting-started/installation)
 
 eCoSim couples independent simulation models, such as a house, its heating and the weather, into one
 co-simulation. A server owns the clock and the data flow. Each model runs in its own client, and for
 every step the server sends each client its inputs, receives its outputs and passes them on to the
 inputs they are connected to.
 
+```mermaid
+flowchart LR
+    fmu2["FMI 2.0 model"] <--> server
+    fmu3["FMI 3.0 model"] <--> server
+    matlab["MATLAB script"] <--> server
+    pyro5["Python model over Pyro5"] <--> server
+    server(("Server")) --> results[("Results in PostgreSQL<br/>or JSON lines files")]
+```
+
 Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models served over
 Pyro5. The server stores the results in PostgreSQL/TimescaleDB or as JSON lines on disk. For many
 simulations at once, `ecosim-hpc` runs the server and the clients on a Dask cluster.
 
-## Packages
+## Quick start
 
-| Folder | Purpose |
-| --- | --- |
-| `ecosim-server` | The server: runs the simulation and stores the results |
-| `ecosim-client-fmu-v2` | Client for FMI 2.0 models |
-| `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
-| `ecosim-client-matlab` | Client for models written as MATLAB scripts |
-| `ecosim-client-pyro5` | Client for Python models served over Pyro5 |
-| `ecosim-hpc` | Runs the server and the clients on a Dask cluster |
-| `ecosim-common`, `ecosim-common-fmpy` | Code shared by the packages |
-| `ecosim-test-common` | Shared test helpers, test data and models |
-| `integration-tests` | Tests that run the packages together |
-
-`simulation_examples/` holds the examples, `docs/` the documentation and `dev/` the scripts for
-development.
-
-## Installation
-
-eCoSim is installed from source. You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
-The MATLAB client needs exactly Python 3.12.
+You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). eCoSim is installed from source:
 
 ```shell
 git clone https://github.com/KIT-IAI-ESA/ecosim.git
 cd ecosim
 ```
-
-Each package is its own uv project. `uv run --project <folder>` creates the environment of that
-folder the first time it is used, so there is no separate install step. See
-[Installation](https://ecosim.easimov.com/docs/getting-started/installation) for the details.
-
-## Quick start
 
 The building example couples three FMI 2.0 models for 100 steps and writes the results as files, so
 no database is needed. Start the server:
@@ -71,10 +63,18 @@ When the simulation is finished, the server and the clients exit, and `results/`
 of each model as JSON lines. The [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start)
 explains the results and the files of the example.
 
+## What the server prints
+
+A real run of the quick start, with the waits shortened. The clients run in the second terminal.
+
+<img alt="The server terminal of the quick start: the settings, the wait for the three clients, the 100 steps and the measurement at the end" src="docs/static/img/readme/quick-start-server.svg" width="100%">
+
 ## Documentation
 
 The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/docs).
 
+- [Installation](https://ecosim.easimov.com/docs/getting-started/installation) and the
+  [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start)
 - Guides: [Docker](https://ecosim.easimov.com/docs/guides/docker),
   [HPC cluster](https://ecosim.easimov.com/docs/guides/hpc-cluster),
   [MATLAB client](https://ecosim.easimov.com/docs/guides/matlab-client),
@@ -82,27 +82,12 @@ The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/doc
 - Reference: [command line](https://ecosim.easimov.com/docs/reference/command-line),
   [configuration files](https://ecosim.easimov.com/docs/reference/configuration-files)
 
-## Development
+## Contributing
 
 Questions, bug reports and pull requests are welcome, see [Contributing](CONTRIBUTING.md). To work on
-eCoSim itself, start with the project setup.
-
-- [Project setup](docs/content/development/project-setup.md)
-- [Architecture](docs/content/development/architecture.md)
-- [Developing](docs/content/development/developing.md)
-- [Testing](docs/content/development/testing.md)
-- [Dependencies](docs/content/development/dependencies.md)
-- [Adding a subproject](docs/content/development/adding-a-subproject.md)
-- [Coding guidelines](docs/content/development/coding-guidelines.md)
-- [Development tips](docs/content/development/tips.md)
-- [Release history](docs/content/development/release-history.md)
-
-## Credits
-
-eCoSim is a project of the [Energy System Analysis](https://www.iai.kit.edu/english/groups_4104.php)
-research group at the [Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
-of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php). See also
-[eASiMOV](https://easimov.cloud.iai.kit.edu) and the [Energy Lab](https://www.elab.kit.edu/english/index.php).
+eCoSim itself, start with the [project setup](docs/content/development/project-setup.md). The
+[architecture page](docs/content/development/architecture.md) lists the packages of this repository
+and what each one does.
 
 ## Citing eCoSim
 
@@ -112,3 +97,12 @@ GitHub shows them under "Cite this repository" on the repository page.
 ## Licence
 
 eCoSim is released under the [Apache License 2.0](LICENSE).
+
+## Credits
+
+<a href="https://www.iai.kit.edu/english/groups_4104.php"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/esa-dark.png"><img alt="ESA" src="docs/static/img/readme/esa-light.png" height="36"></picture></a>
+
+eCoSim is a project of the [Energy System Analysis](https://www.iai.kit.edu/english/groups_4104.php)
+research group at the [Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
+of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php). See also
+[eASiMOV](https://easimov.cloud.iai.kit.edu) and the [Energy Lab](https://www.elab.kit.edu/english/index.php).
