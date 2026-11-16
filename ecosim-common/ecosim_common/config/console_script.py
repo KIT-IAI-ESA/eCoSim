@@ -1,12 +1,13 @@
 import textwrap
 from dataclasses import dataclass
 
+from ecosim_common.tech import banner
 from ecosim_common.tech.deployment.module_version import get_module_version
 
 
 @dataclass(frozen=True)
 class ConsoleScript:
-    """A command as its --help and its --version show it. The name is also the name of its package."""
+    """A command as its --help, its --version and its banner show it. The name is also the name of its package."""
 
     name: str
     description: str
@@ -19,3 +20,8 @@ class ConsoleScript:
         if not self.examples:
             return None
         return "\n".join(["examples:", *(textwrap.indent(text=example, prefix="  ") for example in self.examples)])
+
+    def print_banner(self) -> None:
+        banner.print_banner()
+        # flush, so the banner stays at the top of a log file that also gets the log lines from stderr
+        print(f"{self.name} {self.version()}", flush=True)

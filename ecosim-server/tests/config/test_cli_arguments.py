@@ -1,6 +1,7 @@
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_server.config.cli_arguments import CLIArguments
+from ecosim_server.main import main
 from ecosim_test_common.resources.config_files import config_file_path_str
 
 REQUIRED_ARGUMENTS = [
@@ -42,3 +43,11 @@ def test_the_communication_protocol_takes_the_spellings_it_took_before(value: st
     arguments = CLIArguments(passed_arguments=[*REQUIRED_ARGUMENTS, "--communication-protocol", value])
 
     assert arguments.communication_protocol() is CommunicationProtocol.TCP_SOCKET
+
+
+def test_the_help_does_not_print_the_banner(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(passed_arguments=["--help"])
+
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.startswith("usage: ecosim-server --server-config FILE --simulation-config FILE --steps N [options]")
