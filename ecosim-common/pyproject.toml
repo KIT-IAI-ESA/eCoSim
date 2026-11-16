@@ -61,6 +61,8 @@ disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
+    # Ignore art library (not typed)
+    "art",
     # dask is only typed partly
     "dask",
     "dask.distributed",
