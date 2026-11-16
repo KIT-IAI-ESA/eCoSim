@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -107,13 +106,12 @@ def test_the_test_configs_are_accepted(file_name: str) -> None:
 def test_the_server_does_not_start_with_an_invalid_connection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     file = config_file(tmp_path, a_simulator("weather", an_output("T_out")), a_simulator("house", an_input("T", simulator="-1", interface="T_out")))
     arguments = ["--server-config", config_file_path_str("server_config.ini"), "--simulation-config", str(file), "--steps", "1"]
-    monkeypatch.setattr(sys, "argv", ["ecosim-server", *arguments])
-    for name in ("sleep", "ShutdownManager", "init_logger", "create_repositories"):
+    for name in ("ShutdownManager", "init_logger", "create_repositories"):
         monkeypatch.setattr(server_main, name, MagicMock())
     server = MagicMock()
     monkeypatch.setattr(server_main, "Server", server)
 
     with pytest.raises(RuntimeError, match="simulator index '-1'"):
-        server_main.main()
+        server_main.main(passed_arguments=arguments)
 
     server.assert_not_called()

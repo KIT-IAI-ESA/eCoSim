@@ -1,11 +1,9 @@
 import logging
-from time import sleep
+from typing import Sequence
 
-from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
-from ecosim_common.tech.banner import print_banner
-from ecosim_server.config.cli_arguments import CLIArguments
+from ecosim_server.config.cli_arguments import CONSOLE_SCRIPT, CLIArguments
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories, create_repositories
@@ -13,12 +11,9 @@ from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurem
 from ecosim_server.server import Server
 
 
-def main() -> None:
-    print_banner()
-    print(f"Server - {get_module_version(name='ecosim-server')}")
-    sleep(0.5)
-
-    args = CLIArguments()
+def main(passed_arguments: Sequence[str] | None = None) -> None:
+    args = CLIArguments(passed_arguments=passed_arguments)
+    CONSOLE_SCRIPT.print_banner()
 
     ShutdownManager().init()
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)

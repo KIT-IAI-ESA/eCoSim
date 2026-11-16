@@ -1,15 +1,13 @@
 import logging
 import sys
-from time import sleep
+from typing import Sequence
 
 from ecosim_common.config import config_parser
 from ecosim_common.config.console_script import ConsoleScript
-from ecosim_common.tech.deployment.module_version import get_module_version
 from ecosim_common.tech.logger.logger import init_logger
 from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_common_fmpy.config.fmpy_cli_arguments import FMPyCliArguments
 from ecosim_common_fmpy.config.validate_fmu_file_or_error import validate_fmu_file_or_error
-from ecosim_common.tech.banner import print_banner
 
 from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 
@@ -24,12 +22,9 @@ CONSOLE_SCRIPT = ConsoleScript(
 )
 
 
-def main() -> None:
-    print_banner()
-    print(f"FMUv3 Client - {get_module_version('ecosim_client_fmu_v3')}")
-    sleep(0.5)
-
-    args = FMPyCliArguments(console_script=CONSOLE_SCRIPT)
+def main(passed_arguments: Sequence[str] | None = None) -> None:
+    args = FMPyCliArguments(console_script=CONSOLE_SCRIPT, passed_arguments=passed_arguments)
+    CONSOLE_SCRIPT.print_banner()
 
     init_logger(log_level=logging.DEBUG if args.debug_enabled() else logging.INFO)
     ShutdownManager().init()
