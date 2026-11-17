@@ -17,6 +17,7 @@ from ecosim_server.client.message_subscription import MessageSubscription
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
+from ecosim_server.failure_texts import LOST_CLIENTS_PREFIX, LOST_CLIENTS_SUFFIX
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.progress_logger import progress_logger
 from ecosim_server.run_summary import RunSummary
@@ -192,7 +193,8 @@ class SimulationExecutor:
     ) -> None:
         lost_client_ids = self._client_communication.lost_client_ids(client_ids)
         if len(lost_client_ids) > 0:
-            raise RuntimeError(f"Lost client {', '.join(str(client_id) for client_id in lost_client_ids)} while waiting for {waiting_for}")
+            lost_clients = ", ".join(str(client_id) for client_id in lost_client_ids)
+            raise RuntimeError(f"{LOST_CLIENTS_PREFIX}{lost_clients}{LOST_CLIENTS_SUFFIX}waiting for {waiting_for}")
 
     def _subscribe_to(
         self,

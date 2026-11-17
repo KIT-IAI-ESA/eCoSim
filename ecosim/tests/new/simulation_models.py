@@ -12,7 +12,7 @@ def create_interface(name: str, unit: str = "", shape: tuple[int, ...] = (), sta
 
 
 def create_model(name: str, inputs: Sequence[str | FMUInterface] = (), outputs: Sequence[str | FMUInterface] = ()) -> SimulationModel:
-    """A model of an FMI 2.0 FMU that is never read. A name stands for an interface without a unit."""
+    """Builds a model of an FMI 2.0 FMU that is never read."""
     interfaces = FMUInterfaces(
         fmu_file=Path(f"{name}.fmu"),
         fmi_version="2.0",

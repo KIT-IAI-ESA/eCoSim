@@ -6,24 +6,21 @@ from ecosim_common.tech.deployment.module_version import get_module_version
 
 @dataclass(frozen=True)
 class Command:
-    """Its module has build_parser() and main(passed_arguments), and is imported when it runs."""
-
     name: str
     summary: str
+    # has build_parser() and main(passed_arguments)
     module: str
 
 
-# in the order of a day with eCoSim, which is also the order of the help
 COMMANDS = (
     Command(name="new", summary="Write a simulation folder from FMUs", module="ecosim.new.new_command"),
     Command(name="check", summary="Check a simulation folder before a run", module="ecosim.check.check_command"),
-    Command(name="run", summary="Run a simulation on this computer: the server and every client", module="ecosim.run.run_command"),
+    Command(name="run", summary="Run a simulation locally", module="ecosim.run.run_command"),
     Command(name="results", summary="Show the results of a run, or write them to a CSV file", module="ecosim.results.results_command"),
 )
 
 
 def command_parser(name: str, description: str, examples: tuple[str, ...]) -> EcosimArgumentParser:
-    """The parser of a command that works on a simulation, with --version and examples."""
     parser = EcosimArgumentParser(
         prog=f"ecosim {name}",
         usage="%(prog)s [options] [SIMULATION] [-- SERVER OPTIONS]",

@@ -5,13 +5,12 @@ description: Write a simulation folder from your FMUs with one command.
 
 # Your own models
 
-`ecosim new` writes a simulation folder from FMU files: a folder for each model with the FMU, its `.fmc` file and its
-client config, and `server/` with the server config and `simulation.json`. It connects the inputs and outputs that
-have the same name, `--connect` connects others, and at the end it checks the simulation as `ecosim check` does. The
-files are the ones you would write by hand, so you can change them later.
+`ecosim new` writes a simulation folder from FMU files. Each model gets a folder with the FMU, its `.fmc` file and
+its client config. `server/` gets the server config and `simulation.json`. Inputs and outputs with the same name
+are connected. You can change all these files later.
 
-The commands below run in `simulation_examples`, where `uv run` finds the `ecosim` command. The three FMUs of the
-building example make the same simulation as the hand-written files:
+The commands below run in `simulation_examples`. The three FMUs of the building example give the same simulation
+as the files of the example:
 
 ```shell
 uv run ecosim new my_building building/Modules/house/house.fmu building/Modules/occupancy/occupancy.fmu \
@@ -41,38 +40,31 @@ Run it with: uv run ecosim run my_building
 uv run ecosim run my_building
 ```
 
-These are the 18 connections of `building/server/simulation.json`, and the run gives the same results as the
-hand-written simulation. The weather model stores 24 values a step instead of 11, since `ecosim new` keeps every output.
-A command that `ecosim` prints for you to copy starts the way you started `ecosim`, with `uv run` in
-`simulation_examples`.
+These are the 18 connections of `building/server/simulation.json`. The run gives the same results as the building
+example. The weather model stores 24 values per step instead of 11. `ecosim new` keeps every output.
 
-If the check at the end finds a problem, like an FMU without a binary for this computer, the output lists it under
-`Problems:` and `ecosim new` ends with exit code 1. The simulation stays written, so you can fix its files and check it
-again.
+At the end `ecosim new` checks the simulation like `ecosim check`. A problem is listed under `Problems:` and the
+exit code is 1. The files are written anyway. Fix them and check again.
 
 ## The models
 
-- An FMU argument is an `.fmu` file, a folder, or `NAME=FILE`. A folder adds every `.fmu` file directly in it, in
-  the order of their names, and not those in its folders. On Windows, where `*.fmu` is not expanded, a folder is
-  the way to give many FMUs at once.
-- A model is named after its file, without `.fmu` and with `_` for every character other than letters, digits, `_`
-  and `-`. `NAME=FILE` gives it another name, for example `house2=house.fmu` for a second house. The name is also
-  the name of its simulator and of its folder in `Modules/`. Two names that differ only in case are refused.
-- The models keep the order of the arguments, which is the order of `simulators` in `simulation.json`.
-- `ecosim new` takes FMI 2.0 and FMI 3.0 FMUs for co-simulation. A Python, MATLAB or Pyro5 model is added by hand,
-  see the [Python client](../guides/python-client.md) guide.
+An FMU argument is an `.fmu` file, a folder with `.fmu` files or `NAME=FILE`. A model is named after its file.
+`NAME=FILE` sets another name, for example `house2=house.fmu` for a second house. The name is also the name of
+the simulator and of its folder in `Modules/`.
+
+`ecosim new` takes FMI 2.0 and FMI 3.0 FMUs for co-simulation. Add a Python, MATLAB or Pyro5 model manually, see
+the [Python client](../guides/python-client.md) guide.
 
 ## How the inputs get connected
 
-An input is connected to an output of another model if that output is the only one with the same name. A dot and an
-underscore count as the same, so `weatherBus_TDryBul` gets its value from `weatherBus.TDryBul`. An FMI 3.0 array is
-only connected to an input that takes as many values. A connection between two units, like `degC` and `K`, is marked
-in the list. Nothing converts the values.
+An input is connected to the output of another model with the same name. A dot and an underscore count as the
+same: `weatherBus_TDryBul` gets its value from `weatherBus.TDryBul`. Values are not converted between units. A
+connection between two different units, like `degC` and `K`, is marked in the list.
 
-Every other input keeps the start value of its FMU. It is listed with the reason, and with the closest name of an
-output if one is very close. Four FMUs whose names do not all match, a house with a heating and a ventilation that
-control its room temperature. They are FMUs of the tests in
-`ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/`, in `linux` or `windows`, and the commands
+Every other input keeps the start value of its FMU. The output lists it, with the closest output name if there is
+one. The next example has four FMUs whose names do not all match: a house with a heating and a ventilation that
+control its room temperature. The FMUs are test files in
+`ecosim-test-common/ecosim_test_common/resources/fmu_v2/models/house/`, in `linux` or `windows`. The commands
 below leave out that folder:
 
 ```shell
@@ -92,7 +84,7 @@ Connections:
     T_out  <-  T_out
   house <- ventilation, 1 connection
     ventilation_pressure_control_signal  <-  ventilation_pressure_control_signal
-Not connected, so these inputs keep the start value of their FMU:
+Not connected. These inputs keep the start value of their FMU:
   house.dir_sol_iradiance: no output of another model has this name. Did you mean weather.dir_sol_irradiance? Then add --connect house.dir_sol_iradiance=weather.dir_sol_irradiance
   house.heating_heatExchanger_control_signal: no output of another model has this name.
   house.vetnilation_valve_control_signal: no output of another model has this name. Did you mean ventilation.ventilation_valve_control_signal? Then add --connect house.vetnilation_valve_control_signal=ventilation.ventilation_valve_control_signal
@@ -102,18 +94,18 @@ After a change, check it with: uv run ecosim check house_simulation
 Run it with: uv run ecosim run house_simulation
 ```
 
-The table counts the inputs that `simulation.json` connects, as `ecosim check` does. An input that is not connected
-is in the `.fmc` file, but not in `simulation.json`. To connect it in an existing simulation, add it to its simulator in
-`simulation.json` with `connected_to`, see [Configuration files](../reference/configuration-files.md#simulation-config).
+The table counts only the connected inputs. An input that is not connected is in the `.fmc` file but not in
+`simulation.json`. To connect it later, add it to its simulator in `simulation.json` with `connected_to`, see
+[Configuration files](../reference/configuration-files.md#simulation-config).
 
 ## Other names and loops
 
-`--connect INPUT=OUTPUT` connects an input to an output of another name, like
-`--connect heating.T_room=house.room_temperature`. It replaces the match by name. Give it once for each input.
+`--connect INPUT=OUTPUT` connects an input to an output with another name, like
+`--connect heating.T_room=house.room_temperature`. Pass it once per input.
 
-The house and its two controllers then feed each other: the house needs the signals of the controllers, and the
-controllers need the room temperature of the house. The server starts a model in a step only when all its inputs
-have a value, so it could start none of them. `ecosim new` finds such a loop and stops before it writes anything:
+With all five connections the house and its two controllers form a loop. The house needs the signals of the
+controllers and the controllers need the room temperature of the house. `ecosim new` finds the loop and writes
+nothing. Delete the `house_simulation` folder of the first command before you run this one:
 
 ```shell
 uv run ecosim new house_simulation weather.fmu house.fmu heating.fmu ventilation.fmu --step-size 1min --steps 200 \
@@ -124,21 +116,20 @@ uv run ecosim new house_simulation weather.fmu house.fmu heating.fmu ventilation
 ```
 
 ```text
-ecosim new: error: heating, house and ventilation feed each other, so the server could start none of them:
+ecosim new: error: heating, house and ventilation form a loop:
   house.ventilation_pressure_control_signal  <-  ventilation.ventilation_pressure_control_signal
   house.heating_heatExchanger_control_signal  <-  heating.heating_control_signal
   house.vetnilation_valve_control_signal  <-  ventilation.ventilation_valve_control_signal
   heating.T_room  <-  house.room_temperature
   ventilation.T_room  <-  house.room_temperature
-Give inputs the value of the step before to break the loop, for example:
+Break the loop with a logical delay, for example:
   --logical-delay heating.T_room --logical-delay ventilation.T_room
 (run with --debug for the full traceback)
 ```
 
-`--logical-delay INPUT` gives a connected input the value of the step before, which breaks the loop. In the first
-step the input gets the start value of the FMU, or the one after `=`, like `--logical-delay heating.T_room=293.15`.
-An FMI 3.0 array takes one number for each value, like `=1,2,3`. With the two delays the simulation is written, and the
-list shows each delayed input with its start value:
+`--logical-delay INPUT` gives a connected input the value of the previous step. That breaks the loop. In the first
+step the input gets the start value of the FMU or the value after `=`, like `--logical-delay heating.T_room=293.15`.
+With the two delays the simulation is written. The list shows each delayed input with its start value:
 
 ```text
   heating <- house, 1 connection
@@ -147,43 +138,33 @@ list shows each delayed input with its start value:
     T_room  <-  room_temperature   (given with --connect, one step later, starts at 293.15)
 ```
 
-Check the start value. The controllers of this example start at 0 K in their FMUs, so without `=293.15` their
-first steps differ. An input connected to an output of its own model always needs a logical delay.
+Check the start value. The controllers of this example start at 0 K in their FMUs. An input connected to an output
+of its own model always needs a logical delay.
 
 ## What goes into the files
-
-- The `.fmc` file lists every input and output the FMU client can exchange, Real variables of FMI 2.0 and Float64
-  variables of FMI 3.0, with the unit and the description from the FMU. The variables of other types are listed
-  under `Left out of the .fmc files`.
-- `simulation.json` has every output of every model, so a run stores all of them. Leave out the ones you do not
-  need, and the result files get smaller.
-- The time goes into `setup`: `--step-size` as `delta_t`, `--duration` or `--steps` as `steps`, and `--start-date`
-  as `start_date`. A duration has a unit: `ms`, `s`, `min`, `h`, `d` or `y`, where `1y` is 365 days. A step size
-  without a unit is in milliseconds. Without the options, a simulation has steps of 15 minutes for one day from
-  2024-01-01, and the output says which values are such defaults. A date without an offset is UTC.
-- `--database-type postgres` writes a `[database]` section for PostgreSQL. Fill in the server and the user, and
-  give the password with `PGPASSWORD` or a password file. Without it the results are written as files.
-- `--port` sets the port of the server in the server config and in every client config. `ecosim run` does not need
-  it, since it picks a free port.
 
 | In the simulation folder | Content |
 | --- | --- |
 | `Modules/<model>/<model>.fmu` | a copy of the FMU |
-| `Modules/<model>/<model>.fmc` | the inputs and outputs of the model |
+| `Modules/<model>/<model>.fmc` | the inputs and outputs of the model. Only Real variables of FMI 2.0 and Float64 variables of FMI 3.0 |
 | `Modules/<model>/preferences.ini` | the client config: the server, the simulator and the FMU |
-| `server/simulation.json` | the simulators, their connections and the setup |
-| `server/preferences.ini` | the server config |
+| `server/simulation.json` | the simulators with all their outputs, the connections and the setup |
+| `server/preferences.ini` | the server config. With `--database-type postgres` fill in the server and the user in `[database]` |
 
-The target folder must not exist yet, or be empty. The files are written into a draft folder first and moved into
-place at the end, so a stop in between leaves no half-written simulation.
+`--step-size`, `--duration` or `--steps` and `--start-date` set the time in the setup of `simulation.json`. Without
+them a simulation has steps of 15 minutes for one day from 2024-01-01. The output shows which values are defaults.
+
+`simulation.json` has every output of every model. Remove the outputs you do not need to get smaller result files.
+
+The target folder must be empty or not exist yet.
 
 ## Change and run it
 
-The result is a normal simulation folder. Change a file, then check it again with `ecosim check my_building`.
-`ecosim run my_building` runs it with the length of its setup, and `--steps` or `--duration` of `ecosim run`
-override it. A parameter of an FMU goes into `[start_values]` of its client config, see
-[Configuration files](../reference/configuration-files.md#start-values). To start the server and the clients by
-hand, for example on several machines, see [Run a simulation](../guides/run-a-simulation.md#start-the-parts-by-hand). For a
-simulation that `ecosim new` wrote, start them in its folder, with `server/preferences.ini`, `server/simulation.json` and
-`Modules/<model>/preferences.ini` as their config files. The server then writes the results to `results/by_hand`,
-apart from the run folders of `ecosim run`.
+The result is a normal simulation folder. After a change, check it again with `ecosim check my_building`.
+`ecosim run my_building` runs it with the length of its setup. `--steps` or `--duration` of `ecosim run` override
+it. A parameter of an FMU goes into `[start_values]` of its client config, see
+[Configuration files](../reference/configuration-files.md#start-values).
+
+To start the server and the clients manually, for example on several machines, see
+[Run a simulation](../guides/run-a-simulation.md#start-the-server-and-the-clients-manually). Start them in the
+simulation folder. The server then writes the results to `results/manual`.

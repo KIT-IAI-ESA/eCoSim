@@ -1,11 +1,9 @@
-"""Lines that several ecosim commands print the same way."""
-
 import os
 import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Sequence, assert_never
+from typing import Mapping, Sequence, assert_never
 
 from ecosim_common.client.config.client_type import ClientType
 from ecosim_common.tech.datetime.readable_duration import readable_duration
@@ -16,7 +14,6 @@ from ecosim.check.checked_simulator import CheckedSimulator
 
 
 def simulator_lines(simulators: Sequence[CheckedSimulator]) -> list[str]:
-    """Like '  house  FMI 2.0  building/Modules/house  18 inputs  6 outputs'."""
     rows = [
         (
             simulator.name,
@@ -28,15 +25,13 @@ def simulator_lines(simulators: Sequence[CheckedSimulator]) -> list[str]:
         for simulator in simulators
     ]
     widths = [max(len(row[column]) for row in rows) for column in range(5)] if rows else []
-    # the counts are right-aligned, so their digits line up
     return [
-        f"  {name:<{widths[0]}}  {kind:<{widths[1]}}  {folder:<{widths[2]}}  {inputs:>{widths[3]}}  {outputs:>{widths[4]}}"
-        for name, kind, folder, inputs, outputs in rows
+        f"  {name:<{widths[0]}}  {kind:<{widths[1]}}  {directory:<{widths[2]}}  {inputs:>{widths[3]}}  {outputs:>{widths[4]}}"
+        for name, kind, directory, inputs, outputs in rows
     ]
 
 
 def length_line(simulation_config: SimulationConfig) -> str:
-    """Like '35,040 steps of 15 min, from 2023-01-01 00:00 to 2024-01-01 00:00 UTC.'"""
     steps = readable_count(count=simulation_config.steps, noun="step")
     step_size = readable_duration(seconds=simulation_config.step_size_in_ms / 1000)
     return f"{steps} of {step_size}, from {simulation_config.simulated_period_text(completed_steps=simulation_config.steps)}."
@@ -59,26 +54,29 @@ def client_type_text(client_type: ClientType) -> str:
 
 
 def shown_path(path: Path) -> str:
-    """Relative to the current folder when the path is inside it, else absolute."""
+    """Returns the path relative to the current folder when it is inside it."""
     absolute = path.absolute()
     return os.path.relpath(absolute) if absolute.is_relative_to(Path.cwd()) else str(absolute)
 
 
-def ecosim_program() -> list[str]:
-    """The start of a printed ecosim command: uv run ecosim when uv run started this one, as it sets UV."""
-    return ["uv", "run", "ecosim"] if os.environ.get("UV") else ["ecosim"]
+def ecosim_program(environment: Mapping[str, str] = os.environ) -> list[str]:
+    # uv run sets UV
+    return ["uv", "run", "ecosim"] if environment.get("UV") else ["ecosim"]
 
 
 def command_text(arguments: Sequence[str]) -> str:
-    """A command to copy, quoted for the shells of Windows too, which know no single quotes."""
+    # the shells of Windows know no single quotes
     return subprocess.list2cmdline(arguments) if sys.platform == "win32" else shlex.join(arguments)
 
 
 def with_shown_paths(text: str) -> str:
-    """The paths inside the current folder relative to it, since the loaders name absolute paths."""
+    """Replaces absolute paths inside the current folder with relative ones."""
     return text.replace(f"{Path.cwd()}{os.sep}", "")
 
 
 def and_joined(texts: Sequence[str]) -> str:
-    """Like 'a, b and c'."""
     return texts[0] if len(texts) == 1 else f"{', '.join(texts[:-1])} and {texts[-1]}"
+
+
+def it_or_them(count: int) -> str:
+    return "it" if count == 1 else "them"

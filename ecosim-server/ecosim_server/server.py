@@ -23,6 +23,7 @@ from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories import Repositories
+from ecosim_server.failure_texts import RUN_FAILED_PREFIX
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurement, ServerTimeMeasurementType
 from ecosim_server.run_summary import RunSummary
 from ecosim_server.server_state import ServerState
@@ -82,7 +83,7 @@ class Server(ShutdownListener):
             self._run()
             self._failure_reason = None
         except Exception as error:
-            self._logger.error("The run failed: %s -> closing the client connections and the server", one_line_message(error=error))
+            self._logger.error("%s%s -> closing the client connections and the server", RUN_FAILED_PREFIX, one_line_message(error=error))
             # after a signal the server thread of ecosim-hpc fails on the closed channel
             if not ShutdownManager().is_shutdown_in_this_process():
                 self._failure_reason = one_line_message(error=error)

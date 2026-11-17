@@ -12,22 +12,20 @@ from ecosim.run.process_group import kill_process_group, new_process_group, proc
 
 
 @dataclass(frozen=True)
-class PartToStart:
-    """The server or a client of a run: its command, and the log file that gets everything it prints."""
-
+class ProcessToStart:
     name: str
     command: list[str]
     log_file: Path
 
-    def start(self, working_folder: Path, environment: dict[str, str]) -> RunPart:
+    def start(self, working_directory: Path, environment: dict[str, str]) -> RunProcess:
         with self.log_file.open("a", encoding="utf-8") as log:
-            # a restore adds to the logs of the run, and each log says what ran
+            # a restore appends to the logs of the run
             log.write(f"== {datetime.now():%Y-%m-%d %H:%M:%S} {command_text(arguments=self.command)}\n")
             log.flush()
             log_start = log.tell()
             process = subprocess.Popen(
                 self.command,
-                cwd=working_folder,
+                cwd=working_directory,
                 stdin=subprocess.DEVNULL,
                 stdout=log,
                 stderr=subprocess.STDOUT,
@@ -35,34 +33,25 @@ class PartToStart:
                 creationflags=process_group_flags(),
                 process_group=new_process_group(),
             )
-        return RunPart(name=self.name, log_file=self.log_file, log_start=log_start, process=process)
+        return RunProcess(name=self.name, log_file=self.log_file, log_start=log_start, process=process)
 
 
 @dataclass
-class RunPart:
+class RunProcess:
     name: str
     log_file: Path
-    # where this run begins in a log that a restore adds to
+    # where this run begins in the log
     log_start: int
     process: subprocess.Popen[bytes] = field(repr=False)
     stop_requested_at: float | None = None
-    has_ended: bool = False
 
     def is_running(self) -> bool:
         return self.process.poll() is None
 
-    def has_just_ended(self) -> bool:
-        if self.has_ended or self.is_running():
-            return False
-        self.has_ended = True
-        return True
-
     def exit_code(self) -> int:
-        # once the part has ended
         return int(self.process.returncode)
 
     def end_text(self) -> str:
-        """Like 'house stopped with exit code 1' or 'house was killed by signal 9 (SIGKILL)'."""
         code = self.exit_code()
         if code >= 0:
             return f"{self.name} stopped with exit code {code}"
@@ -75,8 +64,8 @@ class RunPart:
         self.stop_requested_at = time.monotonic()
         request_stop(process=self.process, interrupted=interrupted)
 
-    def is_overdue(self, seconds_to_stop: float) -> bool:
-        return self.is_running() and self.stop_requested_at is not None and time.monotonic() - self.stop_requested_at > seconds_to_stop
+    def is_overdue(self, stop_timeout_in_seconds: float) -> bool:
+        return self.is_running() and self.stop_requested_at is not None and time.monotonic() - self.stop_requested_at > stop_timeout_in_seconds
 
     def kill(self) -> None:
         if self.is_running():

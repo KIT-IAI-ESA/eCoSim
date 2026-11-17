@@ -12,15 +12,14 @@ from ecosim_server.results import ResultTable
 from ecosim.command import command_parser
 from ecosim.report_lines import shown_path
 from ecosim.results.results_overview import overview_lines
-from ecosim.results.results_source import ResultsSource, add_source_options, reason_the_options_name_no_results
+from ecosim.results.results_source import ResultsSource, add_source_options, reason_not_to_read
 
 
 def build_parser() -> EcosimArgumentParser:
     parser = command_parser(
         name="results",
-        description="Shows the results of a run: its state, the steps, the simulated period, and the minimum, mean and maximum "
-        + "of every output. With --csv it writes them as one table, with a time column and a column for each interface, "
-        + "named after the simulator and the interface, like house.T_indoor. It only reads.",
+        description="Shows the results of a run with the minimum, mean and maximum of every output. "
+        + "With --csv it writes them as one table to a CSV file.",
         examples=(
             "ecosim results building",
             "ecosim results building --csv results.csv",
@@ -28,7 +27,6 @@ def build_parser() -> EcosimArgumentParser:
             "ecosim results --server-config building/server/preferences.ini --database-schema run_2",
         ),
     )
-    # the results take no options of ecosim-server after --
     parser.usage = "%(prog)s [options] [FOLDER]"
     simulation_config = AppConfigParameter(
         name="simulation-config",
@@ -43,12 +41,12 @@ def build_parser() -> EcosimArgumentParser:
 
 def _add_table_options(parser: EcosimArgumentParser) -> None:
     table_options = parser.add_argument_group(title="table")
-    table_options.add_argument("--inputs", action="store_true", help="Show the inputs too. They are copies of the outputs they are connected to.")
+    table_options.add_argument("--inputs", action="store_true", help="Show the inputs too.")
     table_options.add_argument(
         "--interface",
         metavar="NAME",
         action="append",
-        help="Show only this column. A simulator, like house, or an array, like source.y, picks all its columns. Can be given more than once.",
+        help="Show only this column, or all columns of a simulator or an array. Can be given several times.",
     )
     table_options.add_argument("--csv", metavar="FILE", help="Write the shown columns to this CSV file.")
 
@@ -58,7 +56,7 @@ def main(passed_arguments: Sequence[str]) -> int:
     if "--" in passed_arguments:
         parser.error("leave out the -- before the --database options. ecosim results takes them itself")
     options = parser.parse_args(passed_arguments)
-    reason = reason_the_options_name_no_results(options=options)
+    reason = reason_not_to_read(options=options)
     if reason is not None:
         parser.error(reason)
     source = ResultsSource.of_options(options=options)
@@ -67,7 +65,6 @@ def main(passed_arguments: Sequence[str]) -> int:
 
 
 def shown_columns(table: ResultTable, interface_names: Sequence[str], include_inputs: bool) -> ResultTable:
-    """The columns that --inputs and --interface pick, in the order of the names."""
     shown = table if include_inputs else table.without_inputs()
     for name in interface_names:
         if not shown.matches(name=name) and table.matches(name=name):

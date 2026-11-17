@@ -97,8 +97,8 @@ cat results/simulation_state.jsonl
 Expected: one `module_*.jsonl` per simulator, each with one line per simulation step (60 lines for
 `--steps=60`), a `server_time_measurement.jsonl` with the runtimes the server prints as
 `SERVER MEASUREMENT`, and a `simulation_state.jsonl` that ends with `{"state": "Finished"}`. The folder also
-has a copy of the run's `simulation.json`. If the `ecosim` command is installed on the host, `ecosim results results`
-shows them as a table, see [Read the results](results.md).
+has a copy of the run's `simulation.json`. With the `ecosim` command on the host, `ecosim results results` shows
+the results as a table, see [Read the results](results.md).
 
 Every line is one JSON object. A measurement of the `house` simulator, shortened to one interface:
 

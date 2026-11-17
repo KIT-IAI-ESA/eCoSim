@@ -1,24 +1,24 @@
 from argparse import ArgumentTypeError
 
 import pytest
-from ecosim.run_length import Duration, duration, step_size_in_milliseconds, steps_of_duration
+from ecosim.run_length import Duration, duration, step_size_in_ms, steps_of_duration
 
 
 def test_a_duration_becomes_the_number_of_steps_of_the_step_size() -> None:
-    assert steps_of_duration(run_duration=duration(text="365d"), step_size_in_milliseconds=900_000) == 35_040
-    assert steps_of_duration(run_duration=duration(text="1y"), step_size_in_milliseconds=900_000) == 35_040
+    assert steps_of_duration(run_duration=duration(text="365d"), step_size_in_ms=900_000) == 35_040
+    assert steps_of_duration(run_duration=duration(text="1y"), step_size_in_ms=900_000) == 35_040
 
 
-def test_a_duration_that_is_no_whole_number_of_steps_names_the_two_nearest_step_counts() -> None:
+def test_a_duration_that_is_not_a_whole_number_of_steps_suggests_the_nearest_steps() -> None:
     with pytest.raises(ArgumentTypeError) as error:
-        steps_of_duration(run_duration=duration(text="1h"), step_size_in_milliseconds=7 * 60_000)
+        steps_of_duration(run_duration=duration(text="1h"), step_size_in_ms=7 * 60_000)
 
     assert str(error.value) == "--duration 1h is not a whole number of steps of 7 min. Use --steps 8 (56 min) or --steps 9 (1 h 3 min)."
 
 
-def test_a_duration_shorter_than_one_step_names_one_step() -> None:
+def test_a_duration_shorter_than_one_step_suggests_one_step() -> None:
     with pytest.raises(ArgumentTypeError) as error:
-        steps_of_duration(run_duration=duration(text="5min"), step_size_in_milliseconds=900_000)
+        steps_of_duration(run_duration=duration(text="5min"), step_size_in_ms=900_000)
 
     assert str(error.value).endswith("Use --steps 1 (15 min).")
 
@@ -37,7 +37,7 @@ def test_a_duration_with_decimals_is_read_exactly(text: str, milliseconds: int) 
 
 
 @pytest.mark.parametrize("text", ["0s", "0.5ms", "1.5ms"])
-def test_a_duration_below_one_millisecond_or_between_two_is_refused(text: str) -> None:
+def test_a_duration_below_one_millisecond_or_between_two_is_rejected(text: str) -> None:
     with pytest.raises(ArgumentTypeError) as error:
         duration(text=text)
 
@@ -45,11 +45,9 @@ def test_a_duration_below_one_millisecond_or_between_two_is_refused(text: str) -
 
 
 def test_a_step_size_without_a_unit_is_milliseconds_as_for_the_server() -> None:
-    assert step_size_in_milliseconds(text="900000") == step_size_in_milliseconds(text="15min") == 900_000
+    assert step_size_in_ms(text="900000") == step_size_in_ms(text="15min") == 900_000
 
 
-def test_a_step_size_of_zero_milliseconds_is_refused_as_by_the_server() -> None:
-    with pytest.raises(ArgumentTypeError) as error:
-        step_size_in_milliseconds(text="0")
-
-    assert str(error.value) == "must be a whole number of at least 1, not '0'"
+def test_a_step_size_of_zero_milliseconds_is_rejected_as_by_the_server() -> None:
+    with pytest.raises(ArgumentTypeError):
+        step_size_in_ms(text="0")

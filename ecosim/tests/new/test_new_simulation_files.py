@@ -1,14 +1,16 @@
 import dataclasses
+import os
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from ecosim.new.simulation_file import SimulationFile
+from ecosim.new.input_connections import InputConnections
+from ecosim.new.new_simulation_config import NewSimulationConfig
 from ecosim.new.new_simulation_files import NewSimulationFiles
 from ecosim.new.simulation_length import SimulationLength
 from ecosim.new.simulation_model import SimulationModel
-from ecosim.new.wiring import Wiring
-from ecosim.simulation_folder import SimulationFolder
+from ecosim.simulation_directory import SimulationDirectory
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_test_common.resources.resource_utils import fmu2_model_path
 
@@ -16,11 +18,16 @@ from tests.new.simulation_models import create_model
 
 
 def _write(simulation: Path, models: list[SimulationModel]) -> None:
-    length = SimulationLength(step_size_in_milliseconds=900_000, steps=96, start_date=datetime(2024, 1, 1, tzinfo=UTC), defaults=())
+    length = SimulationLength(step_size_in_ms=900_000, steps=96, start_date=datetime(2024, 1, 1, tzinfo=UTC), defaults=())
     NewSimulationFiles(port=1234, database_type=DatabaseType.FILE, database_directory="results").write(
-        simulation=SimulationFolder.of_path(path=simulation),
+        simulation=SimulationDirectory.of_path(path=simulation),
         models=models,
-        simulation_file=SimulationFile(models=models, wiring=Wiring.of_models(models=models, given_connections=[]), delayed=[], length=length),
+        new_simulation_config=NewSimulationConfig(
+            models=models,
+            input_connections=InputConnections.of_models(models=models, given_connections=[]),
+            delayed=[],
+            length=length,
+        ),
     )
 
 
@@ -36,15 +43,15 @@ def test_a_simulation_that_fails_while_it_is_written_leaves_no_draft_behind(tmp_
     assert list(tmp_path.iterdir()) == []
 
 
-def test_an_empty_simulation_folder_gets_the_files_and_stays_the_same_folder(tmp_path: Path) -> None:
+def test_an_empty_simulation_directory_gets_the_files_and_stays_the_same_directory(tmp_path: Path) -> None:
     simulation = tmp_path / "simulation"
     simulation.mkdir()
-    # a shell whose current folder is the simulation keeps it
-    folder_id = simulation.stat().st_ino
+    # a shell that is in the simulation folder stays in it
+    directory_id = simulation.stat().st_ino
 
     _write(simulation=simulation, models=[_model_of_fmu(fmu_file=fmu2_model_path())])
 
-    assert simulation.stat().st_ino == folder_id
+    assert simulation.stat().st_ino == directory_id
     assert sorted(path.relative_to(simulation).as_posix() for path in simulation.rglob("*") if path.is_file()) == [
         "Modules/feedthrough/feedthrough.fmc",
         "Modules/feedthrough/feedthrough.fmu",
@@ -55,10 +62,10 @@ def test_an_empty_simulation_folder_gets_the_files_and_stays_the_same_folder(tmp
     assert [path.name for path in tmp_path.iterdir()] == ["simulation"]
 
 
-def test_an_empty_simulation_folder_gets_the_files_also_when_the_folder_around_it_cannot_be_written(tmp_path: Path) -> None:
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="chmod does not stop Windows or root from writing")
+def test_an_empty_simulation_directory_is_filled_inside_a_read_only_directory(tmp_path: Path) -> None:
     simulation = tmp_path / "simulation"
     simulation.mkdir()
-    # like a work folder of a container that sits in a folder of root
     tmp_path.chmod(0o555)
     try:
         _write(simulation=simulation, models=[_model_of_fmu(fmu_file=fmu2_model_path())])

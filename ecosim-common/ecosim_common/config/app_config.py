@@ -81,7 +81,6 @@ class AppConfigParameter:
         return self.name.replace("-", "_")
 
     def to_passed_arguments(self, value: Any) -> list[str]:
-        """The arguments that pass a parsed value on to another command, like from ecosim run to ecosim-server."""
         if self.is_flag:
             return [self.to_cli_variable()] if value else []
         if value is None:

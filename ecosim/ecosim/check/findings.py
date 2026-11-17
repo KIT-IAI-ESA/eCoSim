@@ -10,8 +10,7 @@ from ecosim_common.tech.one_line_errors import one_line_message
 
 @dataclass
 class Findings:
-    """What a check found. A problem stops a run, a warning does not."""
-
+    # a problem stops a run, a warning does not
     problems: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -25,12 +24,11 @@ def problem_of(error: Exception, file: Path) -> str:
 
 
 def with_the_file(message: str, file: Path) -> str:
-    """The message after the file, if the message does not name it."""
+    """Prefixes the message with the file unless the message has it."""
     return message if str(file) in message or str(file.absolute()) in message else f"{file}: {message}"
 
 
 def problem_of_ini_file(error: Exception, ini_file: Path) -> str:
-    """Like problem_of, with a hint for a missing section or key."""
     problem = problem_of(error=error, file=ini_file)
     if not isinstance(error, ConfigParserException) or error.section is None:
         return problem

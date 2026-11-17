@@ -7,7 +7,7 @@ Twelve independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and
 
 | Subproject | Import package | Purpose |
 | --- | --- | --- |
-| `ecosim` | `ecosim` | The `ecosim` command, which writes a simulation from FMUs, checks it, runs it on one computer and shows its results |
+| `ecosim` | `ecosim` | The `ecosim` command to write, check and run a simulation locally and to read its results |
 | `ecosim-common` | `ecosim_common` | Shared abstractions: config, communication, simulation primitives |
 | `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for the FMU clients and `ecosim-hpc` |
 | `ecosim-server` | `ecosim_server` | The simulation server: state, repositories, measurements |
@@ -51,8 +51,8 @@ flowchart TD
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster
-- `ecosim` depends on the server and on the clients that need no extra setup, so one install runs a simulation on one
-  computer. It reads the config files with their readers, so its check follows a changed rule at once
+- `ecosim` depends on the server and on the clients that need no extra setup. One install is enough for a local
+  run. Its check reads the config files with the readers of the server and the clients
 - `integration-tests` depends on all of them, which is why it is excluded from `dev/run_unit_tests.py`
 
 Every internal dependency is pinned to the exact version (`ecosim-common==0.14.0`) and resolved
@@ -85,17 +85,17 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 
 | Module | Contains |
 | --- | --- |
-| `main.py`, `command.py` | The dispatcher and `COMMANDS`. A command is a module with `build_parser()` and `main(passed_arguments) -> int`, imported only when it runs, so `ecosim --help` needs neither the server nor fmpy |
-| `simulation_folder.py` | `SimulationFolder`: where the files of a simulation are |
-| `simulation_options.py`, `simulation_command_line.py` | The options the commands share, many of them the server's own, and `RunOptions` |
+| `main.py`, `command.py` | The dispatcher and `COMMANDS`. A command is a module with `build_parser()` and `main(passed_arguments) -> int`. It is imported only when it runs. `ecosim --help` needs neither the server nor fmpy |
+| `simulation_directory.py` | `SimulationDirectory`: where the files of a simulation are |
+| `simulation_options.py`, `simulation_command_line.py` | The options that the commands share and `RunOptions`. Many are options of the server |
 | `run_length.py` | `--step-size` and `--duration` with a unit, like `15min` |
-| `server_arguments.py` | The arguments a command gives `ecosim-server`, with the options after `--` |
+| `server_arguments.py` | The arguments a command passes to `ecosim-server`, with the options after `--` |
 | `report_lines.py` | The lines that several commands print: the table of the simulators and the length of a run |
-| `new/` | `ecosim new`: `SimulationModel` reads the FMUs, `Wiring` connects the inputs to the outputs of the same name or as `--connect` says, `loops.py` stops for models that feed each other without a logical delay, and `NewSimulationFiles` writes the simulation in a draft folder and moves it into place |
-| `check/` | `ecosim check`: `SimulationCheck` loads a simulation with the readers of the server and the clients and keeps every problem |
-| `run_folder.py` | `RunFolder`: the folder of one run, `SIMULATION/results/<start time>/` with the results, a copy of `simulation.json` and `logs/` |
-| `run/` | `ecosim run`: `LocalRun` starts the server and the clients, each in a process group of its own, and `RunWatch` stops all of them when one fails or on a signal |
-| `results/` | `ecosim results`: finds the results that a folder or a server config names, reads them with `ecosim_server.results` and prints the overview or writes the CSV file |
+| `new/` | `ecosim new`. `SimulationModel` reads an FMU. `InputConnections` connects the inputs to the outputs by name or by `--connect`. `loops.py` finds models that form a loop without a logical delay. `NewSimulationFiles` writes the files |
+| `check/` | `ecosim check`. `SimulationCheck` loads a simulation with the readers of the server and the clients and collects every problem |
+| `run_directory.py` | `RunDirectory`: the folder of one run, `SIMULATION/results/<start time>/` with the results, a copy of `simulation.json` and `logs/` |
+| `run/` | `ecosim run`. `LocalRun` starts the server and the clients, each in its own process group. `RunWatch` stops all of them when one fails or on a signal |
+| `results/` | `ecosim results`. Finds the results of a folder or a server config, reads them with `ecosim_server.results` and prints the overview or writes the CSV file |
 
 ### `ecosim_server`
 
@@ -207,12 +207,12 @@ Each deployable subproject declares a console script:
 
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
-Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`, the `main` of each
-`ecosim` command through the dispatcher. Without `--debug`,
-an error prints one line on stderr instead of a traceback and the command exits with code 1.
+Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`. The dispatcher
+does that for the `ecosim` commands. Without `--debug`, an error prints one line on stderr instead of a traceback
+and the command exits with code 1.
 
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
 an `AppConfigParameter` with a group. `--help` and the [command-line reference](../reference/command-line.md) show a
 group as a section. The server's options are in `ecosim_server/config/cli_parameters.py` and
-`database_cli_parameters.py`, so `ecosim-hpc` and other commands can reuse them. The `transform` of a parameter
+`database_cli_parameters.py`. `ecosim-hpc` and the `ecosim` commands reuse them. The `transform` of a parameter
 converts and checks its value. A bad value ends the command with a usage error and exit code 2.

@@ -68,14 +68,15 @@ Both scripts pass extra arguments on, `moduleRun.sh` to each of the three client
 | Purpose | Server | Clients |
 | --- | --- | --- |
 | Another server port, the default is 1234 | `--port 1235` | `--server-port 1235` |
-| Every message, also one for each step | `--debug` | `--debug` |
+| More logs | `--debug` | `--debug` |
 | Fewer steps | `--steps 10` | |
 | Another database port, the default is 5432 | `--database-port 5433` | |
 | Another schema, also dropped if it exists | `--database-schema my_run` | |
 
 To run without PostgreSQL, write the results as files instead:
-`./serverRun.sh --database-type file --database-directory results`. The
-[quick start](../../../docs/content/getting-started/quick-start.md) runs this example with one
-command, `uv run ecosim run building --steps 100` in `simulation_examples`, with the results as files.
+`./serverRun.sh --database-type file --database-directory results`
+
+The [quick start](../../../docs/content/getting-started/quick-start.md) runs this example with one command and
+with the results as files: `uv run ecosim run building --steps 100` in `simulation_examples`.
 
 All options are in the [command-line reference](../../../docs/content/reference/command-line.md).

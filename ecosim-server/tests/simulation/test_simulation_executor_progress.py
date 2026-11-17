@@ -1,5 +1,6 @@
 import pytest
 from ecosim_common.communication.message_type import MessageType
+from ecosim_server.progress_logger import progress_logger
 from ecosim_test_common.test_data.manual_clock import ManualClock
 from tests.simulation.simulation_executor_test_setup import answer_after_advancing, error_of_bounded_run, executor_with_client
 
@@ -10,7 +11,7 @@ def test_the_progress_lines_of_a_run_are_logged_by_the_progress_logger(caplog: p
 
     assert error_of_bounded_run(executor) is None
 
-    (line,) = [record.getMessage() for record in caplog.records if record.name == "Progress"]
+    (line,) = [record.getMessage() for record in caplog.records if record.name == progress_logger.name]
     assert line.startswith("Step 1 of 2 ")
 
 

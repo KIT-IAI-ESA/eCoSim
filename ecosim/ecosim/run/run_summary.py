@@ -7,8 +7,7 @@ from ecosim.run.run_watch import RunEnd
 
 
 def summary_lines(outcome: RunOutcome, results_location: str, restore_command: str, read_command: str) -> list[str]:
-    """What to do next. The server log ends with the summary of the server."""
-    duration = readable_duration(seconds=outcome.seconds)
+    duration = readable_duration(seconds=outcome.run_time_in_seconds)
     match outcome.end:
         case RunEnd.FINISHED:
             return [f"Finished after {duration}. Results: {results_location}", f"Read them with: {read_command}"]

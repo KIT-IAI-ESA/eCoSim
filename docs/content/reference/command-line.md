@@ -17,7 +17,7 @@ repository root.
 
 ## ecosim new
 
-`ecosim new`: Writes a simulation folder from FMUs: a folder in Modules/ for each FMU with the FMU, its .fmc file and its client config, and server/ with the server config and simulation.json. An input is connected to the one output of another model with the same name, where '.' and '_' count as the same. Every other input keeps the start value of its FMU. At the end it checks the simulation as ecosim check does.
+`ecosim new`: Writes a simulation folder from FMUs. Connects each input to the output of another model with the same name. Checks the result like ecosim check.
 
 ```shell
 ecosim new my_simulation house.fmu occupancy.fmu weather.fmu --duration 1y --start-date 2023-01-01
@@ -30,8 +30,8 @@ ecosim new plant_simulation plant.fmu controller.fmu --connect controller.T=plan
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `SIMULATION` | yes |  | The simulation folder to write. It must not exist yet, or be empty. |
-| `FMU` | yes |  | An FMU file, a folder whose .fmu files are all taken, or NAME=FILE to give the model another name than its file. |
+| `SIMULATION` | yes |  | The new simulation folder. Must be empty or not exist yet. |
+| `FMU` | yes |  | An FMU file, a folder with .fmu files, or NAME=FILE to name the model. |
 
 **Options**
 
@@ -43,24 +43,24 @@ ecosim new plant_simulation plant.fmu controller.fmu --connect controller.T=plan
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s. A number without a unit is milliseconds. Without it, 15min. |
-| `--duration DURATION` |  |  | How much simulated time the simulation covers, like 12h, 30d or 1y, where 1y is 365 days. Without it and --steps, 1d. |
-| `--steps N` |  |  | How many steps the simulation runs, instead of --duration. |
-| `--start-date DATE` |  |  | When the simulated time starts, like 2023-01-01 or 2023-01-01T06:00+01:00. A time without an offset is UTC. The results of the first step are one step later. Without it, 2024-01-01. |
+| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s, or a number in milliseconds. Default: 15min. |
+| `--duration DURATION` |  |  | The simulated time of the simulation, like 12h, 30d or 1y (365 days). Default: 1d. |
+| `--steps N` |  |  | The number of steps, instead of --duration. |
+| `--start-date DATE` |  |  | The start of the simulated time, like 2023-01-01 or 2023-01-01T06:00+01:00. Default: 2024-01-01. |
 
 **Connections**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--connect INPUT=OUTPUT` |  |  | Connects an input to an output of another name, like house.T_out=weather.T_dry. Can be given several times. |
-| `--logical-delay INPUT[=START]` |  |  | Gives a connected input the value of the step before, which breaks a loop of models that feed each other. START is its value in the first step, by default its start value in the FMU. Can be given several times. |
+| `--logical-delay INPUT[=START]` |  |  | Gives a connected input the value of the previous step to break a loop. START is its value in the first step. Can be given several times. |
 
 **Results**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--database-type {postgres,file}` |  | `file` | Where the results go, written to type in the [database] section of the server config. |
-| `--database-directory FOLDER` |  | `results/by_hand` | With --database-type file: the folder for the result files of a server started by hand, relative to the folder it starts in. ecosim run puts each run in a folder of its own in results instead. |
+| `--database-directory FOLDER` |  | `results/manual` | The folder for the result files of a server started manually. ecosim run writes each run to its own folder in results. |
 
 **Server connection**
 
@@ -70,7 +70,7 @@ ecosim new plant_simulation plant.fmu controller.fmu --connect controller.T=plan
 
 ## ecosim check
 
-`ecosim check`: Checks a simulation before a run: the simulation config, the server config and the folder of every simulator with its model. It reads them as a run with the same options would, lists every problem with its file, and names the closest name for a typo. It changes nothing and starts nothing. The options after -- are options of ecosim-server, which the check reads as well.
+`ecosim check`: Checks a simulation before a run. Lists every problem with its file. Options after -- are checked as options of ecosim-server.
 
 ```shell
 ecosim check building
@@ -82,7 +82,7 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `SIMULATION` |  |  | The simulation folder, which holds server/ and Modules/. Without it, the current folder. |
+| `SIMULATION` |  |  | The simulation folder with server/ and Modules/. Default: the current folder. |
 
 **Options**
 
@@ -103,8 +103,8 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run it is the number of steps of the whole run. |
-| `--duration DURATION` |  |  | How much simulated time the run covers, like 90min, 12h or 365d, instead of --steps. It has to be a whole number of steps. |
-| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s. A number without a unit is milliseconds. Overrides setup.delta_t in the simulation config. |
+| `--duration DURATION` |  |  | The simulated time of the run, like 90min, 12h or 365d. Must be a whole number of steps. |
+| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s, or a number in milliseconds. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
 
@@ -112,11 +112,11 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. If neither sets it, file. |
+| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. Default: file. |
 
 ## ecosim run
 
-`ecosim run`: Runs a simulation on this computer. It checks the simulation, starts the server and a client for every simulator, shows the progress, and stops every part when one of them fails or on Ctrl-C. Each part writes its output to a log file in the run folder. The options after -- go to ecosim-server.
+`ecosim run`: Runs a simulation locally. Starts the server and one client per simulator. Logs are in the run folder. Options after -- are passed to ecosim-server.
 
 ```shell
 ecosim run building --steps 100
@@ -128,7 +128,7 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `SIMULATION` |  |  | The simulation folder, which holds server/ and Modules/. Without it, the current folder. |
+| `SIMULATION` |  |  | The simulation folder with server/ and Modules/. Default: the current folder. |
 
 **Options**
 
@@ -150,8 +150,8 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run it is the number of steps of the whole run. |
-| `--duration DURATION` |  |  | How much simulated time the run covers, like 90min, 12h or 365d, instead of --steps. It has to be a whole number of steps. |
-| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s. A number without a unit is milliseconds. Overrides setup.delta_t in the simulation config. |
+| `--duration DURATION` |  |  | The simulated time of the run, like 90min, 12h or 365d. Must be a whole number of steps. |
+| `--step-size DURATION` |  |  | The simulated time of one step, like 15min or 1s, or a number in milliseconds. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
 
@@ -159,18 +159,18 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. If neither sets it, file. |
-| `--results FOLDER` |  |  | The run folder for the results and the logs. Without it, a new folder in SIMULATION/results named after the start time, or with --restore-simulation-run the newest one there. |
+| `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the server config. Default: file. |
+| `--results FOLDER` |  |  | The run folder for the results and the logs. Default: a new folder in SIMULATION/results. |
 
 **Server connection**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--port PORT` |  |  | The port the server listens on. Without it, a free port. |
+| `--port PORT` |  |  | The port the server listens on. Default: a free port. |
 
 ## ecosim results
 
-`ecosim results`: Shows the results of a run: its state, the steps, the simulated period, and the minimum, mean and maximum of every output. With --csv it writes them as one table, with a time column and a column for each interface, named after the simulator and the interface, like house.T_indoor. It only reads.
+`ecosim results`: Shows the results of a run with the minimum, mean and maximum of every output. With --csv it writes them as one table to a CSV file.
 
 ```shell
 ecosim results building
@@ -183,7 +183,7 @@ ecosim results --server-config building/server/preferences.ini --database-schema
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `FOLDER` |  |  | A simulation folder for its newest run, a run folder, or a folder of result files. Without it, the current folder. |
+| `FOLDER` |  |  | A simulation folder for its newest run, a run folder, or a folder of result files. Default: the current folder. |
 
 **Options**
 
@@ -196,8 +196,8 @@ ecosim results --server-config building/server/preferences.ini --database-schema
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--inputs` |  | flag | Show the inputs too. They are copies of the outputs they are connected to. |
-| `--interface NAME` |  |  | Show only this column. A simulator, like house, or an array, like source.y, picks all its columns. Can be given more than once. |
+| `--inputs` |  | flag | Show the inputs too. |
+| `--interface NAME` |  |  | Show only this column, or all columns of a simulator or an array. Can be given several times. |
 | `--csv FILE` |  |  | Write the shown columns to this CSV file. |
 
 **Results in PostgreSQL**

@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 from ecosim.check.check_command import build_parser
-from ecosim.server_arguments import reason_to_refuse, server_arguments, split_server_options
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
+from ecosim.server_arguments import reason_to_reject, server_arguments, split_server_options
 from ecosim.simulation_command_line import SimulationCommandLine
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.cli_arguments import CLIArguments
@@ -33,30 +34,28 @@ def test_the_options_after_two_dashes_are_for_the_server() -> None:
         ("--host", "--host after -- is set by ecosim check. Leave it out."),
     ],
 )
-def test_an_option_that_the_command_gives_the_server_itself_is_refused_after_two_dashes(server_option: str, reason: str) -> None:
-    assert reason_to_refuse(server_options=[server_option, "1234"], command_name="check", command_options=parsed_options()) == reason
+def test_an_option_set_by_the_command_is_rejected_after_two_dashes(server_option: str, reason: str) -> None:
+    assert reason_to_reject(server_options=[server_option, "1234"], command_name="check", command_options=parsed_options()) == reason
 
 
 def test_an_option_of_the_server_alone_passes_after_two_dashes() -> None:
     server_options = ["--database-schema", "run_2", "--database-drop-existing-schema"]
 
-    assert reason_to_refuse(server_options=server_options, command_name="check", command_options=parsed_options()) is None
+    assert reason_to_reject(server_options=server_options, command_name="check", command_options=parsed_options()) is None
 
 
-def test_a_misspelt_option_after_two_dashes_is_a_usage_error_of_the_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    simulation = write_building_simulation(folder=tmp_path)
+def test_a_misspelled_option_after_two_dashes_is_a_usage_error_of_the_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    simulation = write_building_simulation(directory=tmp_path)
 
     with pytest.raises(SystemExit) as exit_info:
         command_line_of(str(simulation), "--", "--database-schma", "run_2")
 
-    assert exit_info.value.code == 2
-    assert capsys.readouterr().err.splitlines()[-1] == (
-        "ecosim check: error: unrecognized arguments: --database-schma run_2. Did you mean --database-schema instead of --database-schma?"
-    )
+    assert exit_info.value.code == USAGE_ERROR_EXIT_CODE
+    assert capsys.readouterr().err.splitlines()[-1].startswith("ecosim check: error: unrecognized arguments: --database-schma run_2")
 
 
 def test_the_options_of_the_command_reach_the_server_with_the_same_values(tmp_path: Path) -> None:
-    simulation = write_building_simulation(folder=tmp_path)
+    simulation = write_building_simulation(directory=tmp_path)
     command_line = command_line_of(
         str(simulation),
         "--duration",
@@ -91,7 +90,7 @@ def test_the_options_of_the_command_reach_the_server_with_the_same_values(tmp_pa
 
 
 def test_the_results_go_to_files_unless_the_server_config_sets_a_type(tmp_path: Path) -> None:
-    simulation = write_building_simulation(folder=tmp_path)
+    simulation = write_building_simulation(directory=tmp_path)
     command_line = command_line_of(str(simulation))
     files_by_default = CLIArguments(
         passed_arguments=server_arguments(

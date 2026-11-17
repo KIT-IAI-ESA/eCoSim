@@ -1,17 +1,16 @@
 import re
 from pathlib import Path
 
+from ecosim_common.tech.one_line_errors import DEBUG_HINT
+
 from ecosim.run.log_line import LogLine
 
-# the last line of a traceback, a crash of Python, and the one line a console script ends an error with
-REASON_PATTERN = re.compile(r"[A-Za-z_][\w.]*(Error|Exception)\b.*|Fatal Python error: .*|[\w-]+: error: .*")
-ERROR_LINE_PATTERN = re.compile(r"[\w-]+: error: .*")
-# the end of the one-line error, on a line of its own after a message of several lines
-DEBUG_HINT = "(run with --debug for the full traceback)"
+# the one line a console script ends an error with
+ERROR_LINE = r"[\w-]+: error: .*"
 
 
 def reason_lines(log_file: Path, start: int, count: int = 5) -> list[str]:
-    """The errors and the end of a traceback in the log of this run, else its last lines."""
+    """Returns the errors and the end of a traceback in the log, else its last lines."""
     with log_file.open("rb") as log:
         log.seek(start)
         text = log.read().decode(encoding="utf-8", errors="replace")
@@ -30,7 +29,7 @@ def _reasons_in(lines: list[str]) -> list[str]:
             reasons += [line] if in_an_error_of_several_lines else []
             continue
         reasons += [reason] if (reason := _reason_in(line=line)) is not None else []
-        in_an_error_of_several_lines = ERROR_LINE_PATTERN.fullmatch(line) is not None and not line.endswith(DEBUG_HINT)
+        in_an_error_of_several_lines = re.fullmatch(pattern=ERROR_LINE, string=line) is not None and not line.endswith(DEBUG_HINT)
     return reasons
 
 
@@ -38,4 +37,6 @@ def _reason_in(line: str) -> str | None:
     log_line = LogLine.of_text(text=line)
     if log_line is not None:
         return log_line.message if log_line.is_an_error() else None
-    return line if REASON_PATTERN.fullmatch(line) else None
+    # the last line of a traceback or a crash of Python
+    reason_pattern = rf"[A-Za-z_][\w.]*(Error|Exception)\b.*|Fatal Python error: .*|{ERROR_LINE}"
+    return line if re.fullmatch(pattern=reason_pattern, string=line) else None

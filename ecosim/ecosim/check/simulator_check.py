@@ -15,6 +15,7 @@ from ecosim_server.config.simulation_config import ClientSimulatorConfig, Simula
 from ecosim.check.findings import Findings, problem_of_ini_file
 from ecosim.check.fmu_check import ModelCheck
 from ecosim.check.model_check import model_check
+from ecosim.report_lines import it_or_them
 
 
 def simulator_findings(
@@ -25,9 +26,8 @@ def simulator_findings(
     port: int,
     before_a_run: bool,
 ) -> Findings:
-    """What the client reads at its start and compares with the simulation config."""
     ini_file = directory.config_parser.config_file
-    # the overrides that ecosim run gives every client, so the client config needs no [server]
+    # ecosim run passes these to every client
     override = ClientConfigOverride(server_host="localhost", server_port=port, communication_protocol=CommunicationProtocol.TCP_SOCKET)
     try:
         client_config = SimpleClientConfig.of_config_parser(config_parser=directory.config_parser, config_override=override)
@@ -52,7 +52,6 @@ def simulator_findings(
 
 
 def _fmc_file_warnings(fmc_file: Path) -> list[str]:
-    # the client logs them, the check lists them with the other findings
     raw_interfaces = read_json_file(file=fmc_file)
     return [
         *unknown_key_warnings(raw_interfaces=raw_interfaces, fmc_file=fmc_file),
@@ -66,20 +65,18 @@ def _mismatch_findings(
     client: ClientSimulatorConfig,
     checked_model: ModelCheck,
 ) -> Findings:
-    """The client warns about these and runs. The names that the model check names already are left out."""
     mismatch = client_config.interfaces_config().validate_config_with_server(server_config=client.to_server_interface_settings())
     mismatch = dataclasses.replace(
         mismatch,
-        inputs_not_in_fmc=[name for name in mismatch.inputs_not_in_fmc if not checked_model.names_already(name=name, fmc_names=mismatch.fmc_inputs)],
+        inputs_not_in_fmc=[name for name in mismatch.inputs_not_in_fmc if not checked_model.already_lists(name=name, fmc_names=mismatch.fmc_inputs)],
         outputs_not_in_fmc=[
-            name for name in mismatch.outputs_not_in_fmc if not checked_model.names_already(name=name, fmc_names=mismatch.fmc_outputs)
+            name for name in mismatch.outputs_not_in_fmc if not checked_model.already_lists(name=name, fmc_names=mismatch.fmc_outputs)
         ],
     )
     return Findings(warnings=[f"{directory.path}: {line}" for line in mismatch.lines(fmc_file=client_config.simulator_config().fmc_file)])
 
 
 def _required_interface_problems(directory: SimulatorDirectory, client_config: ClientConfig, simulation_config: SimulationConfig) -> list[str]:
-    # the server stops the run for these
     missing = simulation_config.missing_required_interface_names(
         client_id=client_config.client_id(),
         client_interface_ids=ModelInterfaceIds.of_interface_config(client_config),
@@ -87,5 +84,5 @@ def _required_interface_problems(directory: SimulatorDirectory, client_config: C
     if not missing:
         return []
     fmc_file = client_config.simulator_config().fmc_file
-    it_or_them = "it" if len(missing) == 1 else "them"
-    return [f"{directory.path}: the simulation config marks {', '.join(missing)} as required, but {fmc_file} does not list {it_or_them}."]
+    required = ", ".join(missing)
+    return [f"{directory.path}: the simulation config marks {required} as required, but {fmc_file} does not list {it_or_them(count=len(missing))}."]

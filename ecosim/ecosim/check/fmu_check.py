@@ -22,23 +22,21 @@ from ecosim.check.findings import Findings, problem_of, problem_of_ini_file
 @dataclass(frozen=True)
 class ModelCheck:
     findings: Findings = field(default_factory=Findings)
-    # the interfaces of the simulation config that the model lacks
+    # interfaces of the simulation config that the model lacks
     missing_interfaces: list[str] = field(default_factory=list)
-    # the names of the .fmc file that the model lacks, often a typo
     fmc_names_not_in_the_model: list[str] = field(default_factory=list)
 
-    def names_already(self, name: str, fmc_names: list[str]) -> bool:
-        """Whether the findings name the interface, or the misspelt .fmc name a hint would suggest."""
+    def already_lists(self, name: str, fmc_names: list[str]) -> bool:
+        """Returns whether the findings list the interface or the .fmc typo a hint would suggest."""
         suggested = closest_name(name=name, known_names=fmc_names, cutoff=INTERFACE_NAME_CUTOFF)
         return name in self.missing_interfaces or suggested in self.fmc_names_not_in_the_model
 
 
 def fmu_check(directory: SimulatorDirectory, client_config: ClientConfig, server_interface_settings: ServerInterfaceSettings) -> ModelCheck:
-    """What the FMU client checks at its start and when the server sends the simulation config."""
     ini_file = directory.config_parser.config_file
     try:
         fmu_config = FMUBaseConfig.of_config_parser(directory.config_parser)
-        # an FMI version no client runs, or an FMU without its co-simulation part
+        # raises for an FMI version or an FMU kind that no client runs
         FMUInterfaces.of_fmu_file(fmu_file=fmu_config.fmu_file)
         model_description = read_model_description(file=fmu_config.fmu_file)
     except Exception as error:
@@ -94,7 +92,7 @@ def _platform_problems(fmu_file: Path) -> list[str]:
     platforms = binary_platforms(fmu_file=fmu_file)
     if fmpy.platform in platforms:
         return []
-    only_for = f"for this computer ({fmpy.platform}), only for {', '.join(platforms)}" if platforms else "at all"
+    only_for = f"for this platform ({fmpy.platform}), only for {', '.join(platforms)}" if platforms else "at all"
     return [f"{fmu_file} has no binary {only_for}. Get an FMU built for {fmpy.platform}."]
 
 
@@ -107,7 +105,6 @@ def _interface_findings(
 ) -> Findings:
     interfaces = client_config.interfaces_config()
     try:
-        # the client stops at its start for these
         fmu_config.ensure_model_runs_interfaces(
             model_description=model_description,
             input_names=interfaces.input_interface_names(),
@@ -134,11 +131,9 @@ def _start_value_findings(
 ) -> Findings:
     fmc_inputs = client_config.interfaces_config().input_interface_names()
     problems = StartValues.problems_of(texts=fmu_config.start_value_texts, model_description=model_description, input_names=fmc_inputs)
-    # the client refuses only a start value of an input of the .fmc file
+    # the client rejects only start values of .fmc inputs
     connected = [name for name in fmu_config.start_value_texts if name in settings.inputs and name not in fmc_inputs]
     return Findings(
         problems=[f"{ini_file}: [start_values] {problem}" for problem in problems],
-        warnings=[
-            f"{ini_file}: the start value of {name} has no effect, since the simulation config connects the input {name}." for name in connected
-        ],
+        warnings=[f"{ini_file}: the start value of {name} has no effect. The simulation config connects this input." for name in connected],
     )

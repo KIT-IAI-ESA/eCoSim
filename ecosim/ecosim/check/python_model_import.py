@@ -1,5 +1,3 @@
-"""Imports a Python model as its client does at its start. The check runs it in a process of its own."""
-
 import sys
 from pathlib import Path
 
@@ -13,7 +11,7 @@ def main(ini_file: Path) -> int:
     try:
         import_model_factory(config=PythonConfig.of(config_parser=ConfigParser(ini_file)))
     except Exception as error:
-        # the last line, after anything the module printed
+        # the check reads the last line
         print(one_line_message(error=error))
         return 1
     return 0

@@ -10,8 +10,7 @@ description: Every key the server and the clients read from their config files.
 The server and the clients read ini files. These tables list every key the code reads. A key marked *required* has no default:
 the program stops if it is missing. Enum values are written as the member name, for example `TCP_SOCKET`.
 Values are read literally, so `%` has no special meaning and needs no escaping.
-`ecosim new` writes the server config, the FMU client configs, the `.fmc` files and `simulation.json` for a simulation from FMUs,
-see [Your own models](../getting-started/your-own-models.md).
+`ecosim new` writes these files for a simulation from FMUs, see [Your own models](../getting-started/your-own-models.md).
 After changing a config reader, run `uv run python dev/generate_config_reference.py` in the repository root.
 
 ## Server

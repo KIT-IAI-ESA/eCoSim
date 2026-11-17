@@ -1,33 +1,18 @@
-import contextlib
-import io
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pytest
-from ecosim.new.new_command import main
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common_fmpy.config.validate_fmu_file_or_error import validate_fmu_file_or_error
-from ecosim_test_common.test_data.building_simulation import BUILDING_MODULES
+from ecosim_test_common.test_data.building_simulation import BUILDING_MODULES, BUILDING_SIMULATORS, building_fmu_files
 
-SIMULATORS = ("house", "occupancy", "weather")
-
-
-@dataclass(frozen=True)
-class WrittenSimulation:
-    folder: Path
-    report_lines: list[str]
+from tests.new.written_simulation import WrittenSimulation
 
 
 @pytest.fixture(scope="module")
 def building_simulation(tmp_path_factory: pytest.TempPathFactory) -> WrittenSimulation:
-    """The simulation that ecosim new writes from the FMUs of the hand-written building example, written once for all tests."""
-    folder = tmp_path_factory.mktemp("new") / "building"
-    report = io.StringIO()
-    with contextlib.redirect_stdout(report):
-        assert main(passed_arguments=[str(folder), *(str(BUILDING_MODULES / name / f"{name}.fmu") for name in SIMULATORS)]) == 0
-    return WrittenSimulation(folder=folder, report_lines=report.getvalue().splitlines())
+    return WrittenSimulation.of_fmu_files(directory=tmp_path_factory.mktemp("new") / "building", fmu_files=building_fmu_files())
 
 
 def _connections_of(simulation_config_file: Path) -> dict[tuple[str, str], tuple[str, str]]:
@@ -45,13 +30,13 @@ def _names_in_fmc_file(fmc_file: Path, key: str) -> set[str]:
 
 
 def test_the_building_simulation_connects_the_inputs_like_the_hand_written_one(building_simulation: WrittenSimulation) -> None:
-    connections = _connections_of(simulation_config_file=building_simulation.folder / "server" / "simulation.json")
+    connections = _connections_of(simulation_config_file=building_simulation.directory / "server" / "simulation.json")
 
     assert len(connections) == 18
     assert connections == _connections_of(simulation_config_file=BUILDING_MODULES / "simulation.json")
 
 
-@pytest.mark.parametrize("simulator", SIMULATORS)
+@pytest.mark.parametrize("simulator", BUILDING_SIMULATORS)
 @pytest.mark.parametrize("key", ["inputs", "outputs"])
 def test_the_building_simulation_lists_every_interface_of_the_hand_written_fmc_files(
     building_simulation: WrittenSimulation,
@@ -60,12 +45,12 @@ def test_the_building_simulation_lists_every_interface_of_the_hand_written_fmc_f
 ) -> None:
     hand_written = _names_in_fmc_file(fmc_file=BUILDING_MODULES / simulator / f"{simulator}.fmc", key=key)
 
-    assert hand_written <= _names_in_fmc_file(fmc_file=building_simulation.folder / "Modules" / simulator / f"{simulator}.fmc", key=key)
+    assert hand_written <= _names_in_fmc_file(fmc_file=building_simulation.directory / "Modules" / simulator / f"{simulator}.fmc", key=key)
 
 
-@pytest.mark.parametrize("simulator", SIMULATORS)
+@pytest.mark.parametrize("simulator", BUILDING_SIMULATORS)
 def test_the_building_simulation_passes_the_fmu_validation_of_the_client(building_simulation: WrittenSimulation, simulator: str) -> None:
-    validate_fmu_file_or_error(config=ConfigParser(building_simulation.folder / "Modules" / simulator / "preferences.ini"), fmi_major_version=2)
+    validate_fmu_file_or_error(config=ConfigParser(building_simulation.directory / "Modules" / simulator / "preferences.ini"), fmi_major_version=2)
 
 
 def test_the_check_at_the_end_finds_no_problem_in_the_building_simulation(building_simulation: WrittenSimulation) -> None:
