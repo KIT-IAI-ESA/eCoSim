@@ -15,8 +15,7 @@ from ecosim_server.config.database_cli_parameters import DATABASE_PARAMETERS
 
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-server",
-    description="Runs a simulation. The server waits until every simulator of the simulation config is connected, "
-    + "then steps them all and stores the results in files or in PostgreSQL.",
+    description="Runs a simulation. Waits until one client per simulator is connected. Stores the results in files or in PostgreSQL.",
     examples=(
         "ecosim-server --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
         + "    --steps 100 --database-type file --database-directory results",

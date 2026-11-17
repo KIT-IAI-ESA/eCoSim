@@ -1,5 +1,3 @@
-"""The options of ecosim-server in their help sections, without the database. ecosim-hpc and the ecosim command reuse them."""
-
 from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_common.config.option_values import number_from_zero_to_one, port_number, positive_whole_number
 from ecosim_common.config.shared_parameters import SERVER_CONNECTION
@@ -32,7 +30,7 @@ RUN_PARAMETERS = (
         required=True,
         transform=positive_whole_number,
         metavar="N",
-        help_text="How many steps the simulation runs. With --restore-simulation-run, the steps of the whole run.",
+        help_text="How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run.",
     ),
     AppConfigParameter(
         name="step-size",
@@ -47,14 +45,13 @@ RUN_PARAMETERS = (
         default_value="1",
         transform=number_from_zero_to_one,
         metavar="NUMBER",
-        help_text="Slows the run down: before the server sends a simulator its step, it waits 0 seconds at 1, 2 seconds at 0.5 and 4 seconds at 0.",
+        help_text="Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait.",
     ),
     AppConfigParameter(
         name="restore-simulation-run",
         group=RUN,
         is_flag=True,
-        help_text="Continues an aborted run from its stored results, or starts a new run if there is none. "
-        + "The config files must not have changed: the stored results are mapped to steps with the current step size and start date.",
+        help_text="Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files.",
     ),
 )
 

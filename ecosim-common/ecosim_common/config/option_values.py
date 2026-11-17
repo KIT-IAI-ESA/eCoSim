@@ -1,5 +1,3 @@
-"""Converters for AppConfigParameter.transform. argparse turns their ArgumentTypeError into a usage error with exit code 2."""
-
 import math
 from argparse import ArgumentTypeError
 
@@ -37,5 +35,4 @@ def true_or_false(text: str) -> bool:
 
 
 def choice_name(text: str) -> str:
-    """Accepts any letter case and a hyphen for the underscore, like TCP_SOCKET or tcp-socket for tcp_socket."""
     return text.strip().lower().replace("-", "_")

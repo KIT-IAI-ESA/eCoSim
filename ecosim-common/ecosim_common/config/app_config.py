@@ -57,7 +57,6 @@ def add_parameters(
     parameters: Iterable[AppConfigParameter],
     environment_variables: Mapping[str, str],
 ) -> None:
-    """Adds the parameters to a parser or to a subcommand's parser, each under the title of its group."""
     parameters_by_group: dict[str | None, list[AppConfigParameter]] = {}
     for parameter in parameters:
         parameters_by_group.setdefault(parameter.group, []).append(parameter)
@@ -68,7 +67,6 @@ def add_parameters(
 
 
 def short_usage(parameters: Iterable[AppConfigParameter]) -> str:
-    """The usage line names only the required options, --help lists the others."""
     required = [
         f"{parameter.to_cli_variable()} {parameter.metavar or parameter.to_parsed_arg_name().upper()}"
         for parameter in parameters
@@ -87,13 +85,11 @@ class AppConfigParameter:
     enable_environment_variable: bool = False
     environment_variable_prefix: str | None = None
     default_value: str | None = None
-    # converts the text, an argparse.ArgumentTypeError from it becomes a usage error with exit code 2
+    # argparse turns an ArgumentTypeError of the transform into a usage error
     transform: Callable[[str], Any] | None = None
-    # compared with the value after the transform
+    # argparse compares them with the value after the transform
     choices: tuple[str, ...] | None = None
-    # what the help shows for the value, like FILE or PORT
     metavar: str | None = None
-    # the section of the help, None for the general options
     group: str | None = None
 
     def to_environment_variable(self) -> str:

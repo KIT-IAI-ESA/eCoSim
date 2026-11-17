@@ -11,10 +11,8 @@ from ecosim_server.config.cli_parameters import CONFIG_FILES
 
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-hpc",
-    description="Runs the server and every client of a simulation on a Dask cluster, for example in an HPC job. "
-    + "Each folder in --simulator-dir is one simulator. The server and the clients always talk over Dask. "
-    + "Started with mpirun, it starts its own Dask cluster: rank 0 is the scheduler, rank 1 the server, every other rank a worker. "
-    + "With --interactive it uses a running Dask scheduler instead.",
+    description="Runs the server and all clients of a simulation on a Dask cluster. Started with mpirun it starts its own Dask cluster. "
+    + "With --interactive it uses a running Dask scheduler.",
     examples=(
         "mpirun -np 4 ecosim-hpc --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
         + "    --simulator-dir Modules --steps 100 --database-type file",
@@ -39,7 +37,7 @@ class HPCServerCliArguments(CLIArguments):
     @classmethod
     @override
     def parameters(cls) -> list[AppConfigParameter]:
-        # the protocol is always Dask, see communication_protocol()
+        # the protocol is always Dask
         server_parameters = [parameter for parameter in super().parameters() if parameter is not COMMUNICATION_PROTOCOL_PARAMETER]
         return [
             *server_parameters,
@@ -48,28 +46,26 @@ class HPCServerCliArguments(CLIArguments):
                 group=CONFIG_FILES,
                 required=True,
                 metavar="FOLDER",
-                help_text="The folder with one folder per simulator, usually Modules. The files in a simulator's folder choose its client: "
-                + "an FMU client for each .fmu file, the Pyro5 client for .py files, the MATLAB client for .m files.",
+                help_text="The folder with one folder per simulator, usually Modules.",
             ),
             AppConfigParameter(
                 name="interactive",
                 group=DASK_CLUSTER,
                 is_flag=True,
-                help_text="Connects to a running Dask scheduler through its scheduler file, instead of starting a cluster with mpirun.",
+                help_text="Connects to a running Dask scheduler instead of starting a cluster with mpirun.",
             ),
             AppConfigParameter(
                 name="scheduler-file",
                 group=DASK_CLUSTER,
                 default_value=cls.DEFAULT_SCHEDULER_FILE,
                 metavar="FILE",
-                help_text="With --interactive: the file the Dask scheduler wrote. A relative path starts in the current folder.",
+                help_text="The file the Dask scheduler wrote, used with --interactive.",
             ),
             AppConfigParameter(
                 name="network-interface",
                 group=DASK_CLUSTER,
                 metavar="NAME",
-                help_text="With mpirun: the network interface of the Dask scheduler and the workers, like enp3s0, eno1, eth0 or ib0. "
-                + "Without it, dask_mpi chooses.",
+                help_text="The network interface of the Dask scheduler and the workers with mpirun, for example ib0.",
             ),
             AppConfigParameter(
                 name="threads-per-worker",
@@ -77,7 +73,7 @@ class HPCServerCliArguments(CLIArguments):
                 default_value=str(cls.DEFAULT_THREADS_PER_WORKER),
                 transform=positive_whole_number,
                 metavar="N",
-                help_text="With mpirun: the threads of each Dask worker. A job with only one worker needs at least 2.",
+                help_text="The threads of each Dask worker with mpirun. A job with one worker needs at least 2.",
             ),
         ]
 

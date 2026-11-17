@@ -1,4 +1,4 @@
 from ecosim_common.config.console_script import ConsoleScript
 
-# the name of an installed package, so that --version finds a version
+# --version needs the name of an installed package
 CONSOLE_SCRIPT = ConsoleScript(name="ecosim-common", description="CLI description")

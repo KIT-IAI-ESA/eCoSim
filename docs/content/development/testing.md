@@ -28,11 +28,10 @@ Mark a test that loads an FMU with `@skip_unless_fmpy_loads(fmu_file)` from `eco
 so it is skipped where fmpy cannot load the FMU's binary. For the house FMUs, use
 `@HouseSimulationData.skip_unless_fmpy_loads_the_fmus()`, which also skips the platforms that have no build of them.
 
-The applications read `sys.argv` unless they are given their arguments. Under pytest, `sys.argv` holds
-pytest's own arguments, which the applications reject. A test passes the arguments instead, to the
-console script, `main(passed_arguments=["--config-file", ...])`, or to its options class,
-`CLIArguments(passed_arguments=[...])`. Older tests set `sys.argv` with `esp_monkey_patch` from
-`ecosim-test-common`.
+The applications read `sys.argv` unless a test passes the arguments. Under pytest, `sys.argv` has pytest's own
+arguments and the applications reject them. Pass the arguments to the console script,
+`main(passed_arguments=["--config-file", ...])`, or to its options class, `CLIArguments(passed_arguments=[...])`.
+Older tests set `sys.argv` with `esp_monkey_patch` from `ecosim-test-common`.
 
 ## Integration tests
 

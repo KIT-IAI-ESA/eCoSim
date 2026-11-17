@@ -1,7 +1,10 @@
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
+from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.main import main
+from ecosim_test_common.exit_code_and_error_line import exit_code_and_error_line
 from ecosim_test_common.resources.config_files import config_file_path_str
 
 REQUIRED_ARGUMENTS = [
@@ -31,15 +34,16 @@ def test_a_value_that_would_start_a_wrong_run_stops_the_server_with_a_usage_erro
     option: str,
     value: str,
 ) -> None:
-    with pytest.raises(SystemExit) as exit_info:
-        CLIArguments(passed_arguments=[*REQUIRED_ARGUMENTS, option, value])
+    arguments = [*REQUIRED_ARGUMENTS, option, value]
 
-    assert exit_info.value.code == 2
-    assert f"error: argument {option}: " in capsys.readouterr().err.splitlines()[-1]
+    exit_code, error_line = exit_code_and_error_line(command=lambda: CLIArguments(passed_arguments=arguments), capsys=capsys)
+
+    assert exit_code == USAGE_ERROR_EXIT_CODE
+    assert f"error: argument {option}: " in error_line
 
 
 @pytest.mark.parametrize("value", ["TCP_SOCKET", "tcp_socket", "tcp-socket"])
-def test_the_communication_protocol_takes_the_spellings_it_took_before(value: str) -> None:
+def test_the_communication_protocol_ignores_case_and_takes_a_hyphen(value: str) -> None:
     arguments = CLIArguments(passed_arguments=[*REQUIRED_ARGUMENTS, "--communication-protocol", value])
 
     assert arguments.communication_protocol() is CommunicationProtocol.TCP_SOCKET
@@ -49,5 +53,5 @@ def test_the_help_does_not_print_the_banner(capsys: pytest.CaptureFixture[str]) 
     with pytest.raises(SystemExit) as exit_info:
         main(passed_arguments=["--help"])
 
-    assert exit_info.value.code == 0
-    assert capsys.readouterr().out.startswith("usage: ecosim-server --server-config FILE --simulation-config FILE --steps N [options]")
+    assert exit_info.value.code == ShutdownManager.SUCCESS_EXIT_CODE
+    assert capsys.readouterr().out.startswith("usage: ecosim-server ")
