@@ -14,7 +14,7 @@ from sqlalchemy import FLOAT, JSON, Column, DateTime
 
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
-from ecosim_server.measurement.measurement_repository import MeasurementRepository
+from ecosim_server.measurement.measurement_repository import MODULE_PREFIX, MeasurementRepository
 from ecosim_server.tech.db.db_connection import DBConnection
 from ecosim_server.tech.db.sqlalchemy_base import SimControlDB_Base
 
@@ -94,7 +94,7 @@ class MeasurementRepositoryDB(MeasurementRepository):
 
     @staticmethod
     def table_name_of(simulator_name: str) -> str:
-        return f"module_{simulator_name.lower()}"
+        return f"{MODULE_PREFIX}{simulator_name.lower()}"
 
     @staticmethod
     def column_name_of_server_interface(interface: ModelInterfaceServer) -> str:

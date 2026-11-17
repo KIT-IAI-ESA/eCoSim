@@ -43,7 +43,6 @@ def test_with_the_inputs_each_simulator_shows_its_outputs_before_its_inputs(tmp_
 
     table = read_results(directory=tmp_path, include_inputs=True)
 
-    # simulation.json lists the input of the house before its output
     assert table.column_names()[-2:] == ("house.T_room", "house.T_out_in")
 
 
@@ -57,7 +56,7 @@ def test_whole_numbers_and_booleans_become_floats(tmp_path: Path) -> None:
     assert [type(value) for value in row] == [float, float]
 
 
-def test_a_null_value_of_an_array_gives_empty_cells_and_no_column_of_its_own(tmp_path: Path) -> None:
+def test_a_null_value_of_an_array_gives_empty_cells_and_no_separate_column(tmp_path: Path) -> None:
     repository = StoredRun.file_repository(directory=tmp_path, simulator_name="source")
     repository.add(values=(ProtocolInterfaceValue(name="y", value=[1.0, 2.0]),), timestamp=StoredRun.time_of(step=0))
     repository.add(values=(ProtocolInterfaceValue(name="y", value=None),), timestamp=StoredRun.time_of(step=1))
@@ -78,17 +77,17 @@ def test_a_simulator_without_a_row_at_a_time_gets_empty_cells_there(tmp_path: Pa
     assert table.values("house.T_room") == [290.0, 290.0 + 1 / 3, None]
 
 
-def test_a_folder_with_two_runs_gives_the_last_run_and_says_so(tmp_path: Path, stored_run: StoredRun) -> None:
+def test_a_directory_with_two_runs_gives_the_last_run_and_says_so(tmp_path: Path, stored_run: StoredRun) -> None:
     stored_run.write_files(directory=tmp_path, steps=5)
     stored_run.write_files(directory=tmp_path, steps=2)
 
     table = read_results(tmp_path)
 
     assert table.times == tuple(StoredRun.time_of(step) for step in range(2))
-    assert "holds 2 runs" in table.warnings[0]
+    assert "contains 2 runs" in table.warnings[0]
 
 
-def test_the_simulation_config_can_be_given_for_a_folder_without_a_copy(tmp_path: Path, stored_run: StoredRun) -> None:
+def test_the_simulation_config_can_be_given_for_a_directory_without_a_copy(tmp_path: Path, stored_run: StoredRun) -> None:
     results = tmp_path / "results"
     stored_run.write_files(directory=results, steps=1)
 
@@ -104,7 +103,7 @@ def test_the_state_of_the_run_comes_with_the_table(tmp_path: Path, stored_run: S
     assert read_results(tmp_path).state is SimulationState.FAILED
 
 
-def test_a_folder_without_states_gives_no_state(tmp_path: Path, stored_run: StoredRun) -> None:
+def test_a_directory_without_states_gives_no_state(tmp_path: Path, stored_run: StoredRun) -> None:
     stored_run.write_files(directory=tmp_path, steps=1)
     (tmp_path / "simulation_state.jsonl").unlink()
 

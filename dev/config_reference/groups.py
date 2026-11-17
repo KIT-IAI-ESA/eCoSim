@@ -60,8 +60,8 @@ GROUPS = [
     ),
     (
         "Python client",
-        "Read in addition by `ecosim-client-python`. `model` names the module and the class of the model, "
-        "for example `room:Room`. The folder of the ini file is searched first, then the installed packages. "
+        "Read in addition by `ecosim-client-python`. `model` is the module and the class of the model, "
+        "for example `room:Room`. The module is searched in the folder of the ini file first, then in the installed packages. "
         "See the [Python client](../guides/python-client.md) guide.",
         "ecosim-client-python/ecosim_client_python/python_config.py",
     ),

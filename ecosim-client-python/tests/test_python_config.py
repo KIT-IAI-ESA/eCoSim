@@ -13,15 +13,15 @@ def _python_config_of(directory: Path, model: str) -> PythonConfig:
     return PythonConfig.of(config_parser=ConfigParser(path=ini_file))
 
 
-def test_the_model_names_a_module_and_a_class_and_the_folder_of_the_ini_file(tmp_path: Path) -> None:
+def test_the_model_gives_the_module_the_class_and_the_directory_of_the_ini_file(tmp_path: Path) -> None:
     config = _python_config_of(directory=tmp_path, model="room : Room")
 
-    assert (config.module_name, config.class_name, config.folder) == ("room", "Room", tmp_path)
+    assert (config.module_name, config.class_name, config.directory) == ("room", "Room", tmp_path)
 
 
 @pytest.mark.parametrize("model", ["room", "room:", ":Room", ".room:Room"])
-def test_a_model_that_does_not_name_a_module_and_a_class_says_how_to_write_it(tmp_path: Path, model: str) -> None:
-    expected_message = f"{tmp_path / 'preferences.ini'}: model in [python] has to name a module and a class, like model = room:Room, not '{model}'"
+def test_a_model_without_a_module_and_a_class_says_how_to_write_it(tmp_path: Path, model: str) -> None:
+    expected_message = f"{tmp_path / 'preferences.ini'}: model in [python] needs a module and a class like room:Room, not '{model}'"
 
     with pytest.raises(ValueError, match=re.escape(expected_message)):
         _python_config_of(directory=tmp_path, model=model)

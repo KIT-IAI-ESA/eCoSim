@@ -13,7 +13,7 @@ class FMPyCliArguments(CLIArguments):
             AppConfigParameter(
                 name="validate-fmu-file-only",
                 is_flag=True,
-                help_text="Only check the FMU and the .fmc file against each other, then exit. Starts no client.",
+                help_text="Only check the FMU and the .fmc file against each other. Starts no client.",
             ),
         ]
 

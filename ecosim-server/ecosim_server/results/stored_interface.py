@@ -12,15 +12,12 @@ from sqlalchemy import RowMapping, Table
 
 @dataclass(frozen=True)
 class StoredInterface:
-    """An interface as PostgreSQL stores it: a number in one column, a list in a JSON column."""
-
     column: ResultColumn
     number_column: str
     json_column: str
 
     @staticmethod
     def of_client(client: ClientSimulatorConfig) -> list[StoredInterface]:
-        """The interfaces of the run's simulation.json, so the names come back as written there."""
         return [
             StoredInterface(
                 column=ResultColumn.of_interface(interface),
@@ -32,7 +29,7 @@ class StoredInterface:
 
     @staticmethod
     def of_table(simulator_name: str, table: Table) -> list[StoredInterface]:
-        """The interfaces of the columns: i_ or o_ and the name in lower case, and the same with _json."""
+        """Reads the interfaces from the column names, i_ or o_ before the lower case name."""
         names = [column.name for column in table.columns]
         return [
             StoredInterface(

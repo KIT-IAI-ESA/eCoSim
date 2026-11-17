@@ -98,7 +98,6 @@ class SimulationConfig:
 
     @staticmethod
     def clients_of_file(simulation_config_file: Path) -> List[ClientSimulatorConfig]:
-        # without the connection check, because reading the results of a run must not fail on a broken connection
         config = SimulationConfig._load_config(simulation_config_file)
         problems = simulator_key_problems(raw_config=config, simulation_config_file=simulation_config_file)
         if problems:

@@ -14,8 +14,6 @@ from ecosim_client_python.python_model import PythonModel
 
 @dataclass(kw_only=True)
 class PythonClient(SimulatorClient):
-    """Runs a Python model in the process of the client, without a Pyro5 daemon."""
-
     _model: PythonModel
 
     @staticmethod
@@ -25,7 +23,6 @@ class PythonClient(SimulatorClient):
     ) -> PythonClient:
         client_config = SimpleClientConfig.of_config_parser(config_parser=config_parser, config_override=config_override)
         python_config = PythonConfig.of(config_parser=config_parser)
-        # the import runs the code of the module, which can take a while or wait
         PythonClient.logger.info("Importing the model %s", python_config.model_reference)
         return PythonClient(_client_config=client_config, _model=PythonModel.of_config(config=python_config))
 

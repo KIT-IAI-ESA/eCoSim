@@ -27,7 +27,7 @@ class TestPythonClientBase(ClientBaseTest):
     def create_client(self, config_override: ClientConfigOverride) -> SimulatorClient:
         fmc_file = write_fmc(directory=self._config_directory, inputs=["u"], outputs=["y"])
         ini_file = write_client_ini(directory=self._config_directory, client_type="python", model_name="python_model", fmc_file=fmc_file)
-        # the model object of the test, so assert_resources_released can look at it
+        # assert_resources_released reads the model object of the test
         return PythonClient(
             _client_config=SimpleClientConfig.of_config_parser(config_parser=ConfigParser(path=ini_file), config_override=config_override),
             _model=PythonModel.of_object(model=self._model, model_reference="DoublingModel"),
