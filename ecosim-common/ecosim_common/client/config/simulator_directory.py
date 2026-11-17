@@ -55,11 +55,10 @@ class SimulatorDirectory:
         return sorted(model_file for pattern in ("*.py", "*.fmu", "*.m") for model_file in self.path.glob(pattern))
 
     def has_a_model(self) -> bool:
-        return self.names_a_python_model() or len(self.model_files()) > 0
+        return self.sets_a_python_model() or len(self.model_files()) > 0
 
-    def names_a_python_model(self) -> bool:
-        """The module of the model can also be installed, so the directory needs no .py file."""
-        return self.config_parser.contains("python", "model")
+    def sets_a_python_model(self) -> bool:
+        return self.config_parser.contains(section="python", option="model")
 
 
 @dataclass(frozen=True)
@@ -107,7 +106,6 @@ class SimulatorDirectorySearch:
         try:
             return SimulatorDirectory.of_ini_file(ini_file=ini_file)
         except (ConfigParserException, configparser.Error, UnicodeDecodeError, TypeError) as error:
-            # the errors of an unknown type or a wrong encoding do not name the file
             return str(error) if str(ini_file) in str(error) else f"{ini_file}: {error}"
 
     @staticmethod

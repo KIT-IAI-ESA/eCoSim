@@ -62,7 +62,6 @@ def _problem_of_target(connection: dict[str, Any], own_interface: dict[str, Any]
 
 
 def _names_to_suggest(own_interface: dict[str, Any], simulator: dict[str, Any]) -> list[str]:
-    # an input takes its value from an output, and no interface is connected to itself
     return [
         interface["name"]
         for interface in simulator["interfaces"]

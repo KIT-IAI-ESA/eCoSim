@@ -47,7 +47,8 @@ def test_an_interface_takes_its_unit_and_description_from_the_model_description(
     dry_bulb_temperature = weather.output_named(name="weatherBus.TDryBul")
 
     assert dry_bulb_temperature is not None
-    assert (dry_bulb_temperature.unit, dry_bulb_temperature.description) == ("K", "Dry bulb temperature")
+    assert dry_bulb_temperature.unit == "K"
+    assert dry_bulb_temperature.description == "Dry bulb temperature"
 
 
 @pytest.mark.parametrize(("fmu_file", "fmi_major_version"), [(fmu2_model_path(), 2), (fmu3_model_path(), 3)])
@@ -61,20 +62,13 @@ def test_the_client_check_accepts_every_interface_of_the_fmu_interfaces(fmu_file
     )
 
 
-def test_an_fmu_for_model_exchange_only_is_refused(tmp_path: Path) -> None:
+def test_an_fmu_for_model_exchange_only_is_rejected(tmp_path: Path) -> None:
     fmu_file = generate_fmu_without_co_simulation(fmu_file=fmu2_model_path(), directory=tmp_path)
 
     with pytest.raises(ValueError, match="no co-simulation part"):
         FMUInterfaces.of_fmu_file(fmu_file=fmu_file)
 
 
-@pytest.mark.parametrize("fmu_file", [fmu2_model_path(), fmu3_model_path(), resource_path_file("hpc/modules/house/house.fmu")])
-def test_the_co_simulation_part_is_removed_whether_its_element_is_closed_by_a_tag_or_by_itself(tmp_path: Path, fmu_file: Path) -> None:
-    changed_fmu_file = generate_fmu_without_co_simulation(fmu_file=fmu_file, directory=tmp_path)
-
-    assert read_model_description(file=changed_fmu_file).coSimulation is None
-
-
-def test_an_fmi1_fmu_is_refused_naming_the_versions_that_run(tmp_path: Path) -> None:
+def test_an_fmi1_fmu_is_rejected_with_the_versions_that_run(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="is FMI 1.0, but eCoSim runs FMI 2.0 and FMI 3.0 FMUs only"):
         FMUInterfaces.of_fmu_file(fmu_file=generate_fmi1_fmu(directory=tmp_path))

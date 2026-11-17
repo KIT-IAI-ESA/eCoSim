@@ -4,7 +4,7 @@ from ecosim_common.config.client_id import ClientID
 
 
 def write_simulator_directory(directory: Path, client_id: ClientID, model_file: str | None, extra_ini_text: str = "") -> Path:
-    """Writes the ini file, and an empty model file if one is named. Returns the ini file."""
+    """Returns the ini file."""
     directory.mkdir()
     ini_file = directory / "preferences.ini"
     ini_file.write_text(

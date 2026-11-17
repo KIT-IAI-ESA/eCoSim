@@ -28,13 +28,16 @@ def test_several_ini_files_in_one_directory_fail_naming_the_directory(tmp_path: 
         SimulatorDirectory.find_for_simulators(simulators_directory=tmp_path, client_ids=[house])
 
 
-def test_two_directories_for_one_simulator_fail_naming_the_simulator(tmp_path: Path) -> None:
+def test_two_directories_for_one_simulator_fail_with_the_simulator_and_both_directories(tmp_path: Path) -> None:
     house = ClientID(model_name="house", simulator_name="house")
     write_simulator_directory(directory=tmp_path / "first_house", client_id=house, model_file="house.fmu")
     write_simulator_directory(directory=tmp_path / "second_house", client_id=house, model_file="house.fmu")
 
-    with pytest.raises(RuntimeError, match=re.escape(str(house))):
+    with pytest.raises(RuntimeError, match=re.escape(str(house))) as error:
         SimulatorDirectory.find_for_simulators(simulators_directory=tmp_path, client_ids=[house])
+
+    assert str(tmp_path / "first_house") in str(error.value)
+    assert str(tmp_path / "second_house") in str(error.value)
 
 
 def test_every_configured_simulator_without_a_directory_or_a_model_file_is_named(tmp_path: Path) -> None:
@@ -55,19 +58,7 @@ def test_every_configured_simulator_without_a_directory_or_a_model_file_is_named
     assert named_simulators == [occupancy, weather, heating]
 
 
-def test_two_directories_for_one_simulator_fail_naming_both_directories(tmp_path: Path) -> None:
-    house = ClientID(model_name="house", simulator_name="house")
-    write_simulator_directory(directory=tmp_path / "first_house", client_id=house, model_file="house.fmu")
-    write_simulator_directory(directory=tmp_path / "second_house", client_id=house, model_file="house.fmu")
-
-    with pytest.raises(RuntimeError, match="are both for simulator") as error:
-        SimulatorDirectory.find_for_simulators(simulators_directory=tmp_path, client_ids=[house])
-
-    assert str(tmp_path / "first_house") in str(error.value)
-    assert str(tmp_path / "second_house") in str(error.value)
-
-
-def test_every_directory_whose_ini_file_cannot_be_read_is_named(tmp_path: Path) -> None:
+def test_every_directory_whose_ini_file_cannot_be_read_is_reported(tmp_path: Path) -> None:
     house = ClientID(model_name="house", simulator_name="house")
     weather = ClientID(model_name="weather", simulator_name="weather")
     write_simulator_directory(directory=tmp_path / "house", client_id=house, model_file="house.fmu")
@@ -112,7 +103,7 @@ def test_the_search_lists_every_unusable_directory_with_the_reason(tmp_path: Pat
     assert search.missing == [heating]
 
 
-def test_the_reason_for_an_ini_file_that_cannot_be_read_names_the_file(tmp_path: Path) -> None:
+def test_the_reason_for_an_ini_file_that_cannot_be_read_includes_the_file(tmp_path: Path) -> None:
     house = ClientID(model_name="house", simulator_name="house")
     for directory in ["unknown_type", "no_section", "utf_16"]:
         write_simulator_directory(directory=tmp_path / directory, client_id=house, model_file="house.fmu")
@@ -125,8 +116,8 @@ def test_the_reason_for_an_ini_file_that_cannot_be_read_names_the_file(tmp_path:
 
     search = SimulatorDirectorySearch.of(simulators_directory=tmp_path, client_ids=[house])
 
-    named_directories = sorted(path.name for path, reason in search.unreadable.items() if str(path / "preferences.ini") in reason)
-    assert named_directories == ["no_section", "unknown_type", "utf_16"]
+    directories_with_the_file = sorted(path.name for path, reason in search.unreadable.items() if str(path / "preferences.ini") in reason)
+    assert directories_with_the_file == ["no_section", "unknown_type", "utf_16"]
 
 
 def test_the_model_files_are_the_python_fmu_and_matlab_files_of_the_directory_in_name_order(tmp_path: Path) -> None:
@@ -140,7 +131,7 @@ def test_the_model_files_are_the_python_fmu_and_matlab_files_of_the_directory_in
     assert [model_file.name for model_file in simulator_directory.model_files()] == ["house.fmu", "model.py", "setup.m"]
 
 
-def test_a_python_model_named_in_the_ini_needs_no_model_file_in_the_directory(tmp_path: Path) -> None:
+def test_a_python_model_set_in_the_ini_needs_no_model_file_in_the_directory(tmp_path: Path) -> None:
     room = ClientID(model_name="room", simulator_name="room")
     write_simulator_directory(
         directory=tmp_path / "room",

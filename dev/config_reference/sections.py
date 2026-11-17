@@ -53,7 +53,7 @@ A list that is left out counts as empty. The `weather.fmc` of a model without in
 
 The list decides whether an entry is an input or an output, so `type` and `connected_to` are not read
 here. Neither are `fmu-file` and `modeldescription`, which the files of the examples contain. The client logs a
-warning for any other key it does not read, and for a name that `inputs` or `outputs` lists twice.
+warning for any other unknown key and for a name that is twice in `inputs` or `outputs`.
 """
 INTERFACE_KEYS_TEXT = """## Interface keys
 

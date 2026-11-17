@@ -8,7 +8,7 @@ from tests.tech.shutdown_listeners import CountingShutdownListener
 
 
 def test_a_break_signal_shuts_down_like_terminate() -> None:
-    # a skip and not a skipif mark, because mypy knows SIGBREAK only behind a check of the platform
+    # mypy knows SIGBREAK only behind a check of the platform
     if sys.platform != "win32":
         pytest.skip("SIGBREAK exists on Windows only")
     ShutdownManager().init()
@@ -22,13 +22,10 @@ def test_a_break_signal_shuts_down_like_terminate() -> None:
     assert listener.notification_count == 1
 
 
-def test_the_windows_break_handler_shuts_down_like_terminate_until_the_reset(monkeypatch: pytest.MonkeyPatch) -> None:
-    # SIGUSR1 stands in for SIGBREAK, so the Windows branch also runs where SIGBREAK does not exist
+def test_a_second_terminate_signal_shuts_down_like_terminate_until_the_reset() -> None:
     if sys.platform == "win32":
         pytest.skip("SIGUSR1 does not exist on Windows")
-    monkeypatch.setattr(target=sys, name="platform", value="win32")
-    monkeypatch.setattr(target=signal, name="SIGBREAK", value=signal.SIGUSR1, raising=False)
-    ShutdownManager().init()
+    ShutdownManager().init(terminate_signals=(signal.SIGTERM, signal.SIGUSR1))
     listener = CountingShutdownListener()
     ShutdownManager().register_listener(listener)
 

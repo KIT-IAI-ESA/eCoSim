@@ -40,8 +40,6 @@ class SkippedVariable:
 
 @dataclass(frozen=True)
 class FMUInterfaces:
-    """The inputs and outputs of an FMU: those the FMU clients exchange, and the others."""
-
     fmu_file: Path
     fmi_version: str
     inputs: tuple[FMUInterface, ...]
@@ -72,7 +70,7 @@ class FMUInterfaces:
         # raises for an FMI version that no client runs
         client_type_of_fmi_version(fmi_version=model_description.fmiVersion, fmu_file=fmu_file)
         if model_description.coSimulation is None:
-            raise ValueError(f"{fmu_file} has no co-simulation part. It is for model exchange only, and eCoSim runs co-simulation FMUs only.")
+            raise ValueError(f"{fmu_file} has no co-simulation part. eCoSim runs co-simulation FMUs only.")
 
     def client_type(self) -> ClientType:
         return client_type_of_fmi_version(fmi_version=self.fmi_version, fmu_file=self.fmu_file)

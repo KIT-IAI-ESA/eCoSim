@@ -28,15 +28,13 @@ The example has these scripts in `building_hpc/Executable/`:
 `server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
 are empty, so the server logs in as your cluster user with the password from `test.pgpass`, see below.
 
-A simulator's folder in `Modules/` holds one model, and `ecosim-hpc` starts one client for it:
+A simulator's folder in `Modules/` has one model. `ecosim-hpc` chooses the client by the files in it:
 
-- the Python client if its `preferences.ini` has `model` in a `[python]` section, whatever other files are in
-  the folder
-- otherwise the FMU client for the FMI version of its `.fmu` file, the MATLAB client for `.m` files or the
-  Pyro5 client for `.py` files
+- the Python client if its `preferences.ini` has `model` in a `[python]` section
+- otherwise an FMU client for an `.fmu` file, the MATLAB client for `.m` files or the Pyro5 client for
+  `.py` files
 
-A folder with model files of two kinds, for example `house.fmu` and `helper.py`, or with two FMUs, stops
-the job before any client starts. The error names the files.
+Two FMUs or model files of different kinds in one folder stop the job before any client starts.
 
 ## Set up and run
 
@@ -58,16 +56,15 @@ the job before any client starts. The error names the files.
 5. Edit `ECOSIM_DIR` in `clusterRunHPC.sh` as well.
 6. If an FMU simulator has a `[start_values]` section, check it on the login node now. A client that
    cannot start on its worker does not stop the job. The server waits for it until the job runs out of
-   time, and a wrong start value, for example a misspelt name, stops an FMU client like this. First run
-   the lines of `clusterRunHPC.sh` from `module load` to `source`, with your `ECOSIM_DIR`, so that your
-   shell has the environment of the job. Then, in `building_hpc/Executable`:
+   time. A typo in a start value is enough for that. First run the lines of `clusterRunHPC.sh` from
+   `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the environment of the job. In
+   `building_hpc/Executable`:
 
    ```shell
    uv run ecosim-client-fmu-v2 --config-file ../Modules/house/preferences.ini --validate-fmu-file-only
    ```
 
-   It reads the FMU and the start values without starting anything, and lists the values it would set or
-   names the mistake. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
+   It reads the FMU and the start values and starts nothing. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
 7. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
@@ -115,10 +112,9 @@ connects to therefore has to be reachable from every node:
 
 ## Python simulators
 
-A model for the [Python client](python-client.md) needs none of this. The client runs it on any worker, so
-nothing has to be started before the job. The packages the model imports have to be installed in the
-environment of the job, and two models in different directories need modules with different names, see
-[On an HPC cluster](python-client.md#on-an-hpc-cluster).
+A model for the [Python client](python-client.md) needs none of this. The client runs it on any worker.
+The packages the model imports have to be installed in the environment of the job. Two models in different
+folders need modules with different names, see [On an HPC cluster](python-client.md#on-an-hpc-cluster).
 
 ## Look at the results
 
