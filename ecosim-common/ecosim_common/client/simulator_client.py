@@ -28,7 +28,7 @@ class SimulatorClient(Client, ABC):
     _is_cleared: bool = field(default=False)
     _clear_wait_timeout_in_seconds: float = field(default=60.0)
     # every step takes this lock, a small thing to tune for HPC runs if needed
-    # reentrant: a signal handler that clears in the middle of a step in the same thread must not wait for itself
+    # a signal handler clears in the thread that runs the step
     _model_lock: threading.RLock = field(init=False, default_factory=threading.RLock)
 
     def __post_init__(self) -> None:
@@ -73,7 +73,7 @@ class SimulatorClient(Client, ABC):
 
     def _ensure_not_cleared(self) -> None:
         if self._is_cleared:
-            raise RuntimeError("Simulator already cleared, so the model is not used anymore.")
+            raise RuntimeError("Simulator already cleared. The model is not used anymore.")
 
     @override
     def on_simulation_stop(self) -> None:

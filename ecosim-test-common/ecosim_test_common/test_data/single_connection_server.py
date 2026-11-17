@@ -28,7 +28,6 @@ class SingleConnectionServer:
         return ConnectionAddress.of_raw_socket_address(self._listening_socket.getsockname())
 
     def serve_and_close(self, message_types: list[MessageType], payloads: dict[MessageType, MessageData] | None = None) -> None:
-        """Sends a message of each type with its payload from 'payloads', the others empty."""
         payloads = payloads or {}
         channel = self._accept()
         for message_type in message_types:

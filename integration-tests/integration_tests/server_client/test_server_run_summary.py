@@ -1,5 +1,6 @@
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.tech.port_utils import get_free_port
+from ecosim_common.tech.shutdown_manager import ShutdownManager
 from integration_tests.test_data.server_client.lost_client_setup import (
     HEALTHY,
     HOST,
@@ -54,14 +55,18 @@ def test_the_summary_of_a_failed_run_gives_the_error_as_the_reason(communication
     assert summary.failure_reason == str(server_run.error)
 
 
-def test_a_run_that_neither_finished_nor_failed_counts_as_stopped_by_a_signal() -> None:
-    # the signal handler ends the run with SystemExit, which the server lets through
+def test_a_run_that_the_shutdown_of_a_signal_ends_counts_as_stopped_by_a_signal(communication_protocol: CommunicationProtocol) -> None:
     server = SimpleTestServer.for_client_ids(
-        communication_protocol=CommunicationProtocol.TCP_SOCKET,
+        communication_protocol=communication_protocol,
         host=HOST,
         port=get_free_port(),
         client_ids=(HEALTHY,),
         steps=STEPS,
     )
+    server_run = server.start_in_thread()
+    server.wait_until_listening()
 
+    ShutdownManager().set_shutdown_at_application_end()
+
+    server_run.assert_ends_within(timeout_in_seconds=RUN_TIMEOUT_IN_SECONDS)
     assert server.run_summary().failure_reason == "stopped by Ctrl-C or a kill signal"

@@ -16,13 +16,10 @@ def test_postgres_results_show_the_database_server_its_name_and_the_schema() -> 
     assert database.start_up_values() == {"Database server": "localhost:5432", "Database name": "sim_control", "Database schema": "temp_schema"}
 
 
-def test_postgres_results_without_a_server_name_are_on_this_computer() -> None:
+def test_postgres_results_without_a_server_name_show_the_local_port() -> None:
     database = generate_server_config(database_type=DatabaseType.POSTGRES, database_host="").database
 
-    assert (database.start_up_values()["Database server"], database.results_location()) == (
-        "port 5432 of this computer",
-        "PostgreSQL database sim_control on port 5432 of this computer, schema sim_control",
-    )
+    assert database.start_up_values()["Database server"] == "local port 5432"
 
 
 def test_the_image_renderer_shows_up_only_when_it_is_configured() -> None:

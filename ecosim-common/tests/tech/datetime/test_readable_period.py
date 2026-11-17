@@ -27,5 +27,5 @@ _BERLIN_IN_WINTER = timezone(timedelta(hours=1))
         ),
     ],
 )
-def test_a_period_names_its_start_and_its_end_and_the_zone_once(start: datetime, end: datetime, text: str) -> None:
+def test_a_period_shows_its_start_and_its_end_and_the_zone_once(start: datetime, end: datetime, text: str) -> None:
     assert readable_period(start=start, end=end) == text

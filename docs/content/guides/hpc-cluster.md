@@ -61,16 +61,13 @@ everyone in without a password, so the job stops with a message: delete or renam
 
 ## What the job prints
 
-The job writes its output into the SLURM file `slurm-<job id>.out` next to the scripts. The server
-prints its settings, a progress line every 10 seconds in the first minute, then every minute and after an
-hour every 10 minutes, and at the end SIMULATION FINISHED or SIMULATION FAILED with the steps, the
-simulated period and where the results are. `clusterRun.sh` writes what each client prints into
-`log_client1` to `log_client3` instead.
+The job writes its output to the SLURM file `slurm-<job id>.out` next to the scripts. The server prints
+its settings and a progress line from time to time. At the end it prints SIMULATION FINISHED or
+SIMULATION FAILED with the steps, the simulated period and where the results are. `clusterRun.sh` writes
+the output of the clients to `log_client1` to `log_client3` instead.
 
-The job scripts pass `--debug`, so the output also has every message of every step. For 100 steps the
-SLURM file of `clusterRunHPC.sh` has about 10,000 lines. `grep -v ' - DEBUG - ' slurm-<job id>.out` leaves
-out the debug messages and shows the settings, the progress lines and the summary. An error keeps its full
-traceback there.
+The job scripts pass `--debug`. That makes the SLURM file long. `grep -v ' - DEBUG - ' slurm-<job id>.out`
+leaves out the debug messages.
 
 ## Choose the network and the threads
 

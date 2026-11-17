@@ -47,9 +47,8 @@ class Server(ShutdownListener):
     _simulation_executor: SimulationExecutor = field(init=False)
     _channel: ESPChannel = field(init=False)
     _rendering_socket: RenderingSocket | None = field(init=False)
-    # replaced when the run ends, so it stays only if a signal stopped the run
+    # stays when a signal stops the run
     _failure_reason: str | None = field(init=False, default="stopped by Ctrl-C or a kill signal")
-    # the caller of force_stop reports why the run ends
     _force_stopped: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
@@ -83,7 +82,7 @@ class Server(ShutdownListener):
             self._run()
             self._failure_reason = None
         except Exception as error:
-            # a signal reaches only the main thread, so the server thread of ecosim-hpc fails on what the shutdown closed
+            # after a signal the server thread of ecosim-hpc fails on the closed channel
             stopped_by_a_signal = self._client_communication.is_shutdown_triggered() and not self._force_stopped
             if not stopped_by_a_signal:
                 self._failure_reason = one_line_message(error=error)
@@ -135,7 +134,7 @@ class Server(ShutdownListener):
     def force_stop(self) -> None:
         self._force_stopped = True
         self.on_app_shutdown()
-        self._client_communication.stop_waiting_for_clients()
+        self._client_communication.set_shutdown_triggered()
         self._simulation_executor.force_stop()
 
     @override
@@ -259,7 +258,7 @@ class Server(ShutdownListener):
                 if not client_communication.add_if_needed(client_config, connection):
                     Server._logger.warning(
                         "%s",
-                        Server.turned_away_warning(
+                        Server.rejected_client_warning(
                             simulation_config=simulation_config,
                             client_id=client_id,
                             waiting_for_client_ids=client_communication.waiting_for_client_ids(),
@@ -290,21 +289,20 @@ class Server(ShutdownListener):
                 raise e
 
     @staticmethod
-    def why_the_client_is_turned_away(simulation_config: SimulationConfig, client_id: ClientID) -> str:
+    def _rejection_reason(simulation_config: SimulationConfig, client_id: ClientID) -> str:
         if client_id in simulation_config.client_ids():
-            return f"Client {client_id} is already connected, so the server closed the second connection"
-        return f"Client {client_id} is not in the simulation config, so the server closed its connection"
+            return f"Rejected a second connection of client {client_id}. It is already connected."
+        return f"Rejected client {client_id}. It is not in the simulation config."
 
     @staticmethod
-    def turned_away_warning(simulation_config: SimulationConfig, client_id: ClientID, waiting_for_client_ids: Tuple[ClientID, ...]) -> str:
-        reason = Server.why_the_client_is_turned_away(simulation_config=simulation_config, client_id=client_id)
+    def rejected_client_warning(simulation_config: SimulationConfig, client_id: ClientID, waiting_for_client_ids: Tuple[ClientID, ...]) -> str:
+        reason = Server._rejection_reason(simulation_config=simulation_config, client_id=client_id)
         if len(waiting_for_client_ids) == 0:
             return reason
-        return f"{reason}. Still waiting for: {', '.join(str(waiting_client_id) for waiting_client_id in waiting_for_client_ids)}"
+        return f"{reason} Still waiting for: {', '.join(str(waiting_client_id) for waiting_client_id in waiting_for_client_ids)}"
 
     @staticmethod
     def log_closed_connection(server_running_event: ParallelEvent, client_id: ClientID) -> None:
-        # once the run ends, every client closes its connection, so only a closing during the run is a warning
         if server_running_event.is_set():
             Server._logger.warning("Client %s closed the connection", client_id)
             return

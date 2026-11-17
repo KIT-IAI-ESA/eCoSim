@@ -28,19 +28,18 @@ class ConfigParser:
             raise ConfigParserException(self._unreadable_file_message(error=error)) from error
 
     def _unreadable_file_message(self, error: configparser.Error) -> str:
-        # configparser names the file by its repr, like PosixPath('...')
+        # configparser shows the file as its repr, like PosixPath('...')
         if isinstance(error, configparser.DuplicateSectionError):
             return f"{self.config_file} has the section [{error.section}] twice, the second time in line {error.lineno}"
         if isinstance(error, configparser.MissingSectionHeaderError):
             return f"{self.config_file} has to start with a section like [server], not '{error.line.strip()}' in line {error.lineno}"
         if isinstance(error, configparser.ParsingError):
-            # the first bad line only, as a JSON error names only the first mistake
             first_line_number, _ = error.errors[0]
             return self._parsing_error_line(line_number=first_line_number)
         return f"{self.config_file} cannot be read: {error.message}"
 
     def _parsing_error_line(self, line_number: int) -> str:
-        # read again, since Python 3.12 keeps only the repr of each line
+        # Python 3.12 keeps only the repr of each line
         line = self.config_file.read_text(encoding="locale").splitlines()[line_number - 1]
         return f"{self.config_file}: line {line_number} has to be a section like [server] or a key = value, not '{line.strip()}'"
 
@@ -57,7 +56,6 @@ class ConfigParser:
                 ConfigParser._logger.debug("Config '%s.%s' was not found. So the default value '%s' will be used.", section, option, default)
                 return default
             raise e
-        # the default is only for a missing key, a value that is no boolean is a mistake
         try:
             return self.config_string_to_bool(value)
         except ConfigParserException as error:

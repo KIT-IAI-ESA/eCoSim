@@ -51,7 +51,7 @@ docker compose up --abort-on-container-exit
 ```
 
 The run takes a few seconds. It is finished when the server prints `SERVER MEASUREMENT` and every
-container has exited with code 0. The last block, `SIMULATION FINISHED`, says how many steps ran and
+container has exited with code 0. The last block, `SIMULATION FINISHED`, shows the number of steps and
 where the results are.
 
 ### Check the results
@@ -96,8 +96,8 @@ cat results/simulation_state.jsonl
 
 Expected: one `module_*.jsonl` per simulator, each with one line per simulation step (60 lines for
 `--steps=60`), a `server_time_measurement.jsonl` with the runtimes the server prints as
-`SERVER MEASUREMENT`, a `simulation_state.jsonl` that ends with `{"state": "Finished"}`, and a copy of the
-run's `simulation.json`.
+`SERVER MEASUREMENT`, and a `simulation_state.jsonl` that ends with `{"state": "Finished"}`. The folder also
+has a copy of the run's `simulation.json`.
 
 Every line is one JSON object. A measurement of the `house` simulator, shortened to one interface:
 
@@ -154,8 +154,8 @@ results end up.
 
 ### file
 
-- `type=file` and `directory=/results` in `server_config.ini` select the file based repositories. They are all
-  the `[database]` section needs for results as files. `--database-type=file` and `--database-directory=...` do
+- `type=file` and `directory=/results` in `server_config.ini` select the file based repositories. The
+  `[database]` section needs no other key for that. `--database-type=file` and `--database-directory=...` do
   the same on the command line.
 - The repositories append to their files, so a second run adds its results to the ones that are
   already there. Delete `results` in between to start clean.

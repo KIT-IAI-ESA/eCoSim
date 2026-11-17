@@ -33,8 +33,8 @@ arguments and the applications reject them. Pass the arguments to the console sc
 `main(passed_arguments=["--config-file", ...])`, or to its options class, `CLIArguments(passed_arguments=[...])`.
 Older tests set `sys.argv` with `esp_monkey_patch` from `ecosim-test-common`.
 
-Without `--debug`, the `main` of a console script ends an error with one line on stderr and `SystemExit` with
-`ShutdownManager.FAILED_RUN_EXIT_CODE`. A test checks those, or passes `--debug` to get the error itself.
+Without `--debug`, the `main` of a console script prints an error as one line on stderr and raises `SystemExit`
+with `ShutdownManager.FAILED_RUN_EXIT_CODE`. A test checks those, or passes `--debug` to get the error itself.
 
 ## Integration tests
 

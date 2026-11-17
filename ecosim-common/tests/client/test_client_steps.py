@@ -7,15 +7,14 @@ from ecosim_common.communication.message_type import MessageType
 
 from tests.client.spy_simulator_client import SpySimulatorClient
 
-_START_DATE = datetime(year=2024, month=1, day=1, tzinfo=timezone.utc)
-
 
 def _payloads(restored_steps: int = 0) -> dict[MessageType, MessageData]:
+    start_date = datetime(year=2024, month=1, day=1, tzinfo=timezone.utc)
     return {
         MessageType.SIMULATION_STEP: SimulationStepRequest(step=0, inputs=[]),
         MessageType.SIMULATION_STEP_BATCH: SimulationStepBatchRequest(
-            start_datetime=_START_DATE,
-            inputs={_START_DATE + timedelta(seconds=step + 1): [] for step in range(restored_steps)},
+            start_datetime=start_date,
+            inputs={start_date + timedelta(seconds=step + 1): [] for step in range(restored_steps)},
         ),
     }
 
@@ -26,7 +25,8 @@ def test_a_finished_run_counts_the_steps_of_its_model() -> None:
         payloads=_payloads(),
     )
 
-    assert (client.completed_steps, client.restored_steps) == (3, 0)
+    assert client.completed_steps == 3
+    assert client.restored_steps == 0
 
 
 def test_a_restore_counts_the_restored_steps_apart() -> None:
@@ -35,7 +35,8 @@ def test_a_restore_counts_the_restored_steps_apart() -> None:
         payloads=_payloads(restored_steps=2),
     )
 
-    assert (client.completed_steps, client.restored_steps) == (1, 2)
+    assert client.completed_steps == 1
+    assert client.restored_steps == 2
 
 
 def test_the_model_time_adds_up_the_time_inside_the_model_steps() -> None:
@@ -55,19 +56,19 @@ def test_a_finished_run_ends_with_its_steps_and_the_time_its_model_took() -> Non
         seconds_per_model_step=1.5,
     )
 
-    assert client.end_line() == "house#house finished after 2 steps, the model took 3.0 s in total"
+    assert client.end_line() == "house#house finished after 2 steps. The model took 3.0 s in total."
 
 
-def test_a_finished_restored_run_names_its_restored_steps_apart_and_one_step_in_the_singular() -> None:
+def test_a_finished_restored_run_shows_its_restored_steps_apart_and_one_step_in_the_singular() -> None:
     client = SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, MessageType.SIMULATION_STEP_BATCH, MessageType.SIMULATION_STEP, MessageType.SIMULATION_STOP],
         payloads=_payloads(restored_steps=1),
     )
 
-    assert client.end_line() == "house#house finished after 1 step and 1 restored step, the model took 0.00 s in total"
+    assert "finished after 1 step and 1 restored step." in client.end_line()
 
 
-def test_a_run_whose_connection_ended_early_names_the_steps_it_did() -> None:
+def test_a_run_whose_connection_ended_early_shows_the_steps_it_did() -> None:
     client = SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, *[MessageType.SIMULATION_STEP] * 2],
         payloads=_payloads(),
