@@ -1,5 +1,3 @@
-"""The database options of ecosim-server, shown as results in the help. ecosim-hpc and the ecosim command reuse them."""
-
 from ecosim_common.config.app_config import AppConfigParameter
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_common.config.option_values import choice_name, port_number, true_or_false
@@ -19,7 +17,7 @@ DATABASE_PARAMETERS = (
         name="database-directory",
         group=RESULTS,
         metavar="FOLDER",
-        help_text=f"With --database-type {DatabaseType.FILE.serialized}: the folder for the result files. Overrides directory in the "
+        help_text=f"The folder for the result files of --database-type {DatabaseType.FILE.serialized}. Overrides directory in the "
         + "[database] section of the config file. If neither sets it, simulation_results.",
     ),
     AppConfigParameter(
@@ -45,8 +43,8 @@ DATABASE_PARAMETERS = (
         name="database-user-password",
         group=RESULTS,
         metavar="PASSWORD",
-        help_text="The password of the PostgreSQL user. Other users on a shared machine can see it in the process list, "
-        + "so better leave it out. Then it comes from the config file, PGPASSWORD or a password file.",
+        help_text="The password of the PostgreSQL user. Other users on a shared machine can see it in the process list. "
+        + "Without it, the password comes from the config file, PGPASSWORD or a password file.",
     ),
     AppConfigParameter(
         name="database-name",
@@ -72,7 +70,6 @@ DATABASE_PARAMETERS = (
         name="database-drop-existing-schema",
         group=RESULTS,
         is_flag=True,
-        help_text="PostgreSQL only: deletes the schema of an earlier run and all its results before the run starts. Without it, the run "
-        + "stops if the schema exists. With --restore-simulation-run the schema is kept.",
+        help_text="Deletes the PostgreSQL schema of an earlier run with all its results. With --restore-simulation-run the schema is kept.",
     ),
 )

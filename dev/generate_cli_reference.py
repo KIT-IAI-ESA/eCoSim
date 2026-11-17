@@ -5,12 +5,10 @@ Usage: uv run --project simulation_examples python dev/generate_cli_reference.py
 """
 
 import argparse
-import importlib
 import sys
 import textwrap
-from dataclasses import dataclass
-from typing import Any
 
+from cli_reference_commands import COMMANDS, Command, parsers_of
 from cli_reference_options import Option, collect_sections
 from config import REPO_ROOT, write_or_check
 
@@ -24,57 +22,15 @@ description: Every option of the eCoSim server, the clients and the HPC command.
 
 # Command-line options
 
-These tables come from the option definitions in the code, the same that `--help` shows. Every command also takes
-`--help` and `--version`. A misspelt option or a wrong value stops the command at once with exit code 2 and a short
+These tables come from the option definitions in the code. `--help` shows the same. Every command also takes
+`--help` and `--version`. A misspelled option or a wrong value stops the command with exit code 2 and a short
 message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
-For a misspelt option the message names the closest one.
+For a misspelled option the message suggests the closest one.
 
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
 """
 TABLE_HEADER = ["| Option | Required | Default | Description |", "| --- | --- | --- | --- |"]
-
-
-@dataclass(frozen=True)
-class Command:
-    title: str
-    # modules with a CONSOLE_SCRIPT, one for each command of the section
-    console_script_modules: list[str]
-    # "package.module.Class" of the AppConfig with the options
-    arguments: str
-    note: str = ""
-
-
-COMMANDS = [
-    Command(
-        title="Server",
-        console_script_modules=["ecosim_server.config.cli_arguments"],
-        arguments="ecosim_server.config.cli_arguments.CLIArguments",
-    ),
-    Command(
-        title="FMU clients",
-        console_script_modules=["ecosim_client_fmu_v2.main", "ecosim_client_fmu_v3.main"],
-        arguments="ecosim_common_fmpy.config.fmpy_cli_arguments.FMPyCliArguments",
-    ),
-    Command(
-        title="MATLAB and Pyro5 clients",
-        console_script_modules=["ecosim_client_matlab.main", "ecosim_client_pyro5.main"],
-        arguments="ecosim_common.client.config.cli_arguments.CLIArguments",
-        note="See the [MATLAB client](../guides/matlab-client.md) and the [Pyro5 client](../guides/pyro5-client.md) guides.",
-    ),
-    Command(
-        title="HPC",
-        console_script_modules=["ecosim_hpc.config.cli_arguments"],
-        arguments="ecosim_hpc.config.cli_arguments.HPCServerCliArguments",
-        note="See the [HPC cluster](../guides/hpc-cluster.md) guide.",
-    ),
-]
-
-
-def load(target: str) -> Any:
-    """Import "package.module.Name"."""
-    module, name = target.rsplit(".", 1)
-    return getattr(importlib.import_module(module), name)
 
 
 def render_row(option: Option) -> str:
@@ -92,7 +48,7 @@ def render_row(option: Option) -> str:
 
 
 def examples_of(epilog: str | None) -> list[str]:
-    """The example commands at the end of the help, without their indent."""
+    """Return the example commands at the end of the help, without their indent."""
     if not epilog or not epilog.startswith("examples:"):
         return []
     return textwrap.dedent(epilog.removeprefix("examples:").strip("\n")).splitlines()
@@ -114,15 +70,7 @@ def render_page(commands: list[list[str]]) -> str:
 
 
 def main(arguments: list[str]) -> int:
-    create_parser = load("ecosim_common.config.app_config.create_parser")
-    rendered = []
-    for command in COMMANDS:
-        parameters = load(command.arguments).parameters()
-        console_scripts = [load(f"{module}.CONSOLE_SCRIPT") for module in command.console_script_modules]
-        parsers = [
-            create_parser(console_script=console_script, parameters=parameters, environment_variables={}) for console_script in console_scripts
-        ]
-        rendered.append(render_command(command=command, parsers=parsers))
+    rendered = [render_command(command=command, parsers=parsers_of(command=command)) for command in COMMANDS]
     return write_or_check(PAGE, render_page(rendered), "--check" in arguments)
 
 

@@ -14,7 +14,7 @@ from ecosim_client_fmu_v3.fmu3_client import FMU3Client
 
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-fmu-v3",
-    description="Runs an FMI 3.0 model, an FMU, for the eCoSim server. Start the server first.",
+    description="Runs an FMI 3.0 FMU for the eCoSim server. Start the server first.",
     examples=(
         "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini",
         "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate-fmu-file-only",

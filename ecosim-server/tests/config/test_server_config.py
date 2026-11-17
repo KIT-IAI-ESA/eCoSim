@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
 from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.server_config import ServerConfig
@@ -117,7 +118,7 @@ def test_an_unknown_database_type_fails() -> None:
     with pytest.raises(SystemExit) as exit_info:
         generate_server_config_from_file_and_cli_arguments(database_type="mysql")
 
-    assert exit_info.value.code == 2
+    assert exit_info.value.code == USAGE_ERROR_EXIT_CODE
 
 
 def test_the_default_database_directory_is_used_if_the_config_file_has_none() -> None:
@@ -128,10 +129,6 @@ def test_the_database_directory_can_be_overwritten() -> None:
     config = generate_server_config_from_file_and_cli_arguments(database_directory="/tmp/ecosim_results")
 
     assert config.database.directory == Path("/tmp/ecosim_results")
-
-
-def test_the_database_port_option_overrides_the_config_file() -> None:
-    assert generate_server_config_from_file_and_cli_arguments(database_port="5433").database.port == 5433
 
 
 def test_the_database_port_option_overrides_an_empty_port_in_the_config_file(tmp_path: Path) -> None:

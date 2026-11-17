@@ -15,6 +15,6 @@ COMMUNICATION_PROTOCOL_PARAMETER = AppConfigParameter(
     group=SERVER_CONNECTION,
     transform=choice_name,
     choices=tuple(protocol.serialized for protocol in CommunicationProtocol),
-    help_text="How the server and the clients talk to each other. Overrides communication_protocol in the [server] section of the "
-    + f"config file. If neither sets it, {CommunicationProtocol.TCP_SOCKET.serialized}.",
+    help_text=f"The protocol between the server and the clients, by default {CommunicationProtocol.TCP_SOCKET.serialized}. "
+    + "Overrides communication_protocol in the [server] section of the config file.",
 )

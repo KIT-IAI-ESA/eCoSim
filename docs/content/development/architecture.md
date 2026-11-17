@@ -172,7 +172,7 @@ Each deployable subproject declares a console script:
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
-an `AppConfigParameter` with a group, which `--help` and the [command-line reference](../reference/command-line.md) show
-as a section. The server's options are in `ecosim_server/config/cli_parameters.py` and `database_cli_parameters.py`, so
-`ecosim-hpc` and other commands can reuse them. The `transform` of a parameter converts and checks its value, so a bad
-value stops the command with a short usage error and exit code 2.
+an `AppConfigParameter` with a group. `--help` and the [command-line reference](../reference/command-line.md) show a
+group as a section. The server's options are in `ecosim_server/config/cli_parameters.py` and
+`database_cli_parameters.py`, so `ecosim-hpc` and other commands can reuse them. The `transform` of a parameter
+converts and checks its value. A bad value ends the command with a usage error and exit code 2.

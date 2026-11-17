@@ -28,8 +28,8 @@ fmc_file = [house.fmc]
 fmu_file = [house.fmu]
 ```
 
-Without brackets, as in `fmc_file = house.fmc`, the client stops with `Input cannot be parsed to a
-string array`. The clients only read the first entry of `fmc_file` and `fmu_file`.
+Without brackets, as in `fmc_file = house.fmc`, the client stops with an error. The clients only read the
+first entry of `fmc_file` and `fmu_file`.
 """
 INTERFACE_FILES_TEXT = """## Interface files
 

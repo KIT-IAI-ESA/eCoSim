@@ -1,7 +1,7 @@
 from ecosim_common.tech.close_name import closest_name, did_you_mean
 
 
-def test_a_misspelt_name_gets_the_closest_known_name() -> None:
+def test_a_misspelled_name_gets_the_closest_known_name() -> None:
     assert closest_name(name="weatherBus_TDryBull", known_names=["weatherBus_TDryBul", "weatherBus_HDirNor"]) == "weatherBus_TDryBul"
 
 

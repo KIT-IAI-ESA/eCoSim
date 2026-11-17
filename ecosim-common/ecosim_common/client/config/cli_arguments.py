@@ -28,8 +28,7 @@ class CLIArguments(AppConfig):
                 name="config-file",
                 required=True,
                 metavar="FILE",
-                help_text="The client's config file, usually preferences.ini in the folder of the model. "
-                + "A relative path starts in the current folder.",
+                help_text="The client's config file, usually preferences.ini in the folder of the model.",
             ),
             DEBUG_PARAMETER,
             AppConfigParameter(
