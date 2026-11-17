@@ -54,8 +54,8 @@ has to happen in every `pyproject.toml` at once.
 
 The Python modules are internal and can change: the supported way to use eCoSim is the
 [command line](../reference/command-line.md) and the [configuration files](../reference/configuration-files.md).
-The one exception is `ecosim_server.results`, which reads the results of a run as one table. Scripts use its names
-(`read_results`, `read_database_results`, `ResultTable`, `ResultColumn`), so keep them as they are.
+The one exception is `ecosim_server.results`. It reads the results of a run as one table. Scripts of users call
+`read_results`, `read_database_results`, `ResultTable` and `ResultColumn`. Keep these names.
 
 ### `ecosim_common`
 
@@ -82,7 +82,7 @@ The one exception is `ecosim_server.results`, which reads the results of a run a
 | `simulation/` | `SimulationExecutor`, the step loop and its progress line, value history, restore |
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |
 | `measurement/` | `MeasurementRepository` — the simulation results |
-| `results/` | `read_results` for files and `read_database_results` for PostgreSQL, which give the stored results of a run as one table with a column per interface. `to_data_frame()` needs the extra `ecosim-server[pandas]` |
+| `results/` | `read_results` for files and `read_database_results` for PostgreSQL. Both return the stored results of a run as one table with a column per interface. `to_data_frame()` needs the extra `ecosim-server[pandas]` |
 | `data/` | `Repositories` — the aggregate the rest of the server is given |
 | `tech/db/` | SQLAlchemy and file backends |
 | `config/` | `CLIArguments`, `ServerConfig`, `SimulationConfig` |
@@ -99,7 +99,7 @@ main.py               the console script
 
 The FMU clients name the last one `fmu2_simulator_config.py` / `fmu3_simulator_config.py`; the
 others use `matlab_config.py`, `pyro_config.py` and `python_config.py`. The Python client also has
-`python_model.py`, which calls the model, and `model_import.py`, which imports it.
+`python_model.py` to call the model and `model_import.py` to import it.
 
 ## Communication
 

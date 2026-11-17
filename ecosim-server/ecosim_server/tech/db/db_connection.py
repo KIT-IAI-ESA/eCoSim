@@ -34,7 +34,6 @@ class DBConnection:
 
     @staticmethod
     def engine_of(db_config: DatabaseConfig) -> Engine:
-        """An engine that puts a table without a schema into the schema of the config. It creates nothing."""
         return create_engine(db_config.generate_sqlalchemy_db_url()).execution_options(schema_translate_map={None: db_config.schema})
 
     def __post_init__(self) -> None:

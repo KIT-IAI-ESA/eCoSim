@@ -54,7 +54,6 @@ def test_a_positional_only_time_parameter_is_not_passed_and_keeps_its_default() 
 
 
 def test_do_step_of_a_pyro5_model_gets_only_the_inputs() -> None:
-    # DoublingModel.do_step() has no time parameters, so passing them would raise a TypeError
     model = PythonModel.of_object(model=DoublingModel(), model_reference="room:Room")
     model.initialize()
     model.set_input(name="u", value=1.5)
@@ -89,12 +88,6 @@ def test_integer_boolean_and_other_number_outputs_become_float() -> None:
     assert [type(output) for output in outputs] == [float, float, float]
 
 
-def test_a_list_output_stays_a_list() -> None:
-    model = _initialized_model_returning(start_outputs={"temperatures": [20.0, 21.0]})
-
-    assert model.output(name="temperatures") == [20.0, 21.0]
-
-
 def test_every_number_in_a_list_output_becomes_a_float() -> None:
     model = _initialized_model_returning(start_outputs={"temperatures": [NumpyLikeNumber(value=1.5), 2, True]})
 
@@ -113,7 +106,7 @@ def test_a_number_in_a_matrix_output_becomes_a_float() -> None:
 
 
 @pytest.mark.parametrize("value", [None, "warm", "21.5", {"value": 21.0}, NumpyLikeArray(value=21.0)])
-def test_an_output_that_is_not_a_number_is_named(value: Any) -> None:
+def test_an_output_that_is_not_a_number_is_rejected(value: Any) -> None:
     model = _initialized_model_returning(start_outputs={"temperature": value})
 
     with pytest.raises(TypeError, match=re.escape(f"room:Room.initialize() returned {value!r} for the output temperature")):
@@ -121,21 +114,21 @@ def test_an_output_that_is_not_a_number_is_named(value: Any) -> None:
 
 
 @pytest.mark.parametrize("value", [None, "warm", (21.0, 22.0), NumpyLikeArray(value=22.0)])
-def test_a_value_in_a_list_output_that_is_not_a_number_is_named(value: Any) -> None:
+def test_a_value_in_a_list_output_that_is_not_a_number_is_rejected(value: Any) -> None:
     model = _initialized_model_returning(start_outputs={"temperature": [21.0, value]})
 
     with pytest.raises(TypeError, match=re.escape(f"room:Room.initialize() returned a list with {value!r} for the output temperature")):
         model.output(name="temperature")
 
 
-def test_a_missing_output_names_the_outputs_the_model_returned() -> None:
+def test_a_missing_output_lists_the_outputs_the_model_returned() -> None:
     model = _initialized_model_returning(start_outputs={"humidity": 0.5})
 
     with pytest.raises(ValueError, match=re.escape("room:Room.initialize() returned no value for the output temperature. It returned: humidity")):
         model.output(name="temperature")
 
 
-def test_a_missing_output_after_a_step_names_do_step() -> None:
+def test_a_missing_output_after_a_step_shows_do_step() -> None:
     scripted_model = ScriptedOutputsModel(start_outputs={"temperature": 20.0}, step_outputs={"humidity": 0.5})
     model = PythonModel.of_object(model=scripted_model, model_reference="room:Room")
     model.initialize()
@@ -145,7 +138,7 @@ def test_a_missing_output_after_a_step_names_do_step() -> None:
         model.output(name="temperature")
 
 
-def test_an_error_in_initialize_names_the_model_and_keeps_the_error_of_the_model_code() -> None:
+def test_an_error_in_initialize_shows_the_model_and_keeps_the_error_of_the_model_code() -> None:
     model = PythonModel.of_object(model=DividingByZeroModel(), model_reference="room:Room")
 
     with pytest.raises(RuntimeError, match=re.escape("The model room:Room failed in initialize(): division by zero")) as error_info:

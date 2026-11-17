@@ -14,8 +14,8 @@ from ecosim_client_python.python_client import PythonClient
 
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-python",
-    description="Runs a Python model in this process for the eCoSim server, with no Pyro5 daemon. "
-    + "The [python] section of the config file names the model. Start the server first.",
+    description="Runs a Python model for the eCoSim server without a Pyro5 daemon. "
+    + "The model is set in the [python] section of the config file. Start the server first.",
     examples=("ecosim-client-python --config-file Modules/room/preferences.ini",),
 )
 

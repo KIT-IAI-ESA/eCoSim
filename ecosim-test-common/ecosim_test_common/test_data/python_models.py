@@ -4,8 +4,6 @@ from typing import Any, Callable
 
 
 def _forwarding_decorator(do_step: Callable[..., dict[str, float]]) -> Callable[..., dict[str, float]]:
-    """A decorator as a model may use for logging or timing, made with functools.wraps."""
-
     @functools.wraps(do_step)
     def forward(*arguments: Any, **keyword_arguments: Any) -> dict[str, float]:
         return do_step(*arguments, **keyword_arguments)
@@ -15,8 +13,6 @@ def _forwarding_decorator(do_step: Callable[..., dict[str, float]]) -> Callable[
 
 @dataclass
 class DoublingModel:
-    """y = 2 * u, the model of the client tests of the Python client."""
-
     holds_state: bool = False
 
     def initialize(self) -> dict[str, float]:
@@ -32,8 +28,6 @@ class DoublingModel:
 
 @dataclass
 class ClockModel:
-    """Returns the simulation time and the step size it gets in do_step()."""
-
     def initialize(self) -> dict[str, float]:
         return {"time": 0.0, "step_size": 0.0}
 
@@ -46,8 +40,6 @@ class ClockModel:
 
 @dataclass
 class KeywordOnlyClockModel:
-    """Takes the simulation time as a keyword-only parameter of do_step()."""
-
     def initialize(self) -> dict[str, float]:
         return {"time": 0.0}
 
@@ -60,8 +52,6 @@ class KeywordOnlyClockModel:
 
 @dataclass
 class PositionalOnlyClockModel:
-    """Has current_simulation_time as a positional-only parameter, which cannot be passed by name."""
-
     def initialize(self) -> dict[str, float]:
         return {"time": 0.0}
 
@@ -74,8 +64,6 @@ class PositionalOnlyClockModel:
 
 @dataclass
 class DecoratedClockModel:
-    """Has its do_step() behind a decorator."""
-
     def initialize(self) -> dict[str, float]:
         return {"time": 0.0}
 
@@ -89,7 +77,7 @@ class DecoratedClockModel:
 
 @dataclass
 class EchoModel:
-    """Gives the input u back as the output y, and pops it from value_dict as a model may."""
+    """Returns the input u as the output y and removes it from value_dict."""
 
     def initialize(self) -> dict[str, Any]:
         return {"y": 0.0}
@@ -103,8 +91,6 @@ class EchoModel:
 
 @dataclass
 class DividingByZeroModel:
-    """Divides by zero in initialize(), a mistake in the code of a model."""
-
     def initialize(self) -> dict[str, float]:
         return {"share": 1 / 0}
 
@@ -117,8 +103,6 @@ class DividingByZeroModel:
 
 @dataclass
 class ScriptedOutputsModel:
-    """Returns what a test gives it, also what a model must not return."""
-
     start_outputs: Any = None
     step_outputs: Any = None
     clear_calls: int = 0
@@ -135,8 +119,6 @@ class ScriptedOutputsModel:
 
 @dataclass(frozen=True)
 class NumpyLikeNumber:
-    """A number that JSON cannot store, like numpy.float32, until float() turns it into one."""
-
     value: float
 
     def __float__(self) -> float:
@@ -145,7 +127,7 @@ class NumpyLikeNumber:
 
 @dataclass(frozen=True)
 class NumpyLikeArray:
-    """An array of one value, which float() turns into a number, as numpy does."""
+    """Acts like a numpy array with one value, float() takes it."""
 
     value: float
     ndim: int = 1

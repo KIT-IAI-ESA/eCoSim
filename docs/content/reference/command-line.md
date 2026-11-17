@@ -98,7 +98,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
 | `--debug` |  | flag | Show debug messages and the full traceback of an error. |
-| `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other, then exit. Starts no client. |
+| `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other. Starts no client. |
 
 **Server connection**
 
@@ -115,7 +115,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 
 `ecosim-client-pyro5`: Connects a Python model served by a Pyro5 daemon to the eCoSim server. Start the server and the Pyro5 daemon first.
 
-`ecosim-client-python`: Runs a Python model in this process for the eCoSim server, with no Pyro5 daemon. The [python] section of the config file names the model. Start the server first.
+`ecosim-client-python`: Runs a Python model for the eCoSim server without a Pyro5 daemon. The model is set in the [python] section of the config file. Start the server first.
 
 See the [MATLAB client](../guides/matlab-client.md), the [Pyro5 client](../guides/pyro5-client.md) and the [Python client](../guides/python-client.md) guides.
 
