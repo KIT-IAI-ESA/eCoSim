@@ -19,20 +19,17 @@ class StartValues:
 
     @staticmethod
     def texts_of(config_parser: ConfigParser) -> dict[str, str]:
-        """The [start_values] section as written, after a check for a misspelt section name."""
-        # a misspelt section would be ignored without a word, like every unknown section
-        misspelt = [
+        misspelled = [
             section
             for section in config_parser.sections()
             if section != START_VALUES_SECTION and closest_name(name=section.lower(), known_names=[START_VALUES_SECTION], cutoff=0.8) is not None
         ]
-        if misspelt:
-            raise ValueError(f"{config_parser.config_file} has a section [{misspelt[0]}]. Did you mean [{START_VALUES_SECTION}]?")
+        if misspelled:
+            raise ValueError(f"{config_parser.config_file} has a section [{misspelled[0]}]. Did you mean [{START_VALUES_SECTION}]?")
         return config_parser.get_section(START_VALUES_SECTION)
 
     @staticmethod
     def of_texts(texts: dict[str, str], model_description: ModelDescription, input_names: list[str], fmu_file: Path) -> StartValues:
-        """Checks every value before the FMU is extracted, and names all problems at once."""
         results = _start_values_or_problems(texts=texts, model_description=model_description, input_names=input_names)
         problems = [f"  {name}: {result}" for name, result in results.items() if isinstance(result, str)]
         if problems:
@@ -41,7 +38,6 @@ class StartValues:
 
     @staticmethod
     def problems_of(texts: dict[str, str], model_description: ModelDescription, input_names: list[str]) -> list[str]:
-        """One line per start value the FMU cannot take, for a check that lists every problem of a simulation."""
         results = _start_values_or_problems(texts=texts, model_description=model_description, input_names=input_names)
         return [f"{name}: {result}" for name, result in results.items() if isinstance(result, str)]
 

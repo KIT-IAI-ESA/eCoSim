@@ -1,6 +1,5 @@
 """The commands of the command-line reference and their parsers."""
 
-import argparse
 import importlib
 from dataclasses import dataclass
 from typing import Any
@@ -47,12 +46,3 @@ def load(target: str) -> Any:
     """Import "package.module.Name"."""
     module, name = target.rsplit(".", 1)
     return getattr(importlib.import_module(module), name)
-
-
-def parsers_of(command: Command) -> list[argparse.ArgumentParser]:
-    create_parser = load("ecosim_common.config.app_config.AppConfig").create_parser
-    parameters = load(command.arguments).parameters()
-    return [
-        create_parser(console_script=load(f"{module}.CONSOLE_SCRIPT"), parameters=parameters, environment_variables={})
-        for module in command.console_script_modules
-    ]

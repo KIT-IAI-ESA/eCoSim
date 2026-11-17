@@ -27,12 +27,11 @@ def test_every_missing_key_is_listed_with_the_file() -> None:
 
 
 def test_a_delta_t_below_1_is_a_problem_with_its_value() -> None:
-    raw_config = {**_a_complete_config(), "setup": {"delta_t": 0}}
+    raw_config = {**_a_complete_config(), "setup": {"delta_t": "0"}}
 
-    (problem,) = missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False)
-
-    assert problem.startswith(f"{FILE}: setup.delta_t ")
-    assert "'0'" in problem
+    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == [
+        f"{FILE}: setup.delta_t must be a whole number of at least 1, not '0'.",
+    ]
 
 
 def test_a_missing_delta_t_says_how_to_set_the_step_size() -> None:

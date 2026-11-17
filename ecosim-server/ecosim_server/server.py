@@ -198,7 +198,7 @@ class Server(ShutdownListener):
         connection.send(ESPChannelMessageJson.empty(type=MessageType.INTERFACE_REQUEST))
         message: ESPChannelMessage = connection.receive(expected_type=MessageType.INTERFACE_REQUEST)
         client_interfaces = message.payload(ModelInterfaceIds)
-        missing = simulation_config.validate_interfaces(client_id=client_id, client_interface_ids=client_interfaces)
+        missing = simulation_config.missing_required_interface_names(client_id=client_id, client_interface_ids=client_interfaces)
         if missing:
             raise RuntimeError(
                 f"The simulation config marks {', '.join(missing)} of {client_id} as required, "

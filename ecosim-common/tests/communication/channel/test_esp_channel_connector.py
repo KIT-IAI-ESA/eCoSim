@@ -30,8 +30,8 @@ def test_a_client_without_a_server_is_told_to_start_it_or_to_check_the_address()
         connector.connect(connection_address=address, timeout_in_seconds=1)
 
     assert str(error.value) == (
-        f"No server answered at {address} via tcp_socket within 1 s. Start the server first, or check ip and port in the [server] section "
-        + "of the client config, or --server-host and --server-port if you passed them."
+        f"No server answered at {address} via tcp_socket within 1 s. "
+        + "Start the server first, or check ip and port in the [server] section of the client config."
     )
 
 

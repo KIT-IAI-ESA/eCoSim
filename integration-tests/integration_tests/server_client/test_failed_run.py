@@ -51,6 +51,6 @@ def test_failed_run_ends_the_healthy_client_as_failed_and_sets_the_state_to_fail
 
     assert finishes_in_time(blocking_call=healthy_client.wait_until_finished)
     assert healthy_client.exit_code() == ShutdownManager.FAILED_RUN_EXIT_CODE
-    # the run failed because of the other client, so this one does not blame its own model
+    # the other client failed, this one does not blame its own model
     assert any(message.startswith(f"{HEALTHY}: the connection to the server ended") for message in caplog.messages)
     assert server.simulation_state_repository().current() == SimulationState.FAILED

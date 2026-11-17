@@ -11,8 +11,6 @@ from fmpy.model_description import ModelVariable
 
 @dataclass(frozen=True)
 class StartValue:
-    """A value of [start_values], which the FMU gets after instantiate() and before its initialization."""
-
     variable: ModelVariable
     value: float | int | bool
 
@@ -26,7 +24,7 @@ class StartValue:
         return StartValue(variable=variable, value=_parsed_value(variable=variable, text=text.strip()))
 
     def set_on(self, fmu_instance: Any) -> None:
-        # fmpy names its setters after the FMI types: setReal, setInteger, setFloat64, setUInt8, setBoolean
+        # fmpy has a setter per FMI type, with the parameters (vr, value) in FMI 2 and (vr, values) in FMI 3
         setter = getattr(fmu_instance, f"set{self.variable.type}")
         try:
             setter([self.variable.valueReference], [self.value])
@@ -34,7 +32,6 @@ class StartValue:
             raise RuntimeError(f"The FMU did not accept the start value {self.as_line()}") from error
 
     def as_line(self) -> str:
-        # true and false as they are written in the ini file
         value = str(self.value).lower() if isinstance(self.value, bool) else self.value
         return f"{self.variable.name} = {with_unit(variable=self.variable, value=value)}"
 
@@ -51,28 +48,28 @@ def unit_of(variable: ModelVariable) -> str | None:
 
 
 def _ensure_settable(variable: ModelVariable, input_names: list[str]) -> None:
-    # FMI 2.0 and 3.0 allow a set before the initialization for these, and eCoSim cannot use Configuration Mode
+    # FMI allows a set before the initialization only for initial exact or approx
     if variable.variability == "constant":
-        raise ValueError("a constant of the FMU, so it cannot be changed")
+        raise ValueError("a constant of the FMU cannot be changed")
     if variable.causality == "independent":
-        raise ValueError("the simulation time, which cannot be set")
+        raise ValueError("the simulation time cannot be set")
     if variable.causality == "structuralParameter":
-        raise ValueError("a structural parameter, which eCoSim cannot change")
+        raise ValueError("eCoSim cannot change a structural parameter")
     if variable.initial not in ("exact", "approx"):
-        raise ValueError("calculated by the FMU, so it cannot be set")
+        raise ValueError("a value calculated by the FMU cannot be set")
     if variable.name in input_names:
-        raise ValueError("an input in the .fmc file, so it gets a new value every step")
+        raise ValueError("an input in the .fmc file gets a new value every step")
 
 
 def _ensure_supported_type(variable: ModelVariable) -> None:
     if variable.shape:
         raise ValueError("an array, but [start_values] takes single values only")
     if variable.type not in ("Real", "Float32", "Float64", "Boolean") and not _is_integer(variable):
-        raise ValueError(f"of type {variable.type}, which [start_values] does not support")
+        raise ValueError(f"[start_values] does not support the type {variable.type}")
 
 
 def _is_integer(variable: ModelVariable) -> bool:
-    # FMI 2 has Integer, FMI 3 names the bits: Int8 to Int64 and UInt8 to UInt64
+    # FMI 2 has Integer, FMI 3 has Int8 to Int64 and UInt8 to UInt64
     return variable.type == "Integer" or variable.type.removeprefix("U") in ("Int8", "Int16", "Int32", "Int64")
 
 
@@ -113,15 +110,15 @@ def _parsed_float(text: str) -> float:
 
 
 def _comment_hint(text: str) -> str:
-    return ". Write a comment on a line of its own" if "#" in text or ";" in text else ""
+    return ". Write a comment on its own line" if "#" in text or ";" in text else ""
 
 
 def _ensure_fits_the_type(variable: ModelVariable, integer: int) -> None:
-    # without this check, ctypes wraps a value that does not fit without a word
+    # ctypes silently wraps a value that does not fit
     bits = 32 if variable.type == "Integer" else int(variable.type.removeprefix("U").removeprefix("Int"))
     lowest, highest = (0, 2**bits - 1) if variable.type.startswith("U") else (-(2 ** (bits - 1)), 2 ** (bits - 1) - 1)
     if not lowest <= integer <= highest:
-        raise ValueError(f"{integer} does not fit into {variable.type}, which takes {lowest} to {highest}")
+        raise ValueError(f"{integer} does not fit into {variable.type} ({lowest} to {highest})")
 
 
 def _ensure_within_the_limits(variable: ModelVariable, number: float) -> None:
@@ -134,6 +131,6 @@ def _ensure_within_the_limits(variable: ModelVariable, number: float) -> None:
 
 
 def _limit(variable: ModelVariable, attribute: str) -> float | None:
-    # without a limit of its own, a variable has the one of its declared type
+    # a variable without its own limit has the limit of its declared type
     limit = getattr(variable, attribute) or getattr(variable.declaredType, attribute, None)
     return float(limit) if limit is not None else None

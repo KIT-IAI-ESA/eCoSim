@@ -43,8 +43,7 @@ class ESPChannelConnector:
         if not connected:
             raise ConnectionError(
                 f"No server answered at {connection_address} via {transport} within {timeout_in_seconds} s. "
-                + "Start the server first, or check ip and port in the [server] section of the client config, "
-                + "or --server-host and --server-port if you passed them.",
+                + "Start the server first, or check ip and port in the [server] section of the client config.",
             )
         ESPChannelConnector._logger.info("Connected to the server at %s via %s", connection_address, transport)
         return channel

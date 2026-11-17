@@ -109,8 +109,7 @@ stops it right away:
 ecosim-client-python: error: The model room:Rom could not be loaded: module 'room' has no attribute 'Rom' (run with --debug for the full traceback)
 ```
 
-`initialize()` runs later, when the simulation starts. An error there or in `do_step()` stops the client too.
-Its log names the error and the step, and its last line points to that line:
+An error in `initialize()` or `do_step()` stops the client too. Its log shows the error and the step:
 
 ```text
 room#room: the model failed in step 2: ZeroDivisionError: float division by zero
