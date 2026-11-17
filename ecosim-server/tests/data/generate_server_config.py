@@ -43,7 +43,7 @@ def generate_server_config(
             image_renderer_interval=image_renderer_interval,
         ),
         database=DatabaseConfig(
-            # an empty host is the PostgreSQL server of this computer
+            # an empty host is the local socket of PostgreSQL
             host=database_host if database_host is not None else DEFAULT_HOST,
             port=database_port or DEFAULT_DATABASE_PORT,
             # a bool cannot be defaulted with 'or', because that would turn an explicit 'False' into the default

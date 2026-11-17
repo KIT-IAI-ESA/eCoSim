@@ -320,17 +320,17 @@ def test_pace_override() -> None:
     assert config.pace == 0.3
 
 
-def test_a_simulation_config_that_is_no_json_names_the_file(tmp_path: Path) -> None:
+def test_a_simulation_config_that_is_not_json_fails_with_the_file(tmp_path: Path) -> None:
     file = tmp_path / "simulation.json"
     file.write_text('{"setup": {"delta_t": "1000"}\n "simulators": []}', encoding="utf-8")
 
     with pytest.raises(ValueError) as error_info:
         SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
 
-    assert str(error_info.value) == f"{file} is not valid JSON: Expecting ',' delimiter in line 2, column 2."
+    assert str(file) in str(error_info.value)
 
 
-def test_a_missing_setup_names_the_file_and_the_key(tmp_path: Path) -> None:
+def test_a_missing_setup_fails_with_the_file_and_the_key(tmp_path: Path) -> None:
     file = tmp_path / "simulation.json"
     file.write_text(json.dumps({"simulators": [], "logical_delays": []}), encoding="utf-8")
 

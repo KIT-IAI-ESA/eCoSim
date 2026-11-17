@@ -26,7 +26,7 @@ def test_a_server_that_does_not_listen_yet_is_reported_once_and_not_for_every_at
     connector = ESPChannelConnector(_communication_protocol=CommunicationProtocol.TCP_SOCKET)
 
     with pytest.raises(ConnectionError):
-        # room for a second attempt where a refused connect takes 2 s, as on Windows
+        # a connect without a server takes 2 s on Windows
         connector.connect(connection_address=generate_unused_connection_address(), timeout_in_seconds=4)
 
     records = [record for record in caplog.records if record.name == "ESPChannelConnector"]

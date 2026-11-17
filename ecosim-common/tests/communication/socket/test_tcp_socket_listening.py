@@ -45,7 +45,7 @@ def test_listening_on_a_busy_port_leaves_nothing_behind() -> None:
     assert not busy_listener.is_listening_on_connection_event().is_set()
 
 
-def test_a_busy_port_names_the_address() -> None:
+def test_a_busy_port_shows_the_address() -> None:
     with socket.create_server((LOOPBACK_IP, 0)) as occupant:
         busy_address = ConnectionAddress(ip=LOOPBACK_IP, port=occupant.getsockname()[1])
         busy_listener = TCPSocket(_internal_socket=socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM), _connection_address=busy_address)

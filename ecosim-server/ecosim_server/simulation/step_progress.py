@@ -10,8 +10,6 @@ from ecosim_server.config.simulation_config import SimulationConfig
 
 @dataclass
 class StepProgress:
-    """A progress line every 10 s in the first minute of the steps, then every minute, after an hour every 10 minutes."""
-
     _simulation_config: SimulationConfig = field()
     _clock: Callable[[], float] = field(default=time.monotonic)
     first_step: int = field(init=False, default=0)
@@ -24,16 +22,14 @@ class StepProgress:
         self._started_at = self._last_line_at = self._clock()
 
     def step_completed(self, completed_steps: int) -> str | None:
-        """The progress line, if one is due."""
+        """Returns the progress line if one is due."""
         self._last_step_at = now = self._clock()
-        # the summary follows the last step right away
         if completed_steps >= self._simulation_config.steps or now - self._last_line_at < self._interval_in_seconds():
             return None
         self._last_line_at = now
         return self._line(completed_steps=completed_steps, elapsed_in_seconds=now - self._started_at)
 
     def step_time_in_seconds(self) -> float | None:
-        """Ends with the last completed step, so a wait for a lost client does not count."""
         if self._last_step_at is None:
             return None
         return self._last_step_at - self._started_at
@@ -53,7 +49,6 @@ class StepProgress:
         )
 
     def _simulated_time(self, completed_steps: int) -> str:
-        # seconds only for a step size that needs them, so every line of a run has the same form
         time_format = "%Y-%m-%d %H:%M" if self._simulation_config.step_size_in_ms % 60_000 == 0 else "%Y-%m-%d %H:%M:%S"
         return self._simulation_config.date_time_for_step(step=completed_steps - 1).strftime(time_format)
 

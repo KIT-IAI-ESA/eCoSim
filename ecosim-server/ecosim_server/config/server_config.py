@@ -172,7 +172,6 @@ class DatabaseConfig:
 
     @classmethod
     def for_files(cls, directory: Path, drop_existing_schema: bool = False) -> DatabaseConfig:
-        # results as files connect to no database, so they need none of its keys
         return cls(
             host="",
             port=0,
@@ -201,7 +200,6 @@ class DatabaseConfig:
             ),
             drop_existing_schema=db_overwrite.drop_existing_schema(False),
             type=DatabaseType.POSTGRES,
-            # PostgreSQL writes no result files, so the server config is not read for a results folder
             directory=db_overwrite.directory(read_default=lambda: DatabaseConfig._default_directory),
         )
 
@@ -234,5 +232,5 @@ class DatabaseConfig:
         return f"PostgreSQL database {self.name} on {self.server_location()}, schema {self.schema}"
 
     def server_location(self) -> str:
-        # without a server name, PostgreSQL connects to the server of this computer
-        return f"{self.host}:{self.port}" if self.host else f"port {self.port} of this computer"
+        # libpq connects to the local socket for an empty host
+        return f"{self.host}:{self.port}" if self.host else f"local port {self.port}"

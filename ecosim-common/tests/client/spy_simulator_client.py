@@ -27,7 +27,6 @@ class SpySimulatorClient(SimulatorClient):
     step_block_started: threading.Event = field(default_factory=threading.Event)
     step_block_end: threading.Event = field(default_factory=threading.Event)
     seconds_per_model_step: float = field(default=0.0)
-    # the client measures the model time with this clock, and the steps of this spy move it
     _clock: ManualClock = field(default_factory=ManualClock)
 
     @staticmethod

@@ -28,7 +28,7 @@ def _summary(
     )
 
 
-def test_a_finished_run_names_its_steps_its_simulated_period_and_its_results(tmp_path: Path) -> None:
+def test_a_finished_run_shows_its_steps_its_simulated_period_and_its_results(tmp_path: Path) -> None:
     summary = _summary(results_directory=tmp_path)
 
     assert summary.header() == "SIMULATION FINISHED"
@@ -56,7 +56,7 @@ def test_a_failed_run_says_why_and_how_to_continue_it(tmp_path: Path) -> None:
     }
 
 
-def test_a_run_that_failed_before_its_first_step_names_no_results_and_no_restore() -> None:
+def test_a_run_that_failed_before_its_first_step_shows_no_results_and_no_restore() -> None:
     summary = _summary(failure_reason="stopped by Ctrl-C or a kill signal", completed_steps=0, step_time_in_seconds=None)
 
     assert summary.value_pairs() == {"Steps": "0 of 100", "Reason": "stopped by Ctrl-C or a kill signal"}
@@ -68,7 +68,7 @@ def test_the_speed_of_a_restored_run_counts_only_the_steps_of_this_run() -> None
     assert summary.value_pairs()["Steps"] == "100 of 100, 60 of them restored, in 4.0 s (10 steps/s)"
 
 
-def test_postgres_results_name_the_database_its_server_and_the_schema() -> None:
+def test_postgres_results_show_the_database_its_server_and_the_schema() -> None:
     summary = _summary(database_type=DatabaseType.POSTGRES)
 
     assert summary.value_pairs()["Results"] == "PostgreSQL database sim_control on localhost:5432, schema temp_schema"

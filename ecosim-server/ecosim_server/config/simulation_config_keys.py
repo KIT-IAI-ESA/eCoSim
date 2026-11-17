@@ -1,5 +1,3 @@
-"""The keys of simulation.json that the server reads."""
-
 from argparse import ArgumentTypeError
 from pathlib import Path
 from typing import Any
@@ -8,10 +6,9 @@ from ecosim_common.config.config_parser import ConfigParser
 
 
 def missing_key_problems(raw_config: Any, simulation_config_file: Path, has_step_size_override: bool) -> list[str]:
-    """Every key the server needs and does not find, and a delta_t it cannot use, one line each."""
     file = simulation_config_file
     if not isinstance(raw_config, dict):
-        return [f'{file} has to hold a JSON object with the keys "setup", "simulators" and "logical_delays".']
+        return [f'{file} has to contain a JSON object with the keys "setup", "simulators" and "logical_delays".']
     problems = [_missing_top_level_key(file=file, key=key) for key in ("setup", "simulators", "logical_delays") if key not in raw_config]
     if isinstance(raw_config.get("setup"), dict) and not has_step_size_override:
         problems += _delta_t_problems(file=file, setup=raw_config["setup"])
@@ -23,16 +20,14 @@ def missing_key_problems(raw_config: Any, simulation_config_file: Path, has_step
 
 
 def _missing_top_level_key(file: Path, key: str) -> str:
-    # a simulation without delays still needs the empty list
     how_to_add = ' Write "logical_delays": [] if the simulation has none.' if key == "logical_delays" else ""
     return f'{file} has no key "{key}".{how_to_add}'
 
 
 def _delta_t_problems(file: Path, setup: dict[str, Any]) -> list[str]:
     if "delta_t" not in setup:
-        return [f'{file}: setup has no key "delta_t". Write the step size in milliseconds, like "delta_t": "900000", or pass --step-size.']
+        return [f'{file}: setup has no key "delta_t". Set it to the step size in milliseconds or pass --step-size.']
     delta_t = setup["delta_t"]
-    # the loader reads a JSON number like 900000.0 as 900000
     if isinstance(delta_t, float) and delta_t.is_integer() and delta_t >= 1:
         return []
     try:

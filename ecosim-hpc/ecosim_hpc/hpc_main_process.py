@@ -12,8 +12,6 @@ from ecosim_server.data.repositories import Repositories
 from ecosim_server.measurement.server_time_measurement import ServerTimeMeasurementType
 from ecosim_server.server import Server
 
-SERVER_THREAD_NAME = "Server"
-
 
 def hpc_main_process(
     dask_client: distributed.Client,
@@ -28,18 +26,18 @@ def hpc_main_process(
         _repositories=repositories,
     )
 
-    server_thread = ErrorRecordingThread(target=server.start, name=SERVER_THREAD_NAME)
+    server_thread = ErrorRecordingThread(target=server.start, name="Server")
     server_thread.start()
     client_manager = ClientManager(client_manager_config)
     try:
         client_manager.clients_start(simulation_config)
         server_thread.join()
     except SystemExit:
-        # the signal handler already closed the server and the Dask client, only the summary is missing
+        # the signal handler already closed the server and the Dask client
         server.print_run_summary()
         raise
     except Exception:
-        # end the server while Dask still runs, so the error line comes last
+        # the server has to end before Dask is shut down
         server.force_stop()
         server_thread.join()
         shutdown_dask_workers(dask_client)

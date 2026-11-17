@@ -4,7 +4,6 @@ from typing import Any
 
 
 def read_json_file(file: Path) -> Any:
-    """A missing file raises FileNotFoundError with the path, JSON that cannot be read a ValueError that says where."""
     with open(file, encoding="utf-8") as opened_file:
         try:
             return json.load(opened_file)

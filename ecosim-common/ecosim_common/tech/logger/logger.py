@@ -8,9 +8,7 @@ default_handlers = [logging.StreamHandler()]
 
 
 def init_logger(log_level: int = logging.INFO) -> None:
-    # what a model prints lands in a log file where it happens, not at the end
-    if isinstance(sys.stdout, io.TextIOWrapper):
-        sys.stdout.reconfigure(line_buffering=True)
+    _flush_stdout_after_every_line()
     # Reset any existing logging configuration - this was implemented due to no logging in unittests
     # logging.root.handlers.clear()
 
@@ -34,6 +32,11 @@ def init_logger(log_level: int = logging.INFO) -> None:
     logging.getLogger("distributed.worker").setLevel(logging.ERROR)
 
 
+def _flush_stdout_after_every_line() -> None:
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(line_buffering=True)
+
+
 class ESPLogger:
     def __init__(
         self,
@@ -53,7 +56,6 @@ class ESPLogger:
     ) -> None:
         if not self._logger.isEnabledFor(logging.ERROR):
             return
-        # the stack of the logging call helps to debug, in a normal run it buries the message
         if not self.is_debug_enabled:
             self._logger.error(message, *args)
             return

@@ -253,7 +253,7 @@ class ClientInterfaceConfig:
         try:
             fmc_json = read_json_file(file=fmc_file_absolute)
         except (FileNotFoundError, ValueError) as error:
-            # on HPC no main prints the error of a client, so the log is the only place that shows it
+            # on HPC only the log shows the error of a client
             ClientConfig.logger.error("%s", one_line_message(error=error))
             raise
         input_interfaces = fmc_json.get("inputs", [])

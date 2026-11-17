@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ManualClock:
-    """Stands in for time.monotonic: the time moves only when a test moves it."""
+    """Replaces time.monotonic in a test."""
 
     now: float = field(default=0.0)
 

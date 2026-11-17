@@ -11,7 +11,7 @@ def generate_mocked_client_config(
     server_address: ConnectionAddress | None = None,
     client_id: ClientID | None = None,
 ) -> ClientConfig:
-    """Answers only the communication protocol, and the server address and the client id if they are given."""
+    """Answers the communication protocol and only the other values that are given."""
     client_config = MagicMock(spec=ClientConfig)
     client_config.communication_protocol.return_value = communication_protocol
     if server_address is not None:

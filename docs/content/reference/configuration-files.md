@@ -17,9 +17,9 @@ After changing a config reader, run `uv run python dev/generate_config_reference
 The ini file passed to `ecosim-server` with `--server-config`. Matching command-line options override these keys.
 `ssl=true` connects with `sslmode=require`, `ssl=false` with `sslmode=disable`.
 
-The `[database]` keys `server`, `port`, `ssl`, `username` and `password` are read only for results in PostgreSQL, the
-default. For results as files (`type=file` here, or `--database-type file`), the section can be left out or hold only
-`type` and `directory`.
+The `[database]` keys `server`, `port`, `ssl`, `username` and `password` are only read for results in PostgreSQL, the
+default. For results as files (`type=file` or `--database-type file`) the section can be left out or have only `type`
+and `directory`.
 
 The database password comes from the first of these that has one:
 
@@ -166,8 +166,7 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   It needs a time zone offset (`Z` or `+01:00`). A value without one is rejected when the config is
   loaded.
 
-Save the file as UTF-8, like the `.fmc` files. The server stops with `is not saved as UTF-8` for a file in
-another encoding, for example one saved as ANSI on Windows.
+Save the file as UTF-8, like the `.fmc` files.
 
 The building example, shortened to its first simulator and two of its interfaces:
 

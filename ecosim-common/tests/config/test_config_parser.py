@@ -44,14 +44,14 @@ def test_empty_bool() -> None:
         config.get_bool("Section1", "bool_empty")
 
 
-def test_a_value_that_is_no_boolean_names_the_key_and_the_value_also_with_a_default() -> None:
+def test_a_value_that_is_not_a_boolean_shows_the_key_and_the_value_also_with_a_default() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_bool(section="Section1", option="bool_invalid", default=False)
     assert str(error_info.value) == f"{config.config_file}: bool_invalid in [Section1] has to be true or false, not 'not parsable as bool'"
 
 
-def test_a_missing_key_names_the_file_the_section_and_the_key() -> None:
+def test_a_missing_key_shows_the_file_the_section_and_the_key() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_string("Section1", "non_existing")
@@ -70,7 +70,7 @@ def test_non_existing_int() -> None:
         config.get_int("Section1", "non_existing")
 
 
-def test_a_value_that_is_no_whole_number_names_the_key_and_the_value() -> None:
+def test_a_value_that_is_not_a_whole_number_shows_the_key_and_the_value() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_int("Section1", "int_invalid")
@@ -91,7 +91,7 @@ def test_a_list_without_brackets_shows_how_to_write_it() -> None:
     assert str(error_info.value) == expected
 
 
-def test_a_missing_section_names_the_file_and_the_section() -> None:
+def test_a_missing_section_shows_the_file_and_the_section() -> None:
     config = config_parser_for_resource("configs/edge_cases.ini")
     with pytest.raises(config_parser.ConfigParserException) as error_info:
         config.get_string_array("NON_EXISTING", "string_empty")
@@ -112,16 +112,17 @@ def test_an_unknown_enum_value_lists_the_known_values_and_the_close_one(tmp_path
     assert str(error_info.value) == expected
 
 
-def test_a_missing_file_names_its_path(tmp_path: Path) -> None:
+def test_a_missing_file_shows_its_path(tmp_path: Path) -> None:
     file = tmp_path / "preferencs.ini"
     with pytest.raises(FileNotFoundError) as error_info:
         ConfigParser(file)
     assert error_info.value.filename == str(file)
 
 
-def test_a_line_that_is_no_key_and_no_section_names_the_file_and_the_line(tmp_path: Path) -> None:
+@pytest.mark.parametrize("content", ["[server]\nport 1234\nhost = localhost\n", "[server]\nport 1234\nhost localhost\n"])
+def test_a_file_with_lines_that_are_not_a_key_or_a_section_shows_the_file_and_the_first_of_them(tmp_path: Path, content: str) -> None:
     file = tmp_path / "preferences.ini"
-    file.write_text("[server]\nport 1234\nhost = localhost\n", encoding="utf-8")
+    file.write_text(content, encoding="utf-8")
 
     with pytest.raises(config_parser.ConfigParserException) as error_info:
         ConfigParser(file)
@@ -129,17 +130,7 @@ def test_a_line_that_is_no_key_and_no_section_names_the_file_and_the_line(tmp_pa
     assert str(error_info.value) == f"{file}: line 2 has to be a section like [server] or a key = value, not 'port 1234'"
 
 
-def test_a_file_with_several_bad_lines_names_the_first_one_in_one_line(tmp_path: Path) -> None:
-    file = tmp_path / "preferences.ini"
-    file.write_text("[server]\nport 1234\nhost localhost\n", encoding="utf-8")
-
-    with pytest.raises(config_parser.ConfigParserException) as error_info:
-        ConfigParser(file)
-
-    assert str(error_info.value) == f"{file}: line 2 has to be a section like [server] or a key = value, not 'port 1234'"
-
-
-def test_a_key_before_the_first_section_names_the_file_and_the_line(tmp_path: Path) -> None:
+def test_a_key_before_the_first_section_shows_the_file_and_the_line(tmp_path: Path) -> None:
     file = tmp_path / "preferences.ini"
     file.write_text("# the server\nport = 1234\n[server]\n", encoding="utf-8")
 
@@ -149,7 +140,7 @@ def test_a_key_before_the_first_section_names_the_file_and_the_line(tmp_path: Pa
     assert str(error_info.value) == f"{file} has to start with a section like [server], not 'port = 1234' in line 2"
 
 
-def test_a_section_written_twice_names_the_file_and_the_second_line(tmp_path: Path) -> None:
+def test_a_section_written_twice_shows_the_file_and_the_second_line(tmp_path: Path) -> None:
     file = tmp_path / "preferences.ini"
     file.write_text("[server]\nport = 1234\n[server]\nhost = localhost\n", encoding="utf-8")
 

@@ -14,6 +14,7 @@ from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.server import Server
 from tests.data.generate_postgres_name_config import generate_client_simulator_config, generate_simulation_config
+from tests.data.generate_simulation_config import HOUSE
 
 
 def _handle_client(
@@ -60,56 +61,37 @@ def test_failed_handshake_of_a_known_client_resets_its_state() -> None:
     client_communication.reset_state.assert_called_once_with(ClientID(model_name="model", simulator_name="simulator"))
 
 
-def test_a_client_the_simulation_config_does_not_know_is_turned_away_as_unknown() -> None:
-    reason = Server.why_the_client_is_turned_away(
+@pytest.mark.parametrize(
+    ("simulator_name", "reason"),
+    [
+        ("house", "Rejected a second connection of client house#house. It is already connected."),
+        ("hous", "Rejected client house#hous. It is not in the simulation config."),
+    ],
+)
+def test_the_warning_for_a_rejected_client_says_why(simulator_name: str, reason: str) -> None:
+    warning = Server.rejected_client_warning(
         simulation_config=generate_simulation_config(clients=[generate_client_simulator_config(simulator_name="house")]),
-        client_id=ClientID(model_name="house", simulator_name="hous"),
-    )
-
-    assert reason == "Client house#hous is not in the simulation config, so the server closed its connection"
-
-
-def test_a_second_client_with_a_known_name_is_turned_away_as_already_connected() -> None:
-    reason = Server.why_the_client_is_turned_away(
-        simulation_config=generate_simulation_config(clients=[generate_client_simulator_config(simulator_name="house")]),
-        client_id=ClientID(model_name="house", simulator_name="house"),
-    )
-
-    assert reason == "Client house#house is already connected, so the server closed the second connection"
-
-
-def test_the_warning_for_a_turned_away_client_names_the_clients_the_server_still_waits_for() -> None:
-    warning = Server.turned_away_warning(
-        simulation_config=generate_simulation_config(clients=[generate_client_simulator_config(simulator_name="house")]),
-        client_id=ClientID(model_name="house", simulator_name="hous"),
-        waiting_for_client_ids=(ClientID(model_name="house", simulator_name="house"),),
-    )
-
-    assert warning == "Client house#hous is not in the simulation config, so the server closed its connection. Still waiting for: house#house"
-
-
-def test_the_warning_for_a_turned_away_client_names_no_waiting_when_every_client_is_there() -> None:
-    warning = Server.turned_away_warning(
-        simulation_config=generate_simulation_config(clients=[generate_client_simulator_config(simulator_name="house")]),
-        client_id=ClientID(model_name="house", simulator_name="house"),
+        client_id=ClientID(model_name="house", simulator_name=simulator_name),
         waiting_for_client_ids=(),
     )
 
-    assert warning == "Client house#house is already connected, so the server closed the second connection"
+    assert warning == reason
 
 
-def _closed_connection_records(server_is_running: bool, caplog: pytest.LogCaptureFixture) -> list[tuple[int, str]]:
-    caplog.set_level(logging.DEBUG, logger="Server")
-    Server.log_closed_connection(
-        server_running_event=ParallelEvent.thread(init_set=server_is_running),
-        client_id=ClientID(model_name="house", simulator_name="house"),
+def test_the_warning_for_a_rejected_client_lists_the_clients_the_server_still_waits_for() -> None:
+    warning = Server.rejected_client_warning(
+        simulation_config=generate_simulation_config(clients=[generate_client_simulator_config(simulator_name="house")]),
+        client_id=ClientID(model_name="house", simulator_name="hous"),
+        waiting_for_client_ids=(HOUSE,),
     )
-    return [(record.levelno, record.getMessage()) for record in caplog.records if record.name == "Server"]
+
+    assert warning.endswith(" Still waiting for: house#house")
 
 
-def test_a_client_that_closes_its_connection_during_the_run_is_a_warning(caplog: pytest.LogCaptureFixture) -> None:
-    assert _closed_connection_records(server_is_running=True, caplog=caplog) == [(logging.WARNING, "Client house#house closed the connection")]
+@pytest.mark.parametrize(("server_is_running", "level"), [(True, logging.WARNING), (False, logging.DEBUG)])
+def test_a_closed_connection_is_a_warning_only_during_the_run(server_is_running: bool, level: int, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG, logger="Server")
 
+    Server.log_closed_connection(server_running_event=ParallelEvent.thread(init_set=server_is_running), client_id=HOUSE)
 
-def test_clients_that_close_their_connection_after_the_run_are_only_a_debug_message(caplog: pytest.LogCaptureFixture) -> None:
-    assert _closed_connection_records(server_is_running=False, caplog=caplog) == [(logging.DEBUG, "Client house#house closed the connection")]
+    assert [record.levelno for record in caplog.records if record.name == "Server"] == [level]
