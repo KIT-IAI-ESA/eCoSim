@@ -14,17 +14,14 @@ from ecosim_server.simulation.state.simulation_state import SimulationState
 
 @dataclass(frozen=True)
 class ResultTable:
-    """The results of a run as one table: one row per step, one column per interface of a simulator."""
+    """Contains the results of a run, one row per step and one column per interface."""
 
     columns: tuple[ResultColumn, ...]
-    # the end of each step, in the time zone of the start date, or in UTC from PostgreSQL
+    # the end of each step, in UTC from PostgreSQL
     times: tuple[datetime, ...]
     rows: tuple[tuple[ColumnValue, ...], ...]
-    # None if the storage holds no state, for example a folder with copied result files only
     state: SimulationState | None
-    # what the reader had to leave out or guess
     warnings: tuple[str, ...] = ()
-    # the inputs that without_inputs left out, so asking for one says how to read it
     _left_out_inputs: tuple[ResultColumn, ...] = field(default=(), repr=False)
 
     def column_names(self) -> tuple[str, ...]:
@@ -33,16 +30,15 @@ class ResultTable:
     def values(self, column_name: str) -> list[ColumnValue]:
         positions = self._positions_of(names=[column_name])
         if len(positions) > 1:
-            raise ValueError(f"{column_name} picks {len(positions)} columns. Give the name of one of them, like {self.columns[positions[0]].name}.")
+            raise ValueError(f"{column_name} matches {len(positions)} columns. Use the name of one column, like {self.columns[positions[0]].name}.")
         return [row[positions[0]] for row in self.rows]
 
     def without_inputs(self) -> ResultTable:
-        """Leaves out the inputs, which are copies of the outputs they are connected to."""
         outputs = self._with_positions(positions=[position for position, column in enumerate(self.columns) if not column.is_input])
         return replace(outputs, _left_out_inputs=(*self._left_out_inputs, *(column for column in self.columns if column.is_input)))
 
     def select(self, names: Sequence[str]) -> ResultTable:
-        """Keeps the columns the names pick, in the order of the names, see 'ResultColumn.matches'."""
+        """Returns the columns that match the names, in the order of the names."""
         return self._with_positions(positions=self._positions_of(names=names))
 
     def matches(self, name: str) -> bool:
@@ -52,11 +48,11 @@ class ResultTable:
         with Path(file).open("w", encoding="utf-8", newline="") as stream:
             writer = csv.writer(stream, lineterminator="\n")
             writer.writerow(["time", *self.column_names()])
-            # the csv module writes None as an empty cell and a float with all its digits
+            # the csv module writes None as an empty cell
             writer.writerows([time.isoformat(), *row] for time, row in zip(self.times, self.rows, strict=True))
 
     def to_data_frame(self) -> Any:
-        """A pandas DataFrame with the times as index. pandas comes with the extra ecosim-server[pandas]."""
+        """Returns a pandas DataFrame with the times as index."""
         try:
             import pandas
         except ImportError as error:
@@ -75,7 +71,7 @@ class ResultTable:
 
     def _unknown_name_message(self, name: str) -> str:
         if _positions_matching(columns=self._left_out_inputs, name=name):
-            return f"{name} is an input, which the table leaves out. Read it with include_inputs=True."
+            return f"{name} is an input. Read the inputs with include_inputs=True."
         simulator_names = dict.fromkeys(column.simulator_name for column in self.columns)
         return f"The results have no column {name}.{did_you_mean(name=name, known_names=[*self.column_names(), *simulator_names])}"
 
@@ -89,5 +85,5 @@ class ResultTable:
 
 def _positions_matching(columns: Sequence[ResultColumn], name: str) -> list[int]:
     exact = [position for position, column in enumerate(columns) if column.matches(name=name)]
-    # PostgreSQL stores the names in lower case, so without the run's simulation.json only the case can differ
+    # PostgreSQL stores the names in lower case
     return exact or [position for position, column in enumerate(columns) if column.matches(name=name.lower(), ignore_case=True)]

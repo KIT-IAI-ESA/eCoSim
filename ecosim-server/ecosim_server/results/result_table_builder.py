@@ -10,20 +10,16 @@ from ecosim_server.results.result_column import ColumnValue, ResultColumn, numbe
 from ecosim_server.results.result_table import ResultTable
 from ecosim_server.simulation.state.simulation_state import SimulationState
 
-# interface and position in an array: hashed for every value, so a plain tuple instead of a 'ResultColumn'
+# interface name and position in an array
 type CellKey = tuple[str, tuple[int, ...]]
 
 
 @dataclass
 class ResultTableBuilder:
-    """Joins the stored rows of the simulators by their time. Each simulator is added on its own, so its entries can be freed."""
-
-    # the cells of a time by the position of their column
     _cells: dict[datetime, dict[int, ColumnValue]] = field(default_factory=lambda: defaultdict(dict))
     _columns: list[ResultColumn] = field(default_factory=list)
 
     def add_simulator(self, simulator_name: str, entries: Sequence[MeasurementEntry], described_columns: Sequence[ResultColumn]) -> None:
-        """described_columns: the interfaces the run's simulation.json or the storage describes, in their order."""
         cells_by_time = self._cells_of(entries=entries)
         keys = list(dict.fromkeys(key for cells in cells_by_time.values() for key in cells))
         columns = _columns_in_order(simulator_name=simulator_name, keys=keys, described_columns=described_columns)
@@ -49,7 +45,6 @@ class ResultTableBuilder:
         for entry in entries:
             cells = cells_by_time[entry.timestamp]
             for value in entry.values:
-                # a missing cell is empty anyway, and a None must not add a column next to the positions of an array
                 if value.value is None:
                     continue
                 for index, number in numbers_by_index(value=value.value):
@@ -58,7 +53,6 @@ class ResultTableBuilder:
 
 
 def _columns_in_order(simulator_name: str, keys: Sequence[CellKey], described_columns: Sequence[ResultColumn]) -> list[ResultColumn]:
-    """The outputs before the inputs, each in the described order and then as they appear, an array in the order of its positions."""
     column_by_name = {column.interface_name: column for column in described_columns}
     for interface_name, _ in keys:
         column_by_name.setdefault(interface_name, ResultColumn(simulator_name=simulator_name, interface_name=interface_name, interface_type=None))

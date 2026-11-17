@@ -1,23 +1,22 @@
 # eCoSim client for Python models
 
 `ecosim-client-python` couples a Python model with an eCoSim server. The model runs in the process of
-the client, so there is no Pyro5 daemon to start and no port to choose.
+the client. No Pyro5 daemon is needed.
 
 The model is a class with three methods:
 
 - `initialize()` returns a dictionary with every output
-- `do_step(value_dict)` gets the inputs and returns a dictionary with every output. It also gets
-  `current_simulation_time` and `step_size_in_seconds` if it has parameters with these names.
+- `do_step(value_dict)` gets the inputs and returns a dictionary with every output
 - `clear()` runs once at the end
 
-The `[python]` section of the client's `preferences.ini` names the module and the class:
+The `[python]` section of the client's `preferences.ini` sets the module and the class:
 
 ```ini
 [python]
 model = room:Room
 ```
 
-The folder of the ini file is searched first, so `room.py` can sit next to it.
+`room.py` can be in the folder of the ini file.
 
 ```shell
 ecosim-client-python --config-file Modules/room/preferences.ini

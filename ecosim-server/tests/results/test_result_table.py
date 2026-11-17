@@ -25,14 +25,14 @@ def test_a_simulator_or_an_array_name_selects_all_its_columns(table: ResultTable
     assert table.select(names=["house"]).column_names() == ("house.T_room",)
 
 
-def test_the_values_of_a_name_that_picks_several_columns_are_refused(table: ResultTable) -> None:
+def test_the_values_of_a_name_that_matches_several_columns_are_rejected(table: ResultTable) -> None:
     with pytest.raises(ValueError) as raised:
         table.values("weather.profile")
 
-    assert str(raised.value) == "weather.profile picks 3 columns. Give the name of one of them, like weather.profile[0]."
+    assert str(raised.value) == "weather.profile matches 3 columns. Use the name of one column, like weather.profile[0]."
 
 
-def test_a_misspelt_name_gets_the_closest_column_as_a_hint(table: ResultTable) -> None:
+def test_a_misspelled_name_gets_the_closest_column_as_a_hint(table: ResultTable) -> None:
     with pytest.raises(ValueError) as raised:
         table.select(names=["house.T_rom"])
 
@@ -43,10 +43,10 @@ def test_a_left_out_input_says_how_to_read_it(table: ResultTable) -> None:
     with pytest.raises(ValueError) as raised:
         table.values("house.T_out_in")
 
-    assert str(raised.value) == "house.T_out_in is an input, which the table leaves out. Read it with include_inputs=True."
+    assert str(raised.value) == "house.T_out_in is an input. Read the inputs with include_inputs=True."
 
 
-def test_matches_says_whether_a_name_picks_any_column(table: ResultTable) -> None:
+def test_matches_says_whether_a_name_matches_any_column(table: ResultTable) -> None:
     assert table.matches("house")
     assert table.matches("weather.profile")
     assert table.matches("house.t_room")

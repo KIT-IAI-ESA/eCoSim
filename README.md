@@ -22,13 +22,14 @@ flowchart LR
     fmu2["FMI 2.0 model"] <--> server
     fmu3["FMI 3.0 model"] <--> server
     matlab["MATLAB script"] <--> server
-    pyro5["Python model over Pyro5"] <--> server
+    python["Python model"] <--> server
     server(("Server")) --> results[("Results in PostgreSQL<br/>or JSON lines files")]
 ```
 
-Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models served over
-Pyro5. The server stores the results in PostgreSQL/TimescaleDB or as JSON lines on disk. For many
-simulations at once, `ecosim-hpc` runs the server and the clients on a Dask cluster.
+Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models. A Python model
+runs in the client itself or is served over Pyro5. The server stores the results in PostgreSQL/TimescaleDB
+or as JSON lines on disk. For many simulations at once, `ecosim-hpc` runs the server and the clients on a
+Dask cluster.
 
 ## Quick start
 

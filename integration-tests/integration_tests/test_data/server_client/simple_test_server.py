@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, assert_never
 
 from ecosim_common.client.config.client_config import ClientInterfaceConfig
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.client_id import ClientID
+from ecosim_common.config.database_type import DatabaseType
 from ecosim_server.client.client_communication import ClientCommunication
 from ecosim_server.client.client_states import ClientStates
 from ecosim_server.config.server_config import DatabaseConfig, MainConfig, ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
+from ecosim_server.results import ResultTable, read_database_results, read_results
 from ecosim_server.server import Server
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
@@ -88,6 +90,16 @@ class SimpleTestServer(Server):
     def wait_until_listening(self, timeout_in_seconds: float = WAIT_TIMEOUT_IN_SECONDS) -> None:
         listening = self._channel.is_listening_on_connection_event().wait(timeout=timeout_in_seconds)
         assert listening, f"The server did not listen within {timeout_in_seconds}s"
+
+    def read_results(self) -> ResultTable:
+        database_config = self._server_config.database
+        match database_config.type:
+            case DatabaseType.FILE:
+                return read_results(directory=database_config.directory)
+            case DatabaseType.POSTGRES:
+                return read_database_results(database=database_config)
+            case _:
+                assert_never(database_config.type)
 
     def client_states(self) -> ClientStates:
         return self.client_communication()._client_states  # noqa: SLF001

@@ -14,7 +14,6 @@ def missing_key_problems(raw_config: dict[str, Any], simulation_config_file: Pat
 
 
 def simulator_key_problems(raw_config: Any, simulation_config_file: Path) -> list[str]:
-    """Every key of the simulators and their interfaces that is missing, for a reader that needs nothing else."""
     file = simulation_config_file
     if not isinstance(raw_config, dict) or "simulators" not in raw_config:
         return [_missing_top_level_key(file=file, key="simulators")]

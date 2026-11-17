@@ -45,11 +45,15 @@ class RepositoriesFileBased(Repositories):
             ),
         )
 
+    @staticmethod
+    def simulation_config_copy_in(directory: Path) -> Path:
+        return directory / "simulation.json"
+
     def copy_simulation_config(self, simulation_config: SimulationConfig) -> None:
         source = simulation_config.config_file
         if source is None or self._directory.samefile(source.parent):
             return
-        shutil.copyfile(src=source, dst=self._directory / "simulation.json")
+        shutil.copyfile(src=source, dst=RepositoriesFileBased.simulation_config_copy_in(directory=self._directory))
 
     @override
     def measurement_repository(

@@ -15,11 +15,8 @@ from ecosim_client_python.python_config import PythonConfig
 
 @dataclass(kw_only=True)
 class PythonModel:
-    """A model object with initialize(), do_step(value_dict) and clear(), the methods a Pyro5 object has."""
-
     model_reference: str
     _model: Any
-    # only the step time parameters do_step() has, so a model without them keeps working
     _step_time_parameters: frozenset[str]
     _inputs: dict[str, InterfaceValue] = field(default_factory=dict)
     _outputs: Mapping[str, Any] = field(default_factory=dict)
@@ -56,7 +53,7 @@ class PythonModel:
     def do_step(self, current_simulation_time: float, step_size_in_seconds: float) -> None:
         step_time = {"current_simulation_time": current_simulation_time, "step_size_in_seconds": step_size_in_seconds}
         step_time_arguments = {name: value for name, value in step_time.items() if name in self._step_time_parameters}
-        # a copy, so the model cannot change the inputs the client keeps
+        # a copy, the model may change value_dict
         self._keep_outputs(method_name="do_step", outputs=self._model.do_step(dict(self._inputs), **step_time_arguments))
 
     def clear(self) -> None:
@@ -78,20 +75,19 @@ class PythonModel:
         self._outputs_returned_by = method_name
 
     def _output_value(self, name: str, value: Any) -> InterfaceValue:
-        # lists are the arrays, and numpy numbers cannot be stored as JSON, so every number becomes a float, also in a list
+        # numpy numbers cannot be stored as JSON
         if isinstance(value, list):
             return self._output_list(name=name, values=value)
         return self._output_number(name=name, value=value, is_in_a_list=False)
 
     def _output_list(self, name: str, values: list[Any]) -> FloatMatrix:
-        # a matrix is a list of lists
         if values and all(isinstance(value, list) for value in values):
             return [self._output_list(name=name, values=value) for value in values]
         return [self._output_number(name=name, value=value, is_in_a_list=True) for value in values]
 
     def _output_number(self, name: str, value: Any, is_in_a_list: bool) -> float:
         with suppress(TypeError, ValueError):
-            # float() would turn a numpy array of one value into a number and drop its dimension
+            # float() also takes a numpy array with one value
             if value is not None and not isinstance(value, (str, bytes)) and getattr(value, "ndim", 0) == 0:
                 return float(value)
         returned = f"a list with {value!r}" if is_in_a_list else repr(value)
@@ -102,7 +98,7 @@ class PythonModel:
 
 
 def _step_time_parameters_of(do_step: Any) -> frozenset[str]:
-    # the code object, because inspect.signature() evaluates the annotations on Python 3.14
+    # inspect.signature() evaluates the annotations on Python 3.14
     code = getattr(inspect.unwrap(do_step), "__code__", None)
     if code is None:
         return frozenset()

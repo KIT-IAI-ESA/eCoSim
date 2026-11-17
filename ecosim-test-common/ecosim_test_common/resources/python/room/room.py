@@ -1,6 +1,4 @@
 class Room:
-    """A room that the heating power warms up."""
-
     def __init__(self) -> None:
         self.temperature = 20.0
 

@@ -17,7 +17,7 @@ flowchart LR
   ventilation -- control signals --> house
 ```
 
-Models are plugged in through a client for FMI 2.0, FMI 3.0, MATLAB or Pyro5. The server stores the
+Models are plugged in through a client for FMI 2.0, FMI 3.0, MATLAB, Python or Pyro5. The server stores the
 results in PostgreSQL/TimescaleDB or as JSON lines on disk. For many simulations at once, `ecosim-hpc`
 runs server and clients on a Dask cluster.
 
