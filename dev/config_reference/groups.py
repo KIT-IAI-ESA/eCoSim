@@ -42,14 +42,12 @@ GROUPS = [
         "of the FMU, for an output of the `.fmc` file that is not an output of the FMU, and for an interface of a type they "
         "do not support. "
         "`--validate-fmu-file-only` reports the same. "
-        "When a run starts, the clients also check the interfaces that `simulation.json` gives them. "
-        "For one the FMU does not have, or one of a type they do not support, they do not start the simulation, "
-        "and the run fails right away. "
-        "An interface the FMU has but the `.fmc` file does not list only gives a warning. "
+        "When a run starts, the clients also check the interfaces from `simulation.json`. "
+        "The run fails at the start if the FMU does not have one of them or does not support its type. "
         "`ecosim-client-fmu-v2` supports Real interfaces only. "
         "`ecosim-client-fmu-v3` supports `Float64` interfaces only: "
         "scalars and one-dimensional arrays with a fixed size or a size from a structural parameter. "
-        "The optional `[start_values]` section sets parameters and other variables of the FMU before the run, see [start values](#start-values).",
+        "The optional `[start_values]` section sets variables of the FMU before the run, see [start values](#start-values).",
         "ecosim-common-fmpy/ecosim_common_fmpy/config/fmu_base_config.py",
     ),
     (

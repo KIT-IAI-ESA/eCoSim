@@ -102,18 +102,18 @@ def test_a_failing_free_still_removes_the_extracted_files() -> None:
 
 
 @skip_unless_fmpy_loads(_FMU_FILE)
-def test_a_start_value_is_set_before_the_initialization_of_the_fmu() -> None:
+def test_the_fmu_starts_with_a_start_value() -> None:
     client = _create_client(start_value_texts={"mass.s": "1.25"})
 
     client._initialize_model()  # noqa: SLF001
 
-    # the position of the mass is the output pos_1, and a value set after the initialization would leave it at 0.5
+    # the output pos_1 is the position mass.s
     assert client._get_model_output("pos_1") == 1.25  # noqa: SLF001
     client.on_app_shutdown()
 
 
-def test_a_start_value_is_set_after_the_experiment_setup_and_before_the_initialization_mode() -> None:
-    # FMI 2.0 takes a value of a variable with initial="approx" only before enterInitializationMode
+def test_a_start_value_reaches_the_fmu_in_time_for_its_initialization() -> None:
+    # FMI 2.0 takes a value with initial="approx" only before enterInitializationMode
     fmu_instance = SpyFMUInstance()
     client = _create_client_with_spy(fmu_instance=fmu_instance, is_initialized=False, start_value_texts={"mass.s": "1.25"})
 

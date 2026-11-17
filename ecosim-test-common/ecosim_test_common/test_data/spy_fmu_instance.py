@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class SpyFMUInstance:
-    """Acts like an fmpy FMU of FMI 2.0 or 3.0 and records whether it was freed and the calls that start it."""
+    """Acts like an fmpy FMU and records its start calls and whether it was freed."""
 
     terminate_fails: bool = field(default=False)
     free_instance_fails: bool = field(default=False)

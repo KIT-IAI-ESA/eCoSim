@@ -13,7 +13,6 @@ from ecosim_test_common.test_data.generate_broken_fmu import generate_broken_fmu
 
 @pytest.fixture
 def feedthrough_config() -> Iterator[FMU2SimulatorConfig]:
-    """The FMI 2 Feedthrough FMU with a .fmc file that lists none of its interfaces, extracted only for the test."""
     simulator_config = FMU2SimulatorConfig.of(
         simulator_name="test_simulator",
         fmu_config=FMUBaseConfig(fmu_file=fmu2_model_path()),
@@ -88,21 +87,21 @@ def test_an_fmu_input_listed_as_an_output_is_rejected() -> None:
 
 
 @pytest.mark.parametrize(
-    ("fmu_file", "misspelt_input", "fmu_input"),
+    ("fmu_file", "misspelled_input", "fmu_input"),
     [
         (fmu2_model_path(), "Float64_continuous_inptu", "Float64_continuous_input"),
-        # two swapped letters make a short name less alike than one letter does in a long name
         (resource_path_file("fmu_v2/models/house/linux/house.fmu"), "T_otu", "T_out"),
     ],
+    ids=["long name", "short name"],
 )
-def test_an_fmc_input_the_fmu_lacks_gets_the_close_fmu_name(fmu_file: Path, misspelt_input: str, fmu_input: str) -> None:
+def test_an_fmc_input_the_fmu_lacks_gets_the_close_fmu_name(fmu_file: Path, misspelled_input: str, fmu_input: str) -> None:
     fmu_config = FMUBaseConfig(fmu_file=fmu_file)
 
-    with pytest.raises(ValueError, match=re.escape(f"has no input {misspelt_input}. Did you mean {fmu_input}?")):
-        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[misspelt_input], output_names=[])
+    with pytest.raises(ValueError, match=re.escape(f"has no input {misspelled_input}. Did you mean {fmu_input}?")):
+        FMU2SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[misspelled_input], output_names=[])
 
 
-def test_with_several_names_the_fmu_lacks_a_hint_names_the_one_it_replaces() -> None:
+def test_with_several_names_the_fmu_lacks_a_hint_shows_the_one_it_replaces() -> None:
     fmu_config = FMUBaseConfig(fmu_file=fmu2_model_path())
 
     with pytest.raises(ValueError, match=re.escape("Did you mean Float64_continuous_input instead of Float64_continuous_inptu?")):
@@ -114,7 +113,7 @@ def test_with_several_names_the_fmu_lacks_a_hint_names_the_one_it_replaces() -> 
         )
 
 
-def test_an_input_of_the_simulation_config_that_the_fmu_lacks_is_named_with_the_close_name(feedthrough_config: FMU2SimulatorConfig) -> None:
+def test_an_input_of_the_simulation_config_that_the_fmu_lacks_is_shown_with_the_close_name(feedthrough_config: FMU2SimulatorConfig) -> None:
     reason = feedthrough_config.reason_the_model_cannot_run(
         server_interface_settings=ServerInterfaceSettings(inputs=["Float64_continuous_inptu"], outputs=[]),
     )

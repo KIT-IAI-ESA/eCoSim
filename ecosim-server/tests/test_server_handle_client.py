@@ -65,7 +65,7 @@ def test_failed_handshake_of_a_known_client_resets_its_state() -> None:
     client_communication.reset_state.assert_called_once_with(ClientID(model_name="model", simulator_name="simulator"))
 
 
-def test_a_client_whose_fmc_file_lacks_a_required_interface_is_refused_with_the_interface_and_the_client(tmp_path: Path) -> None:
+def test_a_client_whose_fmc_file_lacks_a_required_interface_is_rejected(tmp_path: Path) -> None:
     file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "required": "true"}, create_output("rain")))
     channel = MagicMock(spec=ESPChannel)
     channel.listen_blocking.return_value = ESPChannelMessageJson.create(type=MessageType.INTERFACE_REQUEST, payload=ModelInterfaceIds(interfaces=[]))

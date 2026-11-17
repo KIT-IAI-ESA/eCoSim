@@ -62,6 +62,7 @@ class Client(ShutdownListener):
     _image_renderer_service: SimulationRendererService | None = field(default=None)
     # restored steps count too
     completed_steps: int = field(init=False, default=0)
+    failure_reason: str | None = field(init=False, default=None)
     _reason_not_to_start: str | None = field(init=False, default=None)
     _last_handled_message_type: MessageType | None = field(init=False, default=None)
     _where_the_model_failed: str | None = field(init=False, default=None)
@@ -77,7 +78,6 @@ class Client(ShutdownListener):
         ShutdownManager().register_listener(self)
 
     def _start_values_for_start_up(self) -> list[str]:
-        """The values the model gets before its initialization, as name = value, for the start-up block."""
         return []
 
     @property
@@ -222,7 +222,6 @@ class Client(ShutdownListener):
                 Client.logger.error("Unknown message type: '%s'", message_type)
             case _:
                 assert_never(message_type)
-        # a ping says nothing about how far the run got
         if message_type is not MessageType.PING:
             self._last_handled_message_type = message_type
 
@@ -298,11 +297,11 @@ class Client(ShutdownListener):
         self._execution_config.set_server_interface_settings(server_interface_settings)
         self._reason_not_to_start = self._reason_the_model_cannot_run(server_interface_settings=server_interface_settings)
         if self._reason_not_to_start is not None:
-            Client.logger.error("%s This client does not start the simulation.", self._reason_not_to_start)
+            self.failure_reason = f"{self._reason_not_to_start} This client does not start the simulation."
+            Client.logger.error("%s", self.failure_reason)
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
     def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
-        """Why the model cannot run the interfaces of the simulation config, if the client can tell before the start."""
         return None
 
     def _handle_simulation_setup(
@@ -323,13 +322,13 @@ class Client(ShutdownListener):
     ) -> None:
         Client.logger.debug("Handling start simulation")
         if self._reason_not_to_start is not None:
-            # the server waits for every start answer, so it notices the closed connection at once and fails the run
+            # the server fails the run when a client closes the connection here
             self._channel.close()
             return
         try:
             data: ClientSimStepData = self.on_simulation_start()
         except Exception as error:
-            self._log_model_failure(where="at the start of the simulation", error=error)
+            self._store_and_log_model_failure(where="at the start of the simulation", error=error)
             raise
         self._channel.send(
             ESPChannelMessageJson.answer_with_payload(
@@ -370,13 +369,14 @@ class Client(ShutdownListener):
         try:
             return self.on_simulation_step(received_inputs=received_inputs, step_size_in_seconds=step_size_in_seconds)
         except Exception as error:
-            # counted from 0, as the server counts the steps
-            self._log_model_failure(where=f"in step {self.completed_steps}", error=error)
+            # the server counts the steps from 0
+            self._store_and_log_model_failure(where=f"in step {self.completed_steps}", error=error)
             raise
 
-    def _log_model_failure(self, where: str, error: Exception) -> None:
+    def _store_and_log_model_failure(self, where: str, error: Exception) -> None:
         self._where_the_model_failed = where
-        Client.logger.error("%s: the model failed %s: %s", self.client_id, where, one_line_message_with_type(error=error))
+        self.failure_reason = f"{self.client_id}: the model failed {where}: {one_line_message_with_type(error=error)}"
+        Client.logger.error("%s", self.failure_reason)
 
     def _protocol_interface_value_to_dict(
         self,
