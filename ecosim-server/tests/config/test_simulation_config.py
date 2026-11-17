@@ -359,20 +359,13 @@ def _a_file_with_setup(directory: Path, setup: dict[str, object]) -> Path:
     return file
 
 
-def test_the_steps_come_from_the_setup_without_the_steps_option(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("steps_option", "steps"), [(None, 96), (10, 10)])
+def test_the_steps_come_from_the_steps_option_or_else_from_the_setup(tmp_path: Path, steps_option: int | None, steps: int) -> None:
     file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000", "steps": 96})
 
-    config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=None)
+    config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=steps_option)
 
-    assert config.steps == 96
-
-
-def test_the_steps_option_overrides_the_steps_of_the_setup(tmp_path: Path) -> None:
-    file = _a_file_with_setup(directory=tmp_path, setup={"delta_t": "1000", "steps": 96})
-
-    config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=10)
-
-    assert config.steps == 10
+    assert config.steps == steps
 
 
 def test_the_log_says_that_the_steps_option_overrides_the_steps_of_the_setup(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
@@ -392,10 +385,10 @@ def test_a_config_without_steps_needs_the_steps_option(tmp_path: Path) -> None:
     with pytest.raises(ValueError) as error_info:
         SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=None)
 
-    assert str(error_info.value) == f'{file}: setup has no key "steps". Write how many steps the simulation runs, like "steps": 96, or pass --steps.'
+    assert str(error_info.value) == f'{file}: setup has no key "steps". Set it or pass --steps.'
 
 
-def test_the_required_interfaces_a_client_does_not_list_are_named(tmp_path: Path) -> None:
+def test_a_required_interface_that_the_client_does_not_list_is_missing(tmp_path: Path) -> None:
     file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "required": "true"}, create_output("rain")))
     simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
 

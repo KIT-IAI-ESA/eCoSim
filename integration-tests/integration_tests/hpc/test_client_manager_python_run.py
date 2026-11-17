@@ -15,7 +15,7 @@ from integration_tests.test_data.test_client_data import TestClientData
 
 
 def test_a_python_model_next_to_its_ini_runs_every_step_on_a_dask_worker(dask_client: dd.Client, tmp_path: Path) -> None:
-    # the directory holds counter.py, which would start the Pyro5 client without the [python] section
+    # counter.py would start the Pyro5 client without the [python] section
     shutil.copytree(src=python_counter_config_path().parent, dst=tmp_path / "counter")
     client_data = TestClientData.with_output(simulator_name="counter", model_name="counter", output_name="count")
     simulation_config = SimulationConfig(

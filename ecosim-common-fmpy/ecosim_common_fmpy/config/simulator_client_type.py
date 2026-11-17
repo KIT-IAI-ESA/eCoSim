@@ -7,9 +7,7 @@ from ecosim_common_fmpy.tech.read_model_description import read_model_descriptio
 
 
 def client_type_of(simulator_directory: SimulatorDirectory) -> ClientType:
-    """The one client that runs the model of a simulator directory."""
-    # a Python model can sit next to other files, a .py helper or an FMU it loads itself
-    if simulator_directory.names_a_python_model():
+    if simulator_directory.sets_a_python_model():
         return ClientType.Python
     model_files = _model_files_of_one_model(simulator_directory=simulator_directory)
     match model_files[0].suffix:
@@ -39,7 +37,7 @@ def _model_files_of_one_model(simulator_directory: SimulatorDirectory) -> list[P
             + "or write model = <module>:<class> in the [python] section of its ini file.",
         )
     if len({model_file.suffix for model_file in model_files}) > 1:
-        raise ValueError(f"{simulator_directory.path} holds model files of different kinds: {names}. A simulator folder holds one model.")
+        raise ValueError(f"{simulator_directory.path} has model files of different kinds: {names}.")
     if model_files[0].suffix == ".fmu" and len(model_files) > 1:
-        raise ValueError(f"{simulator_directory.path} holds several FMUs: {names}. A simulator folder holds one model.")
+        raise ValueError(f"{simulator_directory.path} has several FMUs: {names}.")
     return model_files

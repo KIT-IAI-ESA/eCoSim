@@ -30,7 +30,7 @@ RUN_PARAMETERS = (
         transform=ConfigParser.positive_whole_number,
         metavar="N",
         help_text="How many steps the simulation runs. Overrides setup.steps in the simulation config. "
-        + "With --restore-simulation-run, the steps of the whole run.",
+        + "With --restore-simulation-run it is the number of steps of the whole run.",
     ),
     AppConfigParameter(
         name="step-size",

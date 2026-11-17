@@ -1,5 +1,3 @@
-"""The keys of an .fmc file that the clients read."""
-
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -10,7 +8,7 @@ KINDS = (("inputs", "input"), ("outputs", "output"))
 
 
 def unknown_key_warnings(raw_interfaces: Any, fmc_file: Path) -> list[str]:
-    # the .fmc files of the examples have fmu-file and modeldescription, and the docs say that nothing reads them
+    # the .fmc files of the examples have fmu-file and modeldescription
     warnings = unknown_key_warnings_of_object(
         where=str(fmc_file),
         raw_object=raw_interfaces,

@@ -13,7 +13,7 @@ def test_the_written_fmu_section_reads_back_the_same_fmu_file(tmp_path: Path) ->
     assert FMUBaseConfig.of_config_parser(config_parser=ConfigParser(tmp_path / "preferences.ini")) == fmu_config
 
 
-def test_the_missing_interfaces_are_returned_without_raising() -> None:
+def test_the_missing_interfaces_are_the_inputs_and_outputs_the_fmu_does_not_have() -> None:
     missing = FMUBaseConfig.missing_interfaces(
         model_description=read_model_description(file=fmu2_model_path()),
         input_names=["Float64_continuous_input", "missing_input"],

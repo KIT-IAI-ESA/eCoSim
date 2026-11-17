@@ -43,7 +43,7 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run, the steps of the whole run. |
+| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run it is the number of steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
@@ -166,13 +166,13 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 | --- | --- | --- | --- |
 | `--server-config FILE` | yes |  | The server's config file, usually server/preferences.ini. A relative path starts in the current folder. |
 | `--simulation-config FILE` | yes |  | The simulators and their connections, usually server/simulation.json. A relative path starts in the current folder. |
-| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually Modules. A simulator's folder holds one model, which chooses its client: the Python client if the ini file has model in [python], else the FMU client for the FMI version of the .fmu file, the MATLAB client for .m files or the Pyro5 client for .py files. |
+| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually Modules. |
 
 **Run**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run, the steps of the whole run. |
+| `--steps N` |  |  | How many steps the simulation runs. Overrides setup.steps in the simulation config. With --restore-simulation-run it is the number of steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
 | `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
 | `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |

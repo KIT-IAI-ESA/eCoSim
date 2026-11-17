@@ -54,7 +54,6 @@ class SimulationConfig:
         )
         if problems:
             raise ValueError("\n".join(problems))
-        # before the checks below, because a misspelt key like connected-to is often what makes them fail
         for warning in unknown_key_warnings(raw_config=config, simulation_config_file=simulation_config_file):
             SimulationConfig.logger.warning("%s", warning)
         if steps is not None and "steps" in config["setup"]:

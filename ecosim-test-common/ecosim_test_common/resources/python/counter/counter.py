@@ -1,6 +1,4 @@
 class Counter:
-    """Counts its steps, so the stored values show that every step reached the model."""
-
     def __init__(self) -> None:
         self.steps = 0
 

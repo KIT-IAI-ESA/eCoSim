@@ -43,7 +43,7 @@ class ClientManager(ShutdownListener):
             simulators_directory=self._config.simulator_dir,
             client_ids=[simulation.client_id for simulation in simulation_config.clients],
         )
-        # every client type first, so a directory that holds two kinds of model stops the run before any client starts
+        # finds every client type before any client starts
         client_types = {client_id: client_type_of(simulator_directory=directory) for client_id, directory in simulator_directories.items()}
         for client_id, simulator_directory in simulator_directories.items():
             self._start_client(dask_client=dask_client, simulator_directory=simulator_directory, client_type=client_types[client_id])
