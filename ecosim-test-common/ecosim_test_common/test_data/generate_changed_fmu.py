@@ -18,7 +18,6 @@ def generate_fmu_without_co_simulation(fmu_file: Path, directory: Path) -> Path:
 
 
 def generate_fmu_without_binaries_for(fmu_file: Path, directory: Path, platform: str) -> Path:
-    """Copy of the FMU without its binary for the platform, like linux64."""
     target = directory / fmu_file.name
     with zipfile.ZipFile(fmu_file) as source, zipfile.ZipFile(target, mode="w") as copy:
         for entry in source.infolist():

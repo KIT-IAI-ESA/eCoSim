@@ -46,7 +46,6 @@ class ESPLogger:
 
     @property
     def name(self) -> str:
-        # the name in each line of the log, which ecosim run looks for
         return self._name
 
     @property

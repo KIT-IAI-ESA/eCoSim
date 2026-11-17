@@ -9,84 +9,87 @@ from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 
-from ecosim.check.by_hand_check import by_hand_warnings
 from ecosim.check.checked_simulator import CheckedSimulator
 from ecosim.check.findings import Findings
+from ecosim.check.manual_start_check import manual_start_warnings
 from ecosim.check.server_side_check import ServerSideCheck
-from ecosim.check.simulation_file_check import SimulationFileCheck
+from ecosim.check.simulation_config_check import SimulationConfigCheck
 from ecosim.check.simulator_check import simulator_findings
-from ecosim.check.simulator_folder_check import SimulatorFolderCheck
-from ecosim.simulation_folder import SimulationFolder
+from ecosim.check.simulator_directory_check import SimulatorDirectoryCheck
+from ecosim.simulation_directory import SimulationDirectory
 from ecosim.simulation_options import RunOptions
 
 
 @dataclass(frozen=True)
 class SimulationCheck:
-    """What a run reads, checked with the readers of the server and the clients."""
-
     findings: Findings
     simulators: list[CheckedSimulator]
-    # the simulators of the table, None if simulation.json cannot be read
+    # None if simulation.json cannot be read
     simulator_count: int | None
     simulation_config: SimulationConfig | None
     server_config: ServerConfig | None
-    # from --steps, --duration or setup.steps
     length_is_known: bool
 
     @staticmethod
-    def of_simulation(simulation: SimulationFolder, run_options: RunOptions, before_a_run: bool = False) -> SimulationCheck:
-        """Before a run, a Pyro5 object that nothing listens on is a problem, as the run would fail."""
+    def of_simulation(simulation: SimulationDirectory, run_options: RunOptions, before_a_run: bool = False) -> SimulationCheck:
         with _without_the_log_of_the_readers():
-            # the port of a run, which the clients get as well
             port = get_free_port()
-            simulation_file = SimulationFileCheck.of_file(file=simulation.simulation_config, run_options=run_options)
-            server_side = ServerSideCheck.of_simulation(simulation=simulation, run_options=run_options, simulation_file=simulation_file, port=port)
+            simulation_config_check = SimulationConfigCheck.of_file(file=simulation.simulation_config, run_options=run_options)
+            server_side = ServerSideCheck.of_simulation(
+                simulation=simulation,
+                run_options=run_options,
+                simulation_config_check=simulation_config_check,
+                port=port,
+            )
+            simulators, findings_of_the_simulators = _checked_simulators(
+                simulation=simulation,
+                server_side=server_side,
+                port=port,
+                before_a_run=before_a_run,
+            )
             findings = Findings()
-            findings.add(simulation_file.findings)
+            findings.add(simulation_config_check.findings)
             findings.add(server_side.findings)
-            simulators = _checked_simulators(simulation=simulation, server_side=server_side, port=port, findings=findings, before_a_run=before_a_run)
-            findings.warnings += by_hand_warnings(server_config_file=simulation.server_config, simulators=simulators)
+            findings.add(findings_of_the_simulators)
+            findings.warnings += manual_start_warnings(server_config_file=simulation.server_config, simulators=simulators)
         return SimulationCheck(
             findings=findings,
             simulators=simulators,
             simulator_count=None if server_side.clients is None else len(simulators),
             simulation_config=server_side.simulation_config,
             server_config=server_side.server_config,
-            length_is_known=run_options.steps is not None or simulation_file.has_steps(),
+            length_is_known=run_options.steps is not None or simulation_config_check.has_steps(),
         )
 
 
-def simulators_of(simulation: SimulationFolder, clients: list[ClientSimulatorConfig]) -> tuple[list[CheckedSimulator], Findings]:
-    """The folder and the client of each simulator, all that a run needs to start the clients."""
-    folders = SimulatorFolderCheck.of_folder(
+def simulators_of(simulation: SimulationDirectory, clients: list[ClientSimulatorConfig]) -> tuple[list[CheckedSimulator], Findings]:
+    directories = SimulatorDirectoryCheck.of_directory(
         simulator_dir=simulation.simulator_dir,
         client_ids=[client.client_id for client in clients],
         simulation_config_file=simulation.simulation_config,
     )
     simulators = [
         CheckedSimulator(
-            directory=folders.client_types[client.client_id][0],
-            client_type=folders.client_types[client.client_id][1],
+            directory=directories.client_types[client.client_id][0],
+            client_type=directories.client_types[client.client_id][1],
             input_count=len(client.input_interfaces()),
             output_count=len(client.output_interfaces()),
         )
         for client in clients
-        if client.client_id in folders.client_types
+        if client.client_id in directories.client_types
     ]
-    return simulators, folders.findings
+    return simulators, directories.findings
 
 
 def _checked_simulators(
-    simulation: SimulationFolder,
+    simulation: SimulationDirectory,
     server_side: ServerSideCheck,
     port: int,
-    findings: Findings,
     before_a_run: bool,
-) -> list[CheckedSimulator]:
+) -> tuple[list[CheckedSimulator], Findings]:
     if not server_side.clients:
-        return []
-    simulators, folder_findings = simulators_of(simulation=simulation, clients=server_side.clients)
-    findings.add(folder_findings)
+        return [], Findings()
+    simulators, findings = simulators_of(simulation=simulation, clients=server_side.clients)
     clients = {client.client_id: client for client in server_side.clients}
     for simulator in simulators:
         findings.add(
@@ -99,12 +102,12 @@ def _checked_simulators(
                 before_a_run=before_a_run,
             ),
         )
-    return simulators
+    return simulators, findings
 
 
 @contextlib.contextmanager
 def _without_the_log_of_the_readers() -> Iterator[None]:
-    """The check lists what the readers find, and with --debug they would name defaults that the run overrides."""
+    # with --debug the readers would log defaults that the run overrides
     logging.disable(logging.CRITICAL)
     try:
         yield

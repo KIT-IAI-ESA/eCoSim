@@ -65,14 +65,14 @@ Two FMUs or model files of different kinds in one folder stop the job before any
    ```
 
    It reads the FMU and the start values and starts nothing. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
-7. In the same shell and folder, check the whole simulation with the type of results and the length of the job:
+7. In the same shell and folder, check the whole simulation with the options of the job:
 
    ```shell
    uv run ecosim check .. --database-type postgres --steps 100
    ```
 
-   It lists every mistake in the config files, the simulator folders and the start values that would stop the
-   job, see [Run a simulation](run-a-simulation.md#check-the-simulation).
+   It lists every problem in the config files, the simulator folders and the start values, see
+   [Run a simulation](run-a-simulation.md#check-the-simulation).
 8. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
@@ -128,9 +128,9 @@ folders need modules with different names, see [On an HPC cluster](python-client
 
 After the run, the PostgreSQL database `sim_control` is in the directory `test` next to the scripts.
 The script's `--database-schema` puts the tables into the schema `temp_schema`, and its
-`--database-drop-existing-schema` makes the next run replace them. `ecosim results` shows the steps and every
-output, and writes them to `results.csv`, see [Read the results](results.md). `psql` is there for your own
-queries. Both read the password from `test.pgpass`. In `building_hpc/Executable`, with your `ECOSIM_DIR` as in
+`--database-drop-existing-schema` makes the next run replace them. `ecosim results` shows every output and
+writes the values to `results.csv`, see [Read the results](results.md). Use `psql` for your own queries. Both
+read the password from `test.pgpass`. In `building_hpc/Executable`, with your `ECOSIM_DIR` as in
 `clusterRunHPC.sh`:
 
 ```shell

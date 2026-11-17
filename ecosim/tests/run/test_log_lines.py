@@ -3,6 +3,7 @@ from pathlib import Path
 from ecosim.run.log_line import LogLine
 from ecosim.run.reason_lines import reason_lines
 from ecosim.run.server_log_follower import ServerLogFollower, line_to_show
+from ecosim_common.tech.one_line_errors import DEBUG_HINT
 
 from tests.run.log_lines import log_line
 
@@ -40,35 +41,34 @@ def test_warnings_are_left_out_once_a_stop_has_begun(tmp_path: Path) -> None:
     assert shown_lines(log_file=log_file, shows_warnings=False) == ["Step 10 of 100"]
 
 
-def test_a_line_that_is_still_written_is_read_at_the_next_look(tmp_path: Path) -> None:
+def test_a_line_that_is_still_written_is_read_at_the_next_call(tmp_path: Path) -> None:
     log_file = tmp_path / "server.log"
     follower = ServerLogFollower(log_file=log_file, read_up_to=0)
     line = log_line(level="INFO", logger="Progress", message="Step 10 of 100")
     log_file.write_text(line[:30], encoding="utf-8")
-    seen_first = follower.new_log_lines()
+    lines_of_the_first_call = follower.new_log_lines()
     with log_file.open("a", encoding="utf-8") as log:
         log.write(f"{line[30:]}\n")
 
-    assert (seen_first, follower.new_log_lines(), follower.new_log_lines()) == ([], [LogLine.of_text(text=line)], [])
+    assert lines_of_the_first_call == []
+    assert follower.new_log_lines() == [LogLine.of_text(text=line)]
 
 
 def test_the_reason_of_a_failed_client_is_its_errors_and_the_end_of_its_traceback(tmp_path: Path) -> None:
     log_file = tmp_path / "house.log"
+    logged_error = "The connection to the server ended before the simulation was stopped."
+    last_line = f"ecosim-client-fmu-v2: error: KeyError: 'weatherBus_TDryBull' {DEBUG_HINT}"
     lines = [
         log_line(level="INFO", logger="Client", message="Starting"),
-        log_line(level="ERROR", logger="Client", message="The connection to the server ended before the simulation was stopped."),
+        log_line(level="ERROR", logger="Client", message=logged_error),
         "Traceback (most recent call last):",
         '  File "client.py", line 12, in step',
         "KeyError: 'weatherBus_TDryBull'",
-        "ecosim-client-fmu-v2: error: KeyError: 'weatherBus_TDryBull' (run with --debug for the full traceback)",
+        last_line,
     ]
     log_file.write_text("\n".join(lines), encoding="utf-8")
 
-    assert reason_lines(log_file=log_file, start=0) == [
-        "The connection to the server ended before the simulation was stopped.",
-        "KeyError: 'weatherBus_TDryBull'",
-        "ecosim-client-fmu-v2: error: KeyError: 'weatherBus_TDryBull' (run with --debug for the full traceback)",
-    ]
+    assert reason_lines(log_file=log_file, start=0) == [logged_error, "KeyError: 'weatherBus_TDryBull'", last_line]
 
 
 def test_the_reason_of_a_failed_server_has_every_line_of_its_error(tmp_path: Path) -> None:
@@ -76,7 +76,7 @@ def test_the_reason_of_a_failed_server_has_every_line_of_its_error(tmp_path: Pat
     lines = [
         "ecosim-server: error: The simulation config has invalid connections:",
         "- simulator 'house', interface 'weatherBus_TDryBul': simulator 'weather' has no interface 'weatherBus.TDryBul'.",
-        "(run with --debug for the full traceback)",
+        DEBUG_HINT,
     ]
     log_file.write_text("\n".join(lines), encoding="utf-8")
 

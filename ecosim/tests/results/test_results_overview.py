@@ -4,7 +4,7 @@ from ecosim_server.simulation.state.simulation_state import SimulationState
 from tests.results.stored_results import create_house_table_with, create_result_table
 
 
-def test_the_overview_names_the_state_the_steps_and_the_simulated_period() -> None:
+def test_the_overview_shows_the_state_the_steps_and_the_simulated_period() -> None:
     lines = overview_lines(table=create_result_table(steps=4).without_inputs(), source="results", left_out_inputs=1)
 
     assert lines[:3] == [
@@ -39,7 +39,7 @@ def test_a_run_without_a_stored_step_has_simulated_nothing() -> None:
 
 
 def test_every_column_gets_its_unit_and_its_minimum_mean_and_maximum() -> None:
-    # uneven values, so that the mean differs from the median and from the middle of minimum and maximum
+    # with these values the mean differs from the median
     table = create_house_table_with(rows=((290.0, 270.0), (290.0, 270.0), (296.0, 264.0)))
 
     lines = overview_lines(table=table, source="results", left_out_inputs=0)
@@ -51,7 +51,7 @@ def test_every_column_gets_its_unit_and_its_minimum_mean_and_maximum() -> None:
     ]
 
 
-def test_the_numbers_leave_out_the_empty_cells_of_a_simulator_that_stored_fewer_steps() -> None:
+def test_the_numbers_leave_out_the_empty_cells_of_a_simulator_with_fewer_steps() -> None:
     table = create_house_table_with(rows=((290.0, 270.0), (None, 270.0), (296.0, 270.0)), state=SimulationState.FAILED)
 
     lines = overview_lines(table=table, source="results", left_out_inputs=0)

@@ -1,5 +1,3 @@
-"""The model of a simulator, checked with the readers its client uses before it starts."""
-
 from __future__ import annotations
 
 import importlib
@@ -19,7 +17,7 @@ from ecosim_common.communication.data.server_interface_settings import ServerInt
 from ecosim.check.findings import Findings, problem_of_ini_file, with_the_file
 from ecosim.check.fmu_check import ModelCheck, fmu_check
 
-SECONDS_FOR_THE_IMPORT = 60
+IMPORT_TIMEOUT_IN_SECONDS = 60
 
 
 def model_check(
@@ -43,9 +41,9 @@ def model_check(
 
 
 def _matlab_findings(directory: SimulatorDirectory) -> Findings:
-    # the MATLAB client needs Python 3.12, so it often has an environment of its own
+    # the MATLAB client needs Python 3.12 and often has its own environment
     if importlib.util.find_spec("ecosim_client_matlab") is None:
-        return Findings(warnings=[f"{directory.path}: [matlab] was not checked, because ecosim-client-matlab is not installed here."])
+        return Findings(warnings=[f"{directory.path}: [matlab] was not checked. ecosim-client-matlab is not installed."])
     try:
         importlib.import_module("ecosim_client_matlab.matlab_config").MatlabConfig(directory.config_parser)
     except Exception as error:
@@ -62,10 +60,10 @@ def _pyro_findings(directory: SimulatorDirectory, before_a_run: bool) -> Finding
         host, port = config_parser.get_string("pyro", "pyro_host"), config_parser.get_int("pyro", "pyro_port")
     except Exception as error:
         return Findings(problems=[problem_of_ini_file(error=error, ini_file=config_parser.config_file)])
-    not_installed = f"{directory.path}: [pyro] was checked only for pyro_host and pyro_port, because ecosim-client-pyro5 is not installed here."
+    not_installed = f"{directory.path}: only pyro_host and pyro_port of [pyro] were checked. ecosim-client-pyro5 is not installed."
     findings = Findings(warnings=[] if installed else [not_installed])
     try:
-        # the Pyro5 object runs on its own, its client only connects to it
+        # the Pyro5 object is started separately
         socket.create_connection(address=(host, port), timeout=1).close()
     except OSError:
         nothing_listens = f"{directory.path}: nothing listens on {host}:{port} yet. Start the Pyro5 object before the run."
@@ -82,18 +80,18 @@ def _python_findings(directory: SimulatorDirectory) -> Findings:
     try:
         problem = _python_model_import_problem(ini_file=ini_file)
     except subprocess.TimeoutExpired:
-        return Findings(warnings=[f"{ini_file}: the import of the model took more than {SECONDS_FOR_THE_IMPORT} s, so it was not checked."])
+        return Findings(warnings=[f"{ini_file}: the import of the model took more than {IMPORT_TIMEOUT_IN_SECONDS} s. It was not checked."])
     return Findings(problems=[] if problem is None else [with_the_file(message=problem, file=ini_file)])
 
 
 def _python_model_import_problem(ini_file: Path) -> str | None:
-    # the import runs the code of the module, and two simulators can have modules of one name
+    # in a subprocess, two simulators can have modules with the same name
     imported = subprocess.run(
         [sys.executable, "-P", "-m", "ecosim.check.python_model_import", str(ini_file.absolute())],
         capture_output=True,
         text=True,
         check=False,
-        timeout=SECONDS_FOR_THE_IMPORT,
+        timeout=IMPORT_TIMEOUT_IN_SECONDS,
     )
     if imported.returncode == 0:
         return None

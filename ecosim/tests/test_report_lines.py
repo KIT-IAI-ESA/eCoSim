@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 from ecosim.check.checked_simulator import CheckedSimulator
 from ecosim.report_lines import ecosim_program, length_line, simulator_lines
 from ecosim_common.client.config.client_type import ClientType
@@ -10,7 +9,7 @@ from ecosim_test_common.test_data.building_simulation import write_building_simu
 
 
 def test_the_simulator_lines_line_up_their_columns(tmp_path: Path) -> None:
-    simulation = write_building_simulation(folder=tmp_path / "building")
+    simulation = write_building_simulation(directory=tmp_path / "building")
     simulators = [
         CheckedSimulator(
             directory=SimulatorDirectory.of_ini_file(ini_file=simulation / "Modules" / name / "preferences.ini"),
@@ -29,18 +28,12 @@ def test_the_simulator_lines_line_up_their_columns(tmp_path: Path) -> None:
     ]
 
 
-def test_the_length_line_names_the_steps_the_step_size_and_the_simulated_period(tmp_path: Path) -> None:
-    simulation = write_building_simulation(folder=tmp_path)
+def test_the_length_line_shows_the_steps_the_step_size_and_the_simulated_period(tmp_path: Path) -> None:
+    simulation = write_building_simulation(directory=tmp_path)
     simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=simulation / "server" / "simulation.json", steps=35_040)
 
     assert length_line(simulation_config=simulation_config) == "35,040 steps of 15 min, from 2023-01-01 00:00 to 2024-01-01 00:00 UTC."
 
 
-def test_a_printed_command_starts_with_uv_run_when_uv_run_started_ecosim(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("UV", "/usr/bin/uv")
-
-    assert ecosim_program() == ["uv", "run", "ecosim"]
-
-
-def test_a_printed_command_starts_with_ecosim_when_ecosim_was_started_without_uv() -> None:
-    assert ecosim_program() == ["ecosim"]
+def test_a_printed_command_starts_with_uv_run_when_uv_run_started_ecosim() -> None:
+    assert ecosim_program(environment={"UV": "/usr/bin/uv"}) == ["uv", "run", "ecosim"]

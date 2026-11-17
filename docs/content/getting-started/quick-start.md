@@ -16,7 +16,7 @@ flowchart LR
 ```
 
 You need [uv](https://docs.astral.sh/uv/). It also downloads Python if Python 3.12 or newer is missing.
-Everything runs in one terminal, in any shell.
+Everything runs in one terminal.
 
 ## 1. Get the source
 
@@ -25,7 +25,7 @@ git clone https://github.com/KIT-IAI-ESA/ecosim.git
 cd ecosim/simulation_examples
 ```
 
-All commands on this page run in `simulation_examples`. The first `uv run` creates the environment, which takes a
+All commands on this page run in `simulation_examples`. The first `uv run` creates the environment. That takes a
 moment.
 
 ## 2. Check the example
@@ -41,8 +41,7 @@ Checked building: 3 simulators, no problems.
   weather    FMI 2.0  building/Modules/weather     0 inputs  11 outputs
 ```
 
-`ecosim check` reads the config files and the FMUs of the simulation as a run reads them, but starts nothing. Each line
-is one model with its folder and the number of its inputs and outputs.
+`ecosim check` reads the config files and the FMUs of the simulation. It starts nothing.
 
 ## 3. Run it
 
@@ -58,23 +57,20 @@ Finished after 2.5 s. Results: files in building/results/2026-11-14_17-35-27
 Read them with: uv run ecosim results building
 ```
 
-`ecosim run` checks the simulation again, starts the server and a client for each model, and waits until the run is
-done. Each run gets a new folder in `building/results`, named after the time it started. A command that `ecosim`
-prints for you to copy starts the way you started `ecosim`, with `uv run` in `simulation_examples`.
+`ecosim run` checks the simulation again. Then it starts the server and one client per model. Each run gets a new
+folder in `building/results`, named after its start time.
 
-The server and each client write what they print to a log in the `logs` folder of the run. `logs/house.log` has 16
-warnings of the house model at time 0. They come from the model and are expected. `logs/server.log` ends with a
-summary of the run: the steps, the simulated period and where the results are.
+The server and the clients write their output to the `logs` folder of the run. `logs/house.log` has some warnings
+of the house model at time 0. They are expected. `logs/server.log` ends with a summary of the run.
 
-A longer run also shows a progress line, every 10 seconds in the first minute and less often later. This one is
-from a run with `--duration 30d`:
+A longer run also shows a progress line from time to time. This one is from a run with `--duration 30d`:
 
 ```text
 Step 1,574 of 2,880 (54 %), simulated 2023-01-17 09:30, 157 steps/s, about 8.3 s left
 ```
 
-Add `--debug` to get every message in the logs, also one for each step. Ctrl-C stops the server and every client,
-and the last line says how to continue the run, see [Run a simulation](../guides/run-a-simulation.md#stop-and-continue-a-run).
+`--debug` adds the debug messages to the logs. Ctrl-C stops the run. To continue it later, see
+[Run a simulation](../guides/run-a-simulation.md#stop-and-continue-a-run).
 
 ## 4. Look at the results
 
@@ -96,20 +92,20 @@ house.Pe_load                                 -485.435      -426.473      -182.9
 ...
 ```
 
-It shows the newest run of the simulation, with the smallest, the mean and the largest value of each output.
-`uv run ecosim results building --csv results.csv` writes the values to `results.csv`, with a row for each step
-and a column for each output. [Read the results](../guides/results.md) shows how to open the file in Excel, MATLAB
-or pandas, and how to read the results in Python.
+It shows the newest run of the simulation with the minimum, mean and maximum of each output.
+`uv run ecosim results building --csv results.csv` writes the values to `results.csv`, one row per step and one
+column per output. [Read the results](../guides/results.md) shows how to open the file in Excel, MATLAB or pandas
+and how to read the results in Python.
 
-The run folder holds:
+The run folder contains:
 
 | File | Content |
 | --- | --- |
-| `module_house.jsonl`, `module_occupancy.jsonl`, `module_weather.jsonl` | One line for each step with the outputs of that model and the inputs it got |
+| `module_house.jsonl`, `module_occupancy.jsonl`, `module_weather.jsonl` | One line per step with the outputs of that model and the inputs it got |
 | `simulation_state.jsonl` | The states of the run, ending with `{"state": "Finished"}` |
 | `server_time_measurement.jsonl` | How long the server took |
 | `simulation.json` | A copy of the simulation config of the run |
-| `logs/` | `server.log` and a log for each client, `house.log`, `occupancy.log` and `weather.log` |
+| `logs/` | `server.log` and one log per client |
 
 ## 5. Change a parameter of the house
 
@@ -121,7 +117,7 @@ The client config of the house, `building/Modules/house/preferences.ini`, ends w
 # U_wall = 0.3
 ```
 
-Remove the `#` before `U_wall = 0.3`. Then run the simulation again and look only at the room temperature of the house:
+Remove the `#` before `U_wall = 0.3`. Then run the simulation again and look only at the room temperature:
 
 ```shell
 uv run ecosim run building --steps 100
@@ -141,13 +137,13 @@ house.T_indoor         291.917       293.889       295.161
 Add --csv results.csv to write the table to a file.
 ```
 
-With the better walls the room stays warmer: the mean is 293.889 K instead of 293.752 K. `logs/house.log` of the
-run lists the value under `Start values`. The section takes any parameter of the FMU, see
+With the better walls the room stays a little warmer. `logs/house.log` of the run lists the value under
+`Start values`. The section takes any parameter of the FMU, see
 [Start values](../reference/configuration-files.md#start-values). Put the `#` back to use the value of the FMU again.
 
 ## 6. Make a simulation from FMUs
 
-`ecosim new` writes a simulation folder from FMU files. From the three FMUs of the example:
+`ecosim new` writes a simulation folder from FMU files. Here it gets the three FMUs of the example:
 
 ```shell
 uv run ecosim new my_building building/Modules/house/house.fmu building/Modules/occupancy/occupancy.fmu building/Modules/weather/weather.fmu --steps 100 --start-date 2023-01-01
@@ -171,30 +167,28 @@ After a change, check it with: uv run ecosim check my_building
 Run it with: uv run ecosim run my_building
 ```
 
-It connects each input to the output with the same name, where a dot and an underscore count as the same. That
-gives the 18 connections of `building/server/simulation.json`. The 100 steps are now in the new simulation, so the run
-needs no `--steps`:
+It connects each input to the output with the same name. A dot and an underscore count as the same. The 100 steps
+are stored in the new simulation. The run needs no `--steps`:
 
 ```shell
 uv run ecosim run my_building
 uv run ecosim results my_building --interface house.T_indoor
 ```
 
-The mean of `house.T_indoor` is 293.752 K, as in the first run of part 3, and all 100 values are the same to the
-last digit. The weather model stores 24 outputs instead of 11, since `ecosim new` keeps every output.
-[Your own models](your-own-models.md) explains the options, like `--connect` for an input and an output with
-different names.
+The room temperature is the same as in the first run of part 3. The weather model stores 24 outputs instead of 11.
+`ecosim new` keeps every output. [Your own models](your-own-models.md) explains the options, like `--connect` for
+an input and an output with different names.
 
 ## 7. When something goes wrong
 
-A mistake ends in one line that says what is wrong, often with the closest name:
+An error is one line, often with the closest name:
 
 ```text
 ecosim results: error: The results have no column house.T_indor. Did you mean house.T_indoor? (run with --debug for the full traceback)
 ```
 
-Run the same command with `--debug` to see the full traceback. `ecosim check` lists every problem of a simulation at
-once, each with its file. Here the client config of the house says `simulator_name=hous`:
+Run the same command with `--debug` to see the full traceback. `ecosim check` lists every problem of a simulation
+with its file. Here the client config of the house has `simulator_name=hous`:
 
 ```text
 Checked building: 2 simulators, 1 problem.
@@ -209,7 +203,7 @@ Fix it and run the check again: uv run ecosim check building
 
 ## What the example consists of
 
-The simulation folder `building` holds:
+The simulation folder `building` contains:
 
 | File | Purpose |
 | --- | --- |
@@ -217,15 +211,15 @@ The simulation folder `building` holds:
 | `server/simulation.json` | The simulators, how their interfaces are connected, the step size and the start date |
 | `Modules/<model>/preferences.ini` | Where the client finds the server, and which model it runs |
 | `Modules/<model>/*.fmu`, `*.fmc` | The model and its interface description |
-| `results/` | A folder for each run of `ecosim run` |
-| `Executable/` | Scripts that start the server and the clients by hand, with the results in PostgreSQL |
+| `results/` | One folder per run of `ecosim run` |
+| `Executable/` | Scripts that start the server and the clients manually, with the results in PostgreSQL |
 
 The [configuration reference](../reference/configuration-files.md) lists every key of these files.
 
 ## Next steps
 
-- Start the server and the clients by hand, for example on several machines, see
-  [Run a simulation](../guides/run-a-simulation.md#start-the-parts-by-hand).
+- Start the server and the clients manually, for example on several machines, see
+  [Run a simulation](../guides/run-a-simulation.md#start-the-server-and-the-clients-manually).
 - Store the results in PostgreSQL/TimescaleDB with `--database-type postgres` and the `[database]` section of
   `server/preferences.ini`, see [Run a simulation](../guides/run-a-simulation.md#the-run-folder).
 - Run a simulation in containers with the [Docker guide](../guides/docker.md).

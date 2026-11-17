@@ -2,14 +2,13 @@ import importlib
 import sys
 from typing import Sequence
 
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
 from ecosim_common.tech.close_name import did_you_mean
 from ecosim_common.tech.deployment.module_version import get_module_version
 
 from ecosim.command import COMMANDS, Command
 
 USAGE = "usage: ecosim [--version] [--help] COMMAND [OPTIONS]"
-# the code argparse ends a wrong command line with
-USAGE_ERROR_EXIT_CODE = 2
 
 
 def main() -> None:
@@ -31,7 +30,7 @@ def run_command(arguments: Sequence[str]) -> int:
 
 
 def run(command: Command, passed_arguments: Sequence[str]) -> int:
-    # imported only now, since they take a second to import and ecosim --help needs neither
+    # these imports take a second, ecosim --help needs neither
     from ecosim_common.tech.one_line_errors import exits_with_one_line_errors
     from ecosim_common.tech.shutdown_manager import ShutdownManager
 
@@ -39,13 +38,12 @@ def run(command: Command, passed_arguments: Sequence[str]) -> int:
     try:
         return int(command_main(passed_arguments))
     except KeyboardInterrupt:
-        # Ctrl-C before or after a run, during a run the command handles it itself
         return ShutdownManager.INTERRUPT_EXIT_CODE
 
 
 def unknown_command_message(name: str) -> str:
     names = [command.name for command in COMMANDS]
-    # the names of the commands are short and few, so a swap of two letters is close enough
+    # short names need a lower cutoff
     hint = did_you_mean(name=name, known_names=names, cutoff=0.6) or f" The commands are {', '.join(names)}."
     return f"'{name}' is not a command.{hint}"
 

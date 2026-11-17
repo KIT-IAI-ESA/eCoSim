@@ -22,7 +22,8 @@ def change_json_file(file: Path, change: Callable[[Any], None]) -> None:
 
 def replace_in_file(file: Path, old: str, new: str) -> None:
     text = file.read_text(encoding="utf-8")
-    assert old in text
+    if old not in text:
+        raise ValueError(f"{file} has no {old!r}")
     file.write_text(text.replace(old, new), encoding="utf-8")
 
 
@@ -31,7 +32,6 @@ def interface_named(simulator: dict[str, Any], name: str) -> dict[str, Any]:
 
 
 def add_room_simulator(simulation: Path) -> Path:
-    """The Python room model of the client tests as a fourth simulator, heated by the weather."""
     room = simulation / "Modules" / "room"
     shutil.copytree(src=resource_path_file("python/room"), dst=room, ignore=shutil.ignore_patterns("__pycache__"))
     weather_index = "2"

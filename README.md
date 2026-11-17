@@ -28,9 +28,9 @@ flowchart LR
 
 Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models. A Python model
 runs in the client itself or is served over Pyro5. The server stores the results in PostgreSQL/TimescaleDB
-or as JSON lines on disk. On one computer, the `ecosim` command writes a simulation from FMUs, checks it, runs
-it and shows its results. For many simulations at once, `ecosim-hpc` runs the server and the clients on a
-Dask cluster.
+or as JSON lines on disk. The `ecosim` command runs a simulation locally. It can also write one from FMUs,
+check it and show its results. For many simulations at once, `ecosim-hpc` runs the server and the clients
+on a Dask cluster.
 
 ## Quick start
 
@@ -51,17 +51,17 @@ uv run ecosim run building --steps 100
 uv run ecosim results building
 ```
 
-The first `uv run` creates the environment, which takes a moment. `ecosim run` starts the server and
-a client for each model, and writes the results and the logs into a new folder in `building/results`.
-`ecosim results` shows the smallest, the mean and the largest value of each output. The
-[quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) explains each step, and
-goes on with a parameter of the house and a simulation made from FMUs.
+The first `uv run` creates the environment. That takes a moment. `ecosim run` starts the server and one
+client per model. The results and the logs are in a new folder in `building/results`. `ecosim results`
+shows the minimum, mean and maximum of each output. The
+[quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) explains each step. It also
+changes a parameter of the house and makes a simulation from FMUs.
 
 ## What it looks like
 
 A real run of the three commands, with the waits shortened.
 
-<img alt="A terminal with the three commands of the quick start: the check finds no problems, the run finishes after a few seconds, and the results table lists the smallest, the mean and the largest value of each output" src="docs/static/img/readme/quick-start.svg" width="100%">
+<img alt="The three commands of the quick start in a terminal" src="docs/static/img/readme/quick-start.svg" width="100%">
 
 ## Documentation
 

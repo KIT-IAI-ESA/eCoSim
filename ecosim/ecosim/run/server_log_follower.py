@@ -6,16 +6,13 @@ from ecosim_server.progress_logger import progress_logger
 from ecosim.run.log_line import LogLine
 
 
+# a log file never blocks the server as a full pipe would
 @dataclass
 class ServerLogFollower:
-    """Reads the log the server writes, which never blocks the server as a full pipe would."""
-
     log_file: Path
-    # the start of this run, since a restore adds to the log of the run before
     read_up_to: int
 
     def new_log_lines(self) -> list[LogLine]:
-        """The log lines since the last call, without the lines of a traceback."""
         return [log_line for text in self._new_complete_lines() if (log_line := LogLine.of_text(text=text)) is not None]
 
     def _new_complete_lines(self) -> list[str]:
@@ -31,7 +28,6 @@ class ServerLogFollower:
 
 
 def line_to_show(log_line: LogLine, shows_warnings: bool) -> str | None:
-    """A progress line, and a warning or an error until a stop begins, whose effects they would only tell."""
     if log_line.logger == progress_logger.name:
         return log_line.message
     return f"server: {log_line.message}" if shows_warnings and log_line.is_a_warning_or_worse() else None

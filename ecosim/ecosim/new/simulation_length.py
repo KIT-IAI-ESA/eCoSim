@@ -6,18 +6,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from ecosim.report_lines import and_joined
-from ecosim.run_length import duration, step_size_in_milliseconds, steps_of_duration
+from ecosim.run_length import duration, step_size_in_ms, steps_of_duration
+from ecosim_server.config.simulation_config_keys import DEFAULT_START_DATE
 
 DEFAULT_STEP_SIZE = "15min"
 DEFAULT_DURATION = "1d"
-DEFAULT_START_DATE = "2024-01-01"
+DEFAULT_START_DAY = f"{datetime.fromisoformat(DEFAULT_START_DATE):%Y-%m-%d}"
 
 
 @dataclass(frozen=True)
 class SimulationLength:
-    """The setup of the new simulation, and which of its values are defaults."""
-
-    step_size_in_milliseconds: int
+    step_size_in_ms: int
     steps: int
     start_date: datetime
     # like "the step size 15min", with the option that changes it
@@ -25,19 +24,17 @@ class SimulationLength:
 
     @staticmethod
     def of_options(options: argparse.Namespace) -> SimulationLength:
-        """Raises ArgumentTypeError for a duration that is not a whole number of steps."""
-        step_size = options.step_size or step_size_in_milliseconds(text=DEFAULT_STEP_SIZE)
+        step_size = options.step_size or step_size_in_ms(text=DEFAULT_STEP_SIZE)
         run_duration = options.duration or duration(text=DEFAULT_DURATION)
         length_name = "--duration" if options.duration else "The default length"
         return SimulationLength(
-            step_size_in_milliseconds=step_size,
-            steps=options.steps or steps_of_duration(run_duration=run_duration, step_size_in_milliseconds=step_size, length_name=length_name),
+            step_size_in_ms=step_size,
+            steps=options.steps or steps_of_duration(run_duration=run_duration, step_size_in_ms=step_size, length_name=length_name),
             start_date=options.start_date or start_date(text=DEFAULT_START_DATE),
             defaults=_defaults_of(options=options),
         )
 
     def defaults_line(self) -> str | None:
-        """Like 'The step size 15min is the default. Choose another with --step-size.'"""
         if not self.defaults:
             return None
         values = and_joined(texts=[value for value, _ in self.defaults])
@@ -54,12 +51,11 @@ def _defaults_of(options: argparse.Namespace) -> tuple[tuple[str, str], ...]:
     if options.steps is None and options.duration is None:
         defaults.append((f"the length {DEFAULT_DURATION}", "--duration"))
     if options.start_date is None:
-        defaults.append((f"the start date {DEFAULT_START_DATE}", "--start-date"))
+        defaults.append((f"the start date {DEFAULT_START_DAY}", "--start-date"))
     return tuple(defaults)
 
 
 def start_date(text: str) -> datetime:
-    """A converter for argparse: an ISO date, or a date and a time, which is UTC without an offset."""
     try:
         moment = datetime.fromisoformat(text.strip())
     except ValueError:

@@ -138,7 +138,7 @@ class ConfigParser:
         self,
         section: str,
     ) -> List[str]:
-        """The keys of a section in lower case, as the getters read them. Empty for a missing section."""
+        """Returns the keys of a section in lower case."""
         if not self._config.has_section(section):
             return []
         return self._config.options(section)
@@ -278,7 +278,6 @@ class ConfigParserException(Exception):
         option: str | None = None,
     ) -> None:
         super().__init__(message)
-        # so a caller can look for a close section or key without reading the message
         self.section = section
         self.option = option
 
