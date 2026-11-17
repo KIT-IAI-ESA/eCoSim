@@ -8,7 +8,7 @@ import time
 import traceback
 from abc import ABC, abstractmethod
 from types import FrameType
-from typing import Any, Dict, Type
+from typing import Any, Dict, Sequence, Type
 
 import dask.distributed as dd
 from ecosim_common.tech.logger.logger import ESPLogger
@@ -29,11 +29,16 @@ class ShutdownManager:
     FAILED_RUN_EXIT_CODE: int = 1
     INTERRUPT_EXIT_CODE: int = 33
     TERMINATE_EXIT_CODE: int = 44
+    TERMINATE_SIGNALS: tuple[signal.Signals, ...] = (signal.SIGTERM,)
+    # Windows sends a stop of a process group as SIGBREAK
+    if sys.platform == "win32":
+        TERMINATE_SIGNALS = (signal.SIGTERM, signal.SIGBREAK)
     _instance = None
     _lock = threading.Lock()
     _logger = ESPLogger("ShutdownManager")
     _listener: Dict[int, ShutdownListener] = {}
     _signal_handlers_installed: bool = False
+    _handled_terminate_signals: Sequence[signal.Signals] = TERMINATE_SIGNALS
     _ignore_signals_until: float = 0.0
     _is_shutdown_in_this_process: bool = False
     shutdown_event: threading.Event | dd.Event
@@ -65,20 +70,19 @@ class ShutdownManager:
         """
         return (ShutdownManager, ())
 
-    def init(self, install_signal_handlers: bool = True) -> None:
+    def init(self, install_signal_handlers: bool = True, terminate_signals: Sequence[signal.Signals] = TERMINATE_SIGNALS) -> None:
         if install_signal_handlers:
-            self.__install_signal_handlers_once()
+            self.__install_signal_handlers_once(terminate_signals=terminate_signals)
         if not faulthandler.is_enabled():
             faulthandler.enable()
 
-    def __install_signal_handlers_once(self) -> None:
+    def __install_signal_handlers_once(self, terminate_signals: Sequence[signal.Signals]) -> None:
         if ShutdownManager._signal_handlers_installed:
             return
         signal.signal(signal.SIGINT, self.__interrupt_signal_handler)
-        signal.signal(signal.SIGTERM, self.__terminate_signal_handler)
-        # a stop that Windows sends to a process group arrives as SIGBREAK, not as SIGTERM
-        if sys.platform == "win32":
-            signal.signal(signal.SIGBREAK, self.__terminate_signal_handler)
+        for terminate_signal in terminate_signals:
+            signal.signal(terminate_signal, self.__terminate_signal_handler)
+        ShutdownManager._handled_terminate_signals = terminate_signals
         ShutdownManager._signal_handlers_installed = True
 
     # noinspection PyUnusedLocal
@@ -160,6 +164,6 @@ class ShutdownManager:
         ShutdownManager._ignore_signals_until = 0.0
         ShutdownManager._is_shutdown_in_this_process = False
         signal.signal(signal.SIGINT, signal.default_int_handler)
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
-        if sys.platform == "win32":
-            signal.signal(signal.SIGBREAK, signal.SIG_DFL)
+        for terminate_signal in ShutdownManager._handled_terminate_signals:
+            signal.signal(terminate_signal, signal.SIG_DFL)
+        ShutdownManager._handled_terminate_signals = ShutdownManager.TERMINATE_SIGNALS

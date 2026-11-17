@@ -48,7 +48,7 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
                 extra_sections={"pyro": {"pyro_host": "localhost", "pyro_port": "9091", "pyro_object_name": "model"}},
             )
         case ClientKind.PYTHON:
-            # an installed module, so the directory has no .py file and only the ini names the model
+            # the model is an installed module, the directory has no .py file
             _script_module(
                 directory=directory,
                 client_type="python",
@@ -67,20 +67,12 @@ def write_client_module(simulator_dir: Path, kind: ClientKind) -> ClientID:
     return ClientID(model_name=directory.name, simulator_name=kind.value)
 
 
-def write_fmu2_module_that_names_a_missing_fmu(simulator_dir: Path) -> ClientID:
-    directory = simulator_dir / "missing_fmu2_model"
+def write_python_module_without_its_model(simulator_dir: Path) -> ClientID:
+    directory = simulator_dir / "missing_python_model"
     directory.mkdir()
-    # the FMU in the folder gives the client type, the missing one in the ini stops the client on its worker
-    shutil.copy(fmu2_model_path(), directory)
-    shutil.copy(fmu2_fmc_path(), directory)
-    write_client_ini(
-        directory=directory,
-        client_type="fmu2",
-        model_name=directory.name,
-        fmc_file=fmu2_fmc_path().name,
-        extra_sections={"fmu": {"fmu_file": "[missing.fmu]"}},
-    )
-    return ClientID(model_name=directory.name, simulator_name=ClientKind.FMU2.value)
+    # the client cannot import its model and never connects
+    _script_module(directory=directory, client_type="python", scripts=[], extra_sections={"python": {"model": "missing_module:Model"}})
+    return ClientID(model_name=directory.name, simulator_name=ClientKind.PYTHON.value)
 
 
 def write_broken_fmu2_module(simulator_dir: Path) -> ClientID:

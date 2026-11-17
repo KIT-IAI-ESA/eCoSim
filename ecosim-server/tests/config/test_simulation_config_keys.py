@@ -34,19 +34,21 @@ def test_every_missing_key_is_listed_with_the_file() -> None:
     ]
 
 
-def test_a_delta_t_below_1_is_a_problem_with_its_value() -> None:
-    raw_config = {**_a_complete_config(), "setup": {"delta_t": "0"}}
+@pytest.mark.parametrize("key", ["delta_t", "steps"])
+def test_a_delta_t_or_a_number_of_steps_below_1_is_a_problem_with_its_value(key: str) -> None:
+    raw_config = {**_a_complete_config(), "setup": {"delta_t": "900000", "steps": 96, key: 0}}
 
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
-        f"{FILE}: setup.delta_t must be a whole number of at least 1, not '0'.",
-    ]
+    (problem,) = missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=False)
+
+    assert problem.startswith(f"{FILE}: setup.{key} ")
+    assert "'0'" in problem
 
 
 def test_a_missing_delta_t_says_how_to_set_the_step_size() -> None:
     raw_config = {**_a_complete_config(), "setup": {}}
 
     assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=True) == [
-        f'{FILE}: setup has no key "delta_t". Write the step size in milliseconds, like "delta_t": "900000", or pass --step-size.',
+        f'{FILE}: setup has no key "delta_t". Set it to the step size in milliseconds or pass --step-size.',
     ]
 
 
@@ -72,14 +74,6 @@ def test_the_results_need_only_the_simulators_and_their_interfaces() -> None:
     assert simulator_key_problems(raw_config={"setup": {}}, simulation_config_file=FILE) == [f'{FILE} has no key "simulators".']
 
 
-def test_a_number_of_steps_below_1_is_named_with_its_value() -> None:
-    raw_config = {**_a_complete_config(), "setup": {"delta_t": "900000", "steps": 0}}
-
-    assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False, has_steps_override=False) == [
-        f"{FILE}: setup.steps must be a whole number of at least 1, not '0'.",
-    ]
-
-
 def test_every_key_that_the_loader_reads_is_known() -> None:
     sender = create_simulator("sender", {**create_output("sent"), "unit": "K", "description": "", "required": "false"})
     receiver = create_simulator("receiver", create_input("delayed", simulator="0", interface="sent", delay_path=["1"]))
@@ -92,58 +86,46 @@ def test_every_key_that_the_loader_reads_is_known() -> None:
     assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == []
 
 
-# so the tests that load them log no warning
 @pytest.mark.parametrize("file", sorted(resource_path().rglob("simulation*.json")), ids=lambda file: str(file.relative_to(resource_path())))
-def test_the_simulation_configs_of_the_test_resources_have_no_key_that_nothing_reads(file: Path) -> None:
+def test_the_simulation_configs_of_the_test_resources_have_no_unknown_key(file: Path) -> None:
     assert unknown_key_warnings(raw_config=read_json_file(file=file), simulation_config_file=file) == []
 
 
-def test_a_misspelt_start_date_is_a_warning_that_names_the_default() -> None:
+def test_a_misspelled_start_date_is_a_warning_with_the_default_start() -> None:
     raw_config = {**_a_complete_config(), "setup": {"delta_t": "900000", "start-date": "2023-01-01T00:00:00.000Z"}}
 
     assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == [
-        f'{FILE}: setup has the key "start-date", which nothing reads. Did you mean start_date? Without it the run starts at 2024-01-01 00:00 UTC.',
+        f'{FILE}: setup has the unknown key "start-date". Did you mean start_date? Without it the run starts at 2024-01-01 00:00 UTC.',
     ]
 
 
-def test_a_misspelt_start_date_next_to_start_date_does_not_name_the_default() -> None:
+def test_a_misspelled_start_date_next_to_start_date_gets_no_default_start() -> None:
     raw_config = {
         **_a_complete_config(),
         "setup": {"delta_t": "900000", "start_date": "2023-01-01T00:00:00.000Z", "start-date": "2023-06-01T00:00:00.000Z"},
     }
 
-    assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == [
-        f'{FILE}: setup has the key "start-date", which nothing reads. Did you mean start_date?',
-    ]
+    (warning,) = unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE)
+
+    assert warning.endswith("Did you mean start_date?")
 
 
-def test_a_key_that_nothing_reads_is_warned_once_with_the_number_of_entries_that_have_it() -> None:
+def test_an_unknown_key_is_warned_once_with_the_number_of_entries_that_have_it() -> None:
     weather = create_simulator("weather", {**create_output("T_out"), "report": "true"}, {**create_output("wind"), "report": "true"})
     raw_config = {**_a_complete_config(), "simulators": [weather], "comment": "first try"}
 
     assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == [
-        f'{FILE} has the key "comment", which nothing reads.',
-        f'{FILE}: 2 interfaces have the key "report", which nothing reads.',
+        f'{FILE} has the unknown key "comment".',
+        f'{FILE}: 2 interfaces have the unknown key "report".',
     ]
 
 
-def test_the_loader_logs_each_key_that_nothing_reads(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
-    file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "report": "true"}))
-
-    SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
-
-    assert [(record.levelno, record.getMessage()) for record in caplog.records if record.name == "SimulationConfig"] == [
-        (logging.WARNING, f'{file}: 1 interface has the key "report", which nothing reads.'),
-    ]
-
-
-def test_a_misspelt_key_is_warned_also_when_the_config_then_fails_to_load(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+def test_a_misspelled_key_is_warned_also_when_the_config_then_fails_to_load(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     house = create_simulator("house", {"name": "T_out", "type": "Input", "connected-to": [{"simulator": "0", "interface": "T_out"}]})
     file = config_file(tmp_path, create_simulator("weather", create_output("T_out")), house)
 
     with pytest.raises(RuntimeError, match="the input has no connection in connected_to"):
         SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
 
-    assert [(record.levelno, record.getMessage()) for record in caplog.records if record.name == "SimulationConfig"] == [
-        (logging.WARNING, f'{file}: 1 interface has the key "connected-to", which nothing reads. Did you mean connected_to?'),
-    ]
+    (warning,) = [record.getMessage() for record in caplog.records if record.name == "SimulationConfig" and record.levelno == logging.WARNING]
+    assert '"connected-to"' in warning

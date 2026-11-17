@@ -152,12 +152,11 @@ Keep the Pyro5 client for a model that needs another Python environment or anoth
 ## On an HPC cluster
 
 `ecosim-hpc` starts the Python client for every simulator whose `preferences.ini` has `model` in a `[python]`
-section, also when the folder holds other files, such as a helper `.py` file or an FMU that the model loads
-itself. The client runs on any Dask worker, and nothing has to be started before the job.
+section. The client runs on any Dask worker. Nothing has to be started before the job.
 
 - The packages the model imports have to be installed in the environment of the job.
 - Several clients share one Python process on a worker. Two models whose modules have the same name, for
-  example two copies of `room.py` in two folders, cannot run in one process. Give each file its own name, or
-  install the model as a package that both simulators name.
-- A model that computes for a long time in plain Python slows down the other clients on the same worker,
-  because Python runs one thread at a time. Give the job more workers, or keep such a model in the Pyro5 client.
+  example two copies of `room.py` in two folders, cannot run in one process. Use a different file name for
+  each.
+- A model that computes for a long time in plain Python slows down the other clients on the same worker.
+  Use more workers for the job or keep such a model in the Pyro5 client.

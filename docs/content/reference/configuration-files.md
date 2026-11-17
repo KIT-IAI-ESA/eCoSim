@@ -183,7 +183,7 @@ A list that is left out counts as empty. The `weather.fmc` of a model without in
 
 The list decides whether an entry is an input or an output, so `type` and `connected_to` are not read
 here. Neither are `fmu-file` and `modeldescription`, which the files of the examples contain. The client logs a
-warning for any other key it does not read, and for a name that `inputs` or `outputs` lists twice.
+warning for any other unknown key and for a name that is twice in `inputs` or `outputs`.
 
 ## Simulation config
 
@@ -196,15 +196,14 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   Until then the receiving interface gets `start_value`. After a restore they start again with `start_value`,
   so the first steps after the restore can differ from a run without the abort.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
-- `setup.steps`: how many steps the simulation runs. `--steps` overrides it. One of the two has to be given.
-- `setup.start_date`: the time stamp of the first step, by default `2024-01-01T00:00:00.000Z`. It
-  only sets the time stamps of the steps and the stored results; the models always start at time 0.
-  It needs a time zone offset (`Z` or `+01:00`); a value without one is rejected when the config is
+- `setup.steps`: how many steps the simulation runs. `--steps` overrides it. One of the two is required.
+- `setup.start_date`: when the simulated time starts, by default `2024-01-01T00:00:00.000Z`. The results of the
+  first step are stored one step later, at `start_date` plus `delta_t`. It only sets the time stamps of the steps
+  and the stored results. The models always start at time 0.
+  It needs a time zone offset (`Z` or `+01:00`). A value without one is rejected when the config is
   loaded.
 
-Save the file as UTF-8, like the `.fmc` files. The server stops with `is not saved as UTF-8` for a file in
-another encoding, for example one saved as ANSI on Windows. The server logs a warning for each key it does
-not read. If the key is close to one it reads, like `start-date` for `start_date`, the warning names that key.
+Save the file as UTF-8, like the `.fmc` files. The server logs a warning for each unknown key.
 
 The building example, shortened to its first simulator and two of its interfaces:
 

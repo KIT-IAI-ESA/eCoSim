@@ -57,7 +57,7 @@ def test_all_problems_are_reported_together() -> None:
     assert "interfaces 'A', 'a'" in message
 
 
-def test_the_postgres_name_problems_are_returned_without_raising() -> None:
+def test_interfaces_that_share_a_column_are_listed_as_a_problem() -> None:
     simulation_config = generate_simulation_config(
         clients=[generate_client_simulator_config(simulator_name="house", interfaces=[("A", INPUT), ("a", INPUT)])],
     )

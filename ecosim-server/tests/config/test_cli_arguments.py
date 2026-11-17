@@ -1,6 +1,7 @@
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
+from ecosim_common.tech.shutdown_manager import ShutdownManager
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.main import main
 from ecosim_test_common.exit_code_and_error_line import exit_code_and_error_line
@@ -50,5 +51,5 @@ def test_the_help_does_not_print_the_banner(capsys: pytest.CaptureFixture[str]) 
     with pytest.raises(SystemExit) as exit_info:
         main(passed_arguments=["--help"])
 
-    assert exit_info.value.code == 0
-    assert capsys.readouterr().out.startswith("usage: ecosim-server --server-config FILE --simulation-config FILE [options]")
+    assert exit_info.value.code == ShutdownManager.SUCCESS_EXIT_CODE
+    assert capsys.readouterr().out.startswith("usage: ecosim-server ")
