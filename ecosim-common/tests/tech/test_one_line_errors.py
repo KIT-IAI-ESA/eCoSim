@@ -90,5 +90,5 @@ def test_a_socket_error_drops_the_error_number() -> None:
         (TimeoutError(), "TimeoutError"),
     ],
 )
-def test_the_message_with_type_names_the_type_once(error: Exception, message: str) -> None:
+def test_the_message_with_type_shows_the_type_once(error: Exception, message: str) -> None:
     assert one_line_message_with_type(error=error) == message

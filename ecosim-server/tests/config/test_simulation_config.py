@@ -352,11 +352,11 @@ def test_a_step_size_override_needs_no_delta_t(tmp_path: Path) -> None:
     assert config.step_size_in_ms == 1000
 
 
-def test_the_required_interfaces_a_client_does_not_list_are_named(tmp_path: Path) -> None:
+def test_a_required_interface_that_the_client_does_not_list_is_missing(tmp_path: Path) -> None:
     file = config_file(tmp_path, create_simulator("weather", {**create_output("T_out"), "required": "true"}, create_output("rain")))
     simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=1)
 
-    missing = simulation_config.validate_interfaces(
+    missing = simulation_config.missing_required_interface_names(
         client_id=ClientID(model_name="weather", simulator_name="weather"),
         client_interface_ids=ModelInterfaceIds(interfaces=[]),
     )

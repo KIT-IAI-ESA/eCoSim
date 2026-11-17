@@ -41,7 +41,6 @@ class FMUBaseConfig:
         output_names: list[str],
         fmi_major_version: int,
     ) -> str | None:
-        """Why the FMU cannot run the interfaces that the simulation config gives the client, or None if it can."""
         try:
             self.ensure_model_runs_interfaces(
                 model_description=model_description,
@@ -100,7 +99,6 @@ class FMUBaseConfig:
 
 
 def _hints(missing_inputs: list[str], missing_outputs: list[str], fmu_inputs: list[str], fmu_outputs: list[str]) -> list[str]:
-    # with several names, a hint has to say which one it replaces
     several_missing = len(missing_inputs) + len(missing_outputs) > 1
     hints = [
         _hint(name=name, same_kind=fmu_inputs, other_kind=fmu_outputs, other_kind_text="an output", several_missing=several_missing)
@@ -114,7 +112,6 @@ def _hints(missing_inputs: list[str], missing_outputs: list[str], fmu_inputs: li
 
 
 def _hint(name: str, same_kind: list[str], other_kind: list[str], other_kind_text: str, several_missing: bool) -> str:
-    # a name of the other kind is no typo, so a close name would mislead
     if name in other_kind:
         return f"{name} is {other_kind_text} of the FMU."
     closest = closest_name(name=name, known_names=same_kind)

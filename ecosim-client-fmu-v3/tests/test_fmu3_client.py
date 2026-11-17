@@ -80,8 +80,8 @@ def test_a_failing_free_still_removes_the_extracted_files() -> None:
     assert not _unzip_dir(client).exists()
 
 
-def test_a_start_value_is_set_after_instantiate_and_before_the_initialization() -> None:
-    # a spy, because the FMI 3 Reference FMUs also take a value set too late and show it in their outputs
+def test_a_start_value_reaches_the_fmu_in_time_for_its_initialization() -> None:
+    # the FMI 3 Reference FMUs also take a value that is set too late
     fmu_instance = SpyFMUInstance()
     client = _create_feedthrough_client_with_spy(fmu_instance=fmu_instance, start_value_texts={"Float64_fixed_parameter": "2.5"})
 

@@ -110,7 +110,7 @@ def default_argument(call: ast.Call, arguments: list[ast.expr]) -> ast.expr | No
 
 
 def postgres_only_calls(tree: ast.AST) -> set[int]:
-    """The calls in a function named like _for_postgres, which reads the keys that only results in PostgreSQL need."""
+    """Find the calls in functions whose name ends with _for_postgres."""
     functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.endswith("_for_postgres")]
     return {id(node) for function in functions for node in ast.walk(function) if isinstance(node, ast.Call)}
 

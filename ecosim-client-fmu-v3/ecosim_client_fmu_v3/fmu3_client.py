@@ -126,10 +126,7 @@ class FMU3Client(SimulatorClient):
         self,
         step_size_in_seconds: float,
     ) -> None:
-        self._fmu_instance.doStep(
-            currentCommunicationPoint=self._current_simulation_time,
-            communicationStepSize=step_size_in_seconds,
-        )
+        self._fmu_instance.doStep(currentCommunicationPoint=self._current_simulation_time, communicationStepSize=step_size_in_seconds)
 
     @override
     def _on_clear_simulator(self) -> None:

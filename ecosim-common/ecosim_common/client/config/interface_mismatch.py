@@ -6,14 +6,12 @@ from typing import List
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.close_name import did_you_mean
 
-# interface names share long prefixes like weatherBus_, so only a near match is a likely typo
+# interface names share long prefixes like weatherBus_
 INTERFACE_NAME_CUTOFF = 0.9
 
 
 @dataclass(frozen=True)
 class InterfaceMismatch:
-    """The interfaces that the simulation config and the .fmc file of one client name differently."""
-
     inputs_not_in_fmc: List[InterfaceId]
     outputs_not_in_fmc: List[InterfaceId]
     required_inputs_not_connected: List[InterfaceId]
