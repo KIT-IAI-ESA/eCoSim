@@ -17,7 +17,6 @@ _FEEDTHROUGH_FMU = resource_path() / "test_fmus/Feedthrough.fmu"
 
 @pytest.fixture
 def feedthrough_config() -> Iterator[FMU3SimulatorConfig]:
-    """The FMI 3 Feedthrough FMU with a .fmc file that lists none of its interfaces, extracted only for the test."""
     simulator_config = FMU3SimulatorConfig.of(
         simulator_name="test_simulator",
         fmu_config=FMUBaseConfig(fmu_file=_FEEDTHROUGH_FMU),
@@ -60,7 +59,7 @@ def test_an_fmi_2_fmu_is_rejected() -> None:
         FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=["Float64_continuous_input"], output_names=[])
 
 
-def test_an_input_of_the_simulation_config_that_the_fmu_lacks_is_named_with_the_close_name(feedthrough_config: FMU3SimulatorConfig) -> None:
+def test_an_input_of_the_simulation_config_that_the_fmu_lacks_is_shown_with_the_close_name(feedthrough_config: FMU3SimulatorConfig) -> None:
     reason = feedthrough_config.reason_the_model_cannot_run(
         server_interface_settings=ServerInterfaceSettings(inputs=["Float64_continuous_inptu"], outputs=[]),
     )
@@ -80,5 +79,5 @@ def test_an_fmu_input_that_the_fmc_file_does_not_list_is_no_problem_for_the_mode
 def test_a_value_that_does_not_fit_an_fmi_3_integer_type_is_rejected() -> None:
     fmu_config = FMUBaseConfig(fmu_file=_FEEDTHROUGH_FMU, start_value_texts={"UInt8_input": "300"})
 
-    with pytest.raises(ValueError, match=re.escape("UInt8_input: 300 does not fit into UInt8, which takes 0 to 255")):
+    with pytest.raises(ValueError, match=re.escape("UInt8_input: 300 does not fit into UInt8 (0 to 255)")):
         FMU3SimulatorConfig.of(simulator_name="test_simulator", fmu_config=fmu_config, input_names=[], output_names=[])

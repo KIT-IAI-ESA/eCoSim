@@ -24,7 +24,6 @@ def generate_mocked_client_config(
         client_config.meta_data.return_value = ClientMetaData(version="2.0", simulator_name=client_id.simulator_name, model_name=client_id.model_name)
     if simulator_config is not None:
         client_config.simulator_config.return_value = simulator_config
-        # the .fmc file of the simulator comes from the test resources
         interfaces_config = ClientInterfaceConfig.of_simulator_config(simulator_config=simulator_config, config_path=fmc_path())
         client_config.interfaces_config.return_value = interfaces_config
     return client_config

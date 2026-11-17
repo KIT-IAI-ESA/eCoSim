@@ -9,7 +9,7 @@ import sys
 import textwrap
 from typing import Any
 
-from cli_reference.commands import COMMANDS, Command, load, parsers_of
+from cli_reference.commands import COMMANDS, Command, load
 from cli_reference.options import Option, collect_sections
 from config import REPO_ROOT, write_or_check
 
@@ -95,7 +95,15 @@ def render_page(commands: list[list[str]], exit_codes: list[str]) -> str:
 
 
 def main(arguments: list[str]) -> int:
-    rendered = [render_command(command=command, parsers=parsers_of(command=command)) for command in COMMANDS]
+    create_parser = load("ecosim_common.config.app_config.AppConfig").create_parser
+    rendered = []
+    for command in COMMANDS:
+        parameters = load(command.arguments).parameters()
+        console_scripts = [load(f"{module}.CONSOLE_SCRIPT") for module in command.console_script_modules]
+        parsers = [
+            create_parser(console_script=console_script, parameters=parameters, environment_variables={}) for console_script in console_scripts
+        ]
+        rendered.append(render_command(command=command, parsers=parsers))
     exit_codes = render_exit_codes(
         shutdown_manager=load("ecosim_common.tech.shutdown_manager.ShutdownManager"),
         usage_error_exit_code=load("ecosim_common.config.argument_parser.USAGE_ERROR_EXIT_CODE"),

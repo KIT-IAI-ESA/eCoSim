@@ -83,7 +83,6 @@ class ClientConfig(ABC):
             value_pairs["Image renderer port"] = self.server_config().image_renderer_port
         if list_every_interface:
             value_pairs["Provided interfaces"] = interfaces_config.interfaces
-        # always every value, since the log is the only place that says which values a run had
         if start_values:
             value_pairs["Start values"] = start_values
         return value_pairs

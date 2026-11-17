@@ -125,12 +125,11 @@ class SimulationConfig:
         SimulationConfig.logger.warning("Cannot find simulator config for client %s", client_id)
         return None
 
-    def validate_interfaces(
+    def missing_required_interface_names(
         self,
         client_id: ClientID,
         client_interface_ids: ModelInterfaceIds,
     ) -> List[str]:
-        """The names of the required interfaces that the client does not list."""
         client_simulation_config = self.client_simulator_config_for(client_id)
         if client_simulation_config is None:
             return []
