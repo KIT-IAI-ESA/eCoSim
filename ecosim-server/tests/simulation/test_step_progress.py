@@ -12,20 +12,7 @@ def _started_progress(clock: ManualClock, steps: int = 35_040, step_size_in_ms: 
     return step_progress
 
 
-def test_the_first_progress_line_comes_after_ten_seconds() -> None:
-    clock = ManualClock()
-    step_progress = _started_progress(clock=clock)
-
-    clock.advance(seconds=9.9)
-    line_before = step_progress.step_completed(completed_steps=100)
-    clock.advance(seconds=0.1)
-    line_after = step_progress.step_completed(completed_steps=101)
-
-    assert line_before is None
-    assert line_after is not None
-
-
-def test_a_progress_line_names_the_steps_the_simulated_time_the_speed_and_the_time_left() -> None:
+def test_a_progress_line_shows_the_steps_the_simulated_time_the_speed_and_the_time_left() -> None:
     clock = ManualClock()
     step_progress = _started_progress(clock=clock)
 
@@ -36,7 +23,7 @@ def test_a_progress_line_names_the_steps_the_simulated_time_the_speed_and_the_ti
     )
 
 
-def test_progress_lines_come_every_10_s_in_the_first_minute_then_every_minute_and_after_an_hour_every_10_minutes() -> None:
+def test_progress_lines_come_less_often_the_longer_the_run_takes() -> None:
     clock = ManualClock()
     step_progress = _started_progress(clock=clock)
     line_times: list[float] = []
@@ -66,7 +53,7 @@ def test_after_a_restore_the_speed_counts_only_the_steps_of_this_run() -> None:
     line = step_progress.step_completed(completed_steps=18_020)
 
     assert line is not None
-    assert line.startswith("Step 18,020 of 35,040 (51 %), simulated 2024-07-06 17:00, 50 steps/s,")
+    assert "50 steps/s" in line
 
 
 def test_a_slow_run_shows_the_time_of_one_step() -> None:

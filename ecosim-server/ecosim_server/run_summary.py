@@ -11,8 +11,6 @@ from ecosim_server.simulation.step_progress import speed_text
 
 @dataclass(frozen=True)
 class RunSummary:
-    """How far the run got, why it ended and where its results are."""
-
     failure_reason: str | None
     completed_steps: int
     restored_steps: int

@@ -45,6 +45,8 @@ def create_repositories(
                     + "To write the results as files instead, pass --database-type file",
                 ) from error
         case DatabaseType.FILE:
-            return RepositoriesFileBased.create(server_config=server_config, simulation_config=simulation_config)
+            file_based_repositories = RepositoriesFileBased.create(server_config=server_config)
+            file_based_repositories.copy_simulation_config(simulation_config=simulation_config)
+            return file_based_repositories
         case _:
             raise Exception(f"Unsupported database type '{server_config.database.type}' for the repositories")

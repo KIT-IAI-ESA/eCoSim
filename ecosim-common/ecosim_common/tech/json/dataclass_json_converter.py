@@ -55,7 +55,7 @@ class DataclassJsonConverter:
     @staticmethod
     @functools.cache
     def _field_types_of(entry_type: type) -> dict[str, Any]:
-        # get_type_hints evaluates the annotations on every call, which made reading a long results file slow
+        # get_type_hints evaluates the annotations on every call
         return get_type_hints(entry_type)
 
     @staticmethod

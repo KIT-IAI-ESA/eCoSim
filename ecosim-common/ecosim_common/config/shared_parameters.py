@@ -7,7 +7,7 @@ SERVER_CONNECTION = "server connection"
 DEBUG_PARAMETER = AppConfigParameter(
     name="debug",
     is_flag=True,
-    help_text="Show every message, also one for each step, and the full traceback of an error.",
+    help_text="Show debug messages and the full traceback of an error.",
 )
 
 COMMUNICATION_PROTOCOL_PARAMETER = AppConfigParameter(

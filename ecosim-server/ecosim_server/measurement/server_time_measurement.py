@@ -76,7 +76,6 @@ class ServerTimeMeasurement:
             ServerTimeMeasurementType.SIMULATION_STOP: "Simulation stop time",
             ServerTimeMeasurementType.SERVER_UPTIME: "Server uptime",
         }
-        # a restored run has a restore time instead of a start time
         return {label: self._run_time_hh_mm_ss(measurement_type) for measurement_type, label in labels.items() if self.was_measured(measurement_type)}
 
     def _run_time_in_seconds(

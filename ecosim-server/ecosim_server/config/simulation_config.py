@@ -35,7 +35,6 @@ class SimulationConfig:
     logical_delays: List[LogicalDelay]
     pace: float = 1.0
     restore: bool = False
-    # None when the config was not read from a file
     config_file: Path | None = None
 
     @staticmethod
@@ -99,7 +98,6 @@ class SimulationConfig:
 
     @staticmethod
     def clients_of_file(simulation_config_file: Path) -> List[ClientSimulatorConfig]:
-        # without the connection check, because reading the results of a run must not fail on a broken connection
         return SimulationConfig._load_all_clients(SimulationConfig._load_config(simulation_config_file))
 
     @staticmethod

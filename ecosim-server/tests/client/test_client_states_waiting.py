@@ -36,7 +36,7 @@ def test_the_server_waits_for_the_clients_that_are_not_connected_and_ready() -> 
     assert client_states.waiting_for_client_ids() == (HOUSE,)
 
 
-def test_a_client_with_a_misspelt_simulator_name_is_turned_away_and_still_waited_for() -> None:
+def test_a_client_with_a_misspelled_simulator_name_is_rejected_and_still_waited_for() -> None:
     client_states = _client_states_of_house_and_weather()
 
     accepted = _connect(client_states=client_states, client_id=ClientID(model_name="house", simulator_name="hous"))

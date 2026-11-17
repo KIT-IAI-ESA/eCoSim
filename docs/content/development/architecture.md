@@ -73,7 +73,7 @@ The Python modules are internal and can change: the supported way to use eCoSim 
 | Module | Contains |
 | --- | --- |
 | `main.py`, `server.py`, `server_state.py` | Entry point and the server lifecycle |
-| `run_summary.py`, `progress_logger.py` | The summary at the end of a run, and the logger of the progress lines |
+| `run_summary.py`, `progress_logger.py` | The summary at the end of a run and the logger of the progress lines |
 | `client/` | One `ClientConnection` per client, message buffer and subscriptions |
 | `simulation/` | `SimulationExecutor`, the step loop and its progress line, value history, restore |
 | `simulation/state/` | `SimulationStateRepository` and its two implementations |
@@ -156,8 +156,8 @@ Both are exercised end to end by the [Docker example](../guides/docker.md). The 
 the difference. The implementations are in `data/`, `measurement/`, `simulation/state/` and `tech/db/`.
 `tech/db/` also holds what they share: the database connection and base classes, the PostgreSQL setup and
 `FileRepository`. The final state is stored as `finished` in the database and as `Finished` in the file backend.
-The file backend also copies the run's `simulation.json` into its directory, so the results can be read without the
-original config. It copies nothing into the folder of the config itself, so no other config there is replaced.
+The file backend also copies the run's `simulation.json` into its directory. The results can then be read without
+the original config.
 
 ## Entry points
 
@@ -175,7 +175,7 @@ Each deployable subproject declares a console script:
 `ecosim-hpc` needs `mpirun` or a running Dask scheduler, see the [HPC notes](tech/hpc-cheat-sheet.md).
 
 Every `main` is wrapped in `exits_with_one_line_errors` from `ecosim_common/tech/one_line_errors.py`. Without `--debug`,
-an error that ends the command prints one line on stderr instead of a traceback, and the command exits with code 1.
+an error prints one line on stderr instead of a traceback and the command exits with code 1.
 
 Each console script reads its options with a `CLIArguments` class, an `AppConfig` from `ecosim-common`. Each option is
 an `AppConfigParameter` with a group. `--help` and the [command-line reference](../reference/command-line.md) show a

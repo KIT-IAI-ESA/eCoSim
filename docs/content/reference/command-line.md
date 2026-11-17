@@ -30,7 +30,7 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
 
 **Config files**
 
@@ -97,7 +97,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
-| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
 | `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other, then exit. Starts no client. |
 
 **Server connection**
@@ -127,7 +127,7 @@ ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
-| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
 
 **Server connection**
 
@@ -155,7 +155,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--debug` |  | flag | Show every message, also one for each step, and the full traceback of an error. |
+| `--debug` |  | flag | Show debug messages and the full traceback of an error. |
 
 **Config files**
 
@@ -214,14 +214,13 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 
 ## Exit codes
 
-Every command ends with one of these codes. Without `--debug`, an error ends the command with one line that says
-what went wrong, for example:
+Every command ends with one of these codes. Without `--debug` an error ends the command with one line, for example:
 
 ```text
 ecosim-server: error: No such file or directory: /home/user/building/Executable/../server/simulaton.json (run with --debug for the full traceback)
 ```
 
-With `--debug`, the command shows the full traceback instead.
+With `--debug` the command shows the full traceback.
 
 | Code | When |
 | --- | --- |

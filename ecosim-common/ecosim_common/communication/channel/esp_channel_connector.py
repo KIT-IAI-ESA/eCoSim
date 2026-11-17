@@ -47,7 +47,6 @@ class ESPChannelConnector:
 
     def _log_failed_attempt(self, connection_address: ConnectionAddress, failed_attempts: int, error: Exception, timeout_in_seconds: int) -> None:
         transport = self._communication_protocol.serialized
-        # a client that starts before the server listens is normal, so the retries are no warning
         if failed_attempts == 1:
             ESPChannelConnector._logger.info(
                 "Cannot connect to the server at %s via %s yet (%s), trying again for up to %s s",

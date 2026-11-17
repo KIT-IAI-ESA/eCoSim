@@ -137,7 +137,7 @@ class Client(ShutdownListener):
 
     def end_line(self) -> str:
         if self._is_finished:
-            return f"{self.client_id} finished after {self._steps_text()}, the model took {readable_duration(self.model_time_in_seconds)} in total"
+            return f"{self.client_id} finished after {self._steps_text()}. The model took {readable_duration(self.model_time_in_seconds)} in total."
         if self.completed_steps + self.restored_steps == 0:
             return f"{self.client_id}: the connection to the server ended before the simulation started. The server output says why."
         return f"{self.client_id}: the connection to the server ended after {self._steps_text()}, before the simulation was finished."
