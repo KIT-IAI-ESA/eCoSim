@@ -1,7 +1,8 @@
 import argparse
 
+from cli_reference_commands import Command
 from cli_reference_options import Option, collect_sections
-from generate_cli_reference import Command, examples_of, render_command, render_row
+from generate_cli_reference import examples_of, render_command, render_row
 
 
 def a_parser() -> argparse.ArgumentParser:

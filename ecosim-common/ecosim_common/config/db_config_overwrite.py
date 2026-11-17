@@ -28,7 +28,6 @@ class DbConfigOverwrite:
         self,
         read_default: Callable[[], int],
     ) -> int:
-        # read only without the option, so an empty port in the config file does not matter then
         return self._port or read_default()
 
     def user(

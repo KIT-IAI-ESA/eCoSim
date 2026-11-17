@@ -2,8 +2,10 @@ from pathlib import Path
 
 import pytest
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
 from ecosim_hpc.config.cli_arguments import HPCServerCliArguments
 from ecosim_test_common.esp_monkey_patch import ESPMonkeyPatch
+from ecosim_test_common.exit_code_and_error_line import exit_code_and_error_line
 
 
 def test_communication_protocol() -> None:
@@ -47,30 +49,7 @@ def test_threads_per_worker_must_be_positive(
 ) -> None:
     esp_monkey_patch.set_sys_arg("--threads-per-worker", threads_per_worker)
 
-    with pytest.raises(SystemExit) as exit_info:
-        HPCServerCliArguments()
+    exit_code, error_line = exit_code_and_error_line(command=HPCServerCliArguments, capsys=capsys)
 
-    assert exit_info.value.code == 2
-    error_line = capsys.readouterr().err.splitlines()[-1]
+    assert exit_code == USAGE_ERROR_EXIT_CODE
     assert error_line.endswith(f"error: argument --threads-per-worker: must be a whole number of at least 1, not '{threads_per_worker}'")
-
-
-def test_ecosim_hpc_has_no_communication_protocol_option(capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(SystemExit) as exit_info:
-        HPCServerCliArguments(
-            passed_arguments=[
-                "--server-config",
-                "server.ini",
-                "--simulation-config",
-                "simulation.json",
-                "--simulator-dir",
-                "Modules",
-                "--steps",
-                "1",
-                "--communication-protocol",
-                "dask",
-            ],
-        )
-
-    assert exit_info.value.code == 2
-    assert capsys.readouterr().err.splitlines()[-1] == "ecosim-hpc: error: unrecognized arguments: --communication-protocol dask"

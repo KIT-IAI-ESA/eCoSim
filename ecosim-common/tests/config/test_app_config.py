@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
 from ecosim_common.config.option_values import choice_name, positive_whole_number
 
 from tests.config.console_script_test_setup import CONSOLE_SCRIPT
@@ -128,7 +129,7 @@ def test_a_value_the_transform_rejects_ends_in_a_short_usage_error(capsys: pytes
             parameters=[AppConfigParameter(name="steps", transform=positive_whole_number, help_text="steps")],
         )
 
-    assert exit_info.value.code == 2
+    assert exit_info.value.code == USAGE_ERROR_EXIT_CODE
     assert capsys.readouterr().err.splitlines() == [
         "usage: ecosim-common [options]",
         "ecosim-common: error: argument --steps: must be a whole number of at least 1, not 'abc'",

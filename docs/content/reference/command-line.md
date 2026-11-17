@@ -7,17 +7,17 @@ description: Every option of the eCoSim server, the clients and the HPC command.
 
 # Command-line options
 
-These tables come from the option definitions in the code, the same that `--help` shows. Every command also takes
-`--help` and `--version`. A misspelt option or a wrong value stops the command at once with exit code 2 and a short
+These tables come from the option definitions in the code. `--help` shows the same. Every command also takes
+`--help` and `--version`. A misspelled option or a wrong value stops the command with exit code 2 and a short
 message, for example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`.
-For a misspelt option the message names the closest one.
+For a misspelled option the message suggests the closest one.
 
 After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
 repository root.
 
 ## Server
 
-`ecosim-server`: Runs a simulation. The server waits until every simulator of the simulation config is connected, then steps them all and stores the results in files or in PostgreSQL.
+`ecosim-server`: Runs a simulation. Waits until one client per simulator is connected. Stores the results in files or in PostgreSQL.
 
 ```shell
 ecosim-server --server-config server/preferences.ini --simulation-config server/simulation.json \
@@ -43,25 +43,25 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run, the steps of the whole run. |
+| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
-| `--pace NUMBER` |  | `1` | Slows the run down: before the server sends a simulator its step, it waits 0 seconds at 1, 2 seconds at 0.5 and 4 seconds at 0. |
-| `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. The config files must not have changed: the stored results are mapped to steps with the current step size and start date. |
+| `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
+| `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
 
 **Results**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the config file. If neither sets it, postgres. |
-| `--database-directory FOLDER` |  |  | With --database-type file: the folder for the result files. Overrides directory in the [database] section of the config file. If neither sets it, simulation_results. |
+| `--database-directory FOLDER` |  |  | The folder for the result files of --database-type file. Overrides directory in the [database] section of the config file. If neither sets it, simulation_results. |
 | `--database-host HOST` |  |  | The host of the PostgreSQL server. Overrides server in the [database] section of the config file. |
 | `--database-port PORT` |  |  | The port of the PostgreSQL server. Overrides port in the [database] section of the config file. |
 | `--database-user USER` |  |  | The PostgreSQL user. Overrides username in the [database] section of the config file. |
-| `--database-user-password PASSWORD` |  |  | The password of the PostgreSQL user. Other users on a shared machine can see it in the process list, so better leave it out. Then it comes from the config file, PGPASSWORD or a password file. |
+| `--database-user-password PASSWORD` |  |  | The password of the PostgreSQL user. Other users on a shared machine can see it in the process list. Without it, the password comes from the config file, PGPASSWORD or a password file. |
 | `--database-name NAME` |  |  | The PostgreSQL database. Default: sim_control. |
 | `--database-schema NAME` |  |  | The PostgreSQL schema of the result tables. Default: sim_control. |
 | `--database-ssl {true,false}` |  |  | true connects to PostgreSQL with sslmode=require, false with sslmode=disable. Overrides ssl in the [database] section of the config file. |
-| `--database-drop-existing-schema` |  | flag | PostgreSQL only: deletes the schema of an earlier run and all its results before the run starts. Without it, the run stops if the schema exists. With --restore-simulation-run the schema is kept. |
+| `--database-drop-existing-schema` |  | flag | Deletes the PostgreSQL schema of an earlier run with all its results. With --restore-simulation-run the schema is kept. |
 
 **Server connection**
 
@@ -69,7 +69,7 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 | --- | --- | --- | --- |
 | `--host HOST` |  |  | The host name or IP address the server listens on. Overrides host in the [server] section of the config file. |
 | `--port PORT` |  |  | The port the server listens on. Overrides port in the [server] section of the config file. |
-| `--communication-protocol {dask,tcp_socket}` |  |  | How the server and the clients talk to each other. Overrides communication_protocol in the [server] section of the config file. If neither sets it, tcp_socket. |
+| `--communication-protocol {dask,tcp_socket}` |  |  | The protocol between the server and the clients, by default tcp_socket. Overrides communication_protocol in the [server] section of the config file. |
 
 **Image rendering**
 
@@ -80,9 +80,9 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 
 ## FMU clients
 
-`ecosim-client-fmu-v2`: Runs an FMI 2.0 model, an FMU, for the eCoSim server. Start the server first.
+`ecosim-client-fmu-v2`: Runs an FMI 2.0 FMU for the eCoSim server. Start the server first.
 
-`ecosim-client-fmu-v3`: Runs an FMI 3.0 model, an FMU, for the eCoSim server. Start the server first.
+`ecosim-client-fmu-v3`: Runs an FMI 3.0 FMU for the eCoSim server. Start the server first.
 
 ```shell
 ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini
@@ -96,7 +96,7 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. A relative path starts in the current folder. |
+| `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
 | `--debug` |  | flag | More log messages, to find a problem. |
 | `--validate-fmu-file-only` |  | flag | Only check the FMU and the .fmc file against each other, then exit. Starts no client. |
 
@@ -107,13 +107,13 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 | `--server-host HOST` |  |  | The host name or IP address of the server. Overrides ip in the [server] section of the config file. |
 | `--server-port PORT` |  |  | The port of the server. Overrides port in the [server] section of the config file. |
 | `--image-renderer-port PORT` |  |  | The port of the server's image rendering socket. Without it, the client does not connect to it. |
-| `--communication-protocol {dask,tcp_socket}` |  |  | How the server and the clients talk to each other. Overrides communication_protocol in the [server] section of the config file. If neither sets it, tcp_socket. |
+| `--communication-protocol {dask,tcp_socket}` |  |  | The protocol between the server and the clients, by default tcp_socket. Overrides communication_protocol in the [server] section of the config file. |
 
 ## MATLAB and Pyro5 clients
 
 `ecosim-client-matlab`: Runs a model written as MATLAB scripts for the eCoSim server. Needs MATLAB and Python 3.12. Start the server first.
 
-`ecosim-client-pyro5`: Connects a Python model that a Pyro5 daemon serves, for example a pandapower grid, to the eCoSim server. Start the server and the Pyro5 daemon first.
+`ecosim-client-pyro5`: Connects a Python model served by a Pyro5 daemon to the eCoSim server. Start the server and the Pyro5 daemon first.
 
 See the [MATLAB client](../guides/matlab-client.md) and the [Pyro5 client](../guides/pyro5-client.md) guides.
 
@@ -126,7 +126,7 @@ ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. A relative path starts in the current folder. |
+| `--config-file FILE` | yes |  | The client's config file, usually preferences.ini in the folder of the model. |
 | `--debug` |  | flag | More log messages, to find a problem. |
 
 **Server connection**
@@ -136,11 +136,11 @@ ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
 | `--server-host HOST` |  |  | The host name or IP address of the server. Overrides ip in the [server] section of the config file. |
 | `--server-port PORT` |  |  | The port of the server. Overrides port in the [server] section of the config file. |
 | `--image-renderer-port PORT` |  |  | The port of the server's image rendering socket. Without it, the client does not connect to it. |
-| `--communication-protocol {dask,tcp_socket}` |  |  | How the server and the clients talk to each other. Overrides communication_protocol in the [server] section of the config file. If neither sets it, tcp_socket. |
+| `--communication-protocol {dask,tcp_socket}` |  |  | The protocol between the server and the clients, by default tcp_socket. Overrides communication_protocol in the [server] section of the config file. |
 
 ## HPC
 
-`ecosim-hpc`: Runs the server and every client of a simulation on a Dask cluster, for example in an HPC job. Each folder in --simulator-dir is one simulator. The server and the clients always talk over Dask. Started with mpirun, it starts its own Dask cluster: rank 0 is the scheduler, rank 1 the server, every other rank a worker. With --interactive it uses a running Dask scheduler instead.
+`ecosim-hpc`: Runs the server and all clients of a simulation on a Dask cluster. Started with mpirun it starts its own Dask cluster. With --interactive it uses a running Dask scheduler.
 
 See the [HPC cluster](../guides/hpc-cluster.md) guide.
 
@@ -163,31 +163,31 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 | --- | --- | --- | --- |
 | `--server-config FILE` | yes |  | The server's config file, usually server/preferences.ini. A relative path starts in the current folder. |
 | `--simulation-config FILE` | yes |  | The simulators and their connections, usually server/simulation.json. A relative path starts in the current folder. |
-| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually Modules. The files in a simulator's folder choose its client: an FMU client for each .fmu file, the Pyro5 client for .py files, the MATLAB client for .m files. |
+| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually Modules. |
 
 **Run**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run, the steps of the whole run. |
+| `--steps N` | yes |  | How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run. |
 | `--step-size MILLISECONDS` |  |  | The simulated time of one step. Overrides setup.delta_t in the simulation config. |
-| `--pace NUMBER` |  | `1` | Slows the run down: before the server sends a simulator its step, it waits 0 seconds at 1, 2 seconds at 0.5 and 4 seconds at 0. |
-| `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. The config files must not have changed: the stored results are mapped to steps with the current step size and start date. |
+| `--pace NUMBER` |  | `1` | Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait. |
+| `--restore-simulation-run` |  | flag | Continues an aborted run from its stored results, or starts a new run if there is none. Needs the unchanged config files. |
 
 **Results**
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `--database-type {postgres,file}` |  |  | Where the results go. Overrides type in the [database] section of the config file. If neither sets it, postgres. |
-| `--database-directory FOLDER` |  |  | With --database-type file: the folder for the result files. Overrides directory in the [database] section of the config file. If neither sets it, simulation_results. |
+| `--database-directory FOLDER` |  |  | The folder for the result files of --database-type file. Overrides directory in the [database] section of the config file. If neither sets it, simulation_results. |
 | `--database-host HOST` |  |  | The host of the PostgreSQL server. Overrides server in the [database] section of the config file. |
 | `--database-port PORT` |  |  | The port of the PostgreSQL server. Overrides port in the [database] section of the config file. |
 | `--database-user USER` |  |  | The PostgreSQL user. Overrides username in the [database] section of the config file. |
-| `--database-user-password PASSWORD` |  |  | The password of the PostgreSQL user. Other users on a shared machine can see it in the process list, so better leave it out. Then it comes from the config file, PGPASSWORD or a password file. |
+| `--database-user-password PASSWORD` |  |  | The password of the PostgreSQL user. Other users on a shared machine can see it in the process list. Without it, the password comes from the config file, PGPASSWORD or a password file. |
 | `--database-name NAME` |  |  | The PostgreSQL database. Default: sim_control. |
 | `--database-schema NAME` |  |  | The PostgreSQL schema of the result tables. Default: sim_control. |
 | `--database-ssl {true,false}` |  |  | true connects to PostgreSQL with sslmode=require, false with sslmode=disable. Overrides ssl in the [database] section of the config file. |
-| `--database-drop-existing-schema` |  | flag | PostgreSQL only: deletes the schema of an earlier run and all its results before the run starts. Without it, the run stops if the schema exists. With --restore-simulation-run the schema is kept. |
+| `--database-drop-existing-schema` |  | flag | Deletes the PostgreSQL schema of an earlier run with all its results. With --restore-simulation-run the schema is kept. |
 
 **Server connection**
 
@@ -207,7 +207,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--interactive` |  | flag | Connects to a running Dask scheduler through its scheduler file, instead of starting a cluster with mpirun. |
-| `--scheduler-file FILE` |  | `scheduler.json` | With --interactive: the file the Dask scheduler wrote. A relative path starts in the current folder. |
-| `--network-interface NAME` |  |  | With mpirun: the network interface of the Dask scheduler and the workers, like enp3s0, eno1, eth0 or ib0. Without it, dask_mpi chooses. |
-| `--threads-per-worker N` |  | `2` | With mpirun: the threads of each Dask worker. A job with only one worker needs at least 2. |
+| `--interactive` |  | flag | Connects to a running Dask scheduler instead of starting a cluster with mpirun. |
+| `--scheduler-file FILE` |  | `scheduler.json` | The file the Dask scheduler wrote, used with --interactive. |
+| `--network-interface NAME` |  |  | The network interface of the Dask scheduler and the workers with mpirun, for example ib0. |
+| `--threads-per-worker N` |  | `2` | The threads of each Dask worker with mpirun. A job with one worker needs at least 2. |

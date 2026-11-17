@@ -121,8 +121,8 @@ fmc_file = [house.fmc]
 fmu_file = [house.fmu]
 ```
 
-Without brackets, as in `fmc_file = house.fmc`, the client stops with `Input cannot be parsed to a
-string array`. The clients only read the first entry of `fmc_file` and `fmu_file`.
+Without brackets, as in `fmc_file = house.fmc`, the client stops with an error. The clients only read the
+first entry of `fmc_file` and `fmu_file`.
 
 ## Interface files
 
@@ -156,9 +156,10 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   Until then the receiving interface gets `start_value`. After a restore they start again with `start_value`,
   so the first steps after the restore can differ from a run without the abort.
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
-- `setup.start_date`: the time stamp of the first step, by default `2024-01-01T00:00:00.000Z`. It
-  only sets the time stamps of the steps and the stored results; the models always start at time 0.
-  It needs a time zone offset (`Z` or `+01:00`); a value without one is rejected when the config is
+- `setup.start_date`: when the simulated time starts, by default `2024-01-01T00:00:00.000Z`. The results of the
+  first step are stored one step later, at `start_date` plus `delta_t`. It only sets the time stamps of the steps
+  and the stored results. The models always start at time 0.
+  It needs a time zone offset (`Z` or `+01:00`). A value without one is rejected when the config is
   loaded.
 
 The building example, shortened to its first simulator and two of its interfaces:

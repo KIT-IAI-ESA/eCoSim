@@ -7,8 +7,6 @@ from ecosim_common.tech.deployment.module_version import get_module_version
 
 @dataclass(frozen=True)
 class ConsoleScript:
-    """A command as its --help, its --version and its banner show it. The name is also the name of its package."""
-
     name: str
     description: str
     examples: tuple[str, ...] = ()
@@ -23,5 +21,5 @@ class ConsoleScript:
 
     def print_banner(self) -> None:
         banner.print_banner()
-        # flush, so the banner stays at the top of a log file that also gets the log lines from stderr
+        # keeps the banner above the log lines from stderr in a log file
         print(f"{self.name} {self.version()}", flush=True)

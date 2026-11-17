@@ -16,7 +16,7 @@ def test_version_prints_the_name_and_the_version_of_the_package(capsys: pytest.C
     assert capsys.readouterr().out == f"ecosim-common {version('ecosim-common')}\n"
 
 
-def test_the_usage_line_names_only_the_required_options() -> None:
+def test_the_usage_line_shows_only_the_required_options() -> None:
     parser = create_parser(
         console_script=CONSOLE_SCRIPT,
         parameters=[
