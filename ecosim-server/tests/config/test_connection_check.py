@@ -76,7 +76,7 @@ def test_a_connection_to_a_missing_interface_is_rejected(tmp_path: Path) -> None
     assert "simulator 'house', interface 'T': simulator 'weather' has no interface 'missing'" in message
 
 
-def test_a_misspelt_connection_target_suggests_the_closest_output(tmp_path: Path) -> None:
+def test_a_misspelled_connection_target_suggests_the_closest_output(tmp_path: Path) -> None:
     weather = create_simulator("weather", create_output("weatherBus.TDryBul"), create_output("weatherBus.TWetBul"))
 
     message = error_of(tmp_path, weather, create_simulator("house", create_input("T", simulator="0", interface="weatherBus.TDryBull")))
@@ -84,7 +84,7 @@ def test_a_misspelt_connection_target_suggests_the_closest_output(tmp_path: Path
     assert "simulator 'weather' has no interface 'weatherBus.TDryBull'. Did you mean weatherBus.TDryBul?" in message
 
 
-def test_a_misspelt_connection_target_suggests_an_output_also_when_an_input_is_closer(tmp_path: Path) -> None:
+def test_a_misspelled_connection_target_suggests_an_output_also_when_an_input_is_closer(tmp_path: Path) -> None:
     heater = create_simulator("heater", create_output("T_supply"), create_input("T_supply_set", simulator="1", interface="T_set"))
     house = create_simulator("house", create_input("T", simulator="0", interface="T_supply_sett"), create_output("T_set"))
 
@@ -93,7 +93,7 @@ def test_a_misspelt_connection_target_suggests_an_output_also_when_an_input_is_c
     assert "simulator 'heater' has no interface 'T_supply_sett'. Did you mean T_supply?" in message
 
 
-def test_the_connection_problems_are_returned_without_raising() -> None:
+def test_an_invalid_connection_is_listed_as_a_problem() -> None:
     simulators = [
         create_simulator("weather", create_output("T_out")),
         create_simulator("house", create_input("T", simulator="-1", interface="T_out")),

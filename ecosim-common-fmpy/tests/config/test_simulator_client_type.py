@@ -27,7 +27,7 @@ def test_a_directory_of_scripts_gets_the_matlab_or_the_pyro5_client(tmp_path: Pa
     assert client_type_of(simulator_directory=SimulatorDirectory.of_ini_file(ini_file=ini_file)) == client_type
 
 
-def test_a_python_model_named_in_the_ini_gets_the_python_client_whatever_files_lie_next_to_it(tmp_path: Path) -> None:
+def test_a_python_model_set_in_the_ini_gets_the_python_client_whatever_files_lie_next_to_it(tmp_path: Path) -> None:
     ini_file = write_simulator_directory(
         directory=tmp_path / "room",
         client_id=MODEL,
@@ -39,7 +39,7 @@ def test_a_python_model_named_in_the_ini_gets_the_python_client_whatever_files_l
     assert client_type_of(simulator_directory=SimulatorDirectory.of_ini_file(ini_file=ini_file)) == ClientType.Python
 
 
-def test_model_files_of_two_kinds_are_refused_naming_both(tmp_path: Path) -> None:
+def test_model_files_of_two_kinds_are_rejected_with_both_files(tmp_path: Path) -> None:
     ini_file = write_simulator_directory(directory=tmp_path / "house", client_id=MODEL, model_file="helper.py")
     shutil.copy(fmu2_model_path(), ini_file.parent / "house.fmu")
 
@@ -47,7 +47,7 @@ def test_model_files_of_two_kinds_are_refused_naming_both(tmp_path: Path) -> Non
         client_type_of(simulator_directory=SimulatorDirectory.of_ini_file(ini_file=ini_file))
 
 
-def test_two_fmus_in_one_directory_are_refused_naming_both(tmp_path: Path) -> None:
+def test_two_fmus_in_one_directory_are_rejected_with_both_files(tmp_path: Path) -> None:
     ini_file = write_simulator_directory(directory=tmp_path / "house", client_id=MODEL, model_file=None)
     shutil.copy(fmu2_model_path(), ini_file.parent / "house.fmu")
     shutil.copy(fmu2_model_path(), ini_file.parent / "house_copy.fmu")
@@ -56,13 +56,13 @@ def test_two_fmus_in_one_directory_are_refused_naming_both(tmp_path: Path) -> No
         client_type_of(simulator_directory=SimulatorDirectory.of_ini_file(ini_file=ini_file))
 
 
-def test_a_folder_without_a_model_is_refused_saying_what_a_model_is(tmp_path: Path) -> None:
+def test_a_directory_without_a_model_is_rejected_saying_what_a_model_is(tmp_path: Path) -> None:
     ini_file = write_simulator_directory(directory=tmp_path / "house", client_id=MODEL, model_file=None)
 
     with pytest.raises(ValueError, match=r"house has no model\. Put an \.fmu, \.m or \.py file in it, or write model = <module>:<class>"):
         client_type_of(simulator_directory=SimulatorDirectory.of_ini_file(ini_file=ini_file))
 
 
-def test_an_fmu_of_another_fmi_version_is_refused_naming_the_file() -> None:
+def test_an_fmu_of_another_fmi_version_is_rejected_with_the_file() -> None:
     with pytest.raises(ValueError, match="old.fmu is FMI 1.0"):
         client_type_of_fmi_version(fmi_version="1.0", fmu_file=Path("old.fmu"))

@@ -28,11 +28,9 @@ class FMUBaseConfig:
 
     @staticmethod
     def supported_type(fmi_major_version: int) -> str:
-        """The one variable type the FMU clients exchange."""
         return "Real" if fmi_major_version == 2 else "Float64"
 
     def as_string(self) -> str:
-        """The [fmu] section of an ini file next to the FMU, without the start values."""
         return f"[fmu]\nfmu_file = [{self.fmu_file.name}]"
 
     def start_values(self, model_description: ModelDescription, input_names: list[str]) -> StartValues:
@@ -94,7 +92,6 @@ class FMUBaseConfig:
 
     @staticmethod
     def missing_interfaces(model_description: ModelDescription, input_names: list[str], output_names: list[str]) -> tuple[list[str], list[str]]:
-        """The inputs and the outputs that the FMU does not have."""
         fmu_inputs = _variable_names(model_description=model_description, causality="input")
         fmu_outputs = _variable_names(model_description=model_description, causality="output")
         return [name for name in input_names if name not in fmu_inputs], [name for name in output_names if name not in fmu_outputs]

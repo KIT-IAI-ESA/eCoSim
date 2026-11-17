@@ -13,7 +13,7 @@ from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
 from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
-from integration_tests.hpc.hpc_client_modules import ClientKind, write_client_module, write_fmu2_module_that_names_a_missing_fmu
+from integration_tests.hpc.hpc_client_modules import ClientKind, write_client_module, write_python_module_without_its_model
 from integration_tests.hpc.hpc_data import client_manager_config, fmu_files, server_config, simulation_config, single_client_simulation_config
 from integration_tests.hpc.hpc_run_in_a_subprocess import start_hpc_run_in_a_subprocess
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
@@ -69,7 +69,7 @@ def test_a_client_start_that_fails_stops_the_server_and_fails_the_main_process(d
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGINT for another process")
 def test_ctrl_c_while_the_server_waits_for_a_client_ends_the_run_as_stopped(tmp_path: Path) -> None:
     output_file = tmp_path / "output.log"
-    client_id = write_fmu2_module_that_names_a_missing_fmu(simulator_dir=tmp_path)
+    client_id = write_python_module_without_its_model(simulator_dir=tmp_path)
     run = start_hpc_run_in_a_subprocess(simulator_dir=tmp_path, client_id=client_id, output_file=output_file)
     try:
         wait_until_the_server_waits_for_its_client(run=run, output_file=output_file)
