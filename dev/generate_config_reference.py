@@ -49,6 +49,7 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
   loaded.
 
 Save the file as UTF-8, like the `.fmc` files. The server logs a warning for each unknown key.
+The results hold every input and output in `interfaces`, so `report` of older versions is not needed.
 
 The building example, shortened to its first simulator and two of its interfaces:
 """
