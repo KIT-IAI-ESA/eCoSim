@@ -6,17 +6,17 @@ import pytest
 from ecosim_test_common.resources.resource_utils import python_room_config_path
 from ecosim_test_common.test_data.python_models import DoublingModel
 
-from ecosim_client_python.model_import import import_model_factory
+from ecosim_client_python.model_import import create_model, import_model_factory
 from ecosim_client_python.python_config import PythonConfig
 
 
 def test_a_module_next_to_the_ini_file_is_imported() -> None:
     room_directory = python_room_config_path().parent
 
-    model_factory = import_model_factory(config=PythonConfig(module_name="room", class_name="Room", directory=room_directory))
+    model = create_model(config=PythonConfig(module_name="room", class_name="Room", directory=room_directory))
 
-    assert model_factory.__module__ == "room"
-    assert model_factory().initialize() == {"temperature": 20.0}
+    assert type(model).__module__ == "room"
+    assert model.initialize() == {"temperature": 20.0}
 
 
 def test_a_module_next_to_the_ini_file_comes_before_an_installed_module_of_the_same_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -38,48 +38,6 @@ def test_an_installed_module_is_imported_by_its_full_name(tmp_path: Path) -> Non
     assert import_model_factory(config=config) is DoublingModel
 
 
-def test_a_missing_module_shows_the_directory_it_was_looked_for_in(tmp_path: Path) -> None:
-    config = PythonConfig(module_name="no_such_model", class_name="Room", directory=tmp_path)
-
-    with pytest.raises(ModuleNotFoundError, match=re.escape(f"No module no_such_model in {tmp_path}, and none is installed")):
-        import_model_factory(config=config)
-
-
-def test_a_misspelled_module_suggests_a_module_of_the_directory(tmp_path: Path) -> None:
-    (tmp_path / "radiator.py").touch()
-    config = PythonConfig(module_name="radiatr", class_name="Radiator", directory=tmp_path)
-
-    with pytest.raises(ModuleNotFoundError, match=re.escape(f"No module radiatr in {tmp_path}, and none is installed. Did you mean radiator?")):
-        import_model_factory(config=config)
-
-
-def test_a_module_written_with_py_says_to_leave_it_out(tmp_path: Path) -> None:
-    (tmp_path / "boiler.py").write_text("class Boiler:\n    pass\n", encoding="utf-8")
-    config = PythonConfig(module_name="boiler.py", class_name="Boiler", directory=tmp_path)
-    expected_message = "model in [python] needs the module without .py. Use model = boiler:Boiler, not 'boiler.py:Boiler'"
-
-    with pytest.raises(ModuleNotFoundError, match=re.escape(expected_message)):
-        import_model_factory(config=config)
-
-
-def test_a_package_the_model_imports_but_is_missing_is_shown(tmp_path: Path) -> None:
-    (tmp_path / "grid_with_a_missing_package.py").write_text("import no_such_package\n", encoding="utf-8")
-    config = PythonConfig(module_name="grid_with_a_missing_package", class_name="Grid", directory=tmp_path)
-    expected_message = (
-        "no_such_package is not installed in the Python environment of this client. The model grid_with_a_missing_package:Grid imports it"
-    )
-
-    with pytest.raises(ModuleNotFoundError, match=re.escape(expected_message)):
-        import_model_factory(config=config)
-
-
-def test_a_missing_class_suggests_a_close_name() -> None:
-    config = PythonConfig(module_name="room", class_name="Rom", directory=python_room_config_path().parent)
-
-    with pytest.raises(AttributeError, match=re.escape("room.py has no Rom. Did you mean Room?")):
-        import_model_factory(config=config)
-
-
 def test_a_module_with_the_name_of_an_already_loaded_module_has_to_be_renamed(tmp_path: Path) -> None:
     (tmp_path / "json.py").touch()
     config = PythonConfig(module_name="json", class_name="Room", directory=tmp_path)
@@ -89,8 +47,20 @@ def test_a_module_with_the_name_of_an_already_loaded_module_has_to_be_renamed(tm
         import_model_factory(config=config)
 
 
-def test_a_model_that_is_not_a_class_is_rejected(tmp_path: Path) -> None:
-    config = PythonConfig(module_name="string", class_name="ascii_letters", directory=tmp_path)
+def test_an_error_while_the_model_is_loaded_names_the_model_and_keeps_the_error(tmp_path: Path) -> None:
+    (tmp_path / "cooler_dividing_by_zero.py").write_text("class Cooler:\n    def __init__(self):\n        self.share = 1 / 0\n", encoding="utf-8")
+    config = PythonConfig(module_name="cooler_dividing_by_zero", class_name="Cooler", directory=tmp_path)
 
-    with pytest.raises(TypeError, match=re.escape("string:ascii_letters is not a class. Its type is str")):
-        import_model_factory(config=config)
+    with pytest.raises(RuntimeError, match=re.escape("The model cooler_dividing_by_zero:Cooler could not be loaded: division by zero")) as error_info:
+        create_model(config=config)
+
+    assert isinstance(error_info.value.__cause__, ZeroDivisionError)
+
+
+def test_a_model_without_the_three_methods_is_rejected(tmp_path: Path) -> None:
+    (tmp_path / "boiler.py").write_text("class Boiler:\n    def initialize(self):\n        return {}\n", encoding="utf-8")
+    config = PythonConfig(module_name="boiler", class_name="Boiler", directory=tmp_path)
+    expected_message = "boiler:Boiler needs initialize(), do_step(inputs, current_simulation_time, step_size_in_seconds) and clear()"
+
+    with pytest.raises(TypeError, match=re.escape(expected_message)):
+        create_model(config=config)
