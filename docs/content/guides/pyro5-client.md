@@ -101,5 +101,6 @@ makes sure the client reaches the object:
 `ecosim run` starts the Pyro5 client, not the Pyro object. `ecosim check` warns when nothing listens on
 `pyro_host` and `pyro_port` yet, see [Run a simulation](run-a-simulation.md).
 
+A Pyro object started on `localhost` only answers on `localhost`, not on the IP address of its machine.
 `localhost` as `pyro_host` only works if the client runs on the same machine as the Pyro object. On an HPC
 cluster that is most likely not the case, see [HPC cluster](hpc-cluster.md#pyro5-simulators).

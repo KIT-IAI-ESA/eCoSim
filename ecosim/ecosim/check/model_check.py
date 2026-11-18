@@ -66,7 +66,10 @@ def _pyro_findings(directory: SimulatorDirectory, before_a_run: bool) -> Finding
         # the Pyro5 object is started separately
         socket.create_connection(address=(host, port), timeout=1).close()
     except OSError:
-        nothing_listens = f"{directory.path}: nothing listens on {host}:{port} yet. Start the Pyro5 object before the run."
+        nothing_listens = (
+            f"{config_parser.config_file}: nothing listens on pyro_host {host} and pyro_port {port}. Start the Pyro5 object before the run. "
+            + "If it runs already, set pyro_host and pyro_port to the address it listens on."
+        )
         (findings.problems if before_a_run else findings.warnings).append(nothing_listens)
     return findings
 

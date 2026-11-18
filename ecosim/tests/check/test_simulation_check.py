@@ -255,7 +255,10 @@ def test_a_pyro5_object_that_nothing_listens_on_is_a_warning(simulation: Path) -
     check = check_of(simulation)
 
     assert check.findings.problems == []
-    assert f"{room}: nothing listens on localhost:{port} yet. Start the Pyro5 object before the run." in check.findings.warnings
+    assert (
+        f"{room}/preferences.ini: nothing listens on pyro_host localhost and pyro_port {port}. Start the Pyro5 object before the run. "
+        + "If it runs already, set pyro_host and pyro_port to the address it listens on."
+    ) in check.findings.warnings
 
 
 def test_a_client_port_that_differs_from_the_server_port_is_only_a_warning(simulation: Path) -> None:
