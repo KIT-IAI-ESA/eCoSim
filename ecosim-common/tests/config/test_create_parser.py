@@ -1,13 +1,13 @@
 from importlib.metadata import version
 
 import pytest
-from ecosim_common.config.app_config import AppConfigParameter, create_parser
+from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 
 from tests.config.console_script_test_setup import CONSOLE_SCRIPT
 
 
 def test_version_prints_the_name_and_the_version_of_the_package(capsys: pytest.CaptureFixture[str]) -> None:
-    parser = create_parser(console_script=CONSOLE_SCRIPT, parameters=[], environment_variables={})
+    parser = AppConfig.create_parser(console_script=CONSOLE_SCRIPT, parameters=[], environment_variables={})
 
     with pytest.raises(SystemExit) as exit_info:
         parser.parse_args(["--version"])
@@ -17,7 +17,7 @@ def test_version_prints_the_name_and_the_version_of_the_package(capsys: pytest.C
 
 
 def test_the_usage_line_shows_only_the_required_options() -> None:
-    parser = create_parser(
+    parser = AppConfig.create_parser(
         console_script=CONSOLE_SCRIPT,
         parameters=[
             AppConfigParameter(name="config-file", required=True, metavar="FILE", help_text="config"),
@@ -30,7 +30,7 @@ def test_the_usage_line_shows_only_the_required_options() -> None:
 
 
 def test_the_help_lists_each_option_under_the_title_of_its_group() -> None:
-    parser = create_parser(
+    parser = AppConfig.create_parser(
         console_script=CONSOLE_SCRIPT,
         parameters=[
             AppConfigParameter(name="debug", is_flag=True, help_text="debug"),

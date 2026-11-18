@@ -7,6 +7,8 @@ from ecosim_common.tech.deployment.module_version import get_module_version
 
 @dataclass(frozen=True)
 class ConsoleScript:
+    """An installed command: its name, its description and examples for --help, its version and its banner."""
+
     name: str
     description: str
     examples: tuple[str, ...] = ()

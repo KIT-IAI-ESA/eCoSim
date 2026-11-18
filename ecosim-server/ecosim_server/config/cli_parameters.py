@@ -1,5 +1,5 @@
 from ecosim_common.config.app_config import AppConfigParameter
-from ecosim_common.config.option_values import number_from_zero_to_one, port_number, positive_whole_number
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.shared_parameters import SERVER_CONNECTION
 
 CONFIG_FILES = "config files"
@@ -28,14 +28,14 @@ RUN_PARAMETERS = (
         name="steps",
         group=RUN,
         required=True,
-        transform=positive_whole_number,
+        transform=ConfigParser.positive_whole_number,
         metavar="N",
         help_text="How many steps the simulation runs. With --restore-simulation-run it is the number of steps of the whole run.",
     ),
     AppConfigParameter(
         name="step-size",
         group=RUN,
-        transform=positive_whole_number,
+        transform=ConfigParser.positive_whole_number,
         metavar="MILLISECONDS",
         help_text="The simulated time of one step. Overrides setup.delta_t in the simulation config.",
     ),
@@ -43,7 +43,7 @@ RUN_PARAMETERS = (
         name="pace",
         group=RUN,
         default_value="1",
-        transform=number_from_zero_to_one,
+        transform=ConfigParser.number_from_zero_to_one,
         metavar="NUMBER",
         help_text="Slows the run down. At 0 the server waits 4 seconds before it sends a simulator its step, at 1 it does not wait.",
     ),
@@ -65,7 +65,7 @@ SERVER_ADDRESS_PARAMETERS = (
     AppConfigParameter(
         name="port",
         group=SERVER_CONNECTION,
-        transform=port_number,
+        transform=ConfigParser.port_number,
         metavar="PORT",
         help_text="The port the server listens on. Overrides port in the [server] section of the config file.",
     ),
@@ -75,14 +75,14 @@ IMAGE_RENDERING_PARAMETERS = (
     AppConfigParameter(
         name="image-renderer-port",
         group=IMAGE_RENDERING,
-        transform=port_number,
+        transform=ConfigParser.port_number,
         metavar="PORT",
         help_text="The port of the image rendering socket. Without it, the server opens no such socket.",
     ),
     AppConfigParameter(
         name="image-renderer-interval",
         group=IMAGE_RENDERING,
-        transform=positive_whole_number,
+        transform=ConfigParser.positive_whole_number,
         metavar="N",
         help_text="Renders images every N steps and sends them over the image rendering socket. Without it, no images are sent.",
     ),
