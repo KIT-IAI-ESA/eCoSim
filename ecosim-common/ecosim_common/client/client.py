@@ -1,7 +1,6 @@
-import time
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, ClassVar, Dict, List, assert_never
+from typing import ClassVar, Dict, List, assert_never
 
 from ecosim_common.client.config.client_config import ClientConfig
 from ecosim_common.client.config.execution_config import ExecutionConfig
@@ -41,7 +40,6 @@ from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.datetime.date_time_to_millis import (
     date_time_to_millis_since_unix_epoch,
 )
-from ecosim_common.tech.datetime.readable_duration import readable_duration
 from ecosim_common.tech.logger.logger import ESPLogger
 from ecosim_common.tech.parallel.parallel_event import ParallelEvent
 from ecosim_common.tech.readable_count import readable_count
@@ -60,10 +58,8 @@ class Client(ShutdownListener):
     _is_finished: bool = field(default=False)
     _was_started: ParallelEvent = field(init=False)
     _image_renderer_service: SimulationRendererService | None = field(default=None)
-    _clock: Callable[[], float] = field(default=time.monotonic)
+    # restored steps count too
     completed_steps: int = field(init=False, default=0)
-    restored_steps: int = field(init=False, default=0)
-    model_time_in_seconds: float = field(init=False, default=0.0)
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
@@ -131,21 +127,17 @@ class Client(ShutdownListener):
     def wait_until_finished(self) -> None:
         self._channel.wait_for_finish()
         if self._is_finished:
-            Client.logger.info("%s", self.end_line())
+            Client.logger.info("%s", self._end_line())
         else:
-            Client.logger.error("%s", self.end_line())
+            Client.logger.error("%s", self._end_line())
 
-    def end_line(self) -> str:
+    def _end_line(self) -> str:
+        steps = readable_count(count=self.completed_steps, noun="step")
         if self._is_finished:
-            return f"{self.client_id} finished after {self._steps_text()}. The model took {readable_duration(self.model_time_in_seconds)} in total."
-        if self.completed_steps + self.restored_steps == 0:
+            return f"{self.client_id} finished after {steps}."
+        if self.completed_steps == 0:
             return f"{self.client_id}: the connection to the server ended before the simulation started. The server output says why."
-        return f"{self.client_id}: the connection to the server ended after {self._steps_text()}, before the simulation was finished."
-
-    def _steps_text(self) -> str:
-        if self.restored_steps == 0:
-            return readable_count(count=self.completed_steps, noun="step")
-        return f"{readable_count(count=self.completed_steps, noun='step')} and {readable_count(count=self.restored_steps, noun='restored step')}"
+        return f"{self.client_id}: the connection to the server ended after {steps}, before the simulation was finished."
 
     def exit_code(self) -> int:
         # only a fully handled SIMULATION_STOP sets it
@@ -329,7 +321,7 @@ class Client(ShutdownListener):
         received_inputs = self._protocol_interface_value_to_dict(
             simulation_step_request.inputs,
         )
-        data = self._timed_simulation_step(
+        data = self.on_simulation_step(
             received_inputs=received_inputs,
             step_size_in_seconds=self._execution_config.step_size_in_seconds(),
         )
@@ -340,17 +332,6 @@ class Client(ShutdownListener):
                 payload=data,
             ),
         )
-
-    def _timed_simulation_step(
-        self,
-        received_inputs: dict[InterfaceId, InterfaceValue],
-        step_size_in_seconds: float,
-    ) -> ClientSimStepData:
-        started_at = self._clock()
-        try:
-            return self.on_simulation_step(received_inputs=received_inputs, step_size_in_seconds=step_size_in_seconds)
-        finally:
-            self.model_time_in_seconds += self._clock() - started_at
 
     def _protocol_interface_value_to_dict(
         self,
@@ -393,11 +374,11 @@ class Client(ShutdownListener):
                     raise RuntimeError(error_message)
             values = self._protocol_interface_value_to_dict(filtered_inputs)
             current_timestamp = date_time_to_millis_since_unix_epoch(step_datetime)
-            last_simulation_step_data = self._timed_simulation_step(
+            last_simulation_step_data = self.on_simulation_step(
                 received_inputs=values,
                 step_size_in_seconds=(current_timestamp - last_timestamp) / 1000,
             )
-            self.restored_steps += 1
+            self.completed_steps += 1
             last_timestamp = current_timestamp
             for new_interface_value in last_simulation_step_data.interface_values:
                 matching_interface = next(

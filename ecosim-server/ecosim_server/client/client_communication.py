@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from typing import ClassVar, Iterable, List, Tuple
+from typing import ClassVar, Iterable, List, Tuple, override
 
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
 from ecosim_common.communication.channel.esp_channel_message_json import ESPChannelMessageJson
@@ -14,6 +14,7 @@ from ecosim_common.communication.data.simulation_step_request import SimulationS
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.shutdown_manager import ShutdownListener
 from ecosim_server.client.client_connection import ClientConnection
 from ecosim_server.client.client_message_buffer import ClientMessageBuffer
 from ecosim_server.client.client_state import ClientState
@@ -24,7 +25,7 @@ from ecosim_server.config.simulation_config import SimulationConfig
 
 
 @dataclass
-class ClientCommunication:
+class ClientCommunication(ShutdownListener):
     _logger: ClassVar[ESPLogger] = ESPLogger("ClientCommunication")
 
     _client_states: ClientStates = field()
@@ -176,11 +177,9 @@ class ClientCommunication:
     def wait_for_all_clients_connected_and_ready(self) -> None:
         self._client_states.wait_for_all_clients_connected_and_ready()
 
-    def set_shutdown_triggered(self) -> None:
+    @override
+    def on_app_shutdown(self) -> None:
         self._client_states.on_app_shutdown()
-
-    def is_shutdown_triggered(self) -> bool:
-        return self._client_states.is_shutdown_triggered()
 
     def add_if_needed(
         self,
