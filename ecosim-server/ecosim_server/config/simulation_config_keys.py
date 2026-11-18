@@ -55,10 +55,18 @@ def _entry_warnings(file: Path, entries_by_noun: dict[str, list[dict[str, Any]]]
         "logical delay": ("delay", "output_connections"),
         "output connection": ("destination_simulator_name", "destination_interface_name", "start_value"),
     }
+    # older eCoSim versions chose the stored interfaces with report
+    hints_by_noun = {"interface": {"report": "Every input and output goes into the results anyway."}}
     return [
         warning
         for noun, read_keys in read_keys_by_noun.items()
-        for warning in unknown_key_warnings_of_entries(where=str(file), noun=noun, entries=entries_by_noun[noun], read_keys=read_keys)
+        for warning in unknown_key_warnings_of_entries(
+            where=str(file),
+            noun=noun,
+            entries=entries_by_noun[noun],
+            read_keys=read_keys,
+            hints=hints_by_noun.get(noun),
+        )
     ]
 
 
