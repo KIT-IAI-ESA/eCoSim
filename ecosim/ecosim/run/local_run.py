@@ -25,6 +25,8 @@ class LocalRun:
     clients: list[ProcessToStart]
     stop_timeout_in_seconds: float = 10
     client_end_timeout_in_seconds: float = 15
+    # the client the server lost can end a moment after the clients that only lost their connection
+    lost_client_wait_in_seconds: float = 5
     # Windows handles Ctrl-C only between waits
     poll_interval_in_seconds: float = 0.5
 
@@ -58,6 +60,7 @@ class LocalRun:
             follower=ServerLogFollower(log_file=started[0].log_file, read_up_to=started[0].log_start),
             stop_timeout_in_seconds=self.stop_timeout_in_seconds,
             client_end_timeout_in_seconds=self.client_end_timeout_in_seconds,
+            lost_client_wait_in_seconds=self.lost_client_wait_in_seconds,
             started_at=started_at,
         )
 

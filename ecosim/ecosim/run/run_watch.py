@@ -32,6 +32,7 @@ class RunWatch:
     follower: ServerLogFollower
     stop_timeout_in_seconds: float
     client_end_timeout_in_seconds: float
+    lost_client_wait_in_seconds: float
     started_at: float
     end: RunEnd | None = None
     _failed_process: RunProcess | None = None
@@ -40,6 +41,7 @@ class RunWatch:
     _ended: list[RunProcess] = field(default_factory=list)
     _killed: list[RunProcess] = field(default_factory=list)
     _lost_simulator_names: list[str] = field(default_factory=list)
+    _lost_clients_named_at: float | None = None
     _server_stops_the_run: bool = False
 
     def processes(self) -> list[RunProcess]:
@@ -64,10 +66,12 @@ class RunWatch:
 
     def handle_changes(self) -> None:
         ended = [process for process in self.processes() if not process.is_running() and process not in self._ended]
-        self._ended += ended
         # shows the server lines about a failed client before a stop begins
         for log_line in self.follower.new_log_lines():
             self._on_server_log_line(log_line=log_line)
+        # the others are handled again in the next round
+        ended = [process for process in ended if not self._waits_for_the_lost_clients(process=process, ended=ended)]
+        self._ended += ended
         for process in self._the_first_failure_first(ended=ended):
             self._on_end(process=process)
         if self._server_ended_at is not None and time.monotonic() - self._server_ended_at > self.client_end_timeout_in_seconds:
@@ -93,10 +97,20 @@ class RunWatch:
         lost_clients = re.search(pattern=lost_clients_pattern, string=log_line.message)
         if lost_clients is not None:
             self._lost_simulator_names += [client_id.split("#")[-1] for client_id in lost_clients["client_ids"].split(", ")]
+            self._lost_clients_named_at = self._lost_clients_named_at or time.monotonic()
         line = line_to_show(log_line=log_line, shows_warnings=self.end is None and not self._server_stops_the_run)
         if line is not None:
             print(line, flush=True)
         self._server_stops_the_run = self._server_stops_the_run or log_line.message.startswith(RUN_FAILED_PREFIX)
+
+    def _waits_for_the_lost_clients(self, process: RunProcess, ended: list[RunProcess]) -> bool:
+        """A process that failed only because the server lost a client waits until that client has ended, so its error is shown."""
+        if self.end is not None or self._lost_clients_named_at is None or process.exit_code() == 0 or process.name in self._lost_simulator_names:
+            return False
+        lost_clients_run = any(
+            client.name in self._lost_simulator_names and client not in ended and client not in self._ended for client in self.clients
+        )
+        return lost_clients_run and time.monotonic() - self._lost_clients_named_at < self.lost_client_wait_in_seconds
 
     def _the_first_failure_first(self, ended: list[RunProcess]) -> list[RunProcess]:
         # the other processes only lost their connection
