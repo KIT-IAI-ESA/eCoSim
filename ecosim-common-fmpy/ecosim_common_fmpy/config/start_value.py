@@ -35,6 +35,10 @@ class StartValue:
         value = str(self.value).lower() if isinstance(self.value, bool) else self.value
         return f"{self.variable.name} = {with_unit(variable=self.variable, value=value)}"
 
+    def limit_warning(self) -> str | None:
+        passed_limit = None if isinstance(self.value, bool) else _passed_limit(variable=self.variable, number=self.value)
+        return f"The start value {self.as_line()} is {passed_limit}. The client sets it anyway." if passed_limit else None
+
 
 def with_unit(variable: ModelVariable, value: object) -> str:
     unit = unit_of(variable)
@@ -78,9 +82,7 @@ def _parsed_value(variable: ModelVariable, text: str) -> float | int | bool:
         raise ValueError("no value after the =")
     if variable.type == "Boolean":
         return _parsed_boolean(text)
-    number = _parsed_integer(variable=variable, text=text) if _is_integer(variable) else _parsed_float(text)
-    _ensure_within_the_limits(variable=variable, number=number)
-    return number
+    return _parsed_integer(variable=variable, text=text) if _is_integer(variable) else _parsed_float(text)
 
 
 def _parsed_boolean(text: str) -> bool:
@@ -121,13 +123,13 @@ def _ensure_fits_the_type(variable: ModelVariable, integer: int) -> None:
         raise ValueError(f"{integer} does not fit into {variable.type} ({lowest} to {highest})")
 
 
-def _ensure_within_the_limits(variable: ModelVariable, number: float) -> None:
-    value = with_unit(variable=variable, value=number)
+def _passed_limit(variable: ModelVariable, number: float) -> str | None:
     minimum, maximum = _limit(variable=variable, attribute="min"), _limit(variable=variable, attribute="max")
     if minimum is not None and number < minimum:
-        raise ValueError(f"{value} is below the minimum of the FMU, {with_unit(variable=variable, value=minimum)}")
+        return f"below the minimum of the FMU, {with_unit(variable=variable, value=minimum)}"
     if maximum is not None and number > maximum:
-        raise ValueError(f"{value} is above the maximum of the FMU, {with_unit(variable=variable, value=maximum)}")
+        return f"above the maximum of the FMU, {with_unit(variable=variable, value=maximum)}"
+    return None
 
 
 def _limit(variable: ModelVariable, attribute: str) -> float | None:
