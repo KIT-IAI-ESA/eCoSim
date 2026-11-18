@@ -1,14 +1,5 @@
-import functools
 from dataclasses import dataclass
-from typing import Any, Callable
-
-
-def _forwarding_decorator(do_step: Callable[..., dict[str, float]]) -> Callable[..., dict[str, float]]:
-    @functools.wraps(do_step)
-    def forward(*arguments: Any, **keyword_arguments: Any) -> dict[str, float]:
-        return do_step(*arguments, **keyword_arguments)
-
-    return forward
+from typing import Any
 
 
 @dataclass
@@ -19,8 +10,8 @@ class DoublingModel:
         self.holds_state = True
         return {"y": 0.0}
 
-    def do_step(self, value_dict: dict[str, float]) -> dict[str, float]:
-        return {"y": 2 * value_dict["u"]}
+    def do_step(self, inputs: dict[str, Any], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
+        return {"y": 2 * inputs["u"]}
 
     def clear(self) -> None:
         self.holds_state = False
@@ -31,7 +22,7 @@ class ClockModel:
     def initialize(self) -> dict[str, float]:
         return {"time": 0.0, "step_size": 0.0}
 
-    def do_step(self, value_dict: dict[str, float], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
+    def do_step(self, inputs: dict[str, Any], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
         return {"time": current_simulation_time, "step_size": step_size_in_seconds}
 
     def clear(self) -> None:
@@ -39,63 +30,14 @@ class ClockModel:
 
 
 @dataclass
-class KeywordOnlyClockModel:
-    def initialize(self) -> dict[str, float]:
-        return {"time": 0.0}
-
-    def do_step(self, value_dict: dict[str, float], *, current_simulation_time: float) -> dict[str, float]:
-        return {"time": current_simulation_time}
-
-    def clear(self) -> None:
-        pass
-
-
-@dataclass
-class PositionalOnlyClockModel:
-    def initialize(self) -> dict[str, float]:
-        return {"time": 0.0}
-
-    def do_step(self, value_dict: dict[str, float], current_simulation_time: float = -1.0, /) -> dict[str, float]:
-        return {"time": current_simulation_time}
-
-    def clear(self) -> None:
-        pass
-
-
-@dataclass
-class DecoratedClockModel:
-    def initialize(self) -> dict[str, float]:
-        return {"time": 0.0}
-
-    @_forwarding_decorator
-    def do_step(self, value_dict: dict[str, float], current_simulation_time: float) -> dict[str, float]:
-        return {"time": current_simulation_time}
-
-    def clear(self) -> None:
-        pass
-
-
-@dataclass
 class EchoModel:
-    """Returns the input u as the output y and removes it from value_dict."""
+    """Returns the input u as the output y and removes it from the inputs."""
 
     def initialize(self) -> dict[str, Any]:
         return {"y": 0.0}
 
-    def do_step(self, value_dict: dict[str, Any]) -> dict[str, Any]:
-        return {"y": value_dict.pop("u")}
-
-    def clear(self) -> None:
-        pass
-
-
-@dataclass
-class DividingByZeroModel:
-    def initialize(self) -> dict[str, float]:
-        return {"share": 1 / 0}
-
-    def do_step(self, value_dict: dict[str, float]) -> dict[str, float]:
-        return {"share": 0.0}
+    def do_step(self, inputs: dict[str, Any], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, Any]:
+        return {"y": inputs.pop("u")}
 
     def clear(self) -> None:
         pass
@@ -110,27 +52,8 @@ class ScriptedOutputsModel:
     def initialize(self) -> Any:
         return self.start_outputs
 
-    def do_step(self, value_dict: dict[str, float]) -> Any:
+    def do_step(self, inputs: dict[str, Any], current_simulation_time: float, step_size_in_seconds: float) -> Any:
         return self.step_outputs
 
     def clear(self) -> None:
         self.clear_calls += 1
-
-
-@dataclass(frozen=True)
-class NumpyLikeNumber:
-    value: float
-
-    def __float__(self) -> float:
-        return self.value
-
-
-@dataclass(frozen=True)
-class NumpyLikeArray:
-    """Acts like a numpy array with one value, float() takes it."""
-
-    value: float
-    ndim: int = 1
-
-    def __float__(self) -> float:
-        return self.value

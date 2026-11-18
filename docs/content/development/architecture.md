@@ -99,7 +99,7 @@ main.py               the console script
 
 The FMU clients name the last one `fmu2_simulator_config.py` / `fmu3_simulator_config.py`; the
 others use `matlab_config.py`, `pyro_config.py` and `python_config.py`. The Python client also has
-`python_model.py` to call the model and `model_import.py` to import it.
+`python_model.py` with the methods of a model and `model_import.py` to import it.
 
 ## Communication
 

@@ -10,18 +10,22 @@ runs in the process of the client. No Pyro5 daemon is needed.
 
 ## The model
 
-The model is a class with three methods, the same as a [Pyro5 object](pyro5-client.md#the-pyro-object):
+The model is a class with three methods:
 
 | Method | Called |
 | --- | --- |
 | `initialize()` | once, before the first step. It returns a dictionary with every output. |
-| `do_step(value_dict)` | every step. `value_dict` has the inputs from the other simulators. It returns a dictionary with every output. |
+| `do_step(inputs, current_simulation_time, step_size_in_seconds)` | every step. It returns a dictionary with every output. |
 | `clear()` | once, at the end |
 
-`do_step` also gets the time and the step size if it has parameters with these names:
+`do_step` gets, in this order:
 
+- `inputs`: the inputs from the other simulators
 - `current_simulation_time`: the seconds since the start of the simulation, at the start of this step
 - `step_size_in_seconds`: the length of this step in seconds
+
+`PythonModel` in `ecosim_client_python.python_model` has these methods with their types. The class of the
+model does not need to inherit from it.
 
 A room that is heated in the morning and in the evening, with an input `outdoor_temperature` and an output
 `temperature`:
@@ -34,10 +38,10 @@ class Room:
     def initialize(self) -> dict[str, float]:
         return {"temperature": self.temperature}
 
-    def do_step(self, value_dict: dict[str, float], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
+    def do_step(self, inputs: dict[str, float], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
         hour = current_simulation_time / 3600 % 24
         heating_power = 2000.0 if 6 <= hour < 9 or 17 <= hour < 22 else 0.0
-        heat_loss = 50.0 * (self.temperature - value_dict["outdoor_temperature"])
+        heat_loss = 50.0 * (self.temperature - inputs["outdoor_temperature"])
         self.temperature += (heating_power - heat_loss) * step_size_in_seconds / 1.0e6
         return {"temperature": self.temperature}
 
@@ -45,7 +49,7 @@ class Room:
         pass
 ```
 
-An output is a number or a list of numbers. Convert a numpy array with `tolist()` first.
+An output is a float or a list of floats. Convert numpy values with `float()` or `tolist()` first.
 
 ## Configuration
 
@@ -98,23 +102,43 @@ adds:
 uv run --project ../.. --with pandapower python -m ecosim_client_python.main --config-file ../Modules/grid/preferences.ini
 ```
 
-The client checks the model before it connects to the server. A missing module, class, method or package
+The client loads the model before it connects to the server. A missing module, class, method or package
 stops it right away:
 
 ```text
-ecosim-client-python: error: /home/user/simulation/Executable/../Modules/room/room.py has no Rom. Did you mean Room? (run with --debug for the full traceback)
+ecosim-client-python: error: The model room:Rom could not be loaded: module 'room' has no attribute 'Rom' (run with --debug for the full traceback)
 ```
 
-`initialize()` runs later, when the simulation starts. An error there stops the client too, and its log
-names the model and shows the line of the model code that failed.
+`initialize()` runs later, when the simulation starts. An error there stops the client too.
 
 ## Move a model from the Pyro5 client
 
-A Pyro5 object runs in this client as it is. `import Pyro5.api` and `@Pyro5.api.expose` can stay if Pyro5
-is installed in the environment of the client. Otherwise delete both. Move the lines that start the daemon
-under `if __name__ == "__main__":` or delete them. The client would wait in `requestLoop()` when it imports
-the module. In `preferences.ini`, replace the `[pyro]` section with a `[python]` section with
-`model = <module>:<class>` and set `type = python`. Then start `ecosim-client-python` in place of the daemon
-and `ecosim-client-pyro5`.
+The `do_step(value_dict)` of a Pyro5 object gets no time and no step size. A small class in its own module
+wraps the object, here the `Room` of the [Pyro5 client](pyro5-client.md#the-pyro-object) in `room.py`:
+
+```python
+from room import Room
+
+
+class RoomModel:
+    def __init__(self) -> None:
+        self.room = Room()
+
+    def initialize(self) -> dict[str, float]:
+        return self.room.initialize()
+
+    def do_step(self, inputs: dict[str, float], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
+        return self.room.do_step(inputs)
+
+    def clear(self) -> None:
+        self.room.clear()
+```
+
+`import Pyro5.api` and `@Pyro5.api.expose` in `room.py` can stay if Pyro5 is installed in the environment
+of the client. Otherwise delete both. Move the lines that start the daemon under `if __name__ == "__main__":`
+or delete them. The client would wait in `requestLoop()` when it imports the module. Save the wrapper as
+`room_model.py` next to `room.py`. In `preferences.ini`, replace the `[pyro]` section with a `[python]`
+section with `model = room_model:RoomModel` and set `type = python`. Then start `ecosim-client-python` in
+place of the daemon and `ecosim-client-pyro5`.
 
 Keep the Pyro5 client for a model that needs another Python environment or another machine.

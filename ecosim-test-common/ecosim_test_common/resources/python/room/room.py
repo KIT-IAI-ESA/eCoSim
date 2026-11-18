@@ -5,8 +5,8 @@ class Room:
     def initialize(self) -> dict[str, float]:
         return {"temperature": self.temperature}
 
-    def do_step(self, value_dict: dict[str, float], step_size_in_seconds: float) -> dict[str, float]:
-        self.temperature += 0.001 * value_dict["heating_power"] * step_size_in_seconds
+    def do_step(self, inputs: dict[str, float], current_simulation_time: float, step_size_in_seconds: float) -> dict[str, float]:
+        self.temperature += 0.001 * inputs["heating_power"] * step_size_in_seconds
         return {"temperature": self.temperature}
 
     def clear(self) -> None:
