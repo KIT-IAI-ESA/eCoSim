@@ -1,3 +1,4 @@
+import logging
 import re
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from ecosim_common_fmpy.tech.read_model_description import read_model_descriptio
 from ecosim_test_common.resources.resource_utils import fmu2_model_path, fmu3_model_path, resource_path_file
 
 _SUB1 = resource_path_file("fmu_v2/test_fmus/Sub1_Linux.fmu")
+_HOUSE = resource_path_file("fmu_v2/models/house/linux/house.fmu")
 
 
 def _start_values(fmu_file: Path, texts: dict[str, str], input_names: list[str] | None = None) -> StartValues:
@@ -17,6 +19,10 @@ def _start_values(fmu_file: Path, texts: dict[str, str], input_names: list[str] 
         input_names=input_names or [],
         fmu_file=fmu_file,
     )
+
+
+def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [record.getMessage() for record in caplog.records if record.name == "StartValues" and record.levelno == logging.WARNING]
 
 
 def test_the_values_get_the_type_of_their_variable() -> None:
@@ -62,21 +68,41 @@ def test_a_value_that_does_not_fit_its_variable_is_rejected(name: str, text: str
 
 
 @pytest.mark.parametrize(
-    ("fmu_file", "name", "text", "reason"),
+    ("fmu_file", "name", "text", "line", "passed_limit"),
     [
-        pytest.param(_SUB1, "mass.m", "-1", "-1.0 kg is below the minimum of the FMU, 0.0 kg", id="minimum of the declared type"),
+        pytest.param(_SUB1, "mass.m", "-1", "mass.m = -1.0 kg", "below the minimum of the FMU, 0.0 kg", id="minimum of the declared type"),
         pytest.param(
-            resource_path_file("fmu_v2/models/house/linux/house.fmu"),
+            _HOUSE,
             "vetnilation_valve_control_signal",
             "2",
-            "2.0 is above the maximum of the FMU, 1.0",
+            "vetnilation_valve_control_signal = 2.0",
+            "above the maximum of the FMU, 1.0",
             id="maximum of the variable",
         ),
     ],
 )
-def test_a_value_outside_the_minimum_or_the_maximum_is_rejected(fmu_file: Path, name: str, text: str, reason: str) -> None:
-    with pytest.raises(ValueError, match=re.escape(f"{name}: {reason}")):
-        _start_values(fmu_file=fmu_file, texts={name: text})
+def test_a_value_outside_the_minimum_or_the_maximum_is_taken_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+    fmu_file: Path,
+    name: str,
+    text: str,
+    line: str,
+    passed_limit: str,
+) -> None:
+    caplog.set_level(logging.WARNING, logger="StartValues")
+
+    start_values = _start_values(fmu_file=fmu_file, texts={name: text})
+
+    assert start_values.as_lines() == [line]
+    assert _warnings(caplog=caplog) == [f"The start value {line} is {passed_limit}. The client sets it anyway."]
+
+
+def test_a_value_within_the_minimum_and_the_maximum_gets_no_warning(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.WARNING, logger="StartValues")
+
+    _start_values(fmu_file=_HOUSE, texts={"vetnilation_valve_control_signal": "0.5"})
+
+    assert _warnings(caplog=caplog) == []
 
 
 def test_a_variable_with_initial_approx_takes_a_start_value() -> None:

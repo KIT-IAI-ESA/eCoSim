@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.close_name import closest_name
+from ecosim_common.tech.logger.logger import ESPLogger
 from fmpy.model_description import ModelDescription, ModelVariable
 
 from ecosim_common_fmpy.config.start_value import StartValue
@@ -15,6 +16,8 @@ START_VALUES_SECTION = "start_values"
 
 @dataclass(frozen=True)
 class StartValues:
+    _logger: ClassVar[ESPLogger] = ESPLogger("StartValues")
+
     values: list[StartValue]
 
     @staticmethod
@@ -34,7 +37,10 @@ class StartValues:
         problems = [f"  {name}: {result}" for name, result in results.items() if isinstance(result, str)]
         if problems:
             raise ValueError("\n".join([f"The FMU {fmu_file} cannot take these start values:", *problems]))
-        return StartValues(values=[result for result in results.values() if isinstance(result, StartValue)])
+        values = [result for result in results.values() if isinstance(result, StartValue)]
+        for warning in filter(None, (value.limit_warning() for value in values)):
+            StartValues._logger.warning(warning)
+        return StartValues(values=values)
 
     @staticmethod
     def problems_of(texts: dict[str, str], model_description: ModelDescription, input_names: list[str]) -> list[str]:
