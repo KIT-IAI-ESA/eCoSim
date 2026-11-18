@@ -9,9 +9,9 @@ import sys
 from typing import Any
 
 from config import REPO_ROOT, write_or_check
-from config_reference_groups import GROUPS
-from config_reference_keys import Enums, enum_members, extract_keys, render_keys
-from config_reference_sections import INTERFACE_KEYS_TEXT, client_type_values, render_client_sections
+from config_reference.groups import GROUPS
+from config_reference.keys import Enums, enum_members, extract_keys, render_keys
+from config_reference.sections import INTERFACE_KEYS_TEXT, client_type_values, render_client_sections
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "configuration-files.md"
 SIMULATION_EXAMPLE = REPO_ROOT / "simulation_examples" / "building" / "server" / "simulation.json"

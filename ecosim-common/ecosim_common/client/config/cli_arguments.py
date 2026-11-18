@@ -4,8 +4,8 @@ from typing import Sequence
 from ecosim_common.client.config.client_config import ClientConfigOverride
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.console_script import ConsoleScript
-from ecosim_common.config.option_values import port_number
 from ecosim_common.config.shared_parameters import COMMUNICATION_PROTOCOL_PARAMETER, DEBUG_PARAMETER, SERVER_CONNECTION
 
 
@@ -40,14 +40,14 @@ class CLIArguments(AppConfig):
             AppConfigParameter(
                 name="server-port",
                 group=SERVER_CONNECTION,
-                transform=port_number,
+                transform=ConfigParser.port_number,
                 metavar="PORT",
                 help_text="The port of the server. Overrides port in the [server] section of the config file.",
             ),
             AppConfigParameter(
                 name="image-renderer-port",
                 group=SERVER_CONNECTION,
-                transform=port_number,
+                transform=ConfigParser.port_number,
                 metavar="PORT",
                 help_text="The port of the server's image rendering socket. Without it, the client does not connect to it.",
             ),
