@@ -2,7 +2,6 @@ import threading
 import traceback
 from pathlib import Path
 
-import ecosim_test_common.test_data.python_models
 import pytest
 from ecosim_common.communication.message_type import MessageType
 from ecosim_common.tech.one_line_errors import DEBUG_HINT
@@ -41,31 +40,32 @@ def _config_file_for(model: str, directory: Path) -> Path:
     return config_file
 
 
-def test_a_misspelled_class_ends_in_one_line_with_the_class_meant(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    config_file = _config_file_for(model="ecosim_test_common.test_data.python_models:DoublingModl", directory=tmp_path)
+def test_a_misspelled_class_ends_in_one_line_with_the_model(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    module_name = "ecosim_test_common.test_data.python_models"
+    config_file = _config_file_for(model=f"{module_name}:DoublingModl", directory=tmp_path)
 
     with pytest.raises(SystemExit) as exit_info:
         main(passed_arguments=["--config-file", str(config_file)])
 
     assert exit_info.value.code == ShutdownManager.FAILED_RUN_EXIT_CODE
     assert capsys.readouterr().err.splitlines()[-1] == (
-        f"ecosim-client-python: error: {ecosim_test_common.test_data.python_models.__file__} has no DoublingModl. Did you mean DoublingModel? "
-        + DEBUG_HINT
+        f"ecosim-client-python: error: The model {module_name}:DoublingModl could not be loaded: "
+        + f"module '{module_name}' has no attribute 'DoublingModl' {DEBUG_HINT}"
     )
 
 
 @pytest.mark.parametrize(
-    ("module_name", "module_code", "what_failed"),
+    ("module_name", "module_code", "error"),
     [
-        ("room_with_a_syntax_error", "class Room\n    pass\n", "its module was imported: expected ':' (room_with_a_syntax_error.py, line 1)"),
-        ("room_dividing_by_zero", "class Room:\n    def __init__(self) -> None:\n        self.share = 1 / 0\n", "it was created: division by zero"),
+        ("room_with_a_syntax_error", "class Room\n    pass\n", "expected ':' (room_with_a_syntax_error.py, line 1)"),
+        ("room_dividing_by_zero", "class Room:\n    def __init__(self) -> None:\n        self.share = 1 / 0\n", "division by zero"),
     ],
     ids=["import", "creation"],
 )
 def test_an_error_in_the_code_of_the_model_ends_in_one_line_with_the_model(
     module_name: str,
     module_code: str,
-    what_failed: str,
+    error: str,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -77,22 +77,21 @@ def test_an_error_in_the_code_of_the_model_ends_in_one_line_with_the_model(
 
     assert exit_info.value.code == ShutdownManager.FAILED_RUN_EXIT_CODE
     assert capsys.readouterr().err.splitlines()[-1] == (
-        f"ecosim-client-python: error: The model {module_name}:Room failed while {what_failed} {DEBUG_HINT}"
+        f"ecosim-client-python: error: The model {module_name}:Room could not be loaded: {error} {DEBUG_HINT}"
     )
 
 
 @pytest.mark.parametrize(
-    ("module_name", "module_code", "error_type", "failed_code_line"),
+    ("module_name", "module_code", "failed_code_line"),
     [
-        ("heater_with_an_unknown_name", "power = unknown_name\n", ImportError, "line 1, in <module>"),
-        ("heater_dividing_by_zero", "class Heater:\n    def __init__(self):\n        self.share = 1 / 0\n", RuntimeError, "line 3, in __init__"),
+        ("heater_with_an_unknown_name", "power = unknown_name\n", "line 1, in <module>"),
+        ("heater_dividing_by_zero", "class Heater:\n    def __init__(self):\n        self.share = 1 / 0\n", "line 3, in __init__"),
     ],
     ids=["import", "creation"],
 )
 def test_with_debug_an_error_of_the_model_keeps_the_traceback_of_the_model_code(
     module_name: str,
     module_code: str,
-    error_type: type[Exception],
     failed_code_line: str,
     tmp_path: Path,
 ) -> None:
@@ -100,7 +99,7 @@ def test_with_debug_an_error_of_the_model_keeps_the_traceback_of_the_model_code(
     module_file.write_text(module_code, encoding="utf-8")
     config_file = _config_file_for(model=f"{module_name}:Heater", directory=tmp_path)
 
-    with pytest.raises(error_type) as error_info:
+    with pytest.raises(RuntimeError) as error_info:
         main(passed_arguments=["--config-file", str(config_file), "--debug"])
 
     shown_traceback = "".join(traceback.format_exception(error_info.value))

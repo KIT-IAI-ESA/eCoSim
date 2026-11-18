@@ -4,7 +4,6 @@ from typing import override
 import pytest
 
 from ecosim_client_python.python_client import PythonClient
-from ecosim_client_python.python_model import PythonModel
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
@@ -30,7 +29,7 @@ class TestPythonClientBase(ClientBaseTest):
         # assert_resources_released reads the model object of the test
         return PythonClient(
             _client_config=SimpleClientConfig.of_config_parser(config_parser=ConfigParser(path=ini_file), config_override=config_override),
-            _model=PythonModel.of_object(model=self._model, model_reference="DoublingModel"),
+            _model=self._model,
         )
 
     @override
