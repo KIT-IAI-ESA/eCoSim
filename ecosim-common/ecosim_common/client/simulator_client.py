@@ -16,7 +16,7 @@ class SimulatorClient(Client, ABC):
 
     On each step, all received inputs are set first, then the model advances by one step, and finally the outputs
     the server uses are read. The model is initialized once at simulation start and cleared once at app shutdown.
-    The clear waits for a running start or step, and the model is not used after it.
+    The clear waits for a running start or step, up to a timeout, and the model is not used after it.
     For each of the steps described above, there are callbacks for the concrete classes to implement.
 
     Please note, that the __post_init__ method is essential. If you overwrite it in a subclass, you need to call
@@ -26,6 +26,8 @@ class SimulatorClient(Client, ABC):
     _current_simulation_time: float = field(default=0.0)
     _is_initialized: bool = field(default=False)
     _is_cleared: bool = field(default=False)
+    _clear_wait_timeout_in_seconds: float = field(default=60.0)
+    # every step takes this lock, a small thing to tune for HPC runs if needed
     # reentrant: a signal handler that clears in the middle of a step in the same thread must not wait for itself
     _model_lock: threading.RLock = field(init=False, default_factory=threading.RLock)
 
@@ -156,7 +158,8 @@ class SimulatorClient(Client, ABC):
             self._clear_simulator()
 
     def _clear_simulator(self) -> None:
-        with self._model_lock:
+        has_model_lock = self._wait_for_the_model_lock()
+        try:
             if self._is_cleared:
                 self.logger.warning("Simulator already cleared, skipping clearing.")
                 return
@@ -164,3 +167,15 @@ class SimulatorClient(Client, ABC):
             self._is_cleared = True
             self._on_clear_simulator()
             self.logger.debug("Clearing simulator...done.")
+        finally:
+            if has_model_lock:
+                self._model_lock.release()
+
+    def _wait_for_the_model_lock(self) -> bool:
+        has_model_lock = self._model_lock.acquire(timeout=self._clear_wait_timeout_in_seconds)
+        if not has_model_lock:
+            self.logger.warning(
+                "The running start or step did not end within %s seconds, so the simulator is cleared anyway.",
+                self._clear_wait_timeout_in_seconds,
+            )
+        return has_model_lock
