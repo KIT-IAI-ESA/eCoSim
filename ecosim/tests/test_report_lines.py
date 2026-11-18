@@ -12,7 +12,7 @@ def test_the_simulator_lines_line_up_their_columns(tmp_path: Path) -> None:
     simulation = write_building_simulation(directory=tmp_path / "building")
     simulators = [
         CheckedSimulator(
-            directory=SimulatorDirectory.of_ini_file(ini_file=simulation / "Modules" / name / "preferences.ini"),
+            directory=SimulatorDirectory.of_ini_file(ini_file=simulation / "modules" / name / "preferences.ini"),
             client_type=ClientType.FMU_2,
             input_count=inputs,
             output_count=outputs,
@@ -23,8 +23,8 @@ def test_the_simulator_lines_line_up_their_columns(tmp_path: Path) -> None:
     lines = simulator_lines(simulators=simulators)
 
     assert [line.replace(str(simulation), "building") for line in lines] == [
-        "  house      FMI 2.0  building/Modules/house      18 inputs  6 outputs",
-        "  occupancy  FMI 2.0  building/Modules/occupancy   0 inputs  7 outputs",
+        "  house      FMI 2.0  building/modules/house      18 inputs  6 outputs",
+        "  occupancy  FMI 2.0  building/modules/occupancy   0 inputs  7 outputs",
     ]
 
 

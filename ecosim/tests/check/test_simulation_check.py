@@ -27,16 +27,16 @@ def test_the_building_simulation_has_no_problems(simulation: Path) -> None:
 
 
 def test_a_misspelled_simulator_name_in_an_ini_file_is_one_problem(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
+    replace_in_file(file=simulation / "modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
 
     assert check_of(simulation).findings.problems == [
-        f"{simulation}/Modules/house/preferences.ini: simulator_name is 'hous', "
+        f"{simulation}/modules/house/preferences.ini: simulator_name is 'hous', "
         + f"but {simulation}/server/simulation.json has no simulator 'hous'. Did you mean house?",
     ]
 
 
 def test_a_simulator_without_its_directory_is_not_counted(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
+    replace_in_file(file=simulation / "modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
 
     assert check_of(simulation).simulator_count == 2
 
@@ -49,43 +49,43 @@ def test_a_misspelled_input_in_the_simulation_config_suggests_the_input_of_the_f
 
     [problem] = check_of(simulation).findings.problems
 
-    assert problem.startswith(f"{simulation}/Modules/house: ")
+    assert problem.startswith(f"{simulation}/modules/house: ")
     assert problem.endswith("Did you mean weatherBus_TDryBul?")
 
 
 def test_a_misspelled_output_in_the_fmc_file_is_one_finding_with_the_fmu_variable(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "house" / "house.fmc", old='"T_indoor"', new='"T_indor"')
+    replace_in_file(file=simulation / "modules" / "house" / "house.fmc", old='"T_indoor"', new='"T_indor"')
 
     check = check_of(simulation)
 
     [finding] = [finding for finding in [*check.findings.problems, *check.findings.warnings] if "T_indor" in finding]
-    assert finding.startswith(f"{simulation}/Modules/house/house.fmc: ")
+    assert finding.startswith(f"{simulation}/modules/house/house.fmc: ")
     assert finding.endswith("Did you mean T_indoor?")
 
 
 def test_every_problem_is_listed_not_only_the_first(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "house" / "house.fmc", old='"T_indoor"', new='"T_indor"')
-    replace_in_file(file=simulation / "Modules" / "occupancy" / "preferences.ini", old="fmu_file=", new="fmufile=")
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="model_name=weather", new="model_name=Weather")
+    replace_in_file(file=simulation / "modules" / "house" / "house.fmc", old='"T_indoor"', new='"T_indor"')
+    replace_in_file(file=simulation / "modules" / "occupancy" / "preferences.ini", old="fmu_file=", new="fmufile=")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="model_name=weather", new="model_name=Weather")
 
     problems = check_of(simulation).findings.problems
 
     assert [problem.split(": ")[0].split(" has ")[0] for problem in problems] == [
-        f"{simulation}/Modules/weather/preferences.ini",
-        f"{simulation}/Modules/house/house.fmc",
-        f"{simulation}/Modules/occupancy/preferences.ini",
+        f"{simulation}/modules/weather/preferences.ini",
+        f"{simulation}/modules/house/house.fmc",
+        f"{simulation}/modules/occupancy/preferences.ini",
     ]
 
 
 def test_a_wrong_setup_value_does_not_hide_the_problems_of_the_simulators(simulation: Path) -> None:
     change_json_file(file=simulation / "server" / "simulation.json", change=lambda config: config["setup"].update(steps="0"))
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="model_name=weather", new="model_name=Weather")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="model_name=weather", new="model_name=Weather")
 
     setup_problem, simulator_problem = check_of(simulation).findings.problems
 
     assert setup_problem.startswith(f"{simulation}/server/simulation.json: setup.steps")
     assert simulator_problem == (
-        f"{simulation}/Modules/weather/preferences.ini: model_name is 'Weather', "
+        f"{simulation}/modules/weather/preferences.ini: model_name is 'Weather', "
         + f"but simulator weather in {simulation}/server/simulation.json has the model weather."
     )
 
@@ -119,7 +119,7 @@ def test_a_misspelled_start_date_is_a_warning_and_not_a_problem(simulation: Path
 
 
 def test_a_section_written_in_another_case_is_suggested(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="[simulator]", new="[Simulator]")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="[simulator]", new="[Simulator]")
 
     [problem] = check_of(simulation).findings.problems
 
@@ -127,43 +127,43 @@ def test_a_section_written_in_another_case_is_suggested(simulation: Path) -> Non
 
 
 def test_a_misspelled_key_of_a_client_config_is_suggested(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="fmu_file=", new="fmufile=")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="fmu_file=", new="fmufile=")
 
     [problem] = check_of(simulation).findings.problems
 
-    assert problem.startswith(f"{simulation}/Modules/weather/preferences.ini")
+    assert problem.startswith(f"{simulation}/modules/weather/preferences.ini")
     assert problem.endswith("Did you mean fmu_file instead of fmufile?")
 
 
 def test_a_directory_without_its_model_is_a_problem(simulation: Path) -> None:
-    (simulation / "Modules" / "weather" / "weather.fmu").unlink()
+    (simulation / "modules" / "weather" / "weather.fmu").unlink()
 
     [problem] = check_of(simulation).findings.problems
 
-    assert problem.startswith(f"{simulation}/Modules/weather has no model")
+    assert problem.startswith(f"{simulation}/modules/weather has no model")
 
 
 def test_an_fmu_that_cannot_be_read_is_a_problem_and_the_check_goes_on(simulation: Path) -> None:
-    house_fmu = simulation / "Modules" / "house" / "house.fmu"
+    house_fmu = simulation / "modules" / "house" / "house.fmu"
     house_fmu.write_text("not a zip file", encoding="utf-8")
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="fmu_file=", new="fmufile=")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="fmu_file=", new="fmufile=")
 
     problem_of_the_fmu, problem_of_the_weather = check_of(simulation).findings.problems
 
     assert problem_of_the_fmu == f"{house_fmu} cannot be read: File is not a zip file"
-    assert problem_of_the_weather.startswith(f"{simulation}/Modules/weather/preferences.ini")
+    assert problem_of_the_weather.startswith(f"{simulation}/modules/weather/preferences.ini")
 
 
 def test_a_simulator_directory_without_an_ini_file_is_a_problem(simulation: Path) -> None:
-    (simulation / "Modules" / "weather" / "preferences.ini").unlink()
+    (simulation / "modules" / "weather" / "preferences.ini").unlink()
 
     assert check_of(simulation).findings.problems == [
-        f"{simulation}/Modules/weather has no ini file. Add an ini file whose simulator_name is weather and whose model_name is weather.",
+        f"{simulation}/modules/weather has no ini file. Add an ini file whose simulator_name is weather and whose model_name is weather.",
     ]
 
 
 def test_an_fmu_without_a_binary_for_this_platform_is_a_problem(simulation: Path, tmp_path: Path) -> None:
-    weather_fmu = simulation / "Modules" / "weather" / "weather.fmu"
+    weather_fmu = simulation / "modules" / "weather" / "weather.fmu"
     generate_fmu_without_binaries_for(fmu_file=weather_fmu, directory=tmp_path, platform=fmpy.platform).replace(weather_fmu)
 
     [problem] = check_of(simulation).findings.problems
@@ -172,27 +172,27 @@ def test_an_fmu_without_a_binary_for_this_platform_is_a_problem(simulation: Path
 
 
 def test_a_start_value_the_fmu_cannot_take_is_a_problem(simulation: Path) -> None:
-    with (simulation / "Modules" / "house" / "preferences.ini").open("a", encoding="utf-8") as ini_file:
+    with (simulation / "modules" / "house" / "preferences.ini").open("a", encoding="utf-8") as ini_file:
         ini_file.write("\n[start_values]\nU_wal = 0.3\n")
 
     [problem] = check_of(simulation).findings.problems
 
-    assert problem.startswith(f"{simulation}/Modules/house/preferences.ini: [start_values] U_wal")
+    assert problem.startswith(f"{simulation}/modules/house/preferences.ini: [start_values] U_wal")
 
 
 def test_a_start_value_of_an_input_connected_by_the_simulation_config_is_a_warning(simulation: Path) -> None:
     change_json_file(
-        file=simulation / "Modules" / "house" / "house.fmc",
+        file=simulation / "modules" / "house" / "house.fmc",
         change=lambda fmc: fmc.update(inputs=[interface for interface in fmc["inputs"] if interface["name"] != "weatherBus_TDryBul"]),
     )
-    with (simulation / "Modules" / "house" / "preferences.ini").open("a", encoding="utf-8") as ini_file:
+    with (simulation / "modules" / "house" / "preferences.ini").open("a", encoding="utf-8") as ini_file:
         ini_file.write("\n[start_values]\nweatherBus_TDryBul = 280\n")
 
     check = check_of(simulation)
 
     assert check.findings.problems == []
     assert (
-        f"{simulation}/Modules/house/preferences.ini: the start value of weatherBus_TDryBul has no effect. "
+        f"{simulation}/modules/house/preferences.ini: the start value of weatherBus_TDryBul has no effect. "
         + "The simulation config connects this input."
     ) in check.findings.warnings
 
@@ -262,13 +262,13 @@ def test_a_pyro5_object_that_nothing_listens_on_is_a_warning(simulation: Path) -
 
 
 def test_a_client_port_that_differs_from_the_server_port_is_only_a_warning(simulation: Path) -> None:
-    replace_in_file(file=simulation / "Modules" / "weather" / "preferences.ini", old="port=1234", new="port=1235")
+    replace_in_file(file=simulation / "modules" / "weather" / "preferences.ini", old="port=1234", new="port=1235")
 
     check = check_of(simulation)
 
     assert check.findings.problems == []
     assert (
-        f"{simulation}/Modules/weather/preferences.ini: port in [server] is 1235, but {simulation}/server/preferences.ini has port 1234. "
+        f"{simulation}/modules/weather/preferences.ini: port in [server] is 1235, but {simulation}/server/preferences.ini has port 1234. "
         + "That only matters for a client started manually."
     ) in check.findings.warnings
 

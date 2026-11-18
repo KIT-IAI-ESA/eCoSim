@@ -13,7 +13,7 @@ BUILDING_SIMULATORS = ("house", "occupancy", "weather")
 def write_building_simulation(directory: Path) -> Path:
     """Copies the building example into the layout of a simulation folder."""
     for simulator in BUILDING_SIMULATORS:
-        shutil.copytree(src=BUILDING_MODULES / simulator, dst=directory / "Modules" / simulator)
+        shutil.copytree(src=BUILDING_MODULES / simulator, dst=directory / "modules" / simulator)
     (directory / "server").mkdir(parents=True)
     for file_name in ("simulation.json", "preferences.ini"):
         shutil.copy(src=BUILDING_MODULES / file_name, dst=directory / "server" / file_name)

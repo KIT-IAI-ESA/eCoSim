@@ -36,9 +36,9 @@ uv run ecosim check building
 
 ```text
 Checked building: 3 simulators, no problems.
-  house      FMI 2.0  building/Modules/house      18 inputs   6 outputs
-  occupancy  FMI 2.0  building/Modules/occupancy   0 inputs   7 outputs
-  weather    FMI 2.0  building/Modules/weather     0 inputs  11 outputs
+  house      FMI 2.0  building/modules/house      18 inputs   6 outputs
+  occupancy  FMI 2.0  building/modules/occupancy   0 inputs   7 outputs
+  weather    FMI 2.0  building/modules/weather     0 inputs  11 outputs
 ```
 
 `ecosim check` reads the config files and the FMUs of the simulation. It starts nothing.
@@ -109,7 +109,7 @@ The run folder contains:
 
 ## 5. Change a parameter of the house
 
-The client config of the house, `building/Modules/house/preferences.ini`, ends with a `[start_values]` section:
+The client config of the house, `building/modules/house/preferences.ini`, ends with a `[start_values]` section:
 
 ```ini
 [start_values]
@@ -146,16 +146,16 @@ With the better walls the room stays a little warmer. `logs/house.log` of the ru
 `ecosim new` writes a simulation folder from FMU files. Here it gets the three FMUs of the example:
 
 ```shell
-uv run ecosim new my_building building/Modules/house/house.fmu building/Modules/occupancy/occupancy.fmu building/Modules/weather/weather.fmu --steps 100 --start-date 2023-01-01
+uv run ecosim new my_building building/modules/house/house.fmu building/modules/occupancy/occupancy.fmu building/modules/weather/weather.fmu --steps 100 --start-date 2023-01-01
 ```
 
 ```text
 Wrote my_building: 3 simulators, 18 connections, no problems.
 100 steps of 15 min, from 2023-01-01 00:00 to 2023-01-02 01:00 UTC.
 The step size 15min is the default. Choose another with --step-size.
-  house      FMI 2.0  my_building/Modules/house      18 inputs   6 outputs
-  occupancy  FMI 2.0  my_building/Modules/occupancy   0 inputs   7 outputs
-  weather    FMI 2.0  my_building/Modules/weather     0 inputs  24 outputs
+  house      FMI 2.0  my_building/modules/house      18 inputs   6 outputs
+  occupancy  FMI 2.0  my_building/modules/occupancy   0 inputs   7 outputs
+  weather    FMI 2.0  my_building/modules/weather     0 inputs  24 outputs
 Connections:
   house <- weather, 11 connections
     weatherBus_TDryBul  <-  weatherBus.TDryBul
@@ -192,10 +192,10 @@ with its file. Here the client config of the house has `simulator_name=hous`:
 
 ```text
 Checked building: 2 simulators, 1 problem.
-  occupancy  FMI 2.0  building/Modules/occupancy  0 inputs   7 outputs
-  weather    FMI 2.0  building/Modules/weather    0 inputs  11 outputs
+  occupancy  FMI 2.0  building/modules/occupancy  0 inputs   7 outputs
+  weather    FMI 2.0  building/modules/weather    0 inputs  11 outputs
 Problems:
-  building/Modules/house/preferences.ini: simulator_name is 'hous', but building/server/simulation.json has no simulator 'hous'. Did you mean house?
+  building/modules/house/preferences.ini: simulator_name is 'hous', but building/server/simulation.json has no simulator 'hous'. Did you mean house?
 Fix it and run the check again: uv run ecosim check building
 ```
 
@@ -209,8 +209,8 @@ The simulation folder `building` contains:
 | --- | --- |
 | `server/preferences.ini` | The server's port and its database settings |
 | `server/simulation.json` | The simulators, how their interfaces are connected, the step size and the start date |
-| `Modules/<model>/preferences.ini` | Where the client finds the server, and which model it runs |
-| `Modules/<model>/*.fmu`, `*.fmc` | The model and its interface description |
+| `modules/<model>/preferences.ini` | Where the client finds the server, and which model it runs |
+| `modules/<model>/*.fmu`, `*.fmc` | The model and its interface description |
 | `results/` | One folder per run of `ecosim run` |
 | `Executable/` | Scripts that start the server and the clients manually, with the results in PostgreSQL |
 

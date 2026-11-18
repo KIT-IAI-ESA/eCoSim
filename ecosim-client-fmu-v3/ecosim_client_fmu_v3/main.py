@@ -17,8 +17,8 @@ CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-fmu-v3",
     description="Runs an FMI 3.0 FMU for the eCoSim server. Start the server first.",
     examples=(
-        "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini",
-        "ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate-fmu-file-only",
+        "ecosim-client-fmu-v3 --config-file modules/controller/preferences.ini",
+        "ecosim-client-fmu-v3 --config-file modules/controller/preferences.ini --validate-fmu-file-only",
     ),
 )
 

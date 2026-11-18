@@ -38,7 +38,7 @@ def test_a_simulation_written_by_ecosim_new_reproduces_the_recorded_house_result
         host="localhost",
         port=get_free_port(),
         simulation_config_file=simulation_directory / "server" / "simulation.json",
-        client_config_file=lambda module: simulation_directory / "Modules" / module / "preferences.ini",
+        client_config_file=lambda module: simulation_directory / "modules" / module / "preferences.ini",
     )
 
     simulation.run()

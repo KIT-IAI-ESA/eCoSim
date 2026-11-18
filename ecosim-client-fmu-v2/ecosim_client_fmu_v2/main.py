@@ -17,9 +17,9 @@ CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-fmu-v2",
     description="Runs an FMI 2.0 FMU for the eCoSim server. Start the server first.",
     examples=(
-        "ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini",
-        "ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini --server-host 192.168.1.20 --server-port 1234",
-        "ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini --validate-fmu-file-only",
+        "ecosim-client-fmu-v2 --config-file modules/house/preferences.ini",
+        "ecosim-client-fmu-v2 --config-file modules/house/preferences.ini --server-host 192.168.1.20 --server-port 1234",
+        "ecosim-client-fmu-v2 --config-file modules/house/preferences.ini --validate-fmu-file-only",
     ),
 )
 

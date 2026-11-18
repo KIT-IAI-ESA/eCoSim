@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ecosim_common.client.config.interface_file_keys import repeated_name_warnings, unknown_key_warnings
 
-FMC_FILE = Path("Modules/house/house.fmc")
+FMC_FILE = Path("modules/house/house.fmc")
 
 
 def test_the_keys_of_the_example_files_are_not_warned() -> None:

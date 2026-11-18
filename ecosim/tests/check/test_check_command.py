@@ -13,13 +13,13 @@ from tests.simulation_changes import replace_in_file
 
 def test_problems_end_with_the_failed_exit_code_and_show_their_files(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     simulation = write_building_simulation(directory=tmp_path / "building")
-    replace_in_file(file=simulation / "Modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
+    replace_in_file(file=simulation / "modules" / "house" / "preferences.ini", old="simulator_name=house", new="simulator_name=hous")
 
     assert main(passed_arguments=[str(simulation)]) == ShutdownManager.FAILED_RUN_EXIT_CODE
 
     lines = capsys.readouterr().out.splitlines()
     assert lines[0] == "Checked building: 2 simulators, 1 problem."
-    assert lines[lines.index("Problems:") + 1].startswith(f"  {simulation}/Modules/house/preferences.ini: simulator_name is 'hous'")
+    assert lines[lines.index("Problems:") + 1].startswith(f"  {simulation}/modules/house/preferences.ini: simulator_name is 'hous'")
     assert lines[-1].startswith("Fix it and run the check again: ")
     assert lines[-1].endswith(f"ecosim check {simulation}")
 

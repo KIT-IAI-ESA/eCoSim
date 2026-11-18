@@ -15,7 +15,7 @@ from ecosim_client_pyro5.pyro_client import PyroClient
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-pyro5",
     description="Connects a Python model served by a Pyro5 daemon to the eCoSim server. Start the server and the Pyro5 daemon first.",
-    examples=("ecosim-client-pyro5 --config-file Modules/grid/preferences.ini",),
+    examples=("ecosim-client-pyro5 --config-file modules/grid/preferences.ini",),
 )
 
 

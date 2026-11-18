@@ -12,7 +12,7 @@ def create_simulation_directory(path: Path, simulation_config_name: str = "simul
         path=path,
         simulation_config=path / "server" / simulation_config_name,
         server_config=path / "server" / "preferences.ini",
-        simulator_dir=path / "Modules",
+        simulator_dir=path / "modules",
     )
     simulation.simulation_config.parent.mkdir(parents=True)
     simulation.simulation_config.touch()

@@ -11,6 +11,9 @@ from ecosim_common.tech.close_name import did_you_mean
 from ecosim.report_lines import and_joined, ecosim_program
 
 SIMULATION_CONFIG = Path("server") / "simulation.json"
+SIMULATOR_DIR = "modules"
+# older simulations have Modules/
+OLDER_SIMULATOR_DIR = "Modules"
 
 
 @dataclass(frozen=True)
@@ -36,8 +39,13 @@ class SimulationDirectory:
             path=path,
             simulation_config=path / SIMULATION_CONFIG,
             server_config=path / "server" / "preferences.ini",
-            simulator_dir=path / "Modules",
+            simulator_dir=SimulationDirectory._simulator_dir_of(path=path),
         )
+
+    @staticmethod
+    def _simulator_dir_of(path: Path) -> Path:
+        simulator_dir, older_simulator_dir = path / SIMULATOR_DIR, path / OLDER_SIMULATOR_DIR
+        return older_simulator_dir if older_simulator_dir.is_dir() and not simulator_dir.is_dir() else simulator_dir
 
     @property
     def name(self) -> str:
@@ -51,12 +59,12 @@ class SimulationDirectory:
         if self.path.is_file():
             return (
                 f"{self.path} is a file, not a simulation folder. "
-                + "Pass the folder with server/ and Modules/, or pass the file with --simulation-config."
+                + "Pass the folder with server/ and modules/, or pass the file with --simulation-config."
             )
         if not self.path.is_dir():
             return missing_directory_message(directory=self.path)
         if self.simulation_config.is_file():
-            return None
+            return self._reason_of_both_simulator_dirs()
         if self.simulation_config != self.path / SIMULATION_CONFIG:
             return f"the simulation config {self.simulation_config} does not exist"
         return f"{self.name} is not a simulation folder. It has no {SIMULATION_CONFIG}." + hint_to_a_simulation(
@@ -64,6 +72,13 @@ class SimulationDirectory:
             command_name=command_name,
             working_directory=working_directory,
         )
+
+    def _reason_of_both_simulator_dirs(self) -> str | None:
+        # on Linux modules/ and Modules/ are two folders, and only modules/ is read
+        older_simulator_dir = self.path / OLDER_SIMULATOR_DIR
+        if self.simulator_dir != self.path / SIMULATOR_DIR or not older_simulator_dir.is_dir() or older_simulator_dir.samefile(self.simulator_dir):
+            return None
+        return f"{self.name} has modules/ and Modules/. Move the folders in Modules/ into modules/."
 
 
 def missing_directory_message(directory: Path) -> str:

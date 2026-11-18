@@ -33,13 +33,13 @@ def test_the_server_config_has_the_port_and_its_own_results_directory(simulation
 
 
 def test_a_client_config_reads_back_with_the_port_and_the_client_of_its_fmi_version(simulation: Path) -> None:
-    client_config = SimpleClientConfig.of_config_parser(config_parser=ConfigParser(simulation / "Modules" / "StateSpace" / "preferences.ini"))
+    client_config = SimpleClientConfig.of_config_parser(config_parser=ConfigParser(simulation / "modules" / "StateSpace" / "preferences.ini"))
 
     assert (client_config.server_config().server_address.port, client_config.type()) == (4321, ClientType.FMU_3)
 
 
 def test_the_written_files_keep_the_unit_and_the_description_of_the_fmu(simulation: Path) -> None:
-    fmc_entry = _json_of(file=simulation / "Modules" / "weather" / "weather.fmc")["outputs"][0]
+    fmc_entry = _json_of(file=simulation / "modules" / "weather" / "weather.fmc")["outputs"][0]
     weather = _json_of(file=simulation / "server" / "simulation.json")["simulators"][1]
 
     assert fmc_entry == {"name": "weatherBus.HDifHor", "unit": "W/m2", "description": "Diffuse horizontal solar irradiation"}

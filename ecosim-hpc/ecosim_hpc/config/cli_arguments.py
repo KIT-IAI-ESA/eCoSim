@@ -15,9 +15,9 @@ CONSOLE_SCRIPT = ConsoleScript(
     + "With --interactive it uses a running Dask scheduler.",
     examples=(
         "mpirun -np 4 ecosim-hpc --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
-        + "    --simulator-dir Modules --steps 100 --database-type file",
+        + "    --simulator-dir modules --steps 100 --database-type file",
         "ecosim-hpc --interactive --server-config server/preferences.ini --simulation-config server/simulation.json \\\n"
-        + "    --simulator-dir Modules --steps 100 --database-type file",
+        + "    --simulator-dir modules --steps 100 --database-type file",
     ),
 )
 DASK_CLUSTER = "dask cluster"
@@ -46,7 +46,7 @@ class HPCServerCliArguments(CLIArguments):
                 group=CONFIG_FILES,
                 required=True,
                 metavar="FOLDER",
-                help_text="The folder with one folder per simulator, usually Modules.",
+                help_text="The folder with one folder per simulator, usually modules.",
             ),
             AppConfigParameter(
                 name="interactive",

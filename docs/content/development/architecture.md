@@ -76,7 +76,7 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 | `communication/binary_message` | Framing: header, message assembly |
 | `communication/data` | The payloads: meta data, interface settings, step requests |
 | `config` | `AppConfig` and `EcosimArgumentParser` (command-line options), `ConfigParser` (ini files), `DatabaseType`, interface ids |
-| `client` | `Client` — the base class every client subproject specialises. `SimulatorDirectory` finds the folder of each simulator of a run, usually in `Modules` |
+| `client` | `Client` — the base class every client subproject specialises. `SimulatorDirectory` finds the folder of each simulator of a run, usually in `modules` |
 | `simulation` | Interface identity: `InterfaceId`, `ModelInterfaceId`, `SimulatorInterfaceId` |
 | `tech` | Infrastructure: logging, threading, json, datetime |
 | `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |

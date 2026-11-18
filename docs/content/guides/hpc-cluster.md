@@ -28,7 +28,7 @@ The example has these scripts in `building_hpc/Executable/`:
 `server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
 are empty, so the server logs in as your cluster user with the password from `test.pgpass`, see below.
 
-A simulator's folder in `Modules/` has one model. `ecosim-hpc` chooses the client by the files in it:
+A simulator's folder in `modules/` has one model. `ecosim-hpc` chooses the client by the files in it:
 
 - the Python client if its `preferences.ini` has `model` in a `[python]` section
 - otherwise an FMU client for an `.fmu` file, the MATLAB client for `.m` files or the Pyro5 client for
@@ -61,7 +61,7 @@ Two FMUs or model files of different kinds in one folder stop the job before any
    `building_hpc/Executable`:
 
    ```shell
-   uv run ecosim-client-fmu-v2 --config-file ../Modules/house/preferences.ini --validate-fmu-file-only
+   uv run ecosim-client-fmu-v2 --config-file ../modules/house/preferences.ini --validate-fmu-file-only
    ```
 
    It reads the FMU and the start values and starts nothing. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
