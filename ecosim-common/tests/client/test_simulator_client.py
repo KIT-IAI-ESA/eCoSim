@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from ecosim_common.tech.shutdown_manager import ShutdownManager
+from ecosim_test_common.bounded_wait import finishes_in_time
+from ecosim_test_common.test_data.generate_client_config import generate_mocked_client_config
 from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS, WAIT_TIMEOUT_IN_SECONDS
 
 from tests.client.spy_simulator_client import SpySimulatorClient
@@ -59,18 +61,37 @@ def test_a_shutdown_waits_for_the_running_step() -> None:
     client.step_blocks = True
     step = threading.Thread(target=client.on_simulation_step, kwargs={"received_inputs": {}, "step_size_in_seconds": 1.0})
     step.start()
-    client.step_started.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
+    client.step_block_started.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
     shutdown = threading.Thread(target=client.on_app_shutdown)
     shutdown.start()
 
     shutdown.join(timeout=SHORT_TIMEOUT_IN_SECONDS)
     calls_while_the_step_runs = list(client.calls)
-    client.step_may_end.set()
+    client.step_block_end.set()
     step.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
     shutdown.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
 
     assert calls_while_the_step_runs == ["step of 1.0 at 0.0"]
     assert client.calls == ["step of 1.0 at 0.0", "clear"]
+
+
+def test_a_shutdown_clears_after_the_wait_timeout_although_the_step_still_runs() -> None:
+    client = SpySimulatorClient(
+        _client_config=generate_mocked_client_config(),
+        _clear_wait_timeout_in_seconds=SHORT_TIMEOUT_IN_SECONDS,
+        step_blocks=True,
+    )
+    step = threading.Thread(target=client.on_simulation_step, kwargs={"received_inputs": {}, "step_size_in_seconds": 1.0})
+    step.start()
+    client.step_block_started.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
+
+    shutdown_ended_in_time = finishes_in_time(blocking_call=client.on_app_shutdown)
+    calls_while_the_step_runs = list(client.calls)
+    client.step_block_end.set()
+    step.join(timeout=WAIT_TIMEOUT_IN_SECONDS)
+
+    assert shutdown_ended_in_time, "the shutdown kept waiting for the running step"
+    assert calls_while_the_step_runs == ["step of 1.0 at 0.0", "clear"]
 
 
 def test_the_model_is_not_used_after_the_shutdown() -> None:

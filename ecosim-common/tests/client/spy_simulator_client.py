@@ -21,8 +21,8 @@ class SpySimulatorClient(SimulatorClient):
     initialize_fails: bool = field(default=False)
     stop_fails: bool = field(default=False)
     step_blocks: bool = field(default=False)
-    step_started: threading.Event = field(default_factory=threading.Event)
-    step_may_end: threading.Event = field(default_factory=threading.Event)
+    step_block_started: threading.Event = field(default_factory=threading.Event)
+    step_block_end: threading.Event = field(default_factory=threading.Event)
 
     @staticmethod
     def create(
@@ -71,8 +71,8 @@ class SpySimulatorClient(SimulatorClient):
     def _on_do_step(self, step_size_in_seconds: float) -> None:
         self.calls.append(f"step of {step_size_in_seconds} at {self._current_simulation_time}")
         if self.step_blocks:
-            self.step_started.set()
-            self.step_may_end.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
+            self.step_block_started.set()
+            self.step_block_end.wait(timeout=WAIT_TIMEOUT_IN_SECONDS)
 
     @override
     def _get_model_output(self, name: str) -> InterfaceValue:
