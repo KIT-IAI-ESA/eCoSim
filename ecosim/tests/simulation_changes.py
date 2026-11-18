@@ -32,7 +32,7 @@ def interface_named(simulator: dict[str, Any], name: str) -> dict[str, Any]:
 
 
 def add_room_simulator(simulation: Path) -> Path:
-    room = simulation / "Modules" / "room"
+    room = simulation / "modules" / "room"
     shutil.copytree(src=resource_path_file("python/room"), dst=room, ignore=shutil.ignore_patterns("__pycache__"))
     weather_index = "2"
     interfaces = [

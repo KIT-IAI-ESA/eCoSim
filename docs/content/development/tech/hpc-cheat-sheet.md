@@ -28,7 +28,7 @@ to `simulation_results/`:
 ```shell
 mpirun -np 4 uv run ecosim-hpc \
   --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
-  --simulator-dir ../Modules/ --steps 100 --database-type file
+  --simulator-dir ../modules/ --steps 100 --database-type file
 ```
 
 `--network-interface` and `--threads-per-worker` choose the network and the threads per worker, see the
@@ -58,7 +58,7 @@ writes. In `simulation_examples/building_hpc/Executable`:
    ```shell
    uv run ecosim-hpc --interactive \
      --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
-     --simulator-dir ../Modules/ --steps 100 --database-type file
+     --simulator-dir ../modules/ --steps 100 --database-type file
    ```
 
 - `--scheduler-file` sets another path than `scheduler.json` in the current directory; if the file is

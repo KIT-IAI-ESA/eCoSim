@@ -45,12 +45,12 @@ def test_the_building_simulation_lists_every_interface_of_the_hand_written_fmc_f
 ) -> None:
     hand_written = _names_in_fmc_file(fmc_file=BUILDING_MODULES / simulator / f"{simulator}.fmc", key=key)
 
-    assert hand_written <= _names_in_fmc_file(fmc_file=building_simulation.directory / "Modules" / simulator / f"{simulator}.fmc", key=key)
+    assert hand_written <= _names_in_fmc_file(fmc_file=building_simulation.directory / "modules" / simulator / f"{simulator}.fmc", key=key)
 
 
 @pytest.mark.parametrize("simulator", BUILDING_SIMULATORS)
 def test_the_building_simulation_passes_the_fmu_validation_of_the_client(building_simulation: WrittenSimulation, simulator: str) -> None:
-    validate_fmu_file_or_error(config=ConfigParser(building_simulation.directory / "Modules" / simulator / "preferences.ini"), fmi_major_version=2)
+    validate_fmu_file_or_error(config=ConfigParser(building_simulation.directory / "modules" / simulator / "preferences.ini"), fmi_major_version=2)
 
 
 def test_the_check_at_the_end_finds_no_problem_in_the_building_simulation(building_simulation: WrittenSimulation) -> None:

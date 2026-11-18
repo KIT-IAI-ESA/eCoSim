@@ -90,7 +90,7 @@ The other keys are the same as for every client, see the [configuration referenc
 In the `Executable` folder of an example:
 
 ```shell
-uv run --project ../.. ecosim-client-python --config-file ../Modules/room/preferences.ini
+uv run --project ../.. ecosim-client-python --config-file ../modules/room/preferences.ini
 ```
 
 The model runs in the Python environment of the client. The packages it imports have to be installed there,
@@ -99,7 +99,7 @@ and start the client with `python -m`. The `ecosim-client-python` command does n
 adds:
 
 ```shell
-uv run --project ../.. --with pandapower python -m ecosim_client_python.main --config-file ../Modules/grid/preferences.ini
+uv run --project ../.. --with pandapower python -m ecosim_client_python.main --config-file ../modules/grid/preferences.ini
 ```
 
 The client loads the model before it connects to the server. A missing module, class, method or package

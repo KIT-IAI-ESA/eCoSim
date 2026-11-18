@@ -26,7 +26,7 @@ def add_simulation_options(parser: EcosimArgumentParser) -> None:
         "simulation",
         metavar="SIMULATION",
         nargs="?",
-        help="The simulation folder with server/ and Modules/. Default: the current folder.",
+        help="The simulation folder with server/ and modules/. Default: the current folder.",
     )
     simulation_file_parameters = (
         AppConfigParameter(
@@ -45,7 +45,7 @@ def add_simulation_options(parser: EcosimArgumentParser) -> None:
             name="simulator-dir",
             group=CONFIG_FILES,
             metavar="FOLDER",
-            help_text="The folder with one folder for each simulator, instead of SIMULATION/Modules.",
+            help_text="The folder with one folder for each simulator, instead of SIMULATION/modules.",
         ),
     )
     parser.add_parameters(parameters=[DEBUG_PARAMETER, *simulation_file_parameters], environment_variables=os.environ)

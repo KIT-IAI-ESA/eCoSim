@@ -2,6 +2,7 @@ import os
 from argparse import Namespace
 from pathlib import Path
 
+import pytest
 from ecosim.simulation_directory import SimulationDirectory
 from ecosim_test_common.test_data.building_simulation import write_building_simulation
 
@@ -17,8 +18,25 @@ def test_the_files_of_a_simulation_are_in_the_layout_of_the_examples(tmp_path: P
     assert (simulation.simulation_config, simulation.server_config, simulation.simulator_dir, simulation.results) == (
         tmp_path / "server" / "simulation.json",
         tmp_path / "server" / "preferences.ini",
-        tmp_path / "Modules",
+        tmp_path / "modules",
         tmp_path / "results",
+    )
+
+
+def test_a_simulation_with_the_older_modules_folder_keeps_it(tmp_path: Path) -> None:
+    (tmp_path / "Modules").mkdir()
+
+    assert simulation_of(simulation=tmp_path).simulator_dir.samefile(tmp_path / "Modules")
+
+
+def test_a_simulation_with_modules_and_the_older_modules_folder_is_rejected(tmp_path: Path) -> None:
+    simulation = write_building_simulation(directory=tmp_path / "building")
+    if (simulation / "Modules").exists():
+        pytest.skip("Modules and modules are the same folder on this file system")
+    (simulation / "Modules").mkdir()
+
+    assert simulation_of(simulation=simulation).reason_it_is_not_a_simulation(command_name="check") == (
+        "building has modules/ and Modules/. Move the folders in Modules/ into modules/."
     )
 
 
@@ -81,7 +99,7 @@ def test_a_simulation_config_given_as_the_simulation_is_rejected_as_a_file(tmp_p
 
     assert simulation_of(simulation=simulation_config).reason_it_is_not_a_simulation(command_name="check") == (
         f"{simulation_config} is a file, not a simulation folder. "
-        + "Pass the folder with server/ and Modules/, or pass the file with --simulation-config."
+        + "Pass the folder with server/ and modules/, or pass the file with --simulation-config."
     )
 
 

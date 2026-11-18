@@ -15,7 +15,7 @@ from ecosim_client_matlab.matlab_client import MatlabClient
 CONSOLE_SCRIPT = ConsoleScript(
     name="ecosim-client-matlab",
     description="Runs a model written as MATLAB scripts for the eCoSim server. Needs MATLAB and Python 3.12. Start the server first.",
-    examples=("ecosim-client-matlab --config-file Modules/battery/preferences.ini",),
+    examples=("ecosim-client-matlab --config-file modules/battery/preferences.ini",),
 )
 
 

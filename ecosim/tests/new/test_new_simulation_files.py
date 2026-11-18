@@ -53,9 +53,9 @@ def test_an_empty_simulation_directory_gets_the_files_and_stays_the_same_directo
 
     assert simulation.stat().st_ino == directory_id
     assert sorted(path.relative_to(simulation).as_posix() for path in simulation.rglob("*") if path.is_file()) == [
-        "Modules/feedthrough/feedthrough.fmc",
-        "Modules/feedthrough/feedthrough.fmu",
-        "Modules/feedthrough/preferences.ini",
+        "modules/feedthrough/feedthrough.fmc",
+        "modules/feedthrough/feedthrough.fmu",
+        "modules/feedthrough/preferences.ini",
         "server/preferences.ini",
         "server/simulation.json",
     ]
@@ -72,4 +72,4 @@ def test_an_empty_simulation_directory_is_filled_inside_a_read_only_directory(tm
     finally:
         tmp_path.chmod(0o755)
 
-    assert sorted(path.name for path in simulation.iterdir()) == ["Modules", "server"]
+    assert sorted(path.name for path in simulation.iterdir()) == ["modules", "server"]

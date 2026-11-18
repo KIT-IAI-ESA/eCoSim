@@ -82,7 +82,7 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `SIMULATION` |  |  | The simulation folder with server/ and Modules/. Default: the current folder. |
+| `SIMULATION` |  |  | The simulation folder with server/ and modules/. Default: the current folder. |
 
 **Options**
 
@@ -96,7 +96,7 @@ ecosim check building_hpc --database-type postgres --steps 100 -- --database-sch
 | --- | --- | --- | --- |
 | `--simulation-config FILE` |  |  | The simulation config, instead of SIMULATION/server/simulation.json. |
 | `--server-config FILE` |  |  | The server config, instead of SIMULATION/server/preferences.ini. |
-| `--simulator-dir FOLDER` |  |  | The folder with one folder for each simulator, instead of SIMULATION/Modules. |
+| `--simulator-dir FOLDER` |  |  | The folder with one folder for each simulator, instead of SIMULATION/modules. |
 
 **Run**
 
@@ -128,7 +128,7 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `SIMULATION` |  |  | The simulation folder with server/ and Modules/. Default: the current folder. |
+| `SIMULATION` |  |  | The simulation folder with server/ and modules/. Default: the current folder. |
 
 **Options**
 
@@ -143,7 +143,7 @@ ecosim run building --steps 100 --database-type postgres -- --database-schema ru
 | --- | --- | --- | --- |
 | `--simulation-config FILE` |  |  | The simulation config, instead of SIMULATION/server/simulation.json. |
 | `--server-config FILE` |  |  | The server config, instead of SIMULATION/server/preferences.ini. |
-| `--simulator-dir FOLDER` |  |  | The folder with one folder for each simulator, instead of SIMULATION/Modules. |
+| `--simulator-dir FOLDER` |  |  | The folder with one folder for each simulator, instead of SIMULATION/modules. |
 
 **Run**
 
@@ -284,11 +284,11 @@ ecosim-server --server-config server/preferences.ini --simulation-config server/
 `ecosim-client-fmu-v3`: Runs an FMI 3.0 FMU for the eCoSim server. Start the server first.
 
 ```shell
-ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini
-ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini --server-host 192.168.1.20 --server-port 1234
-ecosim-client-fmu-v2 --config-file Modules/house/preferences.ini --validate-fmu-file-only
-ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini
-ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate-fmu-file-only
+ecosim-client-fmu-v2 --config-file modules/house/preferences.ini
+ecosim-client-fmu-v2 --config-file modules/house/preferences.ini --server-host 192.168.1.20 --server-port 1234
+ecosim-client-fmu-v2 --config-file modules/house/preferences.ini --validate-fmu-file-only
+ecosim-client-fmu-v3 --config-file modules/controller/preferences.ini
+ecosim-client-fmu-v3 --config-file modules/controller/preferences.ini --validate-fmu-file-only
 ```
 
 **Options**
@@ -319,9 +319,9 @@ ecosim-client-fmu-v3 --config-file Modules/controller/preferences.ini --validate
 See the [MATLAB client](../guides/matlab-client.md), the [Pyro5 client](../guides/pyro5-client.md) and the [Python client](../guides/python-client.md) guides.
 
 ```shell
-ecosim-client-matlab --config-file Modules/battery/preferences.ini
-ecosim-client-pyro5 --config-file Modules/grid/preferences.ini
-ecosim-client-python --config-file Modules/room/preferences.ini
+ecosim-client-matlab --config-file modules/battery/preferences.ini
+ecosim-client-pyro5 --config-file modules/grid/preferences.ini
+ecosim-client-python --config-file modules/room/preferences.ini
 ```
 
 **Options**
@@ -348,9 +348,9 @@ See the [HPC cluster](../guides/hpc-cluster.md) guide.
 
 ```shell
 mpirun -np 4 ecosim-hpc --server-config server/preferences.ini --simulation-config server/simulation.json \
-    --simulator-dir Modules --steps 100 --database-type file
+    --simulator-dir modules --steps 100 --database-type file
 ecosim-hpc --interactive --server-config server/preferences.ini --simulation-config server/simulation.json \
-    --simulator-dir Modules --steps 100 --database-type file
+    --simulator-dir modules --steps 100 --database-type file
 ```
 
 **Options**
@@ -365,7 +365,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 | --- | --- | --- | --- |
 | `--server-config FILE` | yes |  | The server's config file, usually server/preferences.ini. A relative path starts in the current folder. |
 | `--simulation-config FILE` | yes |  | The simulators and their connections, usually server/simulation.json. A relative path starts in the current folder. |
-| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually Modules. |
+| `--simulator-dir FOLDER` | yes |  | The folder with one folder per simulator, usually modules. |
 
 **Run**
 

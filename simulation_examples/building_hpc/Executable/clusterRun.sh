@@ -41,9 +41,9 @@ if ! psql -w -lqt | cut -d \| -f 1 | grep -wq sim_control; then
     createdb -w sim_control
 fi
 
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../Modules/house/preferences.ini --debug > log_client1 2>&1 &
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../Modules/occupancy/preferences.ini --debug > log_client2 2>&1 &
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../Modules/weather/preferences.ini --debug > log_client3 2>&1 &
+python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/house/preferences.ini --debug > log_client1 2>&1 &
+python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/occupancy/preferences.ini --debug > log_client2 2>&1 &
+python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/weather/preferences.ini --debug > log_client3 2>&1 &
 
 python3 "$ECOSIM_DIR/ecosim-server/ecosim_server/main.py" --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --steps 100 --database-schema temp_schema --database-drop-existing-schema
 

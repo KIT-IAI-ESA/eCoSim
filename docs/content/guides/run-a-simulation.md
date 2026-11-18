@@ -12,15 +12,16 @@ building/
   server/
     simulation.json    the simulators, their connections, the step size and the start date
     preferences.ini    the server config
-  Modules/
+  modules/
     house/             the client config, the .fmc file and the model of one simulator
     occupancy/
     weather/
   results/             one folder per run of ecosim run
 ```
 
-`simulation_examples/building` has this layout. The commands below run in `simulation_examples`. For another
-layout, pass the files with `--simulation-config`, `--server-config` and `--simulator-dir`.
+`simulation_examples/building` has this layout. Older simulations with `Modules/` instead of `modules/` work as well.
+The commands below run in `simulation_examples`. For another layout, pass the files with `--simulation-config`,
+`--server-config` and `--simulator-dir`.
 
 ## Check the simulation
 
@@ -30,9 +31,9 @@ uv run ecosim check building
 
 ```text
 Checked building: 3 simulators, no problems.
-  house      FMI 2.0  building/Modules/house      18 inputs   6 outputs
-  occupancy  FMI 2.0  building/Modules/occupancy   0 inputs   7 outputs
-  weather    FMI 2.0  building/Modules/weather     0 inputs  11 outputs
+  house      FMI 2.0  building/modules/house      18 inputs   6 outputs
+  occupancy  FMI 2.0  building/modules/occupancy   0 inputs   7 outputs
+  weather    FMI 2.0  building/modules/weather     0 inputs  11 outputs
 ```
 
 `ecosim check` reads the simulation like a run does and starts nothing. It lists every problem with its file and
@@ -40,10 +41,10 @@ suggests the closest name for a typo:
 
 ```text
 Checked building: 2 simulators, 1 problem.
-  occupancy  FMI 2.0  building/Modules/occupancy  0 inputs   7 outputs
-  weather    FMI 2.0  building/Modules/weather    0 inputs  11 outputs
+  occupancy  FMI 2.0  building/modules/occupancy  0 inputs   7 outputs
+  weather    FMI 2.0  building/modules/weather    0 inputs  11 outputs
 Problems:
-  building/Modules/house/preferences.ini: simulator_name is 'hous', but building/server/simulation.json has no simulator 'hous'. Did you mean house?
+  building/modules/house/preferences.ini: simulator_name is 'hous', but building/server/simulation.json has no simulator 'hous'. Did you mean house?
 Fix it and run the check again: uv run ecosim check building
 ```
 
@@ -128,7 +129,7 @@ When the server or a client fails, the run shows why and stops the others:
 server: Client house#house closed the connection
 server: The run failed: Lost client house#house while waiting for all clients to start their simulation -> closing the client connections and the server
 house stopped with exit code 1. The end of building/results/2026-11-14_14-25-37/logs/house.log:
-    The simulation config does not fit the model. The FMU building/Modules/house/house.fmu has no input weatherBus_TDryBull. Did you mean weatherBus_TDryBul? This client does not start the simulation.
+    The simulation config does not fit the model. The FMU building/modules/house/house.fmu has no input weatherBus_TDryBull. Did you mean weatherBus_TDryBul? This client does not start the simulation.
     house#house did not start the simulation. The error above says why.
 Stopping the server and the other clients.
 Failed after 2.0 s. The results so far: files in building/results/2026-11-14_14-25-37
@@ -168,7 +169,7 @@ uv run --project ../.. ecosim-server --server-config ../server/preferences.ini \
     --database-type file --database-directory results
 # terminal 2
 for module in house occupancy weather; do
-    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../Modules/$module/preferences.ini" &
+    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../modules/$module/preferences.ini" &
 done
 wait
 ```

@@ -13,17 +13,17 @@ The commands below run in `simulation_examples`. The three FMUs of the building 
 as the files of the example:
 
 ```shell
-uv run ecosim new my_building building/Modules/house/house.fmu building/Modules/occupancy/occupancy.fmu \
-    building/Modules/weather/weather.fmu --steps 100 --start-date 2023-01-01
+uv run ecosim new my_building building/modules/house/house.fmu building/modules/occupancy/occupancy.fmu \
+    building/modules/weather/weather.fmu --steps 100 --start-date 2023-01-01
 ```
 
 ```text
 Wrote my_building: 3 simulators, 18 connections, no problems.
 100 steps of 15 min, from 2023-01-01 00:00 to 2023-01-02 01:00 UTC.
 The step size 15min is the default. Choose another with --step-size.
-  house      FMI 2.0  my_building/Modules/house      18 inputs   6 outputs
-  occupancy  FMI 2.0  my_building/Modules/occupancy   0 inputs   7 outputs
-  weather    FMI 2.0  my_building/Modules/weather     0 inputs  24 outputs
+  house      FMI 2.0  my_building/modules/house      18 inputs   6 outputs
+  occupancy  FMI 2.0  my_building/modules/occupancy   0 inputs   7 outputs
+  weather    FMI 2.0  my_building/modules/weather     0 inputs  24 outputs
 Connections:
   house <- weather, 11 connections
     weatherBus_TDryBul  <-  weatherBus.TDryBul
@@ -50,7 +50,7 @@ exit code is 1. The files are written anyway. Fix them and check again.
 
 An FMU argument is an `.fmu` file, a folder with `.fmu` files or `NAME=FILE`. A model is named after its file.
 `NAME=FILE` sets another name, for example `house2=house.fmu` for a second house. The name is also the name of
-the simulator and of its folder in `Modules/`.
+the simulator and of its folder in `modules/`.
 
 `ecosim new` takes FMI 2.0 and FMI 3.0 FMUs for co-simulation. Add a Python, MATLAB or Pyro5 model manually, see
 the [Python client](../guides/python-client.md) guide.
@@ -75,10 +75,10 @@ uv run ecosim new house_simulation weather.fmu house.fmu heating.fmu ventilation
 Wrote house_simulation: 4 simulators, 2 connections, no problems.
 200 steps of 1 min, from 2024-01-01 00:00 to 2024-01-01 03:20 UTC.
 The start date 2024-01-01 is the default. Choose another with --start-date.
-  weather      FMI 2.0  house_simulation/Modules/weather      0 inputs  26 outputs
-  house        FMI 2.0  house_simulation/Modules/house        2 inputs    1 output
-  heating      FMI 2.0  house_simulation/Modules/heating      0 inputs    1 output
-  ventilation  FMI 2.0  house_simulation/Modules/ventilation  0 inputs   2 outputs
+  weather      FMI 2.0  house_simulation/modules/weather      0 inputs  26 outputs
+  house        FMI 2.0  house_simulation/modules/house        2 inputs    1 output
+  heating      FMI 2.0  house_simulation/modules/heating      0 inputs    1 output
+  ventilation  FMI 2.0  house_simulation/modules/ventilation  0 inputs   2 outputs
 Connections:
   house <- weather, 1 connection
     T_out  <-  T_out
@@ -145,9 +145,9 @@ of its own model always needs a logical delay.
 
 | In the simulation folder | Content |
 | --- | --- |
-| `Modules/<model>/<model>.fmu` | a copy of the FMU |
-| `Modules/<model>/<model>.fmc` | the inputs and outputs of the model. Only Real variables of FMI 2.0 and Float64 variables of FMI 3.0 |
-| `Modules/<model>/preferences.ini` | the client config: the server, the simulator and the FMU |
+| `modules/<model>/<model>.fmu` | a copy of the FMU |
+| `modules/<model>/<model>.fmc` | the inputs and outputs of the model. Only Real variables of FMI 2.0 and Float64 variables of FMI 3.0 |
+| `modules/<model>/preferences.ini` | the client config: the server, the simulator and the FMU |
 | `server/simulation.json` | the simulators with all their outputs, the connections and the setup |
 | `server/preferences.ini` | the server config. With `--database-type postgres` fill in the server and the user in `[database]` |
 

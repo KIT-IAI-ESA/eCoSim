@@ -19,7 +19,7 @@ model = room:Room
 `room.py` can be in the folder of the ini file.
 
 ```shell
-ecosim-client-python --config-file Modules/room/preferences.ini
+ecosim-client-python --config-file modules/room/preferences.ini
 ```
 
 See the [Python client guide](https://ecosim.easimov.com/docs/guides/python-client) for the details.

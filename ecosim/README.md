@@ -18,7 +18,7 @@ folder in `building/results` with the results and the logs. Ctrl-C stops the run
 `--csv results.csv` writes the values as one table.
 
 A simulation folder has `server/simulation.json`, `server/preferences.ini` and one folder per simulator in
-`Modules/`, like `simulation_examples/building` in the repository. `ecosim new my_simulation house.fmu weather.fmu`
+`modules/`, like `simulation_examples/building` in the repository. `ecosim new my_simulation house.fmu weather.fmu`
 writes such a folder from FMU files.
 
 The extras add the Pyro5 client (`ecosim[pyro5]`) and pandas for the results (`ecosim[pandas]`). The MATLAB client

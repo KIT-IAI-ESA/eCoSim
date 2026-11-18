@@ -67,7 +67,7 @@ def test_the_last_lines_are_the_commands_to_check_and_to_run_the_simulation() ->
 
 
 def test_a_problem_of_the_check_is_listed_with_the_command_to_check_again() -> None:
-    problem = "my_simulation/Modules/weather/weather.fmu has no binary at all."
+    problem = "my_simulation/modules/weather/weather.fmu has no binary at all."
 
     lines = _report_lines(models=[create_model(name="weather", outputs=["T_out"])], check=create_check_with_problems(problems=[problem]))
 
