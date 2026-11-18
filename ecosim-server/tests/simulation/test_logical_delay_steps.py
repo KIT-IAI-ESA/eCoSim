@@ -4,7 +4,7 @@ from typing import List
 import pytest
 from ecosim_common.communication.data.protocol_interface_value import InterfaceValue
 from ecosim_common.simulation.interface_id import InterfaceId
-from ecosim_test_common.test_data.generate_simulation_file import a_logical_delay, a_simulator, an_input, an_output, config_file
+from ecosim_test_common.test_data.generate_simulation_file import config_file, create_input, create_logical_delay, create_output, create_simulator
 from tests.data.generate_connection_config import single_delay_file
 from tests.simulation.logical_delay_test_setup import run_simulation
 
@@ -73,17 +73,17 @@ def test_list_start_value_arrives_until_the_first_delayed_list(tmp_path: Path) -
 def test_blocks_with_different_delays_keep_their_own_values(tmp_path: Path) -> None:
     file = config_file(
         tmp_path,
-        a_simulator("sender", an_output("sent")),
-        a_simulator(
+        create_simulator("sender", create_output("sent")),
+        create_simulator(
             "receiver",
-            an_input("short", simulator="0", interface="sent", delay_path=["1"]),
-            an_input("long", simulator="0", interface="sent", delay_path=["2"]),
-            an_input("short_too", simulator="0", interface="sent", delay_path=["3"]),
+            create_input("short", simulator="0", interface="sent", delay_path=["1"]),
+            create_input("long", simulator="0", interface="sent", delay_path=["2"]),
+            create_input("short_too", simulator="0", interface="sent", delay_path=["3"]),
         ),
         logical_delays=[
-            a_logical_delay("receiver", "short", delay=1, start_value="-1"),
-            a_logical_delay("receiver", "long", delay=3, start_value="-3"),
-            a_logical_delay("receiver", "short_too", delay=1, start_value="-2"),
+            create_logical_delay("receiver", "short", delay=1, start_value="-1"),
+            create_logical_delay("receiver", "long", delay=3, start_value="-3"),
+            create_logical_delay("receiver", "short_too", delay=1, start_value="-2"),
         ],
     )
 
@@ -98,9 +98,9 @@ def test_delay_counts_steps_when_the_sender_runs_after_the_receiver(tmp_path: Pa
     """'fed_back' makes the sender wait for the 'answer' of the receiver, so the receiver runs first in every step."""
     file = config_file(
         tmp_path,
-        a_simulator("sender", an_output("sent"), an_input("fed_back", simulator="1", interface="answer")),
-        a_simulator("receiver", an_output("answer"), an_input("delayed", simulator="0", interface="sent", delay_path=["1"])),
-        logical_delays=[a_logical_delay("receiver", "delayed", delay=2, start_value="-1")],
+        create_simulator("sender", create_output("sent"), create_input("fed_back", simulator="1", interface="answer")),
+        create_simulator("receiver", create_output("answer"), create_input("delayed", simulator="0", interface="sent", delay_path=["1"])),
+        logical_delays=[create_logical_delay("receiver", "delayed", delay=2, start_value="-1")],
     )
 
     clients = run_simulation(
