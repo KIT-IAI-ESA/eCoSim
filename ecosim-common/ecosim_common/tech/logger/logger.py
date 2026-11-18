@@ -1,7 +1,6 @@
 import io
 import logging
 import sys
-import traceback
 
 default_log_format = "%(asctime)s - %(levelname)s - %(name)s: %(message)s"
 default_handlers = [logging.StreamHandler()]
@@ -54,17 +53,7 @@ class ESPLogger:
         message: str,
         *args: object,
     ) -> None:
-        if not self._logger.isEnabledFor(logging.ERROR):
-            return
-        if not self.is_debug_enabled:
-            self._logger.error(message, *args)
-            return
-        stack_trace = "".join(traceback.format_stack())
-        self._logger.error(
-            "%s\n           Stack trace: %s",
-            message % args if args else message,
-            stack_trace,
-        )
+        self._logger.error(message, *args)
 
     def exception(
         self,
