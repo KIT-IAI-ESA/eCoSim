@@ -16,6 +16,22 @@ def test_listener_is_notified_on_shutdown() -> None:
     assert ShutdownManager().is_shutdown()
 
 
+def test_a_shutdown_in_this_process_is_known_without_asking_the_event(monkeypatch: pytest.MonkeyPatch) -> None:
+    manager = ShutdownManager()
+    assert not manager.is_shutdown_in_this_process()
+
+    manager.set_shutdown_at_application_end()
+    # like a Dask event whose scheduler is gone
+    monkeypatch.setattr(manager, "shutdown_event", _UnreachableEvent())
+
+    assert manager.is_shutdown_in_this_process()
+
+
+class _UnreachableEvent:
+    def is_set(self) -> bool:
+        raise OSError("the scheduler is gone")
+
+
 def test_listener_is_notified_only_once_on_repeated_shutdown() -> None:
     listener = CountingShutdownListener()
     ShutdownManager().register_listener(listener)

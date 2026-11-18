@@ -49,7 +49,6 @@ class Server(ShutdownListener):
     _rendering_socket: RenderingSocket | None = field(init=False)
     # stays when a signal stops the run
     _failure_reason: str | None = field(init=False, default="stopped by Ctrl-C or a kill signal")
-    _force_stopped: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
         self.server_measurements = ServerTimeMeasurement(protocol=self._server_config.server.communication_protocol)
@@ -82,12 +81,10 @@ class Server(ShutdownListener):
             self._run()
             self._failure_reason = None
         except Exception as error:
+            self._logger.error("The run failed: %s -> closing the client connections and the server", one_line_message(error=error))
             # after a signal the server thread of ecosim-hpc fails on the closed channel
-            stopped_by_a_signal = self._client_communication.is_shutdown_triggered() and not self._force_stopped
-            if not stopped_by_a_signal:
+            if not ShutdownManager().is_shutdown_in_this_process():
                 self._failure_reason = one_line_message(error=error)
-            log_the_failure = self._logger.debug if self._force_stopped or stopped_by_a_signal else self._logger.error
-            log_the_failure("The run failed: %s -> closing the client connections and the server", one_line_message(error=error))
             # a connection that ends before SIMULATION_STOP makes the client exit as failed
             for client_id in self._client_communication.all_client_ids():
                 self._client_communication.reset_state(client_id)
@@ -132,9 +129,8 @@ class Server(ShutdownListener):
         return self._simulation_executor.run_summary(failure_reason=self._failure_reason)
 
     def force_stop(self) -> None:
-        self._force_stopped = True
         self.on_app_shutdown()
-        self._client_communication.set_shutdown_triggered()
+        self._client_communication.on_app_shutdown()
         self._simulation_executor.force_stop()
 
     @override

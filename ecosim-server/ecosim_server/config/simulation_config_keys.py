@@ -5,10 +5,8 @@ from typing import Any
 from ecosim_common.config.config_parser import ConfigParser
 
 
-def missing_key_problems(raw_config: Any, simulation_config_file: Path, has_step_size_override: bool) -> list[str]:
+def missing_key_problems(raw_config: dict[str, Any], simulation_config_file: Path, has_step_size_override: bool) -> list[str]:
     file = simulation_config_file
-    if not isinstance(raw_config, dict):
-        return [f'{file} has to contain a JSON object with the keys "setup", "simulators" and "logical_delays".']
     problems = [_missing_top_level_key(file=file, key=key) for key in ("setup", "simulators", "logical_delays") if key not in raw_config]
     if isinstance(raw_config.get("setup"), dict) and not has_step_size_override:
         problems += _delta_t_problems(file=file, setup=raw_config["setup"])

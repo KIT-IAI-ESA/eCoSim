@@ -31,3 +31,13 @@ def test_a_missing_file_shows_its_path(tmp_path: Path) -> None:
         read_json_file(file=file)
 
     assert error_info.value.filename == str(file)
+
+
+def test_a_file_without_a_json_object_is_refused(tmp_path: Path) -> None:
+    file = tmp_path / "simulation.json"
+    file.write_text('[{"name": "house"}]', encoding="utf-8")
+
+    with pytest.raises(ValueError) as error_info:
+        read_json_file(file=file)
+
+    assert str(error_info.value) == f"{file} has to contain a JSON object in {{ }}."
