@@ -187,6 +187,23 @@ def test_the_lost_client_is_shown_first_when_every_process_ends_at_once(tmp_path
     assert stopped.startswith("weather stopped with exit code 1.")
 
 
+def test_the_lost_client_is_shown_also_when_it_ends_after_the_others(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    message = f"{RUN_FAILED_PREFIX}{LOST_CLIENTS_PREFIX}house#house{LOST_CLIENTS_SUFFIX}waiting for all clients"
+    lost_house = log_line(level="ERROR", logger="Server", message=message)
+    local_run = LocalRun(
+        server=FakeRunProcess(exit_code=1, run_time_in_seconds=0, last_line=lost_house).to_start(name="server", directory=tmp_path),
+        clients=[
+            FakeRunProcess(exit_code=1, run_time_in_seconds=1).to_start(name="house", directory=tmp_path),
+            FakeRunProcess(exit_code=1, run_time_in_seconds=0).to_start(name="weather", directory=tmp_path),
+        ],
+    )
+
+    executed(local_run=local_run, directory=tmp_path)
+
+    [stopped] = [line for line in capsys.readouterr().out.splitlines() if " stopped with exit code " in line]
+    assert stopped.startswith("house stopped with exit code 1.")
+
+
 def test_the_failed_server_is_shown_when_the_clients_end_at_once(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     local_run = LocalRun(
         server=FakeRunProcess(exit_code=5, run_time_in_seconds=0).to_start(name="server", directory=tmp_path),
