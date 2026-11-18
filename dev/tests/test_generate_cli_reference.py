@@ -1,11 +1,11 @@
 import argparse
 
-from cli_reference_commands import Command
-from cli_reference_options import Option, collect_sections
+from cli_reference.commands import Command
+from cli_reference.options import Option, collect_sections
 from generate_cli_reference import examples_of, render_command, render_row
 
 
-def a_parser() -> argparse.ArgumentParser:
+def create_sample_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ecosim-test",
         description="Tests.",
@@ -22,7 +22,7 @@ def a_parser() -> argparse.ArgumentParser:
 
 
 def test_the_options_of_argument_groups_are_collected_under_their_titles() -> None:
-    sections = collect_sections(a_parser())
+    sections = collect_sections(create_sample_parser())
 
     assert [(section.title, [option.name for option in section.options]) for section in sections] == [
         ("options", ["--debug"]),
@@ -32,7 +32,7 @@ def test_the_options_of_argument_groups_are_collected_under_their_titles() -> No
 
 
 def test_an_option_keeps_how_the_help_shows_its_value_and_its_default() -> None:
-    run = collect_sections(a_parser())[-1]
+    run = collect_sections(create_sample_parser())[-1]
 
     assert run.options == [
         Option(name="--pace", value="NUMBER", required=False, flag=False, default="1", help="Pace, 1 means 100%"),
@@ -60,11 +60,14 @@ def test_render_row() -> None:
 
 
 def test_the_examples_keep_their_continuation_lines() -> None:
-    assert examples_of(a_parser().epilog) == ["ecosim-test --config-file a.ini \\", "    --debug"]
+    assert examples_of(create_sample_parser().epilog) == ["ecosim-test --config-file a.ini \\", "    --debug"]
 
 
 def test_a_command_has_its_description_its_examples_and_a_table_for_each_section() -> None:
-    lines = render_command(command=Command(title="Test", console_script_modules=[], arguments="", note="See the guide."), parsers=[a_parser()])
+    lines = render_command(
+        command=Command(title="Test", console_script_modules=[], arguments="", note="See the guide."),
+        parsers=[create_sample_parser()],
+    )
 
     assert lines[:4] == ["## Test", "", "`ecosim-test`: Tests.", ""]
     assert "See the guide." in lines

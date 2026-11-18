@@ -3,8 +3,8 @@ from typing import Sequence, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.config.app_config import AppConfigParameter
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.console_script import ConsoleScript
-from ecosim_common.config.option_values import positive_whole_number
 from ecosim_common.config.shared_parameters import COMMUNICATION_PROTOCOL_PARAMETER
 from ecosim_server.config.cli_arguments import CLIArguments
 from ecosim_server.config.cli_parameters import CONFIG_FILES
@@ -71,7 +71,7 @@ class HPCServerCliArguments(CLIArguments):
                 name="threads-per-worker",
                 group=DASK_CLUSTER,
                 default_value=str(cls.DEFAULT_THREADS_PER_WORKER),
-                transform=positive_whole_number,
+                transform=ConfigParser.positive_whole_number,
                 metavar="N",
                 help_text="The threads of each Dask worker with mpirun. A job with one worker needs at least 2.",
             ),

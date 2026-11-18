@@ -1,6 +1,6 @@
 from ecosim_common.config.app_config import AppConfigParameter
+from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.config.database_type import DatabaseType
-from ecosim_common.config.option_values import choice_name, port_number, true_or_false
 
 RESULTS = "results"
 
@@ -8,7 +8,7 @@ DATABASE_PARAMETERS = (
     AppConfigParameter(
         name="database-type",
         group=RESULTS,
-        transform=choice_name,
+        transform=ConfigParser.choice_name,
         choices=tuple(member.serialized for member in DatabaseType),
         help_text="Where the results go. Overrides type in the [database] section of the config file. "
         + f"If neither sets it, {DatabaseType.POSTGRES.serialized}.",
@@ -29,7 +29,7 @@ DATABASE_PARAMETERS = (
     AppConfigParameter(
         name="database-port",
         group=RESULTS,
-        transform=port_number,
+        transform=ConfigParser.port_number,
         metavar="PORT",
         help_text="The port of the PostgreSQL server. Overrides port in the [database] section of the config file.",
     ),
@@ -61,7 +61,7 @@ DATABASE_PARAMETERS = (
     AppConfigParameter(
         name="database-ssl",
         group=RESULTS,
-        transform=true_or_false,
+        transform=ConfigParser.true_or_false,
         metavar="{true,false}",
         help_text="true connects to PostgreSQL with sslmode=require, false with sslmode=disable. "
         + "Overrides ssl in the [database] section of the config file.",

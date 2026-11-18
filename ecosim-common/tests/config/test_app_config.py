@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from ecosim_common.config.app_config import AppConfig, AppConfigParameter
 from ecosim_common.config.argument_parser import USAGE_ERROR_EXIT_CODE
-from ecosim_common.config.option_values import choice_name, positive_whole_number
+from ecosim_common.config.config_parser import ConfigParser
 
 from tests.config.console_script_test_setup import CONSOLE_SCRIPT
 
@@ -126,7 +126,7 @@ def test_a_value_the_transform_rejects_ends_in_a_short_usage_error(capsys: pytes
         AppConfig(
             passed_arguments=["--steps", "abc"],
             console_script=CONSOLE_SCRIPT,
-            parameters=[AppConfigParameter(name="steps", transform=positive_whole_number, help_text="steps")],
+            parameters=[AppConfigParameter(name="steps", transform=ConfigParser.positive_whole_number, help_text="steps")],
         )
 
     assert exit_info.value.code == USAGE_ERROR_EXIT_CODE
@@ -140,7 +140,7 @@ def test_a_choice_is_accepted_in_any_letter_case() -> None:
     app_config = AppConfig(
         passed_arguments=["--protocol", "TCP-SOCKET"],
         console_script=CONSOLE_SCRIPT,
-        parameters=[AppConfigParameter(name="protocol", transform=choice_name, choices=("dask", "tcp_socket"), help_text="protocol")],
+        parameters=[AppConfigParameter(name="protocol", transform=ConfigParser.choice_name, choices=("dask", "tcp_socket"), help_text="protocol")],
     )
 
     assert app_config._args.protocol == "tcp_socket"

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import argparse
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from ecosim_common.config import config_parser
 from ecosim_common.config.argument_parser import EcosimArgumentParser
@@ -27,7 +26,7 @@ class AppConfig(object):
         environment_variables: Mapping[str, str] | None = None,
         passed_arguments: Sequence[str] | None = None,
     ) -> None:
-        parser = create_parser(
+        parser = AppConfig.create_parser(
             console_script=console_script,
             parameters=parameters,
             environment_variables=os.environ if environment_variables is None else environment_variables,
@@ -35,44 +34,21 @@ class AppConfig(object):
         # None reads sys.argv
         self._args = parser.parse_args(passed_arguments)
 
-
-def create_parser(
-    console_script: ConsoleScript,
-    parameters: Sequence[AppConfigParameter],
-    environment_variables: Mapping[str, str],
-) -> EcosimArgumentParser:
-    parser = EcosimArgumentParser(
-        prog=console_script.name,
-        usage=short_usage(parameters),
-        description=console_script.description,
-        epilog=console_script.examples_text(),
-    )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {console_script.version()}")
-    add_parameters(parser=parser, parameters=parameters, environment_variables=environment_variables)
-    return parser
-
-
-def add_parameters(
-    parser: argparse.ArgumentParser,
-    parameters: Iterable[AppConfigParameter],
-    environment_variables: Mapping[str, str],
-) -> None:
-    parameters_by_group: dict[str | None, list[AppConfigParameter]] = {}
-    for parameter in parameters:
-        parameters_by_group.setdefault(parameter.group, []).append(parameter)
-    for group, grouped_parameters in parameters_by_group.items():
-        container = parser if group is None else parser.add_argument_group(title=group)
-        for parameter in grouped_parameters:
-            container.add_argument(parameter.to_cli_variable(), **parameter.argparse_settings(environment_variables))
-
-
-def short_usage(parameters: Iterable[AppConfigParameter]) -> str:
-    required = [
-        f"{parameter.to_cli_variable()} {parameter.metavar or parameter.to_parsed_arg_name().upper()}"
-        for parameter in parameters
-        if parameter.required
-    ]
-    return " ".join(["%(prog)s", *required, "[options]"])
+    @staticmethod
+    def create_parser(
+        console_script: ConsoleScript,
+        parameters: Sequence[AppConfigParameter],
+        environment_variables: Mapping[str, str],
+    ) -> EcosimArgumentParser:
+        parser = EcosimArgumentParser(
+            prog=console_script.name,
+            usage=EcosimArgumentParser.short_usage(parameters=parameters),
+            description=console_script.description,
+            epilog=console_script.examples_text(),
+        )
+        parser.add_argument("--version", action="version", version=f"%(prog)s {console_script.version()}")
+        parser.add_parameters(parameters=parameters, environment_variables=environment_variables)
+        return parser
 
 
 @dataclass(frozen=True)

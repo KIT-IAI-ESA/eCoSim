@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import argparse
 import sys
 import textwrap
-from typing import Any, Iterable, NoReturn, override
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NoReturn, override
 
 from ecosim_common.tech.close_name import closest_name
+
+if TYPE_CHECKING:
+    # app_config imports this module
+    from ecosim_common.config.app_config import AppConfigParameter
 
 # argparse exits with this code after a usage error
 USAGE_ERROR_EXIT_CODE = 2
@@ -27,7 +33,7 @@ class EcosimHelpFormatter(argparse.HelpFormatter):
 
 
 class EcosimArgumentParser(argparse.ArgumentParser):
-    """Adds the closest option to the error of a misspelled option."""
+    """Adds the options of AppConfigParameters and suggests the closest option for a misspelled one."""
 
     def __init__(self, **settings: Any) -> None:
         settings.setdefault("formatter_class", EcosimHelpFormatter)
@@ -35,6 +41,24 @@ class EcosimArgumentParser(argparse.ArgumentParser):
             settings.setdefault("suggest_on_error", True)
         super().__init__(**settings)
         self._arguments: list[str] = []
+
+    @staticmethod
+    def short_usage(parameters: Iterable[AppConfigParameter]) -> str:
+        required = [
+            f"{parameter.to_cli_variable()} {parameter.metavar or parameter.to_parsed_arg_name().upper()}"
+            for parameter in parameters
+            if parameter.required
+        ]
+        return " ".join(["%(prog)s", *required, "[options]"])
+
+    def add_parameters(self, parameters: Iterable[AppConfigParameter], environment_variables: Mapping[str, str]) -> None:
+        parameters_by_group: dict[str | None, list[AppConfigParameter]] = {}
+        for parameter in parameters:
+            parameters_by_group.setdefault(parameter.group, []).append(parameter)
+        for group, grouped_parameters in parameters_by_group.items():
+            container = self if group is None else self.add_argument_group(title=group)
+            for parameter in grouped_parameters:
+                container.add_argument(parameter.to_cli_variable(), **parameter.argparse_settings(environment_variables))
 
     @override
     def parse_known_args(

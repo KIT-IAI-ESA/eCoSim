@@ -49,7 +49,7 @@ def load(target: str) -> Any:
 
 
 def parsers_of(command: Command) -> list[argparse.ArgumentParser]:
-    create_parser = load("ecosim_common.config.app_config.create_parser")
+    create_parser = load("ecosim_common.config.app_config.AppConfig").create_parser
     parameters = load(command.arguments).parameters()
     return [
         create_parser(console_script=load(f"{module}.CONSOLE_SCRIPT"), parameters=parameters, environment_variables={})

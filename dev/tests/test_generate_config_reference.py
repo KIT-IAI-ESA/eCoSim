@@ -2,8 +2,8 @@ import importlib
 
 import pytest
 from config import REPO_ROOT
-from config_reference_keys import Key, enum_members, extract_keys, render_keys
-from config_reference_sections import client_type_values, render_client_types
+from config_reference.keys import Key, enum_members, extract_keys, render_keys
+from config_reference.sections import client_type_values, render_client_types
 from generate_config_reference import CLIENT_TYPE_FILE, render_page, trim_simulation
 
 CLIENT_TYPE_SOURCE = """

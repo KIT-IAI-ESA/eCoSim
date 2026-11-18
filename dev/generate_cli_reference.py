@@ -8,8 +8,8 @@ import argparse
 import sys
 import textwrap
 
-from cli_reference_commands import COMMANDS, Command, parsers_of
-from cli_reference_options import Option, collect_sections
+from cli_reference.commands import COMMANDS, Command, parsers_of
+from cli_reference.options import Option, collect_sections
 from config import REPO_ROOT, write_or_check
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "command-line.md"
