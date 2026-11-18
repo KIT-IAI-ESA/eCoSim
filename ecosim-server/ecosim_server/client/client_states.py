@@ -155,9 +155,6 @@ class ClientStates(ShutdownListener):
     def on_app_shutdown(self) -> None:
         self._shutdown_triggered = True
 
-    def is_shutdown_triggered(self) -> bool:
-        return self._shutdown_triggered
-
     def is_connected(
         self,
         client_id: ClientID,

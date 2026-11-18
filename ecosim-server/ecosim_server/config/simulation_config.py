@@ -109,8 +109,7 @@ class SimulationConfig:
 
     @staticmethod
     def _load_config(simulation_config_file: Path) -> dict[str, Any]:
-        config: dict[str, Any] = read_json_file(file=simulation_config_file)
-        return config
+        return read_json_file(file=simulation_config_file)
 
     def client_simulator_config_for(
         self,

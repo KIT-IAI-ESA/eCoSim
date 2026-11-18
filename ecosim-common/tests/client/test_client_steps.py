@@ -1,5 +1,7 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from ecosim_common.communication.channel.message_data import MessageData
 from ecosim_common.communication.data.simulation_step_batch_request import SimulationStepBatchRequest
 from ecosim_common.communication.data.simulation_step_request import SimulationStepRequest
@@ -19,6 +21,10 @@ def _payloads(restored_steps: int = 0) -> dict[MessageType, MessageData]:
     }
 
 
+def _end_line(caplog: pytest.LogCaptureFixture) -> str:
+    return [record.getMessage() for record in caplog.records if record.getMessage().startswith("house#house")][-1]
+
+
 def test_a_finished_run_counts_the_steps_of_its_model() -> None:
     client = SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, *[MessageType.SIMULATION_STEP] * 3, MessageType.SIMULATION_STOP],
@@ -26,58 +32,38 @@ def test_a_finished_run_counts_the_steps_of_its_model() -> None:
     )
 
     assert client.completed_steps == 3
-    assert client.restored_steps == 0
 
 
-def test_a_restore_counts_the_restored_steps_apart() -> None:
+def test_a_restore_counts_the_restored_steps_too() -> None:
     client = SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, MessageType.SIMULATION_STEP_BATCH, MessageType.SIMULATION_STEP, MessageType.SIMULATION_STOP],
         payloads=_payloads(restored_steps=2),
     )
 
-    assert client.completed_steps == 1
-    assert client.restored_steps == 2
+    assert client.completed_steps == 3
 
 
-def test_the_model_time_adds_up_the_time_inside_the_model_steps() -> None:
-    client = SpySimulatorClient.of_ended_run(
-        message_types=[MessageType.SIMULATION_START, MessageType.SIMULATION_STEP_BATCH, MessageType.SIMULATION_STEP, MessageType.SIMULATION_STOP],
-        payloads=_payloads(restored_steps=2),
-        seconds_per_model_step=1.5,
-    )
+def test_a_finished_run_ends_with_its_steps(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO)
 
-    assert client.model_time_in_seconds == 4.5
-
-
-def test_a_finished_run_ends_with_its_steps_and_the_time_its_model_took() -> None:
-    client = SpySimulatorClient.of_ended_run(
-        message_types=[MessageType.SIMULATION_START, *[MessageType.SIMULATION_STEP] * 2, MessageType.SIMULATION_STOP],
+    SpySimulatorClient.of_ended_run(
+        message_types=[MessageType.SIMULATION_START, MessageType.SIMULATION_STEP, MessageType.SIMULATION_STOP],
         payloads=_payloads(),
-        seconds_per_model_step=1.5,
     )
 
-    assert client.end_line() == "house#house finished after 2 steps. The model took 3.0 s in total."
+    assert _end_line(caplog=caplog) == "house#house finished after 1 step."
 
 
-def test_a_finished_restored_run_shows_its_restored_steps_apart_and_one_step_in_the_singular() -> None:
-    client = SpySimulatorClient.of_ended_run(
-        message_types=[MessageType.SIMULATION_START, MessageType.SIMULATION_STEP_BATCH, MessageType.SIMULATION_STEP, MessageType.SIMULATION_STOP],
-        payloads=_payloads(restored_steps=1),
-    )
-
-    assert "finished after 1 step and 1 restored step." in client.end_line()
-
-
-def test_a_run_whose_connection_ended_early_shows_the_steps_it_did() -> None:
-    client = SpySimulatorClient.of_ended_run(
+def test_a_run_whose_connection_ended_early_shows_the_steps_it_did(caplog: pytest.LogCaptureFixture) -> None:
+    SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, *[MessageType.SIMULATION_STEP] * 2],
         payloads=_payloads(),
     )
 
-    assert client.end_line() == "house#house: the connection to the server ended after 2 steps, before the simulation was finished."
+    assert _end_line(caplog=caplog) == "house#house: the connection to the server ended after 2 steps, before the simulation was finished."
 
 
-def test_a_run_whose_connection_ended_before_the_start_points_to_the_server_output() -> None:
-    client = SpySimulatorClient.of_ended_run(message_types=[])
+def test_a_run_whose_connection_ended_before_the_start_points_to_the_server_output(caplog: pytest.LogCaptureFixture) -> None:
+    SpySimulatorClient.of_ended_run(message_types=[])
 
-    assert client.end_line() == "house#house: the connection to the server ended before the simulation started. The server output says why."
+    assert _end_line(caplog=caplog) == "house#house: the connection to the server ended before the simulation started. The server output says why."

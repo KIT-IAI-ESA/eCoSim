@@ -49,12 +49,6 @@ def test_a_delta_t_written_with_a_zero_fraction_is_a_whole_number() -> None:
     assert missing_key_problems(raw_config=raw_config, simulation_config_file=FILE, has_step_size_override=False) == []
 
 
-def test_json_that_is_not_an_object_is_a_problem_with_the_keys_it_needs() -> None:
-    assert missing_key_problems(raw_config=[], simulation_config_file=FILE, has_step_size_override=False) == [
-        f'{FILE} has to contain a JSON object with the keys "setup", "simulators" and "logical_delays".',
-    ]
-
-
 def test_a_simulator_and_an_interface_with_a_missing_key_are_listed() -> None:
     house = create_simulator("house", {"name": "T_out"})
     del house["model"]

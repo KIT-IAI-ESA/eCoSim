@@ -35,6 +35,7 @@ class ShutdownManager:
     _listener: Dict[int, ShutdownListener] = {}
     _signal_handlers_installed: bool = False
     _ignore_signals_until: float = 0.0
+    _is_shutdown_in_this_process: bool = False
     shutdown_event: threading.Event | dd.Event
 
     def __new__(
@@ -106,6 +107,7 @@ class ShutdownManager:
 
     def __trigger_shutdown(self) -> None:
         ShutdownManager._ignore_signals_until = time.monotonic() + SIGNAL_GRACE_IN_SECONDS
+        ShutdownManager._is_shutdown_in_this_process = True
         if self.shutdown_event.is_set():
             self._logger.debug("Shutdown was already triggered - listeners stay untouched.")
             return
@@ -139,6 +141,10 @@ class ShutdownManager:
     def is_shutdown(self) -> bool:
         return self.shutdown_event.is_set()
 
+    def is_shutdown_in_this_process(self) -> bool:
+        # unlike a Dask event it never asks the scheduler, so it also works while Dask shuts down
+        return ShutdownManager._is_shutdown_in_this_process
+
     def set_shutdown_at_application_end(self) -> None:
         self._logger.debug("Shutdown was triggered at the end of the application.")
         self.__trigger_shutdown()
@@ -149,5 +155,6 @@ class ShutdownManager:
         ShutdownManager._signal_handlers_installed = False
         ShutdownManager._instance = None
         ShutdownManager._ignore_signals_until = 0.0
+        ShutdownManager._is_shutdown_in_this_process = False
         signal.signal(signal.SIGINT, signal.default_int_handler)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
