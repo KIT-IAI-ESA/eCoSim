@@ -111,12 +111,21 @@ def test_a_misspelled_start_date_next_to_start_date_gets_no_default_start() -> N
 
 
 def test_an_unknown_key_is_warned_once_with_the_number_of_entries_that_have_it() -> None:
-    weather = create_simulator("weather", {**create_output("T_out"), "report": "true"}, {**create_output("wind"), "report": "true"})
+    weather = create_simulator("weather", {**create_output("T_out"), "shortname": "T"}, {**create_output("wind"), "shortname": "v"})
     raw_config = {**_a_complete_config(), "simulators": [weather], "comment": "first try"}
 
     assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == [
         f'{FILE} has the unknown key "comment".',
-        f'{FILE}: 2 interfaces have the unknown key "report".',
+        f'{FILE}: 2 interfaces have the unknown key "shortname".',
+    ]
+
+
+def test_report_of_older_versions_is_warned_with_the_note_that_every_interface_is_stored() -> None:
+    weather = create_simulator("weather", {**create_output("T_out"), "report": "false"})
+    raw_config = {**_a_complete_config(), "simulators": [weather]}
+
+    assert unknown_key_warnings(raw_config=raw_config, simulation_config_file=FILE) == [
+        f'{FILE}: 1 interface has the unknown key "report". Every input and output goes into the results anyway.',
     ]
 
 
