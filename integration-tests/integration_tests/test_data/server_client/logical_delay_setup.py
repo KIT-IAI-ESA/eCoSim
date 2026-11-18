@@ -13,7 +13,7 @@ from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.simulation.interface_id import InterfaceId
 from ecosim_common.tech.port_utils import get_free_port
 from ecosim_server.config.simulation_config import SimulationConfig
-from ecosim_test_common.test_data.generate_simulation_file import a_logical_delay, a_simulator, an_input, an_output, config_file
+from ecosim_test_common.test_data.generate_simulation_file import config_file, create_input, create_logical_delay, create_output, create_simulator
 from integration_tests.test_data.server_client.simple_test_client import SimpleTestClient
 from integration_tests.test_data.server_client.simple_test_server import SimpleTestServer, SimpleTestServerParameters, generate_simple_test_server
 from integration_tests.test_data.test_client_data import TestClientData
@@ -49,12 +49,12 @@ def delayed_simulation_config(
     delayed_input: str = "delayed",
     receiver_outputs: tuple[str, ...] = (),
 ) -> SimulationConfig:
-    receiver_input = an_input(delayed_input, simulator="0", interface=_SENT_INTERFACE, delay_path=["1"])
+    receiver_input = create_input(delayed_input, simulator="0", interface=_SENT_INTERFACE, delay_path=["1"])
     file = config_file(
         directory,
-        a_simulator(_SENDER_NAME, an_output(_SENT_INTERFACE)),
-        a_simulator(receiver_name, receiver_input, *[an_output(output) for output in receiver_outputs], model=receiver_model),
-        logical_delays=[a_logical_delay(receiver_name, delayed_input, delay=delay, start_value=start_value)],
+        create_simulator(_SENDER_NAME, create_output(_SENT_INTERFACE)),
+        create_simulator(receiver_name, receiver_input, *[create_output(output) for output in receiver_outputs], model=receiver_model),
+        logical_delays=[create_logical_delay(receiver_name, delayed_input, delay=delay, start_value=start_value)],
     )
     return SimulationConfig.of_config_file_and_params(simulation_config_file=file, steps=steps)
 
