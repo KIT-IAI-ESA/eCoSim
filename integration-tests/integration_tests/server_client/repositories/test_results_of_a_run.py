@@ -46,7 +46,7 @@ def test_a_stored_run_reads_back_as_one_table(database_config: DatabaseConfig, c
     server.assert_finishing_in_time()
     table = server.read_results()
 
-    assert table.times == tuple(server.step_to_date(step) for step in range(STEPS))
+    assert table.simulation_times == tuple(server.step_to_date(step) for step in range(STEPS))
     # PostgreSQL stores the names in lower case
     assert table.values(f"{client_data.simulator_name}.{OUTPUT_INTERFACE}") == [(step + 1) * STEP_SIZE_IN_MS / 1000 for step in range(STEPS)]
     assert table.state is SimulationState.FINISHED

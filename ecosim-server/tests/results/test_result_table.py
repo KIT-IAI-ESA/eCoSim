@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pandas
 import pytest
-from ecosim_server.results import ResultTable, read_results
+from ecosim_server.results import ResultTable, read_file_results
 from tests.results.stored_run import StoredRun
 
 
 @pytest.fixture
 def table(tmp_path: Path) -> ResultTable:
     StoredRun.in_directory(tmp_path).write_files(directory=tmp_path, steps=3)
-    return read_results(tmp_path)
+    return read_file_results(tmp_path)
 
 
 def test_select_keeps_the_named_columns_in_the_order_of_the_names(table: ResultTable) -> None:
@@ -67,13 +67,13 @@ def test_the_csv_has_a_time_column_and_keeps_every_digit(table: ResultTable, tmp
     with csv_file.open(newline="") as file:
         header, *rows = list(csv.reader(file))
     assert header == ["time", *table.column_names()]
-    assert [row[0] for row in rows] == [time.isoformat() for time in table.times]
+    assert [row[0] for row in rows] == [time.isoformat() for time in table.simulation_times]
     assert [[float(cell) for cell in row[1:]] for row in rows] == [list(row) for row in table.rows]
 
 
 def test_the_data_frame_has_the_times_as_index_and_a_column_per_interface(table: ResultTable) -> None:
-    frame = table.to_data_frame()
+    frame = table.to_pandas_data_frame()
 
     assert list(frame.columns) == list(table.column_names())
-    assert list(frame.index) == [pandas.Timestamp(time) for time in table.times]
+    assert list(frame.index) == [pandas.Timestamp(time) for time in table.simulation_times]
     assert frame["house.T_room"].tolist() == table.values("house.T_room")

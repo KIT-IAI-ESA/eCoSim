@@ -19,7 +19,7 @@ from ecosim_server.simulation.state.simulation_state_repository_file import Simu
 _logger = ESPLogger("FileResults")
 
 
-def read_results(directory: str | Path, simulation_config: str | Path | None = None, include_inputs: bool = False) -> ResultTable:
+def read_file_results(directory: str | Path, simulation_config: str | Path | None = None, include_inputs: bool = False) -> ResultTable:
     """Reads the result files of a run as one table, without the inputs by default."""
     given_config = None if simulation_config is None else Path(simulation_config)
     table = FileResults.of_directory(directory=Path(directory), simulation_config=given_config).table()
@@ -39,10 +39,10 @@ class FileResults:
             raise NotADirectoryError(f"{directory} is a file. Pass its folder {directory.parent}.")
         if not directory.is_dir():
             raise FileNotFoundError(f"{directory} does not exist. Use the --database-directory of the run.")
-        stored_simulator_names = _simulator_names_in(directory)
+        stored_simulator_names = FileResults._simulator_names_in(directory=directory)
         if not stored_simulator_names:
             raise FileNotFoundError(f"{directory} has no results. There is no {MODULE_PREFIX}<simulator>.jsonl in it.")
-        config_file = _simulation_config_file_of(directory=directory, given_file=simulation_config)
+        config_file = FileResults._simulation_config_file_of(directory=directory, given_file=simulation_config)
         clients = None if config_file is None else SimulationConfig.clients_of_file(config_file)
         return FileResults(directory=directory, simulation_config_file=config_file, clients=clients, stored_simulator_names=stored_simulator_names)
 
@@ -68,7 +68,7 @@ class FileResults:
         # the protocol only picks the kind of lock
         protocol = CommunicationProtocol.TCP_SOCKET
         repository = MeasurementRepositoryFile.create(directory=self.directory, simulator_name=simulator_name, communication_protocol=protocol)
-        entries, run_count = _last_run_of(repository.all())
+        entries, run_count = self._last_run_of(entries=repository.all())
         described_columns = self._described_columns(simulator_name=simulator_name)
         builder.add_simulator(simulator_name=simulator_name, entries=entries, described_columns=described_columns)
         return run_count
@@ -103,18 +103,18 @@ class FileResults:
         repository = SimulationStateRepositoryFile.create(directory=self.directory, communication_protocol=CommunicationProtocol.TCP_SOCKET)
         return repository.current() if repository.file_path().is_file() else None
 
+    @staticmethod
+    def _simulation_config_file_of(directory: Path, given_file: Path | None) -> Path | None:
+        if given_file is not None:
+            return given_file
+        copy = RepositoriesFileBased.simulation_config_copy_in(directory=directory)
+        return copy if copy.is_file() else None
 
-def _simulation_config_file_of(directory: Path, given_file: Path | None) -> Path | None:
-    if given_file is not None:
-        return given_file
-    copy = RepositoriesFileBased.simulation_config_copy_in(directory=directory)
-    return copy if copy.is_file() else None
+    @staticmethod
+    def _last_run_of(entries: list[MeasurementEntry]) -> tuple[list[MeasurementEntry], int]:
+        run_starts = [position for position in range(1, len(entries)) if entries[position].timestamp <= entries[position - 1].timestamp]
+        return entries[run_starts[-1] if run_starts else 0 :], len(run_starts) + 1
 
-
-def _last_run_of(entries: list[MeasurementEntry]) -> tuple[list[MeasurementEntry], int]:
-    run_starts = [position for position in range(1, len(entries)) if entries[position].timestamp <= entries[position - 1].timestamp]
-    return entries[run_starts[-1] if run_starts else 0 :], len(run_starts) + 1
-
-
-def _simulator_names_in(directory: Path) -> list[str]:
-    return sorted(file.name.removeprefix(MODULE_PREFIX).removesuffix(".jsonl") for file in directory.glob(f"{MODULE_PREFIX}*.jsonl"))
+    @staticmethod
+    def _simulator_names_in(directory: Path) -> list[str]:
+        return sorted(file.name.removeprefix(MODULE_PREFIX).removesuffix(".jsonl") for file in directory.glob(f"{MODULE_PREFIX}*.jsonl"))
