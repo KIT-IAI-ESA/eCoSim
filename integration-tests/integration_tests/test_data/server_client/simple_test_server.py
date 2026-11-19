@@ -14,7 +14,7 @@ from ecosim_server.config.server_config import DatabaseConfig, MainConfig, Serve
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.data.repositories import Repositories, create_repositories
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
-from ecosim_server.results import ResultTable, read_database_results, read_results
+from ecosim_server.results import ResultTable, read_database_results, read_file_results
 from ecosim_server.server import Server
 from ecosim_server.simulation.response_timeouts import ResponseTimeouts
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
@@ -95,7 +95,7 @@ class SimpleTestServer(Server):
         database_config = self._server_config.database
         match database_config.type:
             case DatabaseType.FILE:
-                return read_results(directory=database_config.directory)
+                return read_file_results(directory=database_config.directory)
             case DatabaseType.POSTGRES:
                 return read_database_results(database=database_config)
             case _:

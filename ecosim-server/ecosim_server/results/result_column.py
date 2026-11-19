@@ -19,7 +19,7 @@ class ResultColumn:
     # None for result files without the run's simulation.json
     interface_type: InterfaceType | None
     unit: str = ""
-    index: tuple[int, ...] = ()
+    array_position: tuple[int, ...] = ()
 
     @staticmethod
     def of_interface(interface: ModelInterfaceServer) -> ResultColumn:
@@ -32,7 +32,7 @@ class ResultColumn:
 
     @property
     def name(self) -> str:
-        positions = "".join(f"[{position}]" for position in self.index)
+        positions = "".join(f"[{position}]" for position in self.array_position)
         return f"{self.simulator_name}.{self.interface_name}{positions}"
 
     @property
@@ -44,13 +44,13 @@ class ResultColumn:
         own_name = self.name.lower() if ignore_case else self.name
         return own_name == name or own_name.startswith(f"{name}.") or own_name.startswith(f"{name}[")
 
-    def for_index(self, index: tuple[int, ...]) -> ResultColumn:
-        return replace(self, index=index)
+    def for_array_position(self, array_position: tuple[int, ...]) -> ResultColumn:
+        return replace(self, array_position=array_position)
 
 
-def numbers_by_index(value: InterfaceValue, index: tuple[int, ...] = ()) -> Iterator[tuple[tuple[int, ...], ColumnValue]]:
+def numbers_by_array_position(value: InterfaceValue, array_position: tuple[int, ...] = ()) -> Iterator[tuple[tuple[int, ...], ColumnValue]]:
     if isinstance(value, list):
         for position, item in enumerate(value):
-            yield from numbers_by_index(value=item, index=(*index, position))
+            yield from numbers_by_array_position(value=item, array_position=(*array_position, position))
         return
-    yield index, float(value) if isinstance(value, (int, float)) else None
+    yield array_position, float(value) if isinstance(value, (int, float)) else None

@@ -8,7 +8,7 @@ import pytest
 from ecosim_server.config.server_config import ServerConfig
 from ecosim_server.config.simulation_config import SimulationConfig
 from ecosim_server.data.repositories_db import RepositoriesDB
-from ecosim_server.results import read_database_results, read_results
+from ecosim_server.results import read_database_results, read_file_results
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from tests.results.stored_run import StoredRun
 from psycopg import sql
@@ -37,7 +37,7 @@ def test_the_database_gives_the_same_table_as_the_files(plain_cluster: PostgresT
 
     from_database = read_database_results(database=server_config.database, simulation_config=stored_run.simulation_config_file, include_inputs=True)
 
-    assert from_database == read_results(directory=tmp_path, include_inputs=True)
+    assert from_database == read_file_results(directory=tmp_path, include_inputs=True)
 
 
 def test_the_times_come_in_utc_whatever_time_zone_the_database_has(plain_cluster: PostgresTestCluster, tmp_path: Path) -> None:
@@ -49,7 +49,7 @@ def test_the_times_come_in_utc_whatever_time_zone_the_database_has(plain_cluster
 
     table = read_database_results(database=server_config.database, simulation_config=stored_run.simulation_config_file)
 
-    assert [time.isoformat() for time in table.times] == [StoredRun.time_of(step=0).isoformat()]
+    assert [time.isoformat() for time in table.simulation_times] == [StoredRun.time_of(step=0).isoformat()]
 
 
 def test_without_simulation_json_the_names_are_in_lower_case_and_the_inputs_still_known(
