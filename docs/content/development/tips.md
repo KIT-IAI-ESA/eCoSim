@@ -2,8 +2,7 @@
 
 We look for these in reviews, on top of the [coding guidelines](coding-guidelines.md) and the [testing](testing.md) page.
 
-These points also serve as instructions for coding assistants, so they go into more detail than a person needs. For
-day-to-day work, the main points are enough.
+These points also serve as instructions for coding assistants, so they go into more detail than a person needs.
 
 ## Names
 
@@ -11,12 +10,31 @@ day-to-day work, the main points are enough.
 - Drop words from a name that don't match the code, like `step` on a delay or `copy` on a test that copies nothing.
 - Name a side effect nobody would expect: `__pop_and_notify` rather than `__notify`, since it also removes the listener.
 - Give related names one pattern, like `<Behaviour>ShutdownListener`. A long name is fine if it shows the intent.
+- Name a function like its counterpart: `read_file_results` next to `read_database_results`.
+- Say which kind of value a name holds when it could be read two ways: `simulation_times`, not `times`, which could
+  also mean the wall clock, and `array_position`, not `index`.
+- No `a_xy` or `an_xy` names. Test helpers that build something are called `create_xy` or `generate_xy`.
 
 ## Comments and log messages
 
 - Use comments to say why, as in `# add before checking, so a shutdown starting right now cannot miss it`.
 - Delete (or rewrite) comments that repeat the code or only made sense for an older version of it.
 - Update comments and log messages along with the code, or they'll mislead the next person who debugs with them.
+- Give a class whose purpose isn't clear from its name a one-line docstring.
+- Log a warning when two options contradict each other and one of them gets ignored.
+
+## Classes and functions
+
+- A function that only one class uses goes into that class, as a private static method if it needs no instance.
+- Keep a method private unless another class calls it.
+- Make a return type as exact as the callers need, like `dict[str, Any]` for a JSON object file or `pandas.DataFrame`
+  instead of `Any`. Callers rely on it anyway, so it's hard to change later.
+- If something has to react to a shutdown, let it implement `ShutdownListener` and do the work in `on_app_shutdown`,
+  instead of adding a public close method or checking a shutdown flag.
+- Give every wait on a lock or an event a timeout, even a generous one, so a hanging step can't block forever.
+- Prefer a small fixed interface, like a `Protocol` that a model implements, over code that accepts any object and
+  inspects it.
+- A dev tool made of several files gets its own folder in `dev/`.
 
 ## Tests
 
@@ -80,7 +98,11 @@ class RaisingShutdownListener(ShutdownListener):
 ## Changes
 
 - When you can't tell what an approach might break, go with the less invasive one.
-- If a fix turns into a bigger behaviour change, open an issue so we can discuss it first.
+- Open an issue to discuss the design before you build a new big feature, and when a fix turns into a bigger behaviour
+  change.
+- Before you add another part to a big class like `Client`, check whether it can be a class of its own. Keep the
+  state small: one field that says something failed is enough when the log already has the details.
+- Most command line options should also be settable in the config files.
 - Run the [performance tests](testing.md#performance-tests) before merging a change that may cost performance,
   such as one in the main loop, so we can measure instead of guessing.
 - Remove code that looks unused in a pull request, so the review can spot an unfinished concept. If something
