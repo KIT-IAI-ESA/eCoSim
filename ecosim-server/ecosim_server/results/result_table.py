@@ -5,11 +5,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 from ecosim_common.tech.close_name import did_you_mean
 from ecosim_server.results.result_column import ColumnValue, ResultColumn
 from ecosim_server.simulation.state.simulation_state import SimulationState
+
+if TYPE_CHECKING:
+    import pandas
 
 
 @dataclass(frozen=True)
@@ -18,7 +21,7 @@ class ResultTable:
 
     columns: tuple[ResultColumn, ...]
     # the end of each step, in UTC from PostgreSQL
-    times: tuple[datetime, ...]
+    simulation_times: tuple[datetime, ...]
     rows: tuple[tuple[ColumnValue, ...], ...]
     state: SimulationState | None
     warnings: tuple[str, ...] = ()
@@ -42,35 +45,35 @@ class ResultTable:
         return self._with_positions(positions=self._positions_of(names=names))
 
     def matches(self, name: str) -> bool:
-        return bool(_positions_matching(columns=self.columns, name=name))
+        return bool(self._positions_matching(columns=self.columns, name=name))
 
     def write_csv(self, file: str | Path) -> None:
         with Path(file).open("w", encoding="utf-8", newline="") as stream:
             writer = csv.writer(stream, lineterminator="\n")
             writer.writerow(["time", *self.column_names()])
             # the csv module writes None as an empty cell
-            writer.writerows([time.isoformat(), *row] for time, row in zip(self.times, self.rows, strict=True))
+            writer.writerows([time.isoformat(), *row] for time, row in zip(self.simulation_times, self.rows, strict=True))
 
-    def to_data_frame(self) -> Any:
-        """Returns a pandas DataFrame with the times as index."""
+    def to_pandas_data_frame(self) -> pandas.DataFrame:
+        """Returns a pandas DataFrame with the simulation times as index."""
         try:
             import pandas
         except ImportError as error:
-            raise ImportError('to_data_frame needs pandas. Install it with: pip install "ecosim-server[pandas]"') from error
-        index = pandas.DatetimeIndex(data=list(self.times), name="time")
+            raise ImportError('to_pandas_data_frame needs pandas. Install it with: pip install "ecosim-server[pandas]"') from error
+        index = pandas.DatetimeIndex(data=list(self.simulation_times), name="time")
         return pandas.DataFrame(data=list(self.rows), index=index, columns=list(self.column_names()), dtype="float64")
 
     def _positions_of(self, names: Sequence[str]) -> list[int]:
         positions: list[int] = []
         for name in names:
-            matching = _positions_matching(columns=self.columns, name=name)
+            matching = self._positions_matching(columns=self.columns, name=name)
             if not matching:
                 raise ValueError(self._unknown_name_message(name=name))
             positions += [position for position in matching if position not in positions]
         return positions
 
     def _unknown_name_message(self, name: str) -> str:
-        if _positions_matching(columns=self._left_out_inputs, name=name):
+        if self._positions_matching(columns=self._left_out_inputs, name=name):
             return f"{name} is an input. Read the inputs with include_inputs=True."
         simulator_names = dict.fromkeys(column.simulator_name for column in self.columns)
         return f"The results have no column {name}.{did_you_mean(name=name, known_names=[*self.column_names(), *simulator_names])}"
@@ -82,8 +85,8 @@ class ResultTable:
             rows=tuple(tuple(row[position] for position in positions) for row in self.rows),
         )
 
-
-def _positions_matching(columns: Sequence[ResultColumn], name: str) -> list[int]:
-    exact = [position for position, column in enumerate(columns) if column.matches(name=name)]
-    # PostgreSQL stores the names in lower case
-    return exact or [position for position, column in enumerate(columns) if column.matches(name=name.lower(), ignore_case=True)]
+    @staticmethod
+    def _positions_matching(columns: Sequence[ResultColumn], name: str) -> list[int]:
+        exact = [position for position, column in enumerate(columns) if column.matches(name=name)]
+        # PostgreSQL stores the names in lower case
+        return exact or [position for position, column in enumerate(columns) if column.matches(name=name.lower(), ignore_case=True)]
