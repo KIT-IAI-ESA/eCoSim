@@ -62,10 +62,9 @@ class Client(ShutdownListener):
     _image_renderer_service: SimulationRendererService | None = field(default=None)
     # restored steps count too
     completed_steps: int = field(init=False, default=0)
-    failure_reason: str | None = field(init=False, default=None)
-    _reason_not_to_start: str | None = field(init=False, default=None)
+    # for the line at the end, like "failed in step 3"
+    _failure: str | None = field(init=False, default=None)
     _last_handled_message_type: MessageType | None = field(init=False, default=None)
-    _where_the_model_failed: str | None = field(init=False, default=None)
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
@@ -144,10 +143,8 @@ class Client(ShutdownListener):
         steps = readable_count(count=self.completed_steps, noun="step")
         if self._is_finished:
             return f"{self.client_id} finished after {steps}."
-        if self._reason_not_to_start is not None:
-            return f"{self.client_id} did not start the simulation. The error above says why."
-        if self._where_the_model_failed is not None:
-            return f"{self.client_id}: the model failed {self._where_the_model_failed}. The error above says why."
+        if self._failure is not None:
+            return f"{self.client_id} {self._failure}. The error above says why."
         return f"{self.client_id}: {self._why_the_connection_ended()}"
 
     def _why_the_connection_ended(self) -> str:
@@ -295,10 +292,10 @@ class Client(ShutdownListener):
         for line in mismatch.lines(fmc_file=self._client_config.simulator_config().fmc_file):
             Client.logger.warning("%s", line)
         self._execution_config.set_server_interface_settings(server_interface_settings)
-        self._reason_not_to_start = self._reason_the_model_cannot_run(server_interface_settings=server_interface_settings)
-        if self._reason_not_to_start is not None:
-            self.failure_reason = f"{self._reason_not_to_start} This client does not start the simulation."
-            Client.logger.error("%s", self.failure_reason)
+        reason = self._reason_the_model_cannot_run(server_interface_settings=server_interface_settings)
+        if reason is not None:
+            Client.logger.error("%s This client does not start the simulation.", reason)
+            self._failure = "did not start the simulation"
         self._channel.send(ESPChannelMessageJson.empty_answer(message))
 
     def _reason_the_model_cannot_run(self, server_interface_settings: ServerInterfaceSettings) -> str | None:
@@ -321,7 +318,7 @@ class Client(ShutdownListener):
         message: ESPChannelMessage,
     ) -> None:
         Client.logger.debug("Handling start simulation")
-        if self._reason_not_to_start is not None:
+        if self._failure is not None:
             # the server fails the run when a client closes the connection here
             self._channel.close()
             return
@@ -374,9 +371,8 @@ class Client(ShutdownListener):
             raise
 
     def _store_and_log_model_failure(self, where: str, error: Exception) -> None:
-        self._where_the_model_failed = where
-        self.failure_reason = f"{self.client_id}: the model failed {where}: {one_line_message_with_type(error=error)}"
-        Client.logger.error("%s", self.failure_reason)
+        Client.logger.error("%s: the model failed %s: %s", self.client_id, where, one_line_message_with_type(error=error))
+        self._failure = f"failed {where}"
 
     def _protocol_interface_value_to_dict(
         self,
