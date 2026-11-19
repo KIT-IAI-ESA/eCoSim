@@ -33,7 +33,7 @@ class StartValues:
 
     @staticmethod
     def of_texts(texts: dict[str, str], model_description: ModelDescription, input_names: list[str], fmu_file: Path) -> StartValues:
-        results = _start_values_or_problems(texts=texts, model_description=model_description, input_names=input_names)
+        results = StartValues._start_values_or_problems(texts=texts, model_description=model_description, input_names=input_names)
         problems = [f"  {name}: {result}" for name, result in results.items() if isinstance(result, str)]
         if problems:
             raise ValueError("\n".join([f"The FMU {fmu_file} cannot take these start values:", *problems]))
@@ -49,14 +49,17 @@ class StartValues:
     def as_lines(self) -> list[str]:
         return [start_value.as_line() for start_value in self.values]
 
+    @staticmethod
+    def _start_values_or_problems(texts: dict[str, str], model_description: ModelDescription, input_names: list[str]) -> dict[str, StartValue | str]:
+        variables = {variable.name: variable for variable in model_description.modelVariables}
+        return {
+            name: StartValues._start_value_or_problem(name=name, text=text, variables=variables, input_names=input_names)
+            for name, text in texts.items()
+        }
 
-def _start_values_or_problems(texts: dict[str, str], model_description: ModelDescription, input_names: list[str]) -> dict[str, StartValue | str]:
-    variables = {variable.name: variable for variable in model_description.modelVariables}
-    return {name: _start_value_or_problem(name=name, text=text, variables=variables, input_names=input_names) for name, text in texts.items()}
-
-
-def _start_value_or_problem(name: str, text: str, variables: dict[str, ModelVariable], input_names: list[str]) -> StartValue | str:
-    try:
-        return StartValue.of_text(name=name, text=text, variables=variables, input_names=input_names)
-    except ValueError as problem:
-        return str(problem)
+    @staticmethod
+    def _start_value_or_problem(name: str, text: str, variables: dict[str, ModelVariable], input_names: list[str]) -> StartValue | str:
+        try:
+            return StartValue.of_text(name=name, text=text, variables=variables, input_names=input_names)
+        except ValueError as problem:
+            return str(problem)

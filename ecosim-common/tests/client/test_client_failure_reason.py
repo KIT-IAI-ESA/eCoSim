@@ -21,7 +21,7 @@ def test_a_model_that_cannot_run_the_simulation_config_is_never_started_and_the_
 
     assert client.calls == []
     assert client.exit_code() == ShutdownManager.FAILED_RUN_EXIT_CODE
-    assert client.failure_reason == "The FMU house.fmu has no input T_outdoor. This client does not start the simulation."
+    assert "The FMU house.fmu has no input T_outdoor. This client does not start the simulation." in caplog.messages
     assert "house#house did not start the simulation. The error above says why." in caplog.messages
 
 
@@ -47,21 +47,21 @@ def test_a_client_rejected_after_its_interfaces_is_pointed_to_a_required_interfa
 
 
 def test_a_model_that_fails_at_the_start_is_reported_with_its_error(caplog: pytest.LogCaptureFixture) -> None:
-    client = SpySimulatorClient.of_ended_run(message_types=[MessageType.SIMULATION_START], initialize_fails=True)
+    SpySimulatorClient.of_ended_run(message_types=[MessageType.SIMULATION_START], initialize_fails=True)
 
-    assert client.failure_reason == "house#house: the model failed at the start of the simulation: RuntimeError: initialize failed"
-    assert "house#house: the model failed at the start of the simulation. The error above says why." in caplog.messages
+    assert "house#house: the model failed at the start of the simulation: RuntimeError: initialize failed" in caplog.messages
+    assert "house#house failed at the start of the simulation. The error above says why." in caplog.messages
 
 
 def test_a_model_that_fails_in_its_second_step_is_reported_with_step_1_and_its_error(caplog: pytest.LogCaptureFixture) -> None:
-    client = SpySimulatorClient.of_ended_run(
+    SpySimulatorClient.of_ended_run(
         message_types=[MessageType.SIMULATION_START, *[MessageType.SIMULATION_STEP] * 3],
         payloads={MessageType.SIMULATION_STEP: SimulationStepRequest(step=0, inputs=[])},
         failing_step=1,
     )
 
-    assert client.failure_reason == "house#house: the model failed in step 1: RuntimeError: step failed"
-    assert "house#house: the model failed in step 1. The error above says why." in caplog.messages
+    assert "house#house: the model failed in step 1: RuntimeError: step failed" in caplog.messages
+    assert "house#house failed in step 1. The error above says why." in caplog.messages
 
 
 def test_a_server_that_closes_after_the_start_says_the_run_ended_at_the_start(caplog: pytest.LogCaptureFixture) -> None:
