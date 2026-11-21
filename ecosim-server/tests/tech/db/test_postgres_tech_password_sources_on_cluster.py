@@ -2,10 +2,8 @@ import pytest
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from sqlalchemy.exc import OperationalError
 from tests.tech.db.password_sources import ALL_SOURCES, PASSWORD, PasswordSources, SetPassword
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 from tests.tech.db.special_passwords import PASSWORD_PARTS, PASSWORD_WITH_PARTS, SPECIAL_PASSWORDS
-
-pytestmark = skip_in_ci
 
 MAINTENANCE_DATABASE = "postgres"
 

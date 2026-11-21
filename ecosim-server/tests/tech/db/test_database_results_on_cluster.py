@@ -12,9 +12,7 @@ from ecosim_server.results import read_database_results, read_file_results
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from tests.results.stored_run import StoredRun
 from psycopg import sql
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 
 def write_database(stored_run: StoredRun, server_config: ServerConfig, steps: int) -> None:

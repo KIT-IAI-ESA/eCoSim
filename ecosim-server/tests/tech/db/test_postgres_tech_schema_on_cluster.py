@@ -5,9 +5,7 @@ from ecosim_server.data.repositories_db import RepositoriesDB
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from psycopg import sql
 from tests.data.generate_postgres_name_config import generate_simulation_config
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 TABLE_QUERY = "SELECT 1 FROM information_schema.tables WHERE table_schema = 'sim_control' AND table_name = %s"
 

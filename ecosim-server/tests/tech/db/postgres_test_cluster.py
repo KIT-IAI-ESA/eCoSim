@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import psycopg
-import pytest
 from ecosim_server.config.server_config import ServerConfig
 from psycopg import sql
 from tests.data.generate_server_config import generate_server_config
@@ -19,11 +17,6 @@ from tests.tech.db.postgres_test_process import (
     free_port,
     start_postgres,
     stop_postgres,
-)
-
-skip_in_ci = pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Skipped in CI pipeline because it starts a postgres cluster",
 )
 
 

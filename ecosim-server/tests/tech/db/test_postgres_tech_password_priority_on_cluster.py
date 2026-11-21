@@ -2,9 +2,7 @@ import pytest
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from sqlalchemy.exc import OperationalError
 from tests.tech.db.password_sources import ALL_SOURCES, PASSWORD, WRONG_PASSWORD, PasswordSources, SetPassword
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 
 @pytest.mark.parametrize("set_source", ALL_SOURCES)

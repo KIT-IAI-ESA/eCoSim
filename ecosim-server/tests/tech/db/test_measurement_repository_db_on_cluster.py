@@ -6,9 +6,7 @@ from ecosim_common.communication.data.protocol_interface_value import ProtocolIn
 from ecosim_common.config.interface_type import InterfaceType
 from ecosim_server.data.repositories_db import RepositoriesDB
 from tests.data.generate_postgres_name_config import generate_client_simulator_config, generate_simulation_config
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 
 def test_remove_starting_at_keeps_only_the_earlier_measurements(plain_cluster: PostgresTestCluster) -> None:
