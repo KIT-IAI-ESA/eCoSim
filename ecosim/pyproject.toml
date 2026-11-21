@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "ecosim"
 version = "0.14.0"
 description = "The ecosim command to write, check and run a simulation locally"
+maintainers = [
+    { name = "eASiMOV", email = "easimov@iai.kit.edu" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -81,9 +84,6 @@ addopts = [
 [tool.coverage.run]
 source = ["ecosim"]
 omit = ["*/tests/*"]
-
-[tool.coverage.report]
-exclude_lines = []
 
 [tool.mypy]
 mypy_path = [

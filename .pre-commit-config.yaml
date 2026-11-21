@@ -155,8 +155,6 @@ repos:
     hooks:
       - id: validate-pyproject
         files: (^|/)pyproject\.toml$
-        # the client classifiers are fixed with the client rework
-        exclude: ^ecosim-client-(fmu-v2|fmu-v3|matlab|pyro5)/
 
   - repo: https://github.com/betterleaks/betterleaks
     rev: v1.10.0
