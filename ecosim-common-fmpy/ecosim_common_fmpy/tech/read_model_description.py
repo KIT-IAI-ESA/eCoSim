@@ -3,7 +3,7 @@ from pathlib import Path
 import fmpy
 from fmpy.model_description import ModelDescription
 
-from ecosim_common_fmpy.tech.fix_lmxl_threading_issues import PROCESS_LXML_THREADING_FIX, LxmlThreadingFix
+from ecosim_common_fmpy.tech.fix_lxml_threading_issues import PROCESS_LXML_THREADING_FIX, LxmlThreadingFix
 
 
 def read_model_description(

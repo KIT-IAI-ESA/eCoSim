@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import override
 
-from ecosim_common_fmpy.tech.fix_lmxl_threading_issues import LxmlThreadingFix
+from ecosim_common_fmpy.tech.fix_lxml_threading_issues import LxmlThreadingFix
 
 
 @dataclass
