@@ -37,10 +37,7 @@ class PyroClient(SimulatorClient):
         )
 
     @override
-    def _on_initialize_model(
-        self,
-        start_time: float = 0.0,
-    ) -> None:
+    def _on_initialize_model(self) -> None:
         self._simulation_object._pyroClaimOwnership()
         with self._log_model_traceback_on_error(method_name="initialize"):
             self._output_dict = self._simulation_object.initialize()

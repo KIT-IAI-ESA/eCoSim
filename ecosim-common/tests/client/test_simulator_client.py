@@ -16,7 +16,7 @@ def test_initializes_the_model_only_once() -> None:
     client.on_simulation_start()
     client.on_simulation_start()
 
-    assert client.calls == ["initialize at 0.0"]
+    assert client.calls == ["initialize"]
 
 
 def test_clears_the_model_only_once() -> None:

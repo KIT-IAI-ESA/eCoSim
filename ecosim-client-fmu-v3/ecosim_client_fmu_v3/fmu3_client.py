@@ -44,13 +44,10 @@ class FMU3Client(SimulatorClient):
         )
 
     @override
-    def _on_initialize_model(
-        self,
-        start_time: float = 0.0,
-    ) -> None:
+    def _on_initialize_model(self) -> None:
         self._fmu_instance.instantiate()
         self._simulation_config.start_values.set_on(self._fmu_instance)
-        self._fmu_instance.enterInitializationMode(startTime=start_time)
+        self._fmu_instance.enterInitializationMode()
         self._fmu_instance.exitInitializationMode()
 
     @override

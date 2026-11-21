@@ -34,27 +34,20 @@ class SimulatorClient(Client, ABC):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-    def _initialize_model(self, start_time: float = 0.0) -> None:
+    def _initialize_model(self) -> None:
         if self._is_initialized:
             self.logger.warning("Already initialized, skipping initialization.")
             return
         self.logger.info("Initializing the model of %s", self.client_id)
-        self.logger.debug("Initializing with start_time %s", start_time)
-        self._current_simulation_time = start_time
-        self._on_initialize_model(start_time)
+        self._on_initialize_model()
         self._is_initialized = True
         self.logger.debug("Initializing... finished.")
 
     @override
     def on_simulation_start(self) -> ClientSimStepData:
-        """
-        In theory, we can have a start_time != 0.0. The current protocol does not support it, but the foundation is already laid.
-        To implement it, we need to adapt the SIMULATION_START message to contain a corresponding parameter. We also need to
-        check all clients, if they handle the start_time correctly (e.g. the MatLab and Pyro clients currently ignore it).
-        """
         with self._model_lock:
             self._ensure_not_cleared()
-            self._initialize_model(start_time=0.0)
+            self._initialize_model()
             return self._server_used_output_values()
 
     @override
@@ -80,7 +73,7 @@ class SimulatorClient(Client, ABC):
         pass
 
     @abstractmethod
-    def _on_initialize_model(self, start_time: float) -> None:
+    def _on_initialize_model(self) -> None:
         pass
 
     def _server_used_output_values(self) -> ClientSimStepData:

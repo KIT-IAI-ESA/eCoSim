@@ -70,8 +70,8 @@ class SpySimulatorClient(SimulatorClient):
         return self.model_problem
 
     @override
-    def _on_initialize_model(self, start_time: float) -> None:
-        self.calls.append(f"initialize at {start_time}")
+    def _on_initialize_model(self) -> None:
+        self.calls.append("initialize")
         if self.initialize_fails:
             raise RuntimeError("initialize failed")
 

@@ -42,10 +42,7 @@ class MatlabClient(SimulatorClient):
         return self._matlab_engine_or_none
 
     @override
-    def _on_initialize_model(
-        self,
-        start_time: float = 0.0,
-    ) -> None:
+    def _on_initialize_model(self) -> None:
         self._matlab_engine_or_none = self._start_matlab()
         self._matlab_engine.addpath(str(self._matlab_config.folder_path))
         self._run_script(script=self._matlab_engine.setup)

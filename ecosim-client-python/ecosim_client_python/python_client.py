@@ -31,10 +31,7 @@ class PythonClient(SimulatorClient):
         return PythonClient(_client_config=client_config, _model=create_model(config=python_config))
 
     @override
-    def _on_initialize_model(
-        self,
-        start_time: float = 0.0,
-    ) -> None:
+    def _on_initialize_model(self) -> None:
         self._outputs = self._model.initialize()
 
     @override
