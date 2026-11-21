@@ -1,4 +1,7 @@
+import signal
 import socket
+import sys
+import threading
 
 import pytest
 
@@ -38,3 +41,29 @@ def test_a_stuck_accept_loop_does_not_hold_up_close(address: ConnectionAddress, 
     stuck_listener.close()
 
     assert stuck_listener.is_listening_on_connection_event().is_set()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="signal.pthread_kill does not exist on Windows")
+def test_wait_for_finish_runs_the_handler_of_a_signal_that_another_thread_caught(address: ConnectionAddress) -> None:
+    with socket.socket() as internal_socket:
+        channel = TCPSocket(_internal_socket=internal_socket, _connection_address=address)
+        closed_without_the_handler = threading.Event()
+
+        def close_without_the_handler() -> None:
+            closed_without_the_handler.set()
+            channel.close()
+
+        previous_handler = signal.signal(signal.SIGUSR1, lambda signal_number, frame: channel.close())
+        # to the timer's own thread, and a moment later so that the main thread already waits
+        signal_sender = threading.Timer(interval=0.2, function=lambda: signal.pthread_kill(threading.get_ident(), signal.SIGUSR1))
+        fallback = threading.Timer(interval=WAIT_TIMEOUT_IN_SECONDS, function=close_without_the_handler)
+        signal_sender.start()
+        fallback.start()
+        try:
+            channel.wait_for_finish()
+        finally:
+            fallback.cancel()
+            signal_sender.join()
+            signal.signal(signal.SIGUSR1, previous_handler)
+
+    assert not closed_without_the_handler.is_set()

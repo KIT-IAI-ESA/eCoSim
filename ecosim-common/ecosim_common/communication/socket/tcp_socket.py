@@ -313,4 +313,6 @@ class TCPSocket(ESPChannel, ShutdownListener):
 
     @override
     def wait_for_finish(self) -> None:
-        self._closed.wait()
+        # short waits, so a signal that another thread caught still gets its handler run on this thread
+        while not self._closed.wait(timeout=1):
+            pass
