@@ -12,7 +12,7 @@ from ecosim_common.communication.socket.tcp_socket import TCPSocket
 from ecosim_test_common.bounded_listen import listen_blocking_bounded
 from ecosim_test_common.bounded_wait import finishes_in_time
 from ecosim_test_common.timeouts import SHORT_TIMEOUT_IN_SECONDS, WAIT_TIMEOUT_IN_SECONDS
-from tests.communication.channel_test_setup import ADDRESS, RaisingMessageHandler, dask_channel_pair, simple_message
+from tests.communication.channel_test_setup import ADDRESS, ClosingEchoHandler, RaisingMessageHandler, dask_channel_pair, simple_message
 
 
 @contextmanager
@@ -78,6 +78,21 @@ def test_the_swallowed_error_of_a_handler_is_logged_with_its_traceback_with_debu
     caplog.set_level(logging.DEBUG)
 
     assert "Traceback" in _log_of_a_raising_handler(channel_and_peer=channel_and_peer, caplog=caplog)
+
+
+def test_an_answer_that_fails_after_close_is_not_logged_as_an_error(caplog: pytest.LogCaptureFixture) -> None:
+    with _connected_sockets() as (connector, listener):
+        channel = TCPSocket(_internal_socket=connector, _connection_address=ADDRESS)
+        peer = TCPSocket(_internal_socket=listener, _connection_address=ADDRESS)
+        handler = ClosingEchoHandler(channel=channel)
+        channel.listen_on_message_async(on_message=handler)
+
+        peer.send(simple_message())
+
+        listen_thread = handler.listen_threads.get(timeout=WAIT_TIMEOUT_IN_SECONDS)
+        assert finishes_in_time(blocking_call=listen_thread.join)
+        peer.close()
+    assert [record.getMessage() for record in caplog.records if record.levelno >= logging.ERROR] == []
 
 
 def test_a_receive_timeout_raises_and_leaves_the_channel_usable(channel_and_peer: tuple[ESPChannel, ESPChannel]) -> None:

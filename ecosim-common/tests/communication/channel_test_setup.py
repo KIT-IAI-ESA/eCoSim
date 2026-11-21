@@ -1,3 +1,4 @@
+import queue
 import threading
 import time
 from dataclasses import dataclass, field
@@ -35,6 +36,19 @@ class SlowEchoHandler:
 
     def __call__(self, message: ESPChannelMessage) -> None:
         time.sleep(self.delay_in_seconds)
+        self.channel.send(message)
+
+
+@dataclass
+class ClosingEchoHandler:
+    """Closes the channel before it answers, like a step that finishes after Ctrl-C."""
+
+    channel: ESPChannel
+    listen_threads: queue.Queue[threading.Thread] = field(default_factory=queue.Queue)
+
+    def __call__(self, message: ESPChannelMessage) -> None:
+        self.listen_threads.put(threading.current_thread())
+        self.channel.close()
         self.channel.send(message)
 
 

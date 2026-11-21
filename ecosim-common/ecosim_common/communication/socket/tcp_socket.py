@@ -207,6 +207,10 @@ class TCPSocket(ESPChannel, ShutdownListener):
                 if message is not None:
                     on_message(message)
         except Exception as error:
+            # after close(), as on Ctrl-C, a running step cannot send its answer, which is no error
+            if self._closed.is_set():
+                TCPSocket._logger.info("Receive loop on %s ended, the channel was closed.", self._connection_address)
+                return
             TCPSocket._logger.exception("Receive loop on %s failed, closing the channel: %s", self._connection_address, one_line_message(error=error))
         finally:
             self._listening.clear()
