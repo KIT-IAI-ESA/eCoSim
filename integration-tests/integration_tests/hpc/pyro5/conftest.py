@@ -34,14 +34,17 @@ def dask_cluster(request: pytest.FixtureRequest) -> dd.Client:
 
 
 @pytest.fixture
-def dask_cluster_on_nodes(request: pytest.FixtureRequest) -> dd.Client:
+def dask_cluster_on_nodes(request: pytest.FixtureRequest) -> Generator[dd.Client, Any, None]:
     """One worker per node, with the threads an indirect parametrization passes as {node IP: threads}; 2 by default.
 
-    The teardown hook of ecosim-test-common closes the client and the cluster.
+    It closes the cluster itself, as a client leaves a cluster it was handed open.
     """
     threads_by_node_ip: dict[str, int] = getattr(request, "param", {ip: 2 for ip in WORKER_NODE_IPS})
-    cluster = dd.SpecCluster(
-        scheduler={"cls": dd.Scheduler, "options": {"host": SCHEDULER_NODE_IP, "dashboard_address": ":0"}},
-        workers={ip: {"cls": dd.Nanny, "options": {"host": ip, "nthreads": threads}} for ip, threads in threads_by_node_ip.items()},
-    )
-    return dd.Client(cluster)
+    with (
+        dd.SpecCluster(
+            scheduler={"cls": dd.Scheduler, "options": {"host": SCHEDULER_NODE_IP, "dashboard_address": ":0"}},
+            workers={ip: {"cls": dd.Nanny, "options": {"host": ip, "nthreads": threads}} for ip, threads in threads_by_node_ip.items()},
+        ) as cluster,
+        dd.Client(cluster) as client,
+    ):
+        yield client
