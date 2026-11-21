@@ -46,7 +46,8 @@ ignore_missing_imports = true
 
 ## Updates from Dependabot
 
-Dependabot opens one grouped pull request a week for the GitHub Actions, as set in `.github/dependabot.yml`.
+Dependabot opens one grouped pull request a week for the GitHub Actions and one a month for the packages of
+the docs site in `docs/`, as set in `.github/dependabot.yml`.
 The Python packages are updated by hand for now: the same exact pins appear in several subprojects, and
 Dependabot updates one directory at a time, so its updates can't be resolved.
 
