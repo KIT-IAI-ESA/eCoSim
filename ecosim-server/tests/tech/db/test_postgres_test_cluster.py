@@ -5,10 +5,8 @@ from typing import Any, Generator
 
 import pytest
 from tests.tech.db import postgres_test_process
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 from tests.tech.db.postgres_test_process import run_command, stop_postgres
-
-pytestmark = skip_in_ci
 
 
 def _is_running(process_id: int) -> bool:

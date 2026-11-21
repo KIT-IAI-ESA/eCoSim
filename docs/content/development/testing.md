@@ -22,7 +22,7 @@
 | `ecosim-client-pyro5`, `ecosim-test-common` | none |
 
 `ecosim-server/tests/tech/db/` starts its own throwaway PostgreSQL clusters on a free port if `initdb`
-is installed. Without `initdb`, and in CI, those tests are skipped.
+is installed, as it is on the Ubuntu runners of GitHub. Without `initdb`, those tests are skipped.
 
 Mark a test that loads an FMU with `@skip_unless_fmpy_loads(fmu_file)` from `ecosim_test_common/fmpy_platform.py`,
 so it is skipped where fmpy cannot load the FMU's binary. For the house FMUs, use

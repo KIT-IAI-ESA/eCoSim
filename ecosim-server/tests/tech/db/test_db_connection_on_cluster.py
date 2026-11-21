@@ -7,9 +7,7 @@ from ecosim_server.tech.db.postgres_tech import PostgresTech
 from ecosim_server.tech.db.server_time_measurement_repository_db import ServerTimeMeasurementDBEntry
 from psycopg import sql
 from tests.data.generate_postgres_name_config import generate_client_simulator_config, generate_simulation_config
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 SCHEMA = "configured_schema"
 

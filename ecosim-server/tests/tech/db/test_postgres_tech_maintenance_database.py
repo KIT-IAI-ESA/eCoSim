@@ -7,9 +7,7 @@ from ecosim_server.tech.db import postgres_tech
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 MAINTENANCE_DATABASE = "postgres"
 PASSWORD = "role_password"

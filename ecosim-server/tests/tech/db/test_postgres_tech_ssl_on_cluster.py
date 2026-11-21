@@ -6,9 +6,7 @@ from ecosim_server.config.server_config import DatabaseConfig
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from sqlalchemy import URL, create_engine, text
 from sqlalchemy.exc import OperationalError
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
-
-pytestmark = skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 
 
 def _is_encrypted(url: URL) -> bool:
