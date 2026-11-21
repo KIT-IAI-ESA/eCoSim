@@ -268,7 +268,7 @@ class ClientInterfaceConfig:
         input_interfaces = fmc_json.get("inputs", [])
         output_interfaces = fmc_json.get("outputs", [])
         for input_interface in input_interfaces:
-            if not input_interface["name"]:
+            if not input_interface.get("name"):
                 ClientConfig.logger.warning("There is an input interface without a name in file %s: %s", fmc_file_absolute, input_interface)
                 continue
             interfaces.append(
@@ -281,7 +281,11 @@ class ClientInterfaceConfig:
                     interface_type=InterfaceType.INPUT,
                 ),
             )
-        for output_interface in output_interfaces:
+        for index, output_interface in enumerate(output_interfaces):
+            if not output_interface.get("name"):
+                message = f"{fmc_file_absolute}: the output at index {index} has no name."
+                ClientConfig.logger.error("%s", message)
+                raise ValueError(message)
             interfaces.append(
                 ModelInterfaceClient.of_json_client_config(
                     model_interface_id=ModelInterfaceId(
@@ -292,9 +296,6 @@ class ClientInterfaceConfig:
                     interface_type=InterfaceType.OUTPUT,
                 ),
             )
-            if not output_interface["name"]:
-                ClientConfig.logger.warning("There is an output interface without a name in file %s: %s", fmc_file_absolute, output_interface)
-                continue
         return ClientInterfaceConfig(interfaces=interfaces)
 
     def all_interfaces_to_protocol_json_string(self) -> str:

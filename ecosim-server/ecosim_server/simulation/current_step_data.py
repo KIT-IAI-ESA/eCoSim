@@ -128,6 +128,19 @@ class CurrentStepData:
             result[client_id] = [interface_data_entry.interface_value.to_immutable() for interface_data_entry in client_data.interface_data]
         return result
 
+    def waiting_inputs(self) -> List[SimulatorInterfaceId]:
+        data_by_client = self._data_by_client.get_snapshot()
+        return [
+            SimulatorInterfaceId(
+                simulator_name=client_id.simulator_name,
+                model_interface_id=ModelInterfaceId(model_name=client_id.model_name, interface=interface_data_entry.interface_value.name),
+            )
+            for client_id, client_data in data_by_client.items()
+            if not client_data.executed
+            for interface_data_entry in client_data.interface_data
+            if interface_data_entry.interface_value.value is None
+        ]
+
     def add_received_data(
         self,
         client_id_sender: ClientID,

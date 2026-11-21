@@ -334,9 +334,11 @@ class SimulationExecutor:
     ) -> None:
         while not self._current_step_data.all_clients_executed():
             if not self._execute_possible_parts("Periodic possible parts execution", subscription):
+                waiting_inputs = ", ".join(str(waiting_input) for waiting_input in self._current_step_data.waiting_inputs())
                 raise RuntimeError(
                     f"Step {self._current_step}: no client is ready for execution but the step is not complete. "
-                    + "This means the clients wait for each other - check the interface connections for a cycle.",
+                    + f"These inputs still wait for a value: {waiting_inputs}. Either the clients wait for each other - check the interface "
+                    + "connections for a cycle - or a client sent no value for an output they are connected to.",
                 )
 
     def _execute_logical_delays(self) -> None:

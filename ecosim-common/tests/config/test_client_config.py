@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -129,6 +130,17 @@ def test_an_fmc_file_that_is_not_json_shows_the_file(tmp_path: Path) -> None:
         ClientInterfaceConfig.of_simulator_config(simulator_config=_simulator_config_with_fmc_file(fmc_file="house.fmc"), config_path=tmp_path)
 
     assert str(error_info.value).startswith(f"{fmc_file} is not valid JSON")
+
+
+@pytest.mark.parametrize("unnamed_output", [{"unit": "W"}, {"name": ""}], ids=["missing name", "empty name"])
+def test_an_output_without_a_name_shows_the_file_and_the_output(tmp_path: Path, unnamed_output: dict[str, str]) -> None:
+    fmc_file = tmp_path / "house.fmc"
+    fmc_file.write_text(json.dumps({"outputs": [{"name": "T_indoor"}, unnamed_output]}), encoding="utf-8")
+
+    with pytest.raises(ValueError) as error_info:
+        ClientInterfaceConfig.of_simulator_config(simulator_config=_simulator_config_with_fmc_file(fmc_file="house.fmc"), config_path=tmp_path)
+
+    assert str(error_info.value) == f"{fmc_file}: the output at index 1 has no name."
 
 
 def test_as_config_file_content() -> None:

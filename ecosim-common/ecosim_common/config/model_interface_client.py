@@ -22,12 +22,9 @@ class ModelInterfaceClient:
         interface: dict[str, Any],
         interface_type: InterfaceType,
     ) -> "ModelInterfaceClient":
-        interface_name = interface.get("name")
-        if not interface_name:
-            raise RuntimeError(f"Interface name not found: {interface}")
         return ModelInterfaceClient(
             model_interface_id=model_interface_id,
-            name=interface_name,
+            name=model_interface_id.interface,
             unit=interface.get("unit"),
             description=interface.get("description") or "",
             type=interface_type,
