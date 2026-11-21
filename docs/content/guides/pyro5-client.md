@@ -99,7 +99,8 @@ makes sure the client reaches the object:
 - several Pyro objects on one host use different ports
 
 `ecosim run` starts the Pyro5 client, not the Pyro object. `ecosim check` warns when nothing listens on
-`pyro_host` and `pyro_port` yet, see [Run a simulation](run-a-simulation.md).
+`pyro_host` and `pyro_port` yet, see [Run a simulation](run-a-simulation.md). A client that cannot reach the Pyro
+object, or loses it during the run, stops with an error that names its ini file, `pyro_host` and `pyro_port`.
 
 A Pyro object started on `localhost` only answers on `localhost`, not on the IP address of its machine.
 `localhost` as `pyro_host` only works if the client runs on the same machine as the Pyro object. On an HPC

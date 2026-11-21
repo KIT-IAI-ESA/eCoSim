@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 import Pyro5.api
+import Pyro5.errors
 from ecosim_common.client.config.client_config import ClientConfigOverride, SimpleClientConfig
 from ecosim_common.client.simulator_client import SimulatorClient
 from ecosim_common.communication.channel.esp_channel_message import ESPChannelMessage
@@ -39,7 +40,7 @@ class PyroClient(SimulatorClient):
     @override
     def _on_initialize_model(self) -> None:
         self._simulation_object._pyroClaimOwnership()
-        with self._log_model_traceback_on_error(method_name="initialize"):
+        with self._log_model_traceback_on_error(method_name="initialize"), self._name_the_ini_keys_on_connection_error():
             self._output_dict = self._simulation_object.initialize()
 
     @override
@@ -80,7 +81,7 @@ class PyroClient(SimulatorClient):
         self,
         step_size_in_seconds: float,
     ) -> None:
-        with self._log_model_traceback_on_error(method_name="do_step"):
+        with self._log_model_traceback_on_error(method_name="do_step"), self._name_the_ini_keys_on_connection_error():
             self._output_dict = self._simulation_object.do_step(self._input_dict)
 
     @override
@@ -90,8 +91,16 @@ class PyroClient(SimulatorClient):
             return
         self._simulation_object._pyroClaimOwnership()
         self.logger.debug("        ->> terminating instance...")
-        with self._log_model_traceback_on_error(method_name="clear"):
-            self._simulation_object.clear()
+        try:
+            with self._log_model_traceback_on_error(method_name="clear"):
+                self._simulation_object.clear()
+        except Pyro5.errors.CommunicationError:
+            self.logger.warning(
+                "%s: the Pyro5 object on pyro_host %s and pyro_port %s is not reachable, so it was not cleared.",
+                self._pyro_config.config_file,
+                self._pyro_config.host,
+                self._pyro_config.port,
+            )
 
     @contextmanager
     def _log_model_traceback_on_error(
@@ -106,3 +115,22 @@ class PyroClient(SimulatorClient):
             if model_traceback:
                 self.logger.error("The Pyro model failed in %s():\n%s", method_name, "".join(model_traceback))
             raise
+
+    @contextmanager
+    def _name_the_ini_keys_on_connection_error(self) -> Iterator[None]:
+        config_file = self._pyro_config.config_file
+        address = f"pyro_host {self._pyro_config.host} and pyro_port {self._pyro_config.port}"
+        try:
+            yield
+        except Pyro5.errors.ConnectionClosedError as error:
+            raise ConnectionError(
+                f"{config_file}: lost the connection to the Pyro5 object on {address}. The Pyro5 object has to run until the simulation ends.",
+            ) from error
+        except Pyro5.errors.CommunicationError as error:
+            # only a failed connect has an OSError behind it, a wrong pyro_object_name does not
+            if not isinstance(error.__cause__, OSError):
+                raise
+            raise ConnectionError(
+                f"{config_file}: nothing listens on {address}. Start the Pyro5 object before the run. "
+                + "If it runs already, set pyro_host and pyro_port to the address it listens on.",
+            ) from error
