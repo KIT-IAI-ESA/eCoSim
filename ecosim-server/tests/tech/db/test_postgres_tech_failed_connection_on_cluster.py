@@ -4,10 +4,8 @@ import pytest
 from ecosim_server.tech.db.postgres_tech import PostgresTech
 from psycopg import sql
 from sqlalchemy.exc import OperationalError
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 from tests.tech.db.postgres_test_process import ROLE_THAT_DOES_NOT_EXIST
-
-pytestmark = skip_in_ci
 
 MAINTENANCE_DATABASE = "postgres"
 PASSWORD = "role_password"

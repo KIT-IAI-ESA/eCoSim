@@ -8,11 +8,9 @@ from ecosim_server.tech.db.postgres_tech import PostgresTech
 from psycopg import sql
 from sqlalchemy.exc import OperationalError
 from tests.data.generate_server_config import write_server_config_file
-from tests.tech.db.postgres_test_cluster import PostgresTestCluster, skip_in_ci
+from tests.tech.db.postgres_test_cluster import PostgresTestCluster
 from tests.tech.db.postgres_test_process import HOST
 from tests.tech.db.special_passwords import PASSWORD_PARTS, PASSWORD_WITH_PARTS, SPECIAL_PASSWORDS
-
-pytestmark = skip_in_ci
 
 
 def _unique_name() -> str:

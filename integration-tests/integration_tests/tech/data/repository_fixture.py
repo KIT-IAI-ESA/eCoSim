@@ -24,16 +24,7 @@ def repository_postgres_container() -> Generator[PostgresContainer, Any, None]:
 
 @pytest.fixture(
     scope="function",
-    params=[
-        DatabaseType.FILE,
-        pytest.param(
-            DatabaseType.POSTGRES,
-            marks=pytest.mark.skipif(
-                os.environ.get("CI") == "true",  # gitlab sets 'CI' and 'GITLAB_CI' true by default
-                reason="Skipped in CI pipeline because it starts a postgres container",
-            ),
-        ),
-    ],
+    params=[DatabaseType.FILE, DatabaseType.POSTGRES],
     ids=lambda database_type: cast(DatabaseType, database_type).value,
 )
 def database_config(
