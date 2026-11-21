@@ -41,8 +41,8 @@ jobs:
           path: docs/build
 
   deploy:
-    # the organization's plan has no GitHub Pages for private repositories
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !github.event.repository.private
+    # off until the legal pages of the docs are ready (#26) and GitHub Pages is on
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_DOCS == 'true'
     needs: [ docs-reference, docs-build ]
     runs-on: ubuntu-latest
     permissions:

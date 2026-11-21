@@ -46,4 +46,4 @@ With `--check`, both scripts only compare and fail if the page is out of date. C
 ### Publishing
 
 The workflow `.github/workflows/docs.yml` builds the site for every pull request and every push to
-`main`, and publishes `main` to GitHub Pages.
+`main`. It publishes `main` to GitHub Pages when the repository variable `DEPLOY_DOCS` is `true`.
