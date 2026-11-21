@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -57,3 +58,11 @@ class ScriptedOutputsModel:
 
     def clear(self) -> None:
         self.clear_calls += 1
+
+
+@dataclass
+class NeverLoadedModel:
+    """Its creation takes an hour, so its client neither connects nor fails during a test."""
+
+    def __post_init__(self) -> None:
+        time.sleep(3600)
