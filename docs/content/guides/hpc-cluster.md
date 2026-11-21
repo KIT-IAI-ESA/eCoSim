@@ -55,10 +55,10 @@ Two FMUs or model files of different kinds in one folder stop the job before any
 4. Run it: `bash clusterSetup.sh`
 5. Edit `ECOSIM_DIR` in `clusterRunHPC.sh` as well.
 6. If an FMU simulator has a `[start_values]` section, check it on the login node now. A client that
-   cannot start on its worker does not stop the job. The server waits for it until the job runs out of
-   time. A typo in a start value is enough for that. First run the lines of `clusterRunHPC.sh` from
-   `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the environment of the job. In
-   `building_hpc/Executable`:
+   cannot start on its worker stops the job with an error that names the client, but only after the job
+   has waited in the queue. A typo in a start value is enough for that. First run the lines of
+   `clusterRunHPC.sh` from `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the
+   environment of the job. In `building_hpc/Executable`:
 
    ```shell
    uv run ecosim-client-fmu-v2 --config-file ../modules/house/preferences.ini --validate-fmu-file-only

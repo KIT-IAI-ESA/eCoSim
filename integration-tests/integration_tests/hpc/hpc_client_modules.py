@@ -75,6 +75,14 @@ def write_python_module_without_its_model(simulator_dir: Path) -> ClientID:
     return ClientID(model_name=directory.name, simulator_name=ClientKind.PYTHON.value)
 
 
+def write_python_module_that_never_loads(simulator_dir: Path) -> ClientID:
+    directory = simulator_dir / "never_loaded_python_model"
+    directory.mkdir()
+    model = "ecosim_test_common.test_data.python_models:NeverLoadedModel"
+    _script_module(directory=directory, client_type="python", scripts=[], extra_sections={"python": {"model": model}})
+    return ClientID(model_name=directory.name, simulator_name=ClientKind.PYTHON.value)
+
+
 def write_broken_fmu2_module(simulator_dir: Path) -> ClientID:
     directory = simulator_dir / "broken_fmu2_model"
     directory.mkdir()
