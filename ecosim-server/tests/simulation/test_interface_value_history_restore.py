@@ -7,7 +7,7 @@ from ecosim_common.communication.data.simulation_step_batch_request import Simul
 from ecosim_common.config.client_id import ClientID
 from ecosim_server.config.simulation_config import ClientSimulatorConfig
 from ecosim_server.simulation.restore_data import RestoreData
-from tests.simulation.history_test_setup import RecordingRepositories, history, simulation_config
+from tests.simulation.history_test_setup import RecordingRepositories, TransactionCountingEntries, history, simulation_config
 
 
 def test_an_incomplete_newest_row_is_not_replayed() -> None:
@@ -30,6 +30,19 @@ def test_a_client_without_a_stored_step_restarts_the_run_at_step_0() -> None:
     restore_data = _restore_data(repositories=repositories)
 
     assert restore_data == RestoreData(current_step=0, client_restore_data={client.client_id: {} for client in simulation_config().clients})
+
+
+def test_a_restore_copies_the_entries_once_for_all_stored_rows() -> None:
+    repositories = RecordingRepositories()
+    for client in simulation_config().clients:
+        _store_completed_steps(repositories=repositories, client=client, steps=5)
+    entries = TransactionCountingEntries()
+    value_history = history(repositories=repositories, client_id=None, entries=entries)
+
+    value_history.init_from_repositories()
+    value_history.close()
+
+    assert entries.transaction_count == 1
 
 
 def _restore_data(repositories: RecordingRepositories) -> RestoreData:

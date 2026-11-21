@@ -128,8 +128,7 @@ def test_waking_the_thread_adds_nothing_to_the_history(
     value_history.flush()
     value_history.close()
 
-    assert repositories.measurement_repository(generate_random_client_id()).all() == []
-    assert value_history._entries.keys() == set()  # noqa: SLF001
+    assert repositories.all_measurements() == []
 
 
 def test_the_pop_timeout_is_long_enough_to_not_flood_the_scheduler() -> None:
