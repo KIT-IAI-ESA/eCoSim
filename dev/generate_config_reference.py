@@ -11,6 +11,7 @@ from typing import Any
 from config import REPO_ROOT, write_or_check
 from config_reference.groups import GROUPS
 from config_reference.keys import Enums, enum_members, extract_keys, render_keys
+from config_reference.logical_delays import LOGICAL_DELAYS_TEXT
 from config_reference.sections import INTERFACE_KEYS_TEXT, client_type_values, render_client_sections
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "configuration-files.md"
@@ -38,9 +39,7 @@ The JSON file passed to `ecosim-server` with `--simulation-config` describes wha
 - `simulators`: one entry per client with its `name`, `model` and `interfaces`. `connected_to` links
   an interface to an interface of a simulator, which is given by its position in `simulators`,
   counting from 0.
-- `logical_delays`: connections whose values arrive a number of steps (`delay`, at least 1) later.
-  Until then the receiving interface gets `start_value`. After a restore they start again with `start_value`,
-  so the first steps after the restore can differ from a run without the abort.
+- `logical_delays`: connections whose values arrive a number of steps later, see [Logical delays](#logical-delays).
 - `setup.delta_t`: the step size in milliseconds. `--step-size` overrides it.
 - `setup.steps`: how many steps the simulation runs. `--steps` overrides it. One of the two is required.
 - `setup.start_date`: when the simulated time starts, by default `2024-01-01T00:00:00.000Z`. The results of the
@@ -81,7 +80,7 @@ def render_page() -> str:
         keys = extract_keys((REPO_ROOT / file).read_text(encoding="utf-8"), enums)
         parts += [f"## {title}", "", intro, "", render_keys(keys), ""]
     client_types = client_type_values(CLIENT_TYPE_FILE.read_text(encoding="utf-8"))
-    parts += [render_client_sections(client_types), render_simulation_example(), INTERFACE_KEYS_TEXT]
+    parts += [render_client_sections(client_types), render_simulation_example(), INTERFACE_KEYS_TEXT, LOGICAL_DELAYS_TEXT]
     return "\n".join(parts)
 
 

@@ -76,6 +76,7 @@ The interface files and `simulators` in the simulation config describe an interf
   not connect the input.
 - `connected_to` holds `simulator`, the position of the output's simulator in `simulators`, counting
   from 0, and `interface`, the `name` of the output. `simulator` can be a number or a string.
+  An input with a logical delay also has `delay_path`, see [Logical delays](#logical-delays).
 - The run only uses the interfaces in `simulation.json`, so the `.fmc` file may list more.
 - At load, the server lists every bad `connected_to`: every input needs one, the target has to
   exist and be an output, and an output of the same simulator needs a logical delay.
