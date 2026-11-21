@@ -1,4 +1,5 @@
 import signal
+import sys
 
 import pytest
 
@@ -7,7 +8,11 @@ pytest_plugins = ["pytester"]
 
 @pytest.mark.parametrize(
     ("signal_number", "exit_status"),
-    [(signal.SIGINT, pytest.ExitCode.INTERRUPTED), (signal.SIGTERM, -signal.SIGTERM)],
+    [
+        (signal.SIGINT, pytest.ExitCode.INTERRUPTED),
+        # on Windows os.kill ends the process with the signal number as its exit code
+        (signal.SIGTERM, signal.SIGTERM if sys.platform == "win32" else -signal.SIGTERM),
+    ],
 )
 def test_signal_stops_the_test_run(pytester: pytest.Pytester, signal_number: signal.Signals, exit_status: int) -> None:
     """The first inner test makes the signal hit the handlers left by 'reset_instance', not the ones Python starts with."""
