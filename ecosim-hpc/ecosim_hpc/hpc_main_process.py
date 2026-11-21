@@ -31,15 +31,17 @@ def hpc_main_process(
     client_manager = ClientManager(client_manager_config)
     try:
         client_manager.clients_start(simulation_config)
-        server_thread.join()
+        # a client whose task failed never connects, the server would wait for it forever
+        while not server_thread.ends_within(timeout_in_seconds=1.0):
+            client_manager.raise_if_a_client_task_failed()
     except SystemExit:
         # the signal handler already closed the server and the Dask client
         server.print_run_summary()
         raise
     except Exception:
-        # the server has to end before Dask is shut down
+        # the server should end before Dask is shut down, but in a step it does not
         server.force_stop()
-        server_thread.join()
+        server_thread.ends_within(timeout_in_seconds=10.0)
         shutdown_dask_workers(dask_client)
         ShutdownManager().set_shutdown_at_application_end()
         raise

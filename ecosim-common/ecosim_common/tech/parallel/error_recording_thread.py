@@ -18,8 +18,9 @@ class ErrorRecordingThread:
     def start(self) -> None:
         self._thread.start()
 
-    def join(self) -> None:
-        self._thread.join()
+    def ends_within(self, timeout_in_seconds: float) -> bool:
+        self._thread.join(timeout=timeout_in_seconds)
+        return not self._thread.is_alive()
 
     def _run_target(self) -> None:
         try:

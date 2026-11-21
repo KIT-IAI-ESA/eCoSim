@@ -13,6 +13,7 @@ from ecosim_common.communication.communication_protocol import CommunicationProt
 from ecosim_common.config.client_id import ClientID
 from ecosim_common.config.config_parser import ConfigParser
 from ecosim_common.tech.logger.logger import ESPLogger
+from ecosim_common.tech.one_line_errors import one_line_message
 from ecosim_common.tech.shutdown_manager import ShutdownListener, ShutdownManager
 from ecosim_common.tech.structures.esp_map import ESPMap
 from ecosim_common_fmpy.config.simulator_client_type import client_type_of
@@ -32,6 +33,7 @@ class ClientManager(ShutdownListener):
         ShutdownManager().register_listener(self)
         self._config = config
         self.client_dict: ESPMap[ClientID, HPCClientState] = ESPMap.dask()
+        self._client_futures: dict[ClientID, dd.Future] = {}
 
     def clients_start(
         self,
@@ -58,12 +60,18 @@ class ClientManager(ShutdownListener):
             ),
             config_parser=simulator_directory.config_parser,
         )
-        dask_client.sync(
+        self._client_futures[simulator_directory.client_id] = dask_client.sync(
             client_submit,
             client_function=client_function_of(client_type=client_type),
             client_states=self.client_dict,
             state=self.client_dict[simulator_directory.client_id],
         )
+
+    def raise_if_a_client_task_failed(self) -> None:
+        for client_id, client_future in self._client_futures.items():
+            if client_future.status == "error":
+                error = client_future.exception(timeout=10)
+                raise RuntimeError(f"Client {client_id} failed: {one_line_message(error=error)}") from error
 
     @override
     def on_app_shutdown(self) -> None:
@@ -93,7 +101,7 @@ async def client_submit(
     client_states: ESPMap[ClientID, HPCClientState],
     state: HPCClientState,
     workers: str | None = None,
-) -> None:
+) -> dd.Future:
     dask_client = dd.get_client()
     if workers:
         client_future = dask_client.submit(client_run, client_function, client_states, state, workers=workers)
@@ -102,6 +110,7 @@ async def client_submit(
     else:
         client_future = dask_client.submit(client_run, client_function, client_states, state)
     dd.fire_and_forget(client_future)
+    return client_future
 
 
 def client_run(

@@ -2,6 +2,7 @@ import signal
 import subprocess
 import sys
 import time
+from functools import partial
 from pathlib import Path
 
 import dask.distributed as distributed
@@ -12,8 +13,14 @@ from ecosim_hpc.client_manager_config import ClientManagerConfig
 from ecosim_hpc.hpc_main_process import hpc_main_process
 from ecosim_server.simulation.state.simulation_state import SimulationState
 from ecosim_test_common.fmpy_platform import skip_unless_fmpy_loads
+from ecosim_test_common.test_data.error_recording_thread import ErrorRecordingThread
 from ecosim_test_common.timeouts import WAIT_TIMEOUT_IN_SECONDS
-from integration_tests.hpc.hpc_client_modules import ClientKind, write_client_module, write_python_module_without_its_model
+from integration_tests.hpc.hpc_client_modules import (
+    ClientKind,
+    write_client_module,
+    write_python_module_that_never_loads,
+    write_python_module_without_its_model,
+)
 from integration_tests.hpc.hpc_data import client_manager_config, fmu_files, server_config, simulation_config, single_client_simulation_config
 from integration_tests.hpc.hpc_run_in_a_subprocess import start_hpc_run_in_a_subprocess
 from integration_tests.tech.db.repositories_in_memory import RepositoriesInMemory
@@ -66,10 +73,32 @@ def test_a_client_start_that_fails_stops_the_server_and_fails_the_main_process(d
     assert repositories.simulation_state_repository.current() is SimulationState.FAILED
 
 
+def test_a_client_task_that_fails_before_it_connects_ends_the_run_as_failed(dask_client: distributed.Client, tmp_path: Path) -> None:
+    # kept in this process, the Dask client is closed after the run
+    repositories = RepositoriesInMemory()
+    client_id = write_python_module_without_its_model(simulator_dir=tmp_path)
+    run = ErrorRecordingThread(
+        target=partial(
+            hpc_main_process,
+            dask_client=dask_client,
+            server_config=server_config(),
+            simulation_config=single_client_simulation_config(client_id=client_id),
+            client_manager_config=ClientManagerConfig(host="localhost", port=9090, simulator_dir=tmp_path),
+            repositories=repositories,
+        ),
+    )
+
+    run.start()
+
+    run.assert_ends_within(timeout_in_seconds=WAIT_TIMEOUT_IN_SECONDS)
+    assert str(client_id) in str(run.error)
+    assert repositories.simulation_state_repository.current() is SimulationState.FAILED
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGINT for another process")
 def test_ctrl_c_while_the_server_waits_for_a_client_ends_the_run_as_stopped(tmp_path: Path) -> None:
     output_file = tmp_path / "output.log"
-    client_id = write_python_module_without_its_model(simulator_dir=tmp_path)
+    client_id = write_python_module_that_never_loads(simulator_dir=tmp_path)
     run = start_hpc_run_in_a_subprocess(simulator_dir=tmp_path, client_id=client_id, output_file=output_file)
     try:
         wait_until_the_server_waits_for_its_client(run=run, output_file=output_file)
