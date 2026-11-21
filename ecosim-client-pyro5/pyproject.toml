@@ -9,6 +9,9 @@ description = "The pyro client for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
+maintainers = [
+    { name = "eASiMOV", email = "easimov@iai.kit.edu" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -16,8 +19,10 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Topic :: eCoSim :: Pyro5 client",
+    "Topic :: Scientific/Engineering",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 dependencies = [
     "art==6.5",
@@ -29,6 +34,12 @@ dependencies = [
 
 [project.scripts]
 ecosim-client-pyro5 = "ecosim_client_pyro5.main:main"
+
+[project.urls]
+Documentation = "https://ecosim.easimov.com/docs"
+Source = "https://github.com/KIT-IAI-ESA/eCoSim"
+Issues = "https://github.com/KIT-IAI-ESA/eCoSim/issues"
+Changelog = "https://ecosim.easimov.com/docs/development/release-history"
 
 [tool.uv.sources]
 ecosim-common = { path = "../ecosim-common", editable = true }
@@ -62,10 +73,6 @@ module = [
     "dask.*",
 ]
 ignore_missing_imports = true
-
-#[project.urls]
-#Homepage = "https://github.com/yourusername/myapp"
-#Repository = "https://github.com/yourusername/myapp"
 
 [tool.pytest.ini_options]
 timeout = 120

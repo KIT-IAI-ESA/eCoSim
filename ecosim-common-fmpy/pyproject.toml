@@ -9,6 +9,9 @@ description = "Common utilities and abstractions for the fmpy part of eCoSim"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
+maintainers = [
+    { name = "eASiMOV", email = "easimov@iai.kit.edu" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -94,6 +97,3 @@ addopts = [
 [tool.coverage.run]
 source = ["ecosim_common_fmpy"]
 omit = ["*/tests/*"]
-
-[tool.coverage.report]
-exclude_lines = []
