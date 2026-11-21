@@ -70,7 +70,8 @@ class FMU2SimulatorConfig:
         except Exception as first_exception:
             nano_seconds = time.time_ns()
             today = datetime.now()
-            temp_dir_name = f"{today.strftime('%Y-%m-%d %H:%M:%S')}.{nano_seconds % 1_000_000_000:09d}"
+            # Windows allows no colons in a name
+            temp_dir_name = f"{today:%Y-%m-%d_%H-%M-%S}.{nano_seconds % 1_000_000_000:09d}"
             # For identifying FMUs that throw XMLParseErrors
             FMU2SimulatorConfig._logger.warning("Model failed to read initially with '%s'. Trying to reload model description.", first_exception)
             for i in range(2):
