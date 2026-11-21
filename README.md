@@ -1,3 +1,5 @@
+<div align="center">
+
 <h1>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/wordmark-dark.png">
@@ -8,29 +10,39 @@
 A co-simulation framework for energy systems.
 
 [![tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml)
+[![windows tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/windows-tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/windows-tests.yml)
+[![CodeQL](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/github-code-scanning/codeql)
 [![docs](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/docs.yml/badge.svg)](https://ecosim.easimov.com/docs)
 [![licence](https://img.shields.io/badge/licence-Apache%202.0-00876c)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.12%20%7C%203.14-00876c)](https://ecosim.easimov.com/docs/getting-started/installation)
+[![FMI](https://img.shields.io/badge/FMI-2.0%20%7C%203.0-00876c)](https://fmi-standard.org/)
 
-eCoSim couples independent simulation models, such as a house, its heating and the weather, into one
-co-simulation. A server owns the clock and the data flow. Each model runs in its own client, and for
-every step the server sends each client its inputs, receives its outputs and passes them on to the
-inputs they are connected to.
+</div>
+
+eCoSim runs several simulation models together as one simulation, for example a house, its heating
+and the weather. In every step it passes the outputs of each model on to the models that need them.
 
 ```mermaid
 flowchart LR
-    fmu2["FMI 2.0 model"] <--> server
-    fmu3["FMI 3.0 model"] <--> server
-    matlab["MATLAB script"] <--> server
-    python["Python model"] <--> server
-    server(("Server")) --> results[("Results in PostgreSQL<br/>or JSON lines files")]
+    subgraph models["Your models"]
+        direction TB
+        fmu2(["FMI 2.0"])
+        fmu3(["FMI 3.0"])
+        matlab(["MATLAB"])
+        python(["Python"])
+    end
+    models <--> server(("eCoSim"))
+    server --> results[("Results")]
+    classDef accent fill:#00876c,stroke:#00876c,color:#ffffff
+    classDef plain fill:transparent,stroke:#00876c
+    class server accent
+    class fmu2,fmu3,matlab,python,results plain
+    style models fill:transparent,stroke:#00876c,stroke-dasharray:4 3
 ```
 
-Clients exist for FMI 2.0 and FMI 3.0 models, for MATLAB scripts and for Python models. A Python model
-runs in the client itself or is served over Pyro5. The server stores the results in PostgreSQL/TimescaleDB
-or as JSON lines on disk. The `ecosim` command runs a simulation locally. It can also write one from FMUs,
-check it and show its results. For many simulations at once, `ecosim-hpc` runs the server and the clients
-on a Dask cluster.
+Your models can be FMUs (FMI 2.0 or 3.0), MATLAB scripts or Python code. The results go into files or
+into PostgreSQL. To run many simulations on a cluster, see the
+[HPC guide](https://ecosim.easimov.com/docs/guides/hpc-cluster).
 
 ## Quick start
 
@@ -41,8 +53,7 @@ git clone https://github.com/KIT-IAI-ESA/ecosim.git
 cd ecosim
 ```
 
-The building example couples three FMI 2.0 models for 100 steps and writes the results as files, so
-no database is needed. Check it, run it and look at its results:
+The building example runs three models for 100 steps. No database is needed:
 
 ```shell
 cd simulation_examples
@@ -51,11 +62,9 @@ uv run ecosim run building --steps 100
 uv run ecosim results building
 ```
 
-The first `uv run` creates the environment. That takes a moment. `ecosim run` starts the server and one
-client per model. The results and the logs are in a new folder in `building/results`. `ecosim results`
-shows the minimum, mean and maximum of each output. The
-[quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) explains each step. It also
-changes a parameter of the house and makes a simulation from FMUs.
+The first run takes a moment to set up. The results and the logs end up in `building/results`. The
+[quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) explains each step and shows
+how to use your own FMUs.
 
 ## What it looks like
 
@@ -100,7 +109,7 @@ eCoSim is released under the [Apache License 2.0](LICENSE).
 
 <a href="https://www.iai.kit.edu/english/groups_4104.php"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/esa-dark.png"><img alt="ESA" src="docs/static/img/readme/esa-light.png" height="36"></picture></a>
 
-eCoSim is a project of the [Energy System Analysis](https://www.iai.kit.edu/english/groups_4104.php)
-research group at the [Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
-of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php). See also
-[eASiMOV](https://easimov.cloud.iai.kit.edu) and the [Energy Lab](https://www.elab.kit.edu/english/index.php).
+eCoSim is part of [eASiMOV](https://easimov.cloud.iai.kit.edu). It is a project of the
+[Energy System Analysis](https://www.iai.kit.edu/english/groups_4104.php) research group at the
+[Institute for Automation and Applied Informatics (IAI)](https://www.iai.kit.edu/english/index.php)
+of the [Karlsruhe Institute of Technology (KIT)](https://www.kit.edu/english/index.php).
