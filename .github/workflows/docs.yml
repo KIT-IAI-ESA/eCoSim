@@ -11,6 +11,7 @@ permissions:
 jobs:
   docs-reference:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3
@@ -23,6 +24,7 @@ jobs:
 
   docs-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: docs
@@ -45,6 +47,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_DOCS == 'true'
     needs: [ docs-reference, docs-build ]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       pages: write
       id-token: write
