@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 from pathlib import Path
 
 import pytest
@@ -55,3 +56,12 @@ def test_an_unreachable_postgres_ends_in_one_line_with_the_way_to_files(tmp_path
     assert "\n" not in message
     assert message.startswith(f"Cannot use PostgreSQL at 127.0.0.1:{port}: ")
     assert message.endswith(". To write the results as files instead, pass --database-type file")
+
+
+def test_a_postgres_that_never_answers_ends_the_start_after_the_connect_timeout(tmp_path: Path) -> None:
+    with socket.create_server(("127.0.0.1", 0)) as silent_server:
+        port = silent_server.getsockname()[1]
+        server_config = generate_server_config(database_host="127.0.0.1", database_port=port, database_directory=tmp_path)
+
+        with pytest.raises(ConnectionError, match="timeout expired"):
+            create_repositories(server_config=server_config, simulation_config=generate_simulation_config_from_file())

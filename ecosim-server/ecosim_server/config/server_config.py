@@ -222,7 +222,8 @@ class DatabaseConfig:
             host=self.host,
             port=self.port,
             database=database,
-            query={"sslmode": "require" if self.ssl else "disable"},
+            # without it a host that drops packets, or a closed port on Windows, keeps the start waiting
+            query={"sslmode": "require" if self.ssl else "disable", "connect_timeout": "10"},
         )
 
     def start_up_values(self) -> dict[str, str]:
