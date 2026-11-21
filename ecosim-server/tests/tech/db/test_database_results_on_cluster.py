@@ -22,8 +22,8 @@ def write_database(stored_run: StoredRun, server_config: ServerConfig, steps: in
         repository = repositories.measurement_repository(client_id=client_id)
         stored_run.write_steps(repository=repository, simulator_name=client_id.simulator_name, steps=steps)
     repositories.simulation_state_repository.update(SimulationState.FAILED)
-    # the newest state is the state of the run
-    restored = RepositoriesDB.create(server_config=server_config, simulation_config=replace(simulation_config, restore=True))
+    # the newest state is the state of the run; without clients, because a process can define a measurement table only once
+    restored = RepositoriesDB.create(server_config=server_config, simulation_config=replace(simulation_config, restore=True, clients=[]))
     restored.simulation_state_repository.update(SimulationState.FINISHED)
 
 
@@ -94,6 +94,29 @@ def test_an_empty_table_that_the_simulation_config_does_not_list_gives_no_warnin
     table = read_database_results(database=server_config.database, simulation_config=stored_run.simulation_config_file)
 
     assert table.warnings == ()
+
+
+def test_a_listed_simulator_without_a_stored_step_gives_a_warning(plain_cluster: PostgresTestCluster, tmp_path: Path) -> None:
+    stored_run = StoredRun.in_directory(directory=tmp_path, weather="weather_with_step", house="house_without_step")
+    database_name = f"test_{uuid4().hex}"
+    server_config = plain_cluster.server_config(database_name=database_name)
+    write_database(stored_run=stored_run, server_config=server_config, steps=1)
+    schema = server_config.database.schema
+    plain_cluster.execute(statement=sql.SQL("DELETE FROM {}.module_house_without_step").format(sql.Identifier(schema)), database=database_name)
+
+    table = read_database_results(database=server_config.database, simulation_config=stored_run.simulation_config_file)
+
+    assert table.warnings == (f"The schema {schema} has no results of the simulator house_without_step in {stored_run.simulation_config_file}.",)
+
+
+def test_a_run_without_a_stored_step_has_no_results(plain_cluster: PostgresTestCluster, tmp_path: Path) -> None:
+    stored_run = StoredRun.in_directory(directory=tmp_path, weather="weather_no_step", house="house_no_step")
+    server_config = plain_cluster.server_config(database_name=f"test_{uuid4().hex}")
+    simulation_config = SimulationConfig.of_config_file_and_params(simulation_config_file=stored_run.simulation_config_file, steps=1)
+    RepositoriesDB.create(server_config=server_config, simulation_config=simulation_config)
+
+    with pytest.raises(RuntimeError, match="has no results"):
+        read_database_results(database=server_config.database, simulation_config=stored_run.simulation_config_file)
 
 
 def test_a_missing_schema_is_shown_in_the_error(plain_cluster: PostgresTestCluster, tmp_path: Path) -> None:

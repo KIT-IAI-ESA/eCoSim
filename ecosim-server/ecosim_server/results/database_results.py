@@ -53,11 +53,11 @@ class DatabaseResults:
 
     def table(self) -> ResultTable:
         table_names = self._table_names()
-        module_tables = [name for name in table_names if name.startswith(MODULE_PREFIX)]
+        module_tables_with_rows = [name for name in table_names if name.startswith(MODULE_PREFIX) and self._has_rows(table_name=name)]
         builder = ResultTableBuilder()
-        for simulator_name, client in self._simulators_to_read(module_tables=module_tables):
+        for simulator_name, client in self._simulators_to_read(module_tables_with_rows=module_tables_with_rows):
             self._add_simulator(builder=builder, simulator_name=simulator_name, client=client)
-        warnings = self._config_warnings(module_tables=module_tables)
+        warnings = self._config_warnings(module_tables_with_rows=module_tables_with_rows)
         for warning in warnings:
             _logger.warning("%s", warning)
         state = self._state() if SimulationStateDTO.__tablename__ in table_names else None
@@ -70,12 +70,16 @@ class DatabaseResults:
             raise RuntimeError(f"The database {self.database.name} has no schema {schema}. Use the --database-schema of the run.")
         return list(inspector.get_table_names(schema=schema))
 
-    def _simulators_to_read(self, module_tables: list[str]) -> list[tuple[str, ClientSimulatorConfig | None]]:
-        if not module_tables:
-            raise RuntimeError(f"The schema {self.database.schema} has no results. There is no {MODULE_PREFIX}<simulator> table in it.")
+    def _simulators_to_read(self, module_tables_with_rows: list[str]) -> list[tuple[str, ClientSimulatorConfig | None]]:
+        if not module_tables_with_rows:
+            raise RuntimeError(f"The schema {self.database.schema} has no results. No step was stored in a {MODULE_PREFIX}<simulator> table.")
         if self.clients is None:
-            return [(name.removeprefix(MODULE_PREFIX), None) for name in sorted(module_tables)]
-        stored = [client for client in self.clients if MeasurementRepositoryDB.table_name_of(simulator_name=client.simulator_name) in module_tables]
+            return [(name.removeprefix(MODULE_PREFIX), None) for name in sorted(module_tables_with_rows)]
+        stored = [
+            client
+            for client in self.clients
+            if MeasurementRepositoryDB.table_name_of(simulator_name=client.simulator_name) in module_tables_with_rows
+        ]
         if not stored:
             listed, config_file = ", ".join(client.simulator_name for client in self.clients), self.simulation_config_file
             raise ValueError(f"The schema {self.database.schema} has no results of the simulators in {config_file}: {listed}.")
@@ -103,13 +107,13 @@ class DatabaseResults:
             for row in rows
         ]
 
-    def _config_warnings(self, module_tables: list[str]) -> list[str]:
+    def _config_warnings(self, module_tables_with_rows: list[str]) -> list[str]:
         if self.clients is None:
             return ["PostgreSQL stores the names in lower case. Pass the run's simulation.json to get them as written there."]
         listed = {MeasurementRepositoryDB.table_name_of(simulator_name=client.simulator_name): client.simulator_name for client in self.clients}
         schema, config_file = self.database.schema, self.simulation_config_file
-        missing = [name for table, name in listed.items() if table not in module_tables]
-        unlisted = [table for table in module_tables if table not in listed and self._has_rows(table_name=table)]
+        missing = [name for table, name in listed.items() if table not in module_tables_with_rows]
+        unlisted = [table for table in module_tables_with_rows if table not in listed]
         return [
             *(f"The schema {schema} has no results of the simulator {name} in {config_file}." for name in missing),
             *(

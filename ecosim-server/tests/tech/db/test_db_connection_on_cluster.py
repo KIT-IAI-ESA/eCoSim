@@ -19,9 +19,8 @@ def _config_of_a_new_database(cluster: PostgresTestCluster) -> ServerConfig:
 def test_the_tables_of_a_run_are_created_in_the_configured_schema(plain_cluster: PostgresTestCluster) -> None:
     config = _config_of_a_new_database(plain_cluster)
     simulator = generate_client_simulator_config(simulator_name="schema_test")
-    repositories = RepositoriesDB.create(server_config=config, simulation_config=generate_simulation_config(clients=[simulator]))
 
-    repositories.measurement_repository(simulator.client_id)
+    RepositoriesDB.create(server_config=config, simulation_config=generate_simulation_config(clients=[simulator]))
 
     for table in [SimulationStateDTO.__tablename__, ServerTimeMeasurementDBEntry.__tablename__, "module_schema_test"]:
         assert plain_cluster.table_exists(database=config.database.name, schema=SCHEMA, table=table)
