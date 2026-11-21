@@ -39,23 +39,22 @@ _WAKE_UP_ENTRY = InterfaceValueHistoryEntry(
 
 
 def add_to_entries(
-    entries: InterfaceValueHistoryEntries,
+    entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]],
     entry: InterfaceValueHistoryEntry,
 ) -> None:
-    with entries.transaction() as current_entries:
-        if entry.time_step not in current_entries:
-            current_entries[entry.time_step] = {}
-        if entry.client_id not in current_entries[entry.time_step]:
-            current_entries[entry.time_step][entry.client_id] = []
-        current_entries[entry.time_step][entry.client_id].extend(entry.interface_values)
+    if entry.time_step not in entries:
+        entries[entry.time_step] = {}
+    if entry.client_id not in entries[entry.time_step]:
+        entries[entry.time_step][entry.client_id] = []
+    entries[entry.time_step][entry.client_id].extend(entry.interface_values)
 
 
 @dataclass
 class InterfaceValueHistoryThread:
     """
-    Pops the entries of the 'InterfaceValueHistory' and adds them to the entries and to the repositories - so
-    the caller of 'InterfaceValueHistory.add' does not wait for the (slow) repository write. There is only one
-    thread, so the entries are added in the order they were pushed in.
+    Pops the entries of the 'InterfaceValueHistory' and adds the default values to the entries and the steps to
+    the repositories - so the caller of 'InterfaceValueHistory.add' does not wait for the (slow) repository write.
+    There is only one thread, so the entries are added in the order they were pushed in.
 
     ATTENTION: an entry is added some time after it was pushed - so call 'flush' before reading the entries or
                the repositories, and 'close' when nothing is pushed anymore.
@@ -142,16 +141,21 @@ class InterfaceValueHistoryThread:
     def _add(self, entry: InterfaceValueHistoryEntry) -> None:
         """Runs in the adding thread - so it must not let an exception escape."""
         try:
-            add_to_entries(self._entries, entry)
-            self._add_to_repository(entry)
+            if entry.time_step == DEFAULT_VALUES_MARKER:
+                self._add_default_values_to_entries(entry)
+            else:
+                self._add_to_repository(entry)
             InterfaceValueHistoryThread.logger.debug("Adding new entry: %s ... done.", entry)
         except Exception as error:  # one failed entry must not kill the adding thread
             InterfaceValueHistoryThread.logger.error("Adding new entry %s failed: %s", entry, error)
             self._remember_failure(error)
 
+    def _add_default_values_to_entries(self, entry: InterfaceValueHistoryEntry) -> None:
+        # a transaction copies the whole map, so the steps stay out of it
+        with self._entries.transaction() as current_entries:
+            add_to_entries(entries=current_entries, entry=entry)
+
     def _add_to_repository(self, entry: InterfaceValueHistoryEntry) -> None:
-        if entry.time_step == DEFAULT_VALUES_MARKER:
-            return
         self._repositories.measurement_repository(entry.client_id).add(
             values=entry.interface_values,
             timestamp=self._simulation_config.date_time_for_step(entry.time_step),

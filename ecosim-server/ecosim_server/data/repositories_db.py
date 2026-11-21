@@ -37,7 +37,7 @@ class RepositoriesDB(Repositories):
         db_tech = RepositoriesDB._get_db_tech(server_config=server_config, restore=simulation_config.restore)
         db_tech.init_db()
         db_connection = db_tech.db_connection()
-        return RepositoriesDB(
+        repositories = RepositoriesDB(
             _simulation_config=simulation_config,
             _db_connection=db_connection,
             _measurement_repository_creation_lock=ParallelLock.for_protocol(server_config.server.communication_protocol),
@@ -49,6 +49,10 @@ class RepositoriesDB(Repositories):
             ),
             server_time_measurement_repository=ServerTimeMeasurementRepositoryDB(db_connection=db_connection),
         )
+        # creates the tables at the start: a failure at the first write would only end the run after its last step
+        for client_id in simulation_config.client_ids():
+            repositories.measurement_repository(client_id=client_id)
+        return repositories
 
     @override
     def measurement_repository(

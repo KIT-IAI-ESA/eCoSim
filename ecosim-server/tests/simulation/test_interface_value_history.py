@@ -9,6 +9,7 @@ from ecosim_test_common.test_data.generate_client_id import generate_random_clie
 from tests.simulation.history_test_setup import (
     TIMEOUT_IN_SECONDS,
     RecordingRepositories,
+    TransactionCountingEntries,
     client_sim_step_data,
     history,
     simulation_config,
@@ -66,6 +67,18 @@ def test_the_entries_are_added_in_the_order_they_were_handed_over() -> None:
     value_history.close()
 
     assert [entry.values for entry in repositories.measurement_repository(client_id).all()] == [values(float(step)) for step in range(100)]
+
+
+def test_storing_a_step_does_not_copy_the_entries() -> None:
+    repositories = RecordingRepositories()
+    client_id = generate_random_client_id()
+    entries = TransactionCountingEntries()
+    value_history = history(repositories=repositories, client_id=client_id, entries=entries)
+
+    value_history.add(time_step=0, client_id=client_id, interface_values=values())
+    value_history.close()
+
+    assert entries.transaction_count == 0
 
 
 def test_a_reader_sees_the_entries_that_are_still_on_their_way() -> None:

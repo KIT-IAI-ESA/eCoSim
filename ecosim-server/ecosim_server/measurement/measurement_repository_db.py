@@ -11,6 +11,7 @@ from ecosim_common.config.interface_type import InterfaceType
 from ecosim_common.config.model_interface_server import ModelInterfaceServer
 from ecosim_common.tech.logger.logger import ESPLogger
 from sqlalchemy import FLOAT, JSON, Column, DateTime
+from sqlalchemy.exc import DBAPIError
 
 from ecosim_server.config.simulation_config import ClientSimulatorConfig, SimulationConfig
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
@@ -44,7 +45,11 @@ class MeasurementRepositoryDB(MeasurementRepository):
             interface_name_to_column_name=interface_name_to_column_name,
             interface_name_to_json_column_name=interface_name_to_json_column_name,
         )
-        db_connection.create_measurement_table(dynamic_table)
+        try:
+            db_connection.create_measurement_table(dynamic_table)
+        except DBAPIError as error:
+            table = f"{db_connection.default_schema}.{MeasurementRepositoryDB.table_name_of(simulator_name=client_config.simulator_name)}"
+            raise RuntimeError(f"Cannot create the PostgreSQL table {table}: {str(error.orig).splitlines()[0]}") from error
         return MeasurementRepositoryDB(
             _db_connection=db_connection,
             _dynamic_table=dynamic_table,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Tuple, override
+from typing import Any, List, Tuple, override
 
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import (
@@ -96,7 +96,7 @@ class InterfaceValueHistory(ShutdownListener):
         client_id: ClientID,
         interface_values: Tuple[ProtocolInterfaceValue, ...],
     ) -> None:
-        """Pushes the entry into the queue - the adding thread adds it to the entries and to the repositories."""
+        """Pushes the entry into the queue - the adding thread adds default values to the entries and a step to the repositories."""
         InterfaceValueHistory.logger.debug("Adding new entry: TimeStep: %s - ClientID: %s - values: %s ...", time_step, client_id, interface_values)
         self._entries_queue.push(
             InterfaceValueHistoryEntry(
@@ -124,6 +124,7 @@ class InterfaceValueHistory(ShutdownListener):
             raise RuntimeError(
                 "Cannot init from repositories because there are already entries.",
             )
+        restored_entries: dict[int, dict[ClientID, List[ProtocolInterfaceValue]]] = {}
         for client in self._simulation_config.clients:
             InterfaceValueHistory.logger.debug("Initializing from repositories for client %s", client.client_id)
             client_repo = self._repositories.measurement_repository(
@@ -140,8 +141,8 @@ class InterfaceValueHistory(ShutdownListener):
                 step: int = self._simulation_config.date_time_to_step(entry.timestamp)
                 # the entries come from the repositories, so they are added directly and not through the queue
                 add_to_entries(
-                    self._entries,
-                    InterfaceValueHistoryEntry(
+                    entries=restored_entries,
+                    entry=InterfaceValueHistoryEntry(
                         time_step=step,
                         client_id=client.client_id,
                         interface_values=entry.values,
@@ -153,6 +154,9 @@ class InterfaceValueHistory(ShutdownListener):
                     client.client_id,
                     len(sorted_entries),
                 )
+        # one transaction for all rows, because each one copies the whole map
+        with self._entries.transaction() as current_entries:
+            current_entries.update(restored_entries)
 
     def contains_all_default_values(self) -> bool:
         self.flush()  # the entries are read below - so as a precaution, the 'flush' method is called

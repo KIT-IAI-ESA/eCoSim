@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import datetime
 import threading
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import List, Tuple, cast, override
+from typing import Any, Generator, List, Tuple, cast, override
 
 from ecosim_common.communication.communication_protocol import CommunicationProtocol
 from ecosim_common.communication.data.client_sim_step_data import ClientSimStepData
 from ecosim_common.communication.data.protocol_interface_value import ProtocolInterfaceValue
 from ecosim_common.config.client_id import ClientID
-from ecosim_common.tech.structures.esp_map import ESPMap
+from ecosim_common.tech.structures.esp_map import ESPMap, ThreadESPMap
 from ecosim_common.tech.structures.esp_queue import ESPQueue
 from ecosim_common.tech.structures.esp_structure_type import ESPStructureType
 from ecosim_server.config.simulation_config import SimulationConfig
@@ -20,7 +21,7 @@ from ecosim_server.data.server_statistics_repository import ServerTimeMeasuremen
 from ecosim_server.measurement.measurement_entry import MeasurementEntry
 from ecosim_server.measurement.measurement_repository import MeasurementRepository
 from ecosim_server.simulation.interface_value_history import InterfaceValueHistory
-from ecosim_server.simulation.interface_value_history_thread import InterfaceValueHistoryEntry
+from ecosim_server.simulation.interface_value_history_thread import InterfaceValueHistoryEntries, InterfaceValueHistoryEntry
 from ecosim_server.simulation.state.simulation_state_repository import SimulationStateRepository
 from ecosim_test_common.resources.config_files import config_file_path
 
@@ -78,6 +79,26 @@ class RecordingRepositories(Repositories):
             self._repository_by_client[client_id] = RecordingMeasurementRepository()
         return self._repository_by_client[client_id]
 
+    def all_measurements(self) -> List[MeasurementEntry]:
+        return [entry for repository in self._repository_by_client.values() for entry in repository.all()]
+
+
+@dataclass
+class TransactionCountingEntries(ThreadESPMap[int, dict[ClientID, List[ProtocolInterfaceValue]]]):
+    """Counts the transactions, each of them copies the whole map."""
+
+    transaction_count: int = field(default=0)
+
+    def __post_init__(self) -> None:
+        super().__init__()
+
+    @contextmanager
+    @override
+    def transaction(self) -> Generator[dict[int, dict[ClientID, List[ProtocolInterfaceValue]]], Any, None]:
+        self.transaction_count += 1
+        with super().transaction() as current_entries:
+            yield current_entries
+
 
 def values(value: float = 1.0) -> Tuple[ProtocolInterfaceValue, ...]:
     return (ProtocolInterfaceValue(name="T_out", value=value),)
@@ -97,13 +118,14 @@ def history(
     communication_protocol: CommunicationProtocol = CommunicationProtocol.TCP_SOCKET,
     blocked: bool = False,
     entries_queue: ESPQueue[InterfaceValueHistoryEntry] | None = None,
+    entries: InterfaceValueHistoryEntries | None = None,
 ) -> InterfaceValueHistory:
     if not blocked and client_id is not None:
         repositories.measurement_repository(client_id).blocker.set()
     return InterfaceValueHistory(
         _repositories=repositories,
         _simulation_config=simulation_config(),
-        _entries=ESPMap.of_type(ESPStructureType.THREAD),
-        # explicitly against None: an empty 'ESPQueue' is falsy, so 'or' would discard it
+        # explicitly against None: an empty 'ESPMap' or 'ESPQueue' is falsy, so 'or' would discard it
+        _entries=entries if entries is not None else ESPMap.of_type(ESPStructureType.THREAD),
         _entries_queue=entries_queue if entries_queue is not None else ESPQueue.of_communication_protocol(communication_protocol),
     )
