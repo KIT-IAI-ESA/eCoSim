@@ -3,7 +3,7 @@
 <h1>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/wordmark-dark.png">
-  <img alt="eCoSim" src="docs/static/img/readme/wordmark-light.png" height="56">
+  <img alt="eCoSim" src="docs/static/img/readme/wordmark-light.png" height="80">
 </picture>
 </h1>
 
