@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: pre-commit
       # --locked also checks ecosim-test-common/uv.lock, which no other job syncs
@@ -65,7 +65,7 @@ jobs:
       UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: ${{ matrix.project }}-py${{ matrix.python }}
       - name: Sync
@@ -91,7 +91,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       # the tests under locally/ need external models or an HPC environment;
@@ -115,7 +115,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: leaked-secrets
       - name: Install pre-commit
@@ -132,7 +132,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: dev-scripts
       - name: Test
@@ -145,7 +145,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           cache-suffix: examples
       # the commands of the quick start in the README
