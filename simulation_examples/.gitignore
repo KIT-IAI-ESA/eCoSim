@@ -1,2 +1,7 @@
 # the run folders of ecosim run
-*/results/
+**/results/
+
+# made by the steps of the quick start and the guides
+/my_building/
+/house_simulation/
+results.csv
