@@ -8,7 +8,7 @@ KINDS = (("inputs", "input"), ("outputs", "output"))
 
 
 def unknown_key_warnings(raw_interfaces: Any, fmc_file: Path) -> list[str]:
-    # the .fmc files of the examples have fmu-file and modeldescription
+    # older .fmc files have fmu-file and modeldescription
     warnings = unknown_key_warnings_of_object(
         where=str(fmc_file),
         raw_object=raw_interfaces,

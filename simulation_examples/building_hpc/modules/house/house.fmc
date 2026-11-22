@@ -1,6 +1,4 @@
 {
-    "fmu-file": "",
-    "modeldescription": "",
     "inputs": [
         {
             "name": "weatherBus_TDryBul",

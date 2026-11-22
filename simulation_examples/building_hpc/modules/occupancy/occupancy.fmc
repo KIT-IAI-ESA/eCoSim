@@ -1,1 +1,40 @@
-{"fmu-file":"","modeldescription":"","inputs": [],"outputs":[{"name":"occupancyBus.Qdot_sen_human","unit":"","description": ""},{"name":"occupancyBus.Qdot_lat_human","unit":"","description": ""},{"name":"occupancyBus.CO2_flow_human","unit":"","description": ""},{"name":"occupancyBus.Pe_appliances","unit":"","description": ""},{"name":"occupancyBus.Qdot_appliances","unit":"","description": ""},{"name":"occupancyBus.m_airflow_RH","unit":"","description": ""},{"name":"occupancyBus.m_waterflow_DHW","unit":"","description": ""}]}
+{
+    "inputs": [],
+    "outputs": [
+        {
+            "name": "occupancyBus.Qdot_sen_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.Qdot_lat_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.CO2_flow_human",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.Pe_appliances",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.Qdot_appliances",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.m_airflow_RH",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "occupancyBus.m_waterflow_DHW",
+            "unit": "",
+            "description": ""
+        }
+    ]
+}

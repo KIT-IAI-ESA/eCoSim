@@ -1,1 +1,60 @@
-{"fmu-file":"","modeldescription":"","inputs": [],"outputs":[{"name":"weatherBus.TDryBul","unit":"","description": ""},{"name":"weatherBus.HDifHor","unit":"","description": ""},{"name":"weatherBus.HDirNor","unit":"","description": ""},{"name":"weatherBus.HGloHor","unit":"","description": ""},{"name":"weatherBus.alt","unit":"","description": ""},{"name":"weatherBus.cloTim","unit":"","description": ""},{"name":"weatherBus.lat","unit":"","description": ""},{"name":"weatherBus.pAtm","unit":"","description": ""},{"name":"weatherBus.relHum","unit":"","description": ""},{"name":"weatherBus.solTim","unit":"","description": ""},{"name":"weatherBus.solZen","unit":"","description": ""}]}
+{
+    "inputs": [],
+    "outputs": [
+        {
+            "name": "weatherBus.TDryBul",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.HDifHor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.HDirNor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.HGloHor",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.alt",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.cloTim",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.lat",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.pAtm",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.relHum",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.solTim",
+            "unit": "",
+            "description": ""
+        },
+        {
+            "name": "weatherBus.solZen",
+            "unit": "",
+            "description": ""
+        }
+    ]
+}
