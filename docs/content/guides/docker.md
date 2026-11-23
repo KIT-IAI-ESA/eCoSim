@@ -29,17 +29,17 @@ All commands below run in `examples/docker/`.
 
 ## Prerequisites
 
-Build the images once. They are tagged `localhost/ecosim_*`:
+Build the images once. They are tagged `localhost/ecosim-*`:
 
 ```shell
-docker compose -f ../../dev/docker/compose.yaml build ecosim_server ecosim_client_fmu_v2
+docker compose -f ../../dev/docker/compose.yaml build ecosim-server ecosim-client-fmu-v2
 ```
 
 ### How the images are built
 
 - every image comes from `dev/docker/Dockerfile`, with `SOURCE_DIR` and `COMMAND_NAME` as build arguments
 - each service in `dev/docker/compose.yaml` sets `image: localhost/<service>:latest`; without it,
-  compose tags the build `localhost/docker_<service>` and the examples keep using an older image
+  compose puts the folder name in front, like `localhost/docker_<service>`, and the examples keep using an older image
 - the build turns the package into one self-contained `<command>.pex` and links it to `/opt/ecosim`,
   the `ENTRYPOINT`. The exec form of `ENTRYPOINT` does not expand build arguments, hence the fixed path
 
@@ -133,7 +133,7 @@ results end up.
 - The clients retry the connect for 30 seconds, so a plain `depends_on` is enough to start them
   together with the server.
 - The executable is the `ENTRYPOINT` of the images, so `command:` only lists arguments, which are
-  appended to it. `docker run localhost/ecosim_server:latest --help` works the same way.
+  appended to it. `docker run localhost/ecosim-server:latest --help` works the same way.
 - No service publishes a port: the clients reach the server over the compose network. So the variants
   can run at the same time, and next to anything else on the host that uses `1234` or `5432`.
 - The FMUs are x86-64 only, so every service sets `platform: linux/amd64` and arm64 hosts run the images under emulation.

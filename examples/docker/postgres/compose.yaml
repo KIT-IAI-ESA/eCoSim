@@ -8,10 +8,10 @@ name: ecosim-example
 # command line so they reach the 'server' service instead.
 #
 # Build the images first, from this folder:
-#   docker compose -f ../../../dev/docker/compose.yaml build ecosim_server ecosim_client_fmu_v2
+#   docker compose -f ../../../dev/docker/compose.yaml build ecosim-server ecosim-client-fmu-v2
 
 x-client: &client
-  image: localhost/ecosim_client_fmu_v2:latest
+  image: localhost/ecosim-client-fmu-v2:latest
   platform: linux/amd64
   restart: "no"
   depends_on:
@@ -39,7 +39,7 @@ services:
 
   server:
     container_name: ecosim-example-server
-    image: localhost/ecosim_server:latest
+    image: localhost/ecosim-server:latest
     platform: linux/amd64
     restart: "no"
     depends_on:
