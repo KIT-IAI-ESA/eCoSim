@@ -1,8 +1,17 @@
+# the images only need the subprojects, so everything else stays out of the build context
+*
+!ecosim-*
+
 # local environments, build output and caches of the subprojects, the image builds its own
 **/.venv
 **/dist
+**/build
+**/*.egg-info
 **/__pycache__
 **/.pytest_cache
 **/.mypy_cache
 **/.ruff_cache
 **/htmlcov
+**/.coverage
+**/coverage.xml
+**/report.xml
