@@ -175,4 +175,4 @@ wait
 ```
 
 Each client config then needs `ip` and `port` of the server in its `[server]` section. The clients try to connect
-for 30 seconds. `serverRun.sh` and `moduleRun.sh` in the same folder do the same with the results in PostgreSQL.
+for 30 seconds. `run-server.sh` and `run-clients.sh` in the same folder do the same with the results in PostgreSQL.

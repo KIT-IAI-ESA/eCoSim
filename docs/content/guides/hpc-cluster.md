@@ -17,12 +17,12 @@ This batch mode needs `mpirun` and at least 3 ranks. Started without `mpirun` it
 
 The example has these scripts in `building_hpc/`:
 
-- `clusterSetup.sh` sets up the conda and virtual environments and installs the packages, including
+- `cluster-setup.sh` sets up the conda and virtual environments and installs the packages, including
   PostgreSQL. It only needs to run once.
-- `clusterRunHPC.sh` is the job script. It starts PostgreSQL, runs the simulation with `mpirun` and
+- `cluster-run-hpc.sh` is the job script. It starts PostgreSQL, runs the simulation with `mpirun` and
   stops PostgreSQL again. It is configured for SLURM, with 4 tasks for 1 minute: the scheduler, the
   server and 2 workers.
-- `clusterRun.sh` is the same job with the plain server and one process per client, without `mpirun`
+- `cluster-run.sh` is the same job with the plain server and one process per client, without `mpirun`
   and Dask.
 
 `server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
@@ -51,13 +51,13 @@ Two FMUs or model files of different kinds in one folder stop the job before any
 
 2. Copy `building_hpc` into the workspace and change into it. The scripts use
    paths relative to it.
-3. Edit `ECOSIM_DIR` in `clusterSetup.sh` so it points at the eCoSim directory on your system.
-4. Run it: `bash clusterSetup.sh`
-5. Edit `ECOSIM_DIR` in `clusterRunHPC.sh` as well.
+3. Edit `ECOSIM_DIR` in `cluster-setup.sh` so it points at the eCoSim directory on your system.
+4. Run it: `bash cluster-setup.sh`
+5. Edit `ECOSIM_DIR` in `cluster-run-hpc.sh` as well.
 6. If an FMU simulator has a `[start_values]` section, check it on the login node now. A client that
    cannot start on its worker stops the job with an error that names the client, but only after the job
    has waited in the queue. A typo in a start value is enough for that. First run the lines of
-   `clusterRunHPC.sh` from `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the
+   `cluster-run-hpc.sh` from `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the
    environment of the job. In `building_hpc`:
 
    ```shell
@@ -73,7 +73,7 @@ Two FMUs or model files of different kinds in one folder stop the job before any
 
    It lists every problem in the config files, the simulator folders and the start values, see
    [Run a simulation](run-a-simulation.md#check-the-simulation).
-8. Submit the simulation: `sbatch -p <partition> clusterRunHPC.sh`. For this short test, the
+8. Submit the simulation: `sbatch -p <partition> cluster-run-hpc.sh`. For this short test, the
    partitions `dev_cpu` or `dev_cpu_il` are a good choice.
 
 The first run creates the PostgreSQL data directory `test` next to the scripts. Other users on the same
@@ -86,7 +86,7 @@ everyone in without a password, so the job stops with a message: delete or renam
 
 The job writes its output to the SLURM file `slurm-<job id>.out` next to the scripts. The server prints
 its settings and a progress line from time to time. At the end it prints SIMULATION FINISHED or
-SIMULATION FAILED with the steps, the simulated period and where the results are. `clusterRun.sh` writes
+SIMULATION FAILED with the steps, the simulated period and where the results are. `cluster-run.sh` writes
 the output of the clients to `log_client1` to `log_client3` instead.
 
 The job scripts pass `--debug`. That makes the SLURM file long. `grep -v ' - DEBUG - ' slurm-<job id>.out`
@@ -95,7 +95,7 @@ leaves out the debug messages.
 ## Choose the network and the threads
 
 By default Dask uses the address of the network with the default route, and every worker has 2 threads.
-Add these options to the `mpirun` line of `clusterRunHPC.sh` to change that:
+Add these options to the `mpirun` line of `cluster-run-hpc.sh` to change that:
 
 - `--network-interface ib0` uses this network interface, for example InfiniBand instead of Ethernet.
   The job stops right away if a node does not have it. Common names are `enp3s0`, `eno1`, `eth0` and
@@ -131,7 +131,7 @@ The script's `--database-schema` puts the tables into the schema `temp_schema`, 
 `--database-drop-existing-schema` makes the next run replace them. `ecosim results` shows every output and
 writes the values to `results.csv`, see [Read the results](results.md). Use `psql` for your own queries. Both
 read the password from `test.pgpass`. In `building_hpc`, with your `ECOSIM_DIR` as in
-`clusterRunHPC.sh`:
+`cluster-run-hpc.sh`:
 
 ```shell
 module load devel/miniforge/25.3.1-python-3.12
