@@ -23,7 +23,8 @@ services:
 
   db:
     container_name: ecosim-example-db
-    image: timescale/timescaledb:latest-pg16
+    # an image built on the official postgres image, like timescale/timescaledb:latest-pg17 for TimescaleDB
+    image: ${ECOSIM_DB_IMAGE:-postgres:17}
     platform: linux/amd64
     restart: "no"
     shm_size: 128mb
