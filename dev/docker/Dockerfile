@@ -2,7 +2,7 @@
 ARG PYTHON_VERSION=3.14
 ARG DEBIAN_RELEASE=trixie
 
-FROM astral/uv:0.13.7-python${PYTHON_VERSION}-${DEBIAN_RELEASE}-slim AS build
+FROM astral/uv:0.13.9-python${PYTHON_VERSION}-${DEBIAN_RELEASE}-slim AS build
 
 ARG SOURCE_DIR
 
