@@ -1,6 +1,6 @@
 # Examples
 
-Two simulations to try eCoSim with. You need [uv](https://docs.astral.sh/uv/).
+Three simulations to try eCoSim with. You need [uv](https://docs.astral.sh/uv/), for `docker` Docker or Podman instead.
 
 | Folder | What it is |
 | --- | --- |

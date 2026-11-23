@@ -154,7 +154,7 @@ The MATLAB client needs Python 3.12 and usually has its own environment. `ecosim
 `ecosim-client-matlab` on the PATH, see [MATLAB client](matlab-client.md). The `.m` files have to be in the
 simulator folder.
 
-The Pyro5 client comes with the extra `ecosim[pyro5]`. `ecosim run` does not start the Pyro5 object. Start it
+The Pyro5 client comes with the extra `ecosim-cli[pyro5]`. `ecosim run` does not start the Pyro5 object. Start it
 first, see [Pyro5 client](pyro5-client.md). The check before the run stops if nothing listens on `pyro_host` and
 `pyro_port` of the client config.
 

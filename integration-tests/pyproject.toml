@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
     "dask[distributed]==2026.7.0",
     "docker==7.1.0",
-    "ecosim==0.14.0",
+    "ecosim-cli==0.14.0",
     "ecosim-client-fmu-v3==0.14.0",
     "ecosim-client-fmu-v2==0.14.0",
     "ecosim-client-matlab==0.14.0",
@@ -46,7 +46,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-ecosim = { path = "../ecosim-cli", editable = true }
+ecosim-cli = { path = "../ecosim-cli", editable = true }
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-common-fmpy = { path = "../ecosim-common-fmpy", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }

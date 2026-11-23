@@ -30,11 +30,12 @@ flowchart TD
   tests[integration-tests] --> hpc[ecosim-hpc]
   tests --> testcommon[ecosim-test-common]
   tests --> python[ecosim-client-python]
-  ecosim[ecosim] --> server
-  ecosim --> fmu2
-  ecosim --> fmu3
-  ecosim --> python
-  ecosim --> fmpy
+  tests --> ecosim-cli
+  ecosim-cli --> server
+  ecosim-cli --> fmu2
+  ecosim-cli --> fmu3
+  ecosim-cli --> python
+  ecosim-cli --> fmpy
   hpc --> server[ecosim-server]
   hpc --> fmu2[ecosim-client-fmu-v2]
   hpc --> fmu3[ecosim-client-fmu-v3]

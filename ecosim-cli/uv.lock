@@ -555,7 +555,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ecosim"
+name = "ecosim-cli"
 version = "0.14.0"
 source = { editable = "." }
 dependencies = [

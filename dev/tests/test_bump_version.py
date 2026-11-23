@@ -23,7 +23,7 @@ def project_table(project: Path) -> dict[str, Any]:
 def internal_pins(project: Path) -> list[str]:
     table = project_table(project)
     requirements = chain(table.get("dependencies", []), *table.get("optional-dependencies", {}).values())
-    # "ecosim==", "ecosim-common==" and "ecosim-server[pandas]=="
+    # "ecosim-cli==", "ecosim-common==" and "ecosim-server[pandas]=="
     return [requirement for requirement in requirements if requirement.startswith("ecosim")]
 
 

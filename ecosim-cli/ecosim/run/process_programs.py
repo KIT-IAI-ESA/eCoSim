@@ -46,6 +46,6 @@ def _how_to_install(client_type: ClientType, script: str, simulator_directory_pa
                 + "environment and put that environment on the PATH. See the MATLAB client guide."
             )
         case ClientType.Pyro5:
-            return f"{simulator_directory_path} is a Pyro5 model, but {script} is not installed. Install ecosim[pyro5]."
+            return f"{simulator_directory_path} is a Pyro5 model, but {script} is not installed. Install ecosim-cli[pyro5]."
         case _:
             return f"{simulator_directory_path} needs {script}. It is not installed."

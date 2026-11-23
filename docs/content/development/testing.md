@@ -17,7 +17,7 @@
 
 | Subproject | Tests |
 | --- | --- |
-| `ecosim`, `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-client-python`, `ecosim-hpc` | `tests/` |
+| `ecosim-cli`, `ecosim-common`, `ecosim-common-fmpy`, `ecosim-server`, `ecosim-client-fmu-v2`, `ecosim-client-fmu-v3`, `ecosim-client-matlab`, `ecosim-client-python`, `ecosim-hpc` | `tests/` |
 | `integration-tests` | `integration_tests/` |
 | `ecosim-client-pyro5`, `ecosim-test-common` | none |
 

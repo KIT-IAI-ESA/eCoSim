@@ -33,7 +33,7 @@ environment of every package with its development tools and installs the pre-com
 
 | Package | Command | Purpose |
 | --- | --- | --- |
-| `ecosim` | `ecosim` | Runs a simulation locally with `ecosim new`, `ecosim check`, `ecosim run` and `ecosim results`. Installs the server, both FMU clients and the Python client |
+| `ecosim-cli` | `ecosim` | Runs a simulation locally with `ecosim new`, `ecosim check`, `ecosim run` and `ecosim results`. Installs the server, both FMU clients and the Python client |
 | `ecosim-server` | `ecosim-server` | The simulation server: state, repositories, measurements |
 | `ecosim-client-fmu-v2` | `ecosim-client-fmu-v2` | Client for FMI 2.0 models |
 | `ecosim-client-fmu-v3` | `ecosim-client-fmu-v3` | Client for FMI 3.0 models |
@@ -46,8 +46,8 @@ environment of every package with its development tools and installs the pre-com
 Every command lists its options with `--help` and prints its version with `--version`. The
 [command-line reference](../reference/command-line.md) has the same lists.
 
-Start with `ecosim`. A local run needs nothing else. Its extras add the Pyro5 client, `ecosim[pyro5]`, and pandas
-for the results, `ecosim[pandas]`. The MATLAB client needs Python 3.12 and its own environment, see the
+Start with `ecosim-cli`. A local run needs nothing else. Its extras add the Pyro5 client, `ecosim-cli[pyro5]`, and pandas
+for the results, `ecosim-cli[pandas]`. The MATLAB client needs Python 3.12 and its own environment, see the
 [MATLAB client](../guides/matlab-client.md).
 
 `examples/` is a uv project that installs `ecosim`, the server, the clients and `ecosim-hpc` together.
