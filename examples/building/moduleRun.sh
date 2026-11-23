@@ -5,8 +5,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 process_ids=()
 for module in house occupancy weather; do
-    uv run --project ../.. ecosim-client-fmu-v2 \
-        --config-file "../modules/$module/preferences.ini" \
+    uv run --project .. ecosim-client-fmu-v2 \
+        --config-file "modules/$module/preferences.ini" \
         "$@" &
     process_ids+=("$!")
 done

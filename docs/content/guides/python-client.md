@@ -87,19 +87,19 @@ The other keys are the same as for every client, see the [configuration referenc
 
 ## Run it
 
-In the `Executable` folder of an example:
+In the folder of an example simulation in `examples`:
 
 ```shell
-uv run --project ../.. ecosim-client-python --config-file ../modules/room/preferences.ini
+uv run --project .. ecosim-client-python --config-file modules/room/preferences.ini
 ```
 
 The model runs in the Python environment of the client. The packages it imports have to be installed there,
-for example with `uv add --project ../.. pandapower`. To add a package for one run only, use `uv run --with`
+for example with `uv add --project .. pandapower`. To add a package for one run only, use `uv run --with`
 and start the client with `python -m`. The `ecosim-client-python` command does not see a package that `--with`
 adds:
 
 ```shell
-uv run --project ../.. --with pandapower python -m ecosim_client_python.main --config-file ../modules/grid/preferences.ini
+uv run --project .. --with pandapower python -m ecosim_client_python.main --config-file modules/grid/preferences.ini
 ```
 
 The client loads the model before it connects to the server. A missing module, class, method or package

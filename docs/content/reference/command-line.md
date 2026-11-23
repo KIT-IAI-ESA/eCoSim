@@ -419,7 +419,7 @@ ecosim-hpc --interactive --server-config server/preferences.ini --simulation-con
 Every command ends with one of these codes. Without `--debug` an error ends the command with one line, for example:
 
 ```text
-ecosim-server: error: No such file or directory: /home/user/building/Executable/../server/simulaton.json (run with --debug for the full traceback)
+ecosim-server: error: No such file or directory: /home/user/building/server/simulaton.json (run with --debug for the full traceback)
 ```
 
 With `--debug` the command shows the full traceback.

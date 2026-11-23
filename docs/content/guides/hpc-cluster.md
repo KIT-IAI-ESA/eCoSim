@@ -15,7 +15,7 @@ everything with `mpirun`. Dask-MPI then turns the MPI ranks into a Dask cluster:
 
 This batch mode needs `mpirun` and at least 3 ranks. Started without `mpirun` it stops with an error.
 
-The example has these scripts in `building_hpc/Executable/`:
+The example has these scripts in `building_hpc/`:
 
 - `clusterSetup.sh` sets up the conda and virtual environments and installs the packages, including
   PostgreSQL. It only needs to run once.
@@ -49,7 +49,7 @@ Two FMUs or model files of different kinds in one folder stop the job before any
 
    `<user>` is your cluster user name. For KIT users this is `ka_<KIT_ID>`.
 
-2. Copy `building_hpc` into the workspace and change into `building_hpc/Executable`. The scripts use
+2. Copy `building_hpc` into the workspace and change into it. The scripts use
    paths relative to it.
 3. Edit `ECOSIM_DIR` in `clusterSetup.sh` so it points at the eCoSim directory on your system.
 4. Run it: `bash clusterSetup.sh`
@@ -58,17 +58,17 @@ Two FMUs or model files of different kinds in one folder stop the job before any
    cannot start on its worker stops the job with an error that names the client, but only after the job
    has waited in the queue. A typo in a start value is enough for that. First run the lines of
    `clusterRunHPC.sh` from `module load` to `source` with your `ECOSIM_DIR`. Your shell then has the
-   environment of the job. In `building_hpc/Executable`:
+   environment of the job. In `building_hpc`:
 
    ```shell
-   uv run ecosim-client-fmu-v2 --config-file ../modules/house/preferences.ini --validate-fmu-file-only
+   uv run ecosim-client-fmu-v2 --config-file modules/house/preferences.ini --validate-fmu-file-only
    ```
 
    It reads the FMU and the start values and starts nothing. Use `ecosim-client-fmu-v3` for an FMI 3.0 FMU.
 7. In the same shell and folder, check the whole simulation with the options of the job:
 
    ```shell
-   uv run ecosim check .. --database-type postgres --steps 100
+   uv run ecosim check . --database-type postgres --steps 100
    ```
 
    It lists every problem in the config files, the simulator folders and the start values, see
@@ -130,7 +130,7 @@ After the run, the PostgreSQL database `sim_control` is in the directory `test` 
 The script's `--database-schema` puts the tables into the schema `temp_schema`, and its
 `--database-drop-existing-schema` makes the next run replace them. `ecosim results` shows every output and
 writes the values to `results.csv`, see [Read the results](results.md). Use `psql` for your own queries. Both
-read the password from `test.pgpass`. In `building_hpc/Executable`, with your `ECOSIM_DIR` as in
+read the password from `test.pgpass`. In `building_hpc`, with your `ECOSIM_DIR` as in
 `clusterRunHPC.sh`:
 
 ```shell
@@ -140,7 +140,7 @@ ECOSIM_DIR="$HOME/ecosim"
 source "$ECOSIM_DIR/examples/.venv/bin/activate"
 export PGPASSFILE="$PWD/test.pgpass"
 pg_ctl start -D test -l test/logfile -o "-F -p 5432"
-uv run ecosim results --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
+uv run ecosim results --server-config server/preferences.ini --simulation-config server/simulation.json \
     --database-schema temp_schema --csv results.csv
 psql -d sim_control
 # \dt temp_schema.* lists the tables; run your queries, then leave psql with \q
