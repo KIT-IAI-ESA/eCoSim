@@ -14,10 +14,10 @@ The [quick start](../../docs/content/getting-started/quick-start.md) explains ea
 
 ## Start the server and the clients by hand, with PostgreSQL
 
-`serverRun.sh` and `moduleRun.sh` in this folder start the server and the three clients by hand. They run
+`run-server.sh` and `run-clients.sh` in this folder start the server and the three clients by hand. They run
 100 steps of 15 minutes and store the results in PostgreSQL.
 
-**Warning: every start of `serverRun.sh` drops the schema `temp_schema` in the database
+**Warning: every start of `run-server.sh` drops the schema `temp_schema` in the database
 `sim_control` with all its tables, so the results of the previous run are lost. Only a start with
 `--restore-simulation-run` keeps them.**
 
@@ -44,7 +44,7 @@ createdb --host localhost --username postgres --encoding UTF8 --template templat
 ### 3. Start the server
 
 ```shell
-PGPASSWORD=<password> ./serverRun.sh --database-host localhost --database-user postgres
+PGPASSWORD=<password> ./run-server.sh --database-host localhost --database-user postgres
 ```
 
 The first run creates the environment, which takes a moment. The server then waits for the clients.
@@ -55,7 +55,7 @@ Instead of these settings you can fill in the `[database]` section of `server/pr
 In a second terminal, in the same folder:
 
 ```shell
-./moduleRun.sh
+./run-clients.sh
 ```
 
 The clients retry connecting for 30 seconds. When the simulation is finished, the server and the
@@ -77,7 +77,7 @@ says `finished`.
 
 ### Options
 
-Both scripts pass extra arguments on, `moduleRun.sh` to each of the three clients:
+Both scripts pass extra arguments on, `run-clients.sh` to each of the three clients:
 
 | Purpose | Server | Clients |
 | --- | --- | --- |
@@ -88,6 +88,6 @@ Both scripts pass extra arguments on, `moduleRun.sh` to each of the three client
 | Another schema, also dropped if it exists | `--database-schema my_run` | |
 
 To run without PostgreSQL, write the results as files instead:
-`./serverRun.sh --database-type file --database-directory results/manual`
+`./run-server.sh --database-type file --database-directory results/manual`
 
 All options are in the [command-line reference](../../docs/content/reference/command-line.md).

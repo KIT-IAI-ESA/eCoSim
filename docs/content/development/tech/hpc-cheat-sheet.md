@@ -16,11 +16,11 @@ example on bwUniCluster.
 
 #### Start in Batch Mode
 
-`examples/building_hpc/clusterRunHPC.sh` is the complete job script, with PostgreSQL:
+`examples/building_hpc/cluster-run-hpc.sh` is the complete job script, with PostgreSQL:
 
 - `cd examples/building_hpc`
 - set `ECOSIM_DIR` in the script
-- `sbatch -p <partition> clusterRunHPC.sh`
+- `sbatch -p <partition> cluster-run-hpc.sh`
 
 The same run without SLURM and PostgreSQL, on a machine with `mpirun`, in the same directory. The results go
 to `simulation_results/`:
