@@ -24,6 +24,8 @@ The example has these scripts in `building_hpc/`:
   server and 2 workers.
 - `cluster-run.sh` is the same job with the plain server and one process per client, without `mpirun`
   and Dask.
+- `local-run-hpc.sh` runs `ecosim-hpc` on your own computer, without the cluster, see
+  [Try it on your own computer](#try-it-on-your-own-computer).
 
 `server/preferences.ini` points at the PostgreSQL server the job script starts. Its user name and password
 are empty, so the server logs in as your cluster user with the password from `test.pgpass`, see below.
@@ -35,6 +37,20 @@ A simulator's folder in `modules/` has one model. `ecosim-hpc` chooses the clien
   `.py` files
 
 Two FMUs or model files of different kinds in one folder stop the job before any client starts.
+
+## Try it on your own computer
+
+`local-run-hpc.sh` runs the example with `ecosim-hpc` on one machine. It needs neither SLURM, MPI nor
+PostgreSQL: it starts a Dask scheduler and 2 workers, runs `ecosim-hpc --interactive` against them and
+stops them again. In `examples/building_hpc`:
+
+```shell
+./local-run-hpc.sh --steps 10
+```
+
+The arguments go to `ecosim-hpc`, the default is 100 steps. `DASK_WORKERS=4 ./local-run-hpc.sh` starts
+4 workers. The results go to `simulation_results/`, the logs of Dask to `dask-scheduler.log` and
+`dask-workers.log`. The script needs bash, so on Windows run it in WSL.
 
 ## Set up and run
 
