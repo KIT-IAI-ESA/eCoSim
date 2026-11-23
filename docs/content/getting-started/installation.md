@@ -50,8 +50,9 @@ Start with `ecosim-cli`. A local run needs nothing else. Its extras add the Pyro
 for the results, `ecosim-cli[pandas]`. The MATLAB client needs Python 3.12 and its own environment, see the
 [MATLAB client](../guides/matlab-client.md).
 
-`examples/` is a uv project that installs `ecosim`, the server, the clients and `ecosim-hpc` together.
-The examples use it. To have the `ecosim` command in every folder, install it from the clone as a uv tool:
+`examples/` is a uv project that installs `ecosim-cli` (with the `ecosim` command), the server, the clients
+and `ecosim-hpc` together. The examples use it. To have the `ecosim` command in every folder, install `ecosim-cli`
+from the clone as a uv tool:
 
 ```shell
 uv tool install --editable ./ecosim-cli
