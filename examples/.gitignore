@@ -5,3 +5,11 @@
 /my_building/
 /house_simulation/
 results.csv
+
+# made by the HPC scripts and the HPC guides in the folder they run in
+/building_hpc/test/
+/building_hpc/test.pgpass
+/building_hpc/log_client*
+/building_hpc/scheduler.json
+/building_hpc/simulation_results/
+/building_hpc/dask-scratch-space/
