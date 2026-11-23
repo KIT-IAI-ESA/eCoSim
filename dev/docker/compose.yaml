@@ -1,7 +1,7 @@
-# Builds the eCoSim images. From this folder: docker compose build ecosim_server ecosim_client_fmu_v2
+# Builds the eCoSim images. From this folder: docker compose build ecosim-server ecosim-client-fmu-v2
 services:
-  ecosim_server:
-    image: localhost/ecosim_server:latest
+  ecosim-server:
+    image: localhost/ecosim-server:latest
     platform: linux/amd64
     build:
       context: ../..
@@ -9,8 +9,8 @@ services:
       args:
         SOURCE_DIR: ecosim-server
         COMMAND_NAME: ecosim-server
-  ecosim_client_fmu_v2:
-    image: localhost/ecosim_client_fmu_v2:latest
+  ecosim-client-fmu-v2:
+    image: localhost/ecosim-client-fmu-v2:latest
     platform: linux/amd64
     build:
       context: ../..
@@ -18,8 +18,8 @@ services:
       args:
         SOURCE_DIR: ecosim-client-fmu-v2
         COMMAND_NAME: ecosim-client-fmu-v2
-  ecosim_client_fmu_v3:
-    image: localhost/ecosim_client_fmu_v3:latest
+  ecosim-client-fmu-v3:
+    image: localhost/ecosim-client-fmu-v3:latest
     platform: linux/amd64
     build:
       context: ../..
@@ -27,8 +27,8 @@ services:
       args:
         SOURCE_DIR: ecosim-client-fmu-v3
         COMMAND_NAME: ecosim-client-fmu-v3
-  ecosim_client_matlab:
-    image: localhost/ecosim_client_matlab:latest
+  ecosim-client-matlab:
+    image: localhost/ecosim-client-matlab:latest
     platform: linux/amd64
     build:
       context: ../..
@@ -36,8 +36,8 @@ services:
       args:
         SOURCE_DIR: ecosim-client-matlab
         COMMAND_NAME: ecosim-client-matlab
-  ecosim_client_pyro5:
-    image: localhost/ecosim_client_pyro5:latest
+  ecosim-client-pyro5:
+    image: localhost/ecosim-client-pyro5:latest
     platform: linux/amd64
     build:
       context: ../..
