@@ -27,6 +27,9 @@ results:
 
 All commands below run in `examples/docker/`.
 
+For a quick run, `./build-and-run.sh` builds the images and runs the `file` variant, `./run.sh postgres` the
+other one. The steps below do the same by hand.
+
 ## Prerequisites
 
 Build the images once. They are tagged `localhost/ecosim-*`:
