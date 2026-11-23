@@ -1,21 +1,18 @@
 <div align="center">
 
 <h1>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/wordmark-dark.png">
-  <img alt="eCoSim" src="docs/static/img/readme/wordmark-light.png" height="80">
-</picture>
+<img alt="eCoSim" src="docs/static/img/readme/wordmark-band.png" width="100%">
 </h1>
 
 A co-simulation framework for energy systems.
 
-[![tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml)
-[![windows tests](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/windows-tests.yml/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/windows-tests.yml)
-[![CodeQL](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/github-code-scanning/codeql)
-[![docs](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/docs.yml/badge.svg)](https://ecosim.easimov.com/docs)
-[![licence](https://img.shields.io/badge/licence-Apache%202.0-00876c)](LICENSE)
-[![python](https://img.shields.io/badge/python-3.12%20%7C%203.14-00876c)](https://ecosim.easimov.com/docs/getting-started/installation)
-[![FMI](https://img.shields.io/badge/FMI-2.0%20%7C%203.0-00876c)](https://fmi-standard.org/)
+[![tests](https://img.shields.io/github/actions/workflow/status/KIT-IAI-ESA/eCoSim/tests.yml?branch=main&label=tests&style=for-the-badge)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/tests.yml)
+[![windows tests](https://img.shields.io/github/actions/workflow/status/KIT-IAI-ESA/eCoSim/windows-tests.yml?branch=main&label=windows%20tests&style=for-the-badge)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/windows-tests.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/KIT-IAI-ESA/eCoSim/github-code-scanning/codeql?branch=main&label=CodeQL&style=for-the-badge)](https://github.com/KIT-IAI-ESA/eCoSim/actions/workflows/github-code-scanning/codeql)
+[![docs](https://img.shields.io/github/actions/workflow/status/KIT-IAI-ESA/eCoSim/docs.yml?branch=main&label=docs&style=for-the-badge)](https://ecosim.easimov.com/docs)
+[![licence](https://img.shields.io/badge/licence-Apache%202.0-00876c?style=for-the-badge)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.12%20%7C%203.14-00876c?style=for-the-badge)](https://ecosim.easimov.com/docs/getting-started/installation)
+[![FMI](https://img.shields.io/badge/FMI-2.0%20%7C%203.0-00876c?style=for-the-badge)](https://fmi-standard.org/)
 
 </div>
 
@@ -23,21 +20,27 @@ eCoSim runs several simulation models together as one simulation, for example a 
 and the weather. In every step it passes the outputs of each model on to the models that need them.
 
 ```mermaid
-flowchart LR
-    subgraph models["Your models"]
-        direction TB
-        fmu2(["FMI 2.0"])
-        fmu3(["FMI 3.0"])
-        matlab(["MATLAB"])
-        python(["Python"])
-    end
-    models <--> server(("eCoSim"))
-    server --> results[("Results")]
-    classDef accent fill:#00876c,stroke:#00876c,color:#ffffff
+---
+config:
+  look: classic
+  flowchart:
+    rankSpacing: 30
+  themeVariables:
+    lineColor: "#00876c"
+---
+flowchart TB
+    fmu2(["FMI 2.0"]) <--> server(("eCoSim"))
+    fmu3(["FMI 3.0"]) <--> server
+    server <--> matlab(["MATLAB"])
+    matlab ~~~ results[("Results")]
+    server --> results
+    server <--> python(["Python"])
+    python ~~~ results
+    classDef accent fill:#00876c,stroke:#00876c,color:#ffffff,font-size:18px,font-weight:bold
     classDef plain fill:transparent,stroke:#00876c
     class server accent
     class fmu2,fmu3,matlab,python,results plain
-    style models fill:transparent,stroke:#00876c,stroke-dasharray:4 3
+    linkStyle 0,1,2,4,5 stroke-width:2px
 ```
 
 Your models can be FMUs (FMI 2.0 or 3.0), MATLAB scripts or Python code. The results go into files or
@@ -76,25 +79,9 @@ A real run of the three commands, with the waits shortened.
 
 The documentation is at [ecosim.easimov.com/docs](https://ecosim.easimov.com/docs).
 
-- [Installation](https://ecosim.easimov.com/docs/getting-started/installation), the
-  [quick start](https://ecosim.easimov.com/docs/getting-started/quick-start) and
-  [your own models](https://ecosim.easimov.com/docs/getting-started/your-own-models)
-- Guides: [Run a simulation](https://ecosim.easimov.com/docs/guides/run-a-simulation),
-  [Read the results](https://ecosim.easimov.com/docs/guides/results),
-  [Docker](https://ecosim.easimov.com/docs/guides/docker),
-  [HPC cluster](https://ecosim.easimov.com/docs/guides/hpc-cluster),
-  [MATLAB client](https://ecosim.easimov.com/docs/guides/matlab-client),
-  [Pyro5 client](https://ecosim.easimov.com/docs/guides/pyro5-client),
-  [Python client](https://ecosim.easimov.com/docs/guides/python-client)
-- Reference: [command line](https://ecosim.easimov.com/docs/reference/command-line),
-  [configuration files](https://ecosim.easimov.com/docs/reference/configuration-files)
-
 ## Contributing
 
-Questions, bug reports and pull requests are welcome, see [Contributing](CONTRIBUTING.md). To work on
-eCoSim itself, start with the [project setup](docs/content/development/project-setup.md). The
-[architecture page](docs/content/development/architecture.md) lists the packages of this repository
-and what each one does.
+Questions, bug reports and pull requests are welcome, see [Contributing](CONTRIBUTING.md).
 
 ## Citing eCoSim
 
@@ -106,8 +93,6 @@ GitHub shows them under "Cite this repository" on the repository page.
 eCoSim is released under the [Apache License 2.0](LICENSE).
 
 ## Credits
-
-<a href="https://www.iai.kit.edu/english/groups_4104.php"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/static/img/readme/esa-dark.png"><img alt="ESA" src="docs/static/img/readme/esa-light.png" height="36"></picture></a>
 
 eCoSim is part of [eASiMOV](https://easimov.cloud.iai.kit.edu). It is a project of the
 [Energy System Analysis](https://www.iai.kit.edu/english/groups_4104.php) research group at the
