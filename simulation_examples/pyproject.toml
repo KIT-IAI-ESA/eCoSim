@@ -28,7 +28,7 @@ dependencies = [
 py-modules=[]
 
 [tool.uv.sources]
-ecosim = { path = "../ecosim", editable = true }
+ecosim = { path = "../ecosim-cli", editable = true }
 ecosim-common = { path = "../ecosim-common", editable = true }
 ecosim-server = { path = "../ecosim-server", editable = true }
 ecosim-client-fmu-v2 = { path = "../ecosim-client-fmu-v2", editable = true }
@@ -36,4 +36,4 @@ ecosim-client-python = { path = "../ecosim-client-python", editable = true }
 ecosim-hpc = { path = "../ecosim-hpc", editable = true }
 
 [tool.mypy]
-mypy_path = ["../ecosim", "../ecosim-common", "../ecosim-server", "../ecosim-client-python", "../ecosim-hpc"]
+mypy_path = ["../ecosim-cli", "../ecosim-common", "../ecosim-server", "../ecosim-client-python", "../ecosim-hpc"]

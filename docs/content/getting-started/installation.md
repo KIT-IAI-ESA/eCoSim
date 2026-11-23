@@ -54,7 +54,7 @@ for the results, `ecosim[pandas]`. The MATLAB client needs Python 3.12 and its o
 The examples use it. To have the `ecosim` command in every folder, install it from the clone as a uv tool:
 
 ```shell
-uv tool install --editable ./ecosim
+uv tool install --editable ./ecosim-cli
 ```
 
 To work on eCoSim itself, see [Project setup](../development/project-setup.md).

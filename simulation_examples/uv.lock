@@ -230,7 +230,7 @@ wheels = [
 [[package]]
 name = "ecosim"
 version = "0.14.0"
-source = { editable = "../ecosim" }
+source = { editable = "../ecosim-cli" }
 dependencies = [
     { name = "ecosim-client-fmu-v2" },
     { name = "ecosim-client-fmu-v3" },
@@ -1785,7 +1785,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ecosim", editable = "../ecosim" },
+    { name = "ecosim", editable = "../ecosim-cli" },
     { name = "ecosim-client-fmu-v2", editable = "../ecosim-client-fmu-v2" },
     { name = "ecosim-client-python", editable = "../ecosim-client-python" },
     { name = "ecosim-common", editable = "../ecosim-common" },

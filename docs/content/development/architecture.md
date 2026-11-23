@@ -7,7 +7,7 @@ Twelve independent uv projects. Each has its own `pyproject.toml`, `uv.lock` and
 
 | Subproject | Import package | Purpose |
 | --- | --- | --- |
-| `ecosim` | `ecosim` | The `ecosim` command to write, check and run a simulation locally and to read its results |
+| `ecosim-cli` | `ecosim` | The `ecosim` command to write, check and run a simulation locally and to read its results |
 | `ecosim-common` | `ecosim_common` | Shared abstractions: config, communication, simulation primitives |
 | `ecosim-common-fmpy` | `ecosim_common_fmpy` | Shared FMU/fmpy code for the FMU clients and `ecosim-hpc` |
 | `ecosim-server` | `ecosim_server` | The simulation server: state, repositories, measurements |
@@ -51,7 +51,7 @@ flowchart TD
 - `ecosim-hpc` depends on the server *and* on every client package, because it imports their
   classes directly: `hpc_main_process` constructs the `Server`, and `ClientManager` starts the
   clients as tasks on the dask cluster
-- `ecosim` depends on the server and on the clients that need no extra setup. One install is enough for a local
+- `ecosim-cli` depends on the server and on the clients that need no extra setup. One install is enough for a local
   run. Its check reads the config files with the readers of the server and the clients
 - `integration-tests` depends on all of them, which is why it is excluded from `dev/run_unit_tests.py`
 
@@ -81,7 +81,7 @@ The one exception is `ecosim_server.results`. It reads the results of a run as o
 | `tech` | Infrastructure: logging, threading, json, datetime |
 | `tech/structures` | `ESPQueue`, `ESPList`, `ESPMap`, … each with a thread and a dask backend, chosen by `ESPStructureType`. Shared state uses them, so the same code runs on threads or on dask workers |
 
-### `ecosim`
+### `ecosim-cli`
 
 | Module | Contains |
 | --- | --- |
