@@ -23,7 +23,7 @@ cd ecosim
 eCoSim is installed from source. The repository holds one uv project per package, and
 `uv run --project <folder>` creates the environment of that folder the first time it is used, so
 there is no separate install step. The [quick start](quick-start.md) works this way in
-`simulation_examples`.
+`examples`.
 
 To set up all packages at once, run `python dev/init_dev.py` in the repository root. It creates the
 environment of every package with its development tools and installs the pre-commit hooks, see
@@ -50,7 +50,7 @@ Start with `ecosim`. A local run needs nothing else. Its extras add the Pyro5 cl
 for the results, `ecosim[pandas]`. The MATLAB client needs Python 3.12 and its own environment, see the
 [MATLAB client](../guides/matlab-client.md).
 
-`simulation_examples/` is a uv project that installs `ecosim`, the server, the clients and `ecosim-hpc` together.
+`examples/` is a uv project that installs `ecosim`, the server, the clients and `ecosim-hpc` together.
 The examples use it. To have the `ecosim` command in every folder, install it from the clone as a uv tool:
 
 ```shell

@@ -3,7 +3,7 @@
 A house, its weather and the people in it, as three FMI 2.0 models. In every step of 15 minutes `weather`
 and `occupancy` give their values to `house`.
 
-Run it from the `simulation_examples` folder. The results are written as files, so no database is needed:
+Run it from the `examples` folder. The results are written as files, so no database is needed:
 
 ```shell
 uv run ecosim run building --steps 100

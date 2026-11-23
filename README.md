@@ -56,7 +56,7 @@ cd ecosim
 The building example runs three models for 100 steps. No database is needed:
 
 ```shell
-cd simulation_examples
+cd examples
 uv run ecosim check building
 uv run ecosim run building --steps 100
 uv run ecosim results building

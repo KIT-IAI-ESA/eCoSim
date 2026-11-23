@@ -6,7 +6,7 @@ description: Look at the results of a run, write them to a CSV file, or read the
 # Read the results
 
 `ecosim results` shows the results of a run and writes them as one table to a CSV file. The commands below run in
-`simulation_examples`, after a run of [Run a simulation](run-a-simulation.md).
+`examples`, after a run of [Run a simulation](run-a-simulation.md).
 
 ## What a run stores
 
@@ -92,7 +92,7 @@ frame = table.to_pandas_data_frame()  # a pandas DataFrame with the simulation t
 `read_file_results` takes a folder with result files. For `ecosim run` that is a run folder, not the simulation folder.
 It leaves out the inputs unless you pass `include_inputs=True`. `table.select(names=["house"])` keeps the columns
 of the house, like `--interface`. `to_pandas_data_frame()` needs pandas. It comes with the extra `ecosim[pandas]` and
-`simulation_examples` has it.
+`examples` has it.
 
 ## Results in PostgreSQL
 

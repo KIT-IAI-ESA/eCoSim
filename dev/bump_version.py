@@ -15,7 +15,7 @@ from config import REPO_ROOT, SUBPROJECTS, error_print, get_uv_path, run
 
 ECOSIM_PROJECTS = [Path("."), *(path.relative_to(REPO_ROOT) for path, _ in SUBPROJECTS)]
 # the examples keep their own version but pin the eCoSim packages
-ALL_PROJECTS = [*ECOSIM_PROJECTS, Path("simulation_examples")]
+ALL_PROJECTS = [*ECOSIM_PROJECTS, Path("examples")]
 
 
 def read_pyproject(project: Path) -> str:

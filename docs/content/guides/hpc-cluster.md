@@ -5,7 +5,7 @@ description: Run the building example on bwUniCluster with SLURM and Dask-MPI.
 
 # HPC cluster
 
-The `simulation_examples/building_hpc` example runs the building simulation on bwUniCluster with the
+The `examples/building_hpc` example runs the building simulation on bwUniCluster with the
 `ecosim-hpc` command. One job script is submitted to SLURM, the cluster's queuing system, and starts
 everything with `mpirun`. Dask-MPI then turns the MPI ranks into a Dask cluster:
 
@@ -137,7 +137,7 @@ read the password from `test.pgpass`. In `building_hpc/Executable`, with your `E
 module load devel/miniforge/25.3.1-python-3.12
 conda activate eCoSim
 ECOSIM_DIR="$HOME/ecosim"
-source "$ECOSIM_DIR/simulation_examples/.venv/bin/activate"
+source "$ECOSIM_DIR/examples/.venv/bin/activate"
 export PGPASSFILE="$PWD/test.pgpass"
 pg_ctl start -D test -l test/logfile -o "-F -p 5432"
 uv run ecosim results --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \

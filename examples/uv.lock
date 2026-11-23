@@ -518,6 +518,33 @@ requires-dist = [
 provides-extras = ["pandas", "dev"]
 
 [[package]]
+name = "examples"
+version = "0.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "ecosim" },
+    { name = "ecosim-client-fmu-v2" },
+    { name = "ecosim-client-python" },
+    { name = "ecosim-common" },
+    { name = "ecosim-hpc" },
+    { name = "ecosim-server" },
+    { name = "mypy" },
+    { name = "websockets" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ecosim", editable = "../ecosim-cli" },
+    { name = "ecosim-client-fmu-v2", editable = "../ecosim-client-fmu-v2" },
+    { name = "ecosim-client-python", editable = "../ecosim-client-python" },
+    { name = "ecosim-common", editable = "../ecosim-common" },
+    { name = "ecosim-hpc", editable = "../ecosim-hpc" },
+    { name = "ecosim-server", editable = "../ecosim-server" },
+    { name = "mypy", specifier = "==2.3.0" },
+    { name = "websockets", specifier = "==16.0" },
+]
+
+[[package]]
 name = "fastjsonschema"
 version = "2.21.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1766,33 +1793,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6b/bb/58ab4dc0382c2386355cbcb7ffa490e542159de6012d500a602a6d0ed535/serpent-1.43.tar.gz", hash = "sha256:62dc242fd4ea2a50339f4f5aaaf6ecc55605ee74770d7eb2031e760d90a0d114", size = 91641, upload-time = "2026-05-30T16:30:13.881Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/b0/75745c948bc814d145cc46cb6da219c7acf3875822d47f08d6323ccf0458/serpent-1.43-py3-none-any.whl", hash = "sha256:7907f40151da126d57bbd675364d23898efa6b6601d79379cbae800236586b54", size = 9787, upload-time = "2026-05-30T16:30:12.027Z" },
-]
-
-[[package]]
-name = "simulation-examples"
-version = "0.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "ecosim" },
-    { name = "ecosim-client-fmu-v2" },
-    { name = "ecosim-client-python" },
-    { name = "ecosim-common" },
-    { name = "ecosim-hpc" },
-    { name = "ecosim-server" },
-    { name = "mypy" },
-    { name = "websockets" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "ecosim", editable = "../ecosim-cli" },
-    { name = "ecosim-client-fmu-v2", editable = "../ecosim-client-fmu-v2" },
-    { name = "ecosim-client-python", editable = "../ecosim-client-python" },
-    { name = "ecosim-common", editable = "../ecosim-common" },
-    { name = "ecosim-hpc", editable = "../ecosim-hpc" },
-    { name = "ecosim-server", editable = "../ecosim-server" },
-    { name = "mypy", specifier = "==2.3.0" },
-    { name = "websockets", specifier = "==16.0" },
 ]
 
 [[package]]
