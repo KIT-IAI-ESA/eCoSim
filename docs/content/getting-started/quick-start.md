@@ -220,7 +220,7 @@ The [configuration reference](../reference/configuration-files.md) lists every k
 
 - Start the server and the clients manually, for example on several machines, see
   [Run a simulation](../guides/run-a-simulation.md#start-the-server-and-the-clients-manually).
-- Store the results in PostgreSQL/TimescaleDB with `--database-type postgres` and the `[database]` section of
+- Store the results in PostgreSQL with `--database-type postgres` and the `[database]` section of
   `server/preferences.ini`, see [Run a simulation](../guides/run-a-simulation.md#the-run-folder).
 - Run a simulation in containers with the [Docker guide](../guides/docker.md).
 - Run many simulations at once on a cluster with the [HPC guide](../guides/hpc-cluster.md).

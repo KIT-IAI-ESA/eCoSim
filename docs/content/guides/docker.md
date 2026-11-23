@@ -22,7 +22,7 @@ results:
 
 | Variant | Results are stored in | Directory |
 | --- | --- | --- |
-| `postgres` | a TimescaleDB container | `postgres/` |
+| `postgres` | a PostgreSQL container | `postgres/` |
 | `file` | JSON lines on the host, no database needed | `file/` |
 
 All commands below run in `examples/docker/`.
@@ -52,6 +52,15 @@ all images.
 cd postgres
 docker compose up --abort-on-container-exit
 ```
+
+The database is a plain PostgreSQL, the server needs no extension. `ECOSIM_DB_IMAGE` sets another
+image built on the official `postgres` image, for example TimescaleDB:
+
+```shell
+ECOSIM_DB_IMAGE=timescale/timescaledb:latest-pg17 docker compose up --abort-on-container-exit
+```
+
+Run `docker compose down` before switching, `up` keeps the existing `db` container.
 
 The run takes a few seconds. It is finished when the server prints `SERVER MEASUREMENT` and every
 container has exited with code 0. The last block, `SIMULATION FINISHED`, shows the number of steps and

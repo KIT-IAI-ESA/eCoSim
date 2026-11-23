@@ -181,7 +181,7 @@ the server ini:
 
 | `DatabaseType` | Implementation | Needs |
 | --- | --- | --- |
-| `postgres` | `RepositoriesDB` | a PostgreSQL/TimescaleDB instance |
+| `postgres` | `RepositoriesDB` | a PostgreSQL instance |
 | `file` | `RepositoriesFileBased` | a writable directory, one JSON lines file per module |
 
 Both are exercised end to end by the [Docker example](../guides/docker.md). The code that uses them never sees
