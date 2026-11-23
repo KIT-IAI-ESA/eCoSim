@@ -22,7 +22,6 @@ RUN uv build --all-packages
 # create PEX (python executable)
 RUN uv export --no-dev --no-emit-workspace --no-hashes --format requirements-txt -o requirements.txt
 RUN uvx pex -r requirements.txt dist/*.whl -c ${COMMAND_NAME} \
-  --scie eager \
   -o ${BUILD_DIR}/${COMMAND_NAME}.pex
 
 
