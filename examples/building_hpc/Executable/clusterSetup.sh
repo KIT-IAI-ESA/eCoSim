@@ -12,15 +12,15 @@ if ! conda info --envs | grep -wq "eCoSim"; then
     conda create --name eCoSim python=3.13
     conda activate eCoSim
     conda install uv postgresql
-    cd "$ECOSIM_DIR/simulation_examples"
+    cd "$ECOSIM_DIR/examples"
     uv sync
     echo "Completed!"
 
-elif [ ! -d "$ECOSIM_DIR/simulation_examples/.venv" ]; then
+elif [ ! -d "$ECOSIM_DIR/examples/.venv" ]; then
     echo "conda environment eCoSim already exists but simualtion environment not setup."
     echo "Setting up ..."
     conda activate eCoSim
-    cd "$ECOSIM_DIR/simulation_examples"
+    cd "$ECOSIM_DIR/examples"
     uv sync
     echo "Completed!"
 else

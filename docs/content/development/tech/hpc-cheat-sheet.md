@@ -16,9 +16,9 @@ example on bwUniCluster.
 
 #### Start in Batch Mode
 
-`simulation_examples/building_hpc/Executable/clusterRunHPC.sh` is the complete job script, with PostgreSQL:
+`examples/building_hpc/Executable/clusterRunHPC.sh` is the complete job script, with PostgreSQL:
 
-- `cd simulation_examples/building_hpc/Executable`
+- `cd examples/building_hpc/Executable`
 - set `ECOSIM_DIR` in the script
 - `sbatch -p <partition> clusterRunHPC.sh`
 
@@ -46,7 +46,7 @@ mpirun -np 4 uv run ecosim-hpc \
 #### Start in Interactive Mode
 
 `--interactive` starts no cluster, it connects to a running Dask scheduler through the file the scheduler
-writes. In `simulation_examples/building_hpc/Executable`:
+writes. In `examples/building_hpc/Executable`:
 
 1. Start the scheduler and the workers, each in a terminal of its own:
    - with `mpirun`: `mpirun -np 3 uv run dask-mpi --scheduler-file scheduler.json`, which gives a

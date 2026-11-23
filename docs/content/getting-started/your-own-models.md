@@ -9,7 +9,7 @@ description: Write a simulation folder from your FMUs with one command.
 its client config. `server/` gets the server config and `simulation.json`. Inputs and outputs with the same name
 are connected. You can change all these files later.
 
-The commands below run in `simulation_examples`. The three FMUs of the building example give the same simulation
+The commands below run in `examples`. The three FMUs of the building example give the same simulation
 as the files of the example:
 
 ```shell

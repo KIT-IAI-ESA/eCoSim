@@ -38,7 +38,7 @@ Node.js 24 or newer, or Docker with the script below.
 The two reference pages are generated from the code. After changing a command-line option or a
 config reader, regenerate them in the repository root:
 
-- `uv run --project simulation_examples python dev/generate_cli_reference.py`
+- `uv run --project examples python dev/generate_cli_reference.py`
 - `uv run python dev/generate_config_reference.py`
 
 With `--check`, both scripts only compare and fail if the page is out of date. CI runs them this way.

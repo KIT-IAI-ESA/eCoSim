@@ -5,12 +5,13 @@
 #SBATCH --job-name=ecosim-test
 
 module load devel/miniforge/25.3.1-python-3.12
+module load mpi/openmpi/5.0-gnu-14.2
 conda activate eCoSim
 
 ECOSIM_DIR="$HOME/ecosim" #Change to location of eCoSim as need
 
 # shellcheck disable=SC1091
-source "$ECOSIM_DIR/simulation_examples/.venv/bin/activate"
+source "$ECOSIM_DIR/examples/.venv/bin/activate"
 
 #set ecosim location
 #create conda env and install uv and postgresql, perhaps seperate script
@@ -41,11 +42,7 @@ if ! psql -w -lqt | cut -d \| -f 1 | grep -wq sim_control; then
     createdb -w sim_control
 fi
 
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/house/preferences.ini --debug > log_client1 2>&1 &
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/occupancy/preferences.ini --debug > log_client2 2>&1 &
-python3 "$ECOSIM_DIR/ecosim-client-fmu-v2/ecosim_client_fmu_v2/main.py" --config-file ../modules/weather/preferences.ini --debug > log_client3 2>&1 &
-
-python3 "$ECOSIM_DIR/ecosim-server/ecosim_server/main.py" --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --steps 100 --database-schema temp_schema --database-drop-existing-schema
+mpirun --bind-to core --map-by core uv run ecosim-hpc --server-config ../server/preferences.ini --debug --simulation-config ../server/simulation.json --simulator-dir ../modules/ --steps 100 --database-schema temp_schema --database-drop-existing-schema
 
 
 pg_ctl stop -D $PG_SERVER_DIR

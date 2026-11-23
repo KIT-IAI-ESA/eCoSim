@@ -14,7 +14,7 @@ binaries and the scripts need bash.
 
 ```shell
 git clone https://github.com/KIT-IAI-ESA/ecosim.git
-cd ecosim/simulation_examples/building/Executable
+cd ecosim/examples/building/Executable
 ```
 
 ## 2. Check the database encoding
@@ -77,6 +77,6 @@ To run without PostgreSQL, write the results as files instead:
 `./serverRun.sh --database-type file --database-directory results`
 
 The [quick start](../../../docs/content/getting-started/quick-start.md) runs this example with one command and
-with the results as files: `uv run ecosim run building --steps 100` in `simulation_examples`.
+with the results as files: `uv run ecosim run building --steps 100` in `examples`.
 
 All options are in the [command-line reference](../../../docs/content/reference/command-line.md).

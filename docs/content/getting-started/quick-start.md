@@ -22,10 +22,10 @@ Everything runs in one terminal.
 
 ```shell
 git clone https://github.com/KIT-IAI-ESA/ecosim.git
-cd ecosim/simulation_examples
+cd ecosim/examples
 ```
 
-All commands on this page run in `simulation_examples`. The first `uv run` creates the environment. That takes a
+All commands on this page run in `examples`. The first `uv run` creates the environment. That takes a
 moment.
 
 ## 2. Check the example

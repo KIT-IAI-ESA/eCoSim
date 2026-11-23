@@ -50,8 +50,8 @@ easy to accept improvements.
 ## Modelica Buildings Library
 
 Built with the [Modelica Buildings Library](https://github.com/lbl-srg/modelica-buildings): `house.fmu`
-and `weather.fmu` of the building example, in `simulation_examples/building/modules`,
-`simulation_examples/building_hpc/modules` and
+and `weather.fmu` of the building example, in `examples/building/modules`,
+`examples/building_hpc/modules` and
 `ecosim-test-common/ecosim_test_common/resources/hpc/modules`.
 
 ```text

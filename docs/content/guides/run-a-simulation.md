@@ -19,8 +19,8 @@ building/
   results/             one folder per run of ecosim run
 ```
 
-`simulation_examples/building` has this layout. Older simulations with `Modules/` instead of `modules/` work as well.
-The commands below run in `simulation_examples`. For another layout, pass the files with `--simulation-config`,
+`examples/building` has this layout. Older simulations with `Modules/` instead of `modules/` work as well.
+The commands below run in `examples`. For another layout, pass the files with `--simulation-config`,
 `--server-config` and `--simulator-dir`.
 
 ## Check the simulation

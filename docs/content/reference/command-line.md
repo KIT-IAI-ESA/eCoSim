@@ -12,7 +12,7 @@ These tables come from the option definitions in the code. `--help` shows the sa
 example `ecosim-server: error: argument --steps: must be a whole number of at least 1, not '0'`. For a misspelled
 option the message suggests the closest one. The [exit codes](#exit-codes) are at the end of the page.
 
-After changing an option, run `uv run --project simulation_examples python dev/generate_cli_reference.py` in the
+After changing an option, run `uv run --project examples python dev/generate_cli_reference.py` in the
 repository root.
 
 ## ecosim new

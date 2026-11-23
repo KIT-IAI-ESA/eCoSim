@@ -150,13 +150,13 @@ jobs:
           cache-suffix: examples
       # the commands of the quick start in the README
       - name: Run the building example
-        working-directory: simulation_examples
+        working-directory: examples
         run: |
           uv run --locked ecosim check building
           uv run --locked ecosim run building --steps 100
           uv run --locked ecosim results building
       - name: Check the HPC example
-        working-directory: simulation_examples
+        working-directory: examples
         run: uv run --locked ecosim check building_hpc
 
   # the ruleset requires only this job, so new jobs just go into its needs

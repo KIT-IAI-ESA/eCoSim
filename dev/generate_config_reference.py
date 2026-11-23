@@ -15,7 +15,7 @@ from config_reference.logical_delays import LOGICAL_DELAYS_TEXT
 from config_reference.sections import INTERFACE_KEYS_TEXT, client_type_values, render_client_sections
 
 PAGE = REPO_ROOT / "docs" / "content" / "reference" / "configuration-files.md"
-SIMULATION_EXAMPLE = REPO_ROOT / "simulation_examples" / "building" / "server" / "simulation.json"
+SIMULATION_EXAMPLE = REPO_ROOT / "examples" / "building" / "server" / "simulation.json"
 CLIENT_TYPE_FILE = REPO_ROOT / "ecosim-common" / "ecosim_common" / "client" / "config" / "client_type.py"
 HEADER = """---
 title: Configuration files
