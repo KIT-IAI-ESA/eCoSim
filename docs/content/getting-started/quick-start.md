@@ -212,7 +212,7 @@ The simulation folder `building` contains:
 | `modules/<model>/preferences.ini` | Where the client finds the server, and which model it runs |
 | `modules/<model>/*.fmu`, `*.fmc` | The model and its interface description |
 | `results/` | One folder per run of `ecosim run` |
-| `Executable/` | Scripts that start the server and the clients manually, with the results in PostgreSQL |
+| `serverRun.sh`, `moduleRun.sh` | Scripts that start the server and the clients manually, with the results in PostgreSQL |
 
 The [configuration reference](../reference/configuration-files.md) lists every key of these files.
 

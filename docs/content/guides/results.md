@@ -50,7 +50,7 @@ For a simulation folder it shows the newest run in `results/`. A run that was st
 the `Run` line. The inputs are left out. Each input is a copy of the output it is connected to. `--inputs` shows
 them.
 
-The folder can also be a run folder or any folder with result files, like `building/Executable/results` of a
+The folder can also be a run folder or any folder with result files, like `building/results/manual` of a
 server that you started manually. Without a folder `ecosim results` reads the current folder.
 
 ## Write the results to a CSV file

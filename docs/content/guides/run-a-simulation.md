@@ -160,16 +160,16 @@ first, see [Pyro5 client](pyro5-client.md). The check before the run stops if no
 
 ## Start the server and the clients manually
 
-For a run on several machines, start the server and each client yourself. In `building/Executable`:
+For a run on several machines, start the server and each client yourself. In `building`:
 
 ```shell
 # terminal 1
-uv run --project ../.. ecosim-server --server-config ../server/preferences.ini \
-    --simulation-config ../server/simulation.json --steps 100 \
-    --database-type file --database-directory results
+uv run --project .. ecosim-server --server-config server/preferences.ini \
+    --simulation-config server/simulation.json --steps 100 \
+    --database-type file --database-directory results/manual
 # terminal 2
 for module in house occupancy weather; do
-    uv run --project ../.. ecosim-client-fmu-v2 --config-file "../modules/$module/preferences.ini" &
+    uv run --project .. ecosim-client-fmu-v2 --config-file "modules/$module/preferences.ini" &
 done
 wait
 ```

@@ -16,9 +16,9 @@ example on bwUniCluster.
 
 #### Start in Batch Mode
 
-`examples/building_hpc/Executable/clusterRunHPC.sh` is the complete job script, with PostgreSQL:
+`examples/building_hpc/clusterRunHPC.sh` is the complete job script, with PostgreSQL:
 
-- `cd examples/building_hpc/Executable`
+- `cd examples/building_hpc`
 - set `ECOSIM_DIR` in the script
 - `sbatch -p <partition> clusterRunHPC.sh`
 
@@ -27,8 +27,8 @@ to `simulation_results/`:
 
 ```shell
 mpirun -np 4 uv run ecosim-hpc \
-  --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
-  --simulator-dir ../modules/ --steps 100 --database-type file
+  --server-config server/preferences.ini --simulation-config server/simulation.json \
+  --simulator-dir modules/ --steps 100 --database-type file
 ```
 
 `--network-interface` and `--threads-per-worker` choose the network and the threads per worker, see the
@@ -46,7 +46,7 @@ mpirun -np 4 uv run ecosim-hpc \
 #### Start in Interactive Mode
 
 `--interactive` starts no cluster, it connects to a running Dask scheduler through the file the scheduler
-writes. In `examples/building_hpc/Executable`:
+writes. In `examples/building_hpc`:
 
 1. Start the scheduler and the workers, each in a terminal of its own:
    - with `mpirun`: `mpirun -np 3 uv run dask-mpi --scheduler-file scheduler.json`, which gives a
@@ -57,8 +57,8 @@ writes. In `examples/building_hpc/Executable`:
 
    ```shell
    uv run ecosim-hpc --interactive \
-     --server-config ../server/preferences.ini --simulation-config ../server/simulation.json \
-     --simulator-dir ../modules/ --steps 100 --database-type file
+     --server-config server/preferences.ini --simulation-config server/simulation.json \
+     --simulator-dir modules/ --steps 100 --database-type file
    ```
 
 - `--scheduler-file` sets another path than `scheduler.json` in the current directory; if the file is
