@@ -151,8 +151,7 @@ The workflow `.github/workflows/tests.yml` runs these checks on GitHub for every
 A pull request can only be merged when `tests-passed`, `docs-reference`, `docs-build` and `commit-messages` pass.
 
 `.github/workflows/windows-tests.yml` runs the tests of `ecosim-common`, `ecosim-server` and both FMU clients, plus the
-end-to-end run, on Windows. It is not required and stays green when a test fails, so look at the annotations on the
-run page and the step logs.
+end-to-end run, on Windows. It is not required: a failed test turns the run red, but does not block a merge.
 
 ## Secret leaks
 

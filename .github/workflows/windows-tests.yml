@@ -14,7 +14,7 @@ concurrency:
   group: windows-tests-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
-# a failed or timed-out job makes the commit red, so the steps continue on error and the tests time out before the job
+# not a required check: a failed Windows test makes this run red, but does not block a merge
 jobs:
   windows-unit-tests:
     runs-on: windows-latest
@@ -35,11 +35,9 @@ jobs:
         with:
           cache-suffix: ${{ matrix.project }}-py${{ env.UV_PYTHON }}
       - name: Sync
-        continue-on-error: true
         working-directory: ${{ matrix.project }}
         run: uv sync --locked --extra dev
       - name: Test
-        continue-on-error: true
         timeout-minutes: 20
         run: uv run --no-project python dev/run_unit_tests.py ${{ matrix.project }}
       - uses: actions/upload-artifact@v7
@@ -61,7 +59,6 @@ jobs:
         with:
           cache-suffix: integration-tests-py${{ env.UV_PYTHON }}
       - name: Test
-        continue-on-error: true
         timeout-minutes: 10
         working-directory: integration-tests
         run: uv run --locked pytest integration_tests/server_client/test_three_client_server.py
