@@ -36,6 +36,8 @@ services:
       args:
         SOURCE_DIR: ecosim-client-matlab
         COMMAND_NAME: ecosim-client-matlab
+        # the MATLAB engine supports only Python 3.12
+        PYTHON_VERSION: "3.12"
   ecosim-client-pyro5:
     image: localhost/ecosim-client-pyro5:latest
     platform: linux/amd64
