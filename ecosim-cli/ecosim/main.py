@@ -20,7 +20,7 @@ def run_command(arguments: Sequence[str]) -> int:
         print(help_text())
         return 0
     if arguments[0] == "--version":
-        print(f"ecosim {get_module_version(name='ecosim')}")
+        print(f"ecosim {get_module_version(name='ecosim-cli')}")
         return 0
     command = next((command for command in COMMANDS if command.name == arguments[0]), None)
     if command is None:

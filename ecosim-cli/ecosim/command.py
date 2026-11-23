@@ -27,5 +27,5 @@ def command_parser(name: str, description: str, examples: tuple[str, ...]) -> Ec
         description=description,
         epilog="\n".join(["examples:", *(f"  {example}" for example in examples)]),
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {get_module_version(name='ecosim')}")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {get_module_version(name='ecosim-cli')}")
     return parser

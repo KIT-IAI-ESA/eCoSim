@@ -91,7 +91,7 @@ frame = table.to_pandas_data_frame()  # a pandas DataFrame with the simulation t
 
 `read_file_results` takes a folder with result files. For `ecosim run` that is a run folder, not the simulation folder.
 It leaves out the inputs unless you pass `include_inputs=True`. `table.select(names=["house"])` keeps the columns
-of the house, like `--interface`. `to_pandas_data_frame()` needs pandas. It comes with the extra `ecosim[pandas]` and
+of the house, like `--interface`. `to_pandas_data_frame()` needs pandas. It comes with the extra `ecosim-cli[pandas]` and
 `examples` has it.
 
 ## Results in PostgreSQL

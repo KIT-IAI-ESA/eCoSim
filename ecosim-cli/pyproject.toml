@@ -3,7 +3,7 @@ requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ecosim"
+name = "ecosim-cli"
 version = "0.14.0"
 description = "The ecosim command to write, check and run a simulation locally"
 maintainers = [

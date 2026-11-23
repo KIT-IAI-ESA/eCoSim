@@ -21,7 +21,7 @@ A simulation folder has `server/simulation.json`, `server/preferences.ini` and o
 `modules/`, like `examples/building` in the repository. `ecosim new my_simulation house.fmu weather.fmu`
 writes such a folder from FMU files.
 
-The extras add the Pyro5 client (`ecosim[pyro5]`) and pandas for the results (`ecosim[pandas]`). The MATLAB client
+The extras add the Pyro5 client (`ecosim-cli[pyro5]`) and pandas for the results (`ecosim-cli[pandas]`). The MATLAB client
 needs Python 3.12 and is installed separately, see the MATLAB client guide.
 
 See the [documentation](https://ecosim.easimov.com/docs) for the details.

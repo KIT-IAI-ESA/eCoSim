@@ -543,7 +543,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ecosim"
+name = "ecosim-cli"
 version = "0.14.0"
 source = { editable = "../ecosim-cli" }
 dependencies = [
@@ -965,7 +965,7 @@ source = { editable = "." }
 dependencies = [
     { name = "dask", extra = ["distributed"] },
     { name = "docker" },
-    { name = "ecosim" },
+    { name = "ecosim-cli" },
     { name = "ecosim-client-fmu-v2" },
     { name = "ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab" },
@@ -993,7 +993,7 @@ dependencies = [
 requires-dist = [
     { name = "dask", extras = ["distributed"], specifier = "==2026.7.0" },
     { name = "docker", specifier = "==7.1.0" },
-    { name = "ecosim", editable = "../ecosim-cli" },
+    { name = "ecosim-cli", editable = "../ecosim-cli" },
     { name = "ecosim-client-fmu-v2", editable = "../ecosim-client-fmu-v2" },
     { name = "ecosim-client-fmu-v3", editable = "../ecosim-client-fmu-v3" },
     { name = "ecosim-client-matlab", editable = "../ecosim-client-matlab" },
