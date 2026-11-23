@@ -43,8 +43,8 @@ all images.
 - every image comes from `dev/docker/Dockerfile`, with `SOURCE_DIR` and `COMMAND_NAME` as build arguments
 - each service in `dev/docker/compose.yaml` sets `image: localhost/<service>:latest`; without it,
   compose puts the folder name in front, like `localhost/docker_<service>`, and the examples keep using an older image
-- the build turns the package into one self-contained `<command>.pex` and links it to `/opt/ecosim`,
-  the `ENTRYPOINT`. The exec form of `ENTRYPOINT` does not expand build arguments, hence the fixed path
+- the build installs the package with its dependencies into the venv `/opt/venv` and links its command
+  to `/opt/ecosim`, the `ENTRYPOINT`. The exec form of `ENTRYPOINT` does not expand build arguments, hence the fixed path
 
 ## Variant: postgres
 
