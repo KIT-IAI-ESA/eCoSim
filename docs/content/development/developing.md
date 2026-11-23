@@ -47,3 +47,14 @@ With `--check`, both scripts only compare and fail if the page is out of date. C
 
 The workflow `.github/workflows/docs.yml` builds the site for every pull request and every push to
 `main`. It publishes `main` to GitHub Pages when the repository variable `DEPLOY_DOCS` is `true`.
+
+## Container images
+
+`dev/docker/compose.yaml` builds one image per command from `dev/docker/Dockerfile`, tagged
+`localhost/ecosim-*`. Build them in the repository root:
+
+- all images: `python dev/build_docker_images.py`
+- only some: `python dev/build_docker_images.py ecosim-server ecosim-client-fmu-v2`
+
+It uses docker, or podman if docker is not installed. The [Docker guide](../guides/docker.md) runs
+an example with the images.
