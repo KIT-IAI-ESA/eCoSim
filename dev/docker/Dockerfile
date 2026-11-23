@@ -10,13 +10,10 @@ COPY ecosim-common ${BUILD_DIR}/ecosim-common
 COPY ecosim-test-common ${BUILD_DIR}/ecosim-test-common
 COPY ecosim-common-fmpy ${BUILD_DIR}/ecosim-common-fmpy
 
-RUN cd ${BUILD_DIR}/ecosim-common && uv sync
-
 # the actual source dir is copied later, so the tasks above can be cached and reused across different runs
 COPY ${SOURCE_DIR} ${BUILD_DIR}/${SOURCE_DIR}
 
 WORKDIR ${BUILD_DIR}/${SOURCE_DIR}
-RUN uv sync
 RUN uv build --all-packages
 
 # create PEX (python executable)
