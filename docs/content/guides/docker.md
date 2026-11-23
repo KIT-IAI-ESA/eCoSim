@@ -35,6 +35,9 @@ Build the images once. They are tagged `localhost/ecosim-*`:
 docker compose -f ../../dev/docker/compose.yaml build ecosim-server ecosim-client-fmu-v2
 ```
 
+Or, in the repository root, `python dev/build_docker_images.py ecosim-server ecosim-client-fmu-v2`. Without names it builds
+all images.
+
 ### How the images are built
 
 - every image comes from `dev/docker/Dockerfile`, with `SOURCE_DIR` and `COMMAND_NAME` as build arguments
