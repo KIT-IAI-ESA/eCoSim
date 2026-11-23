@@ -6,6 +6,7 @@ Two simulations to try eCoSim with. You need [uv](https://docs.astral.sh/uv/).
 | --- | --- |
 | [building](building) | a house, its weather and the people in it, as three FMI 2.0 models. Runs on your machine |
 | [building_hpc](building_hpc) | the same models, set up for a run on an HPC cluster |
+| [docker](docker) | a house simulation in containers, with the results in PostgreSQL or as files. Needs Docker or Podman |
 
 Run the building example from this folder:
 

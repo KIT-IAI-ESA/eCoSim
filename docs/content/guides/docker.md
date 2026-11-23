@@ -25,14 +25,14 @@ results:
 | `postgres` | a TimescaleDB container | `postgres/` |
 | `file` | JSON lines on the host, no database needed | `file/` |
 
-All commands below run in `dev/docker/example/`.
+All commands below run in `examples/docker/`.
 
 ## Prerequisites
 
 Build the images once. They are tagged `localhost/ecosim_*`:
 
 ```shell
-docker compose -f ../compose.yaml build ecosim_server ecosim_client_fmu_v2
+docker compose -f ../../dev/docker/compose.yaml build ecosim_server ecosim_client_fmu_v2
 ```
 
 ### How the images are built
@@ -141,7 +141,7 @@ results end up.
   containers and keeps running the old image.
 - `docker` may be Podman, where `podman compose` hands over to `podman-compose`. It should not make
   a difference, but check which one runs when something fails.
-- The models are mounted from four levels up (`../../../../ecosim-test-common/...`). With a wrong
+- The models are mounted from three levels up (`../../../ecosim-test-common/...`). With a wrong
   path, the container fails on a missing model, not on the mount.
 
 ### postgres
