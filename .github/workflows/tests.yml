@@ -52,7 +52,7 @@ jobs:
           - ecosim-client-matlab
           - ecosim-client-pyro5
           - ecosim-client-python
-          - ecosim
+          - ecosim-cli
           - ecosim-hpc
         python: [ "3.12", "3.14" ]
         exclude:

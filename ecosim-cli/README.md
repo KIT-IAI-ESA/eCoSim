@@ -1,4 +1,4 @@
-# eCoSim
+# eCoSim CLI
 
 `ecosim` runs a simulation locally with one command. It installs the eCoSim server, both FMU clients and the
 Python client.
