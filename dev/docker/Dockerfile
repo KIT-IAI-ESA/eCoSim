@@ -1,5 +1,5 @@
 # the build and the final image share the same Python, so the venv finds its Python in the final image
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.14
 ARG DEBIAN_RELEASE=trixie
 
 FROM astral/uv:0.13.7-python${PYTHON_VERSION}-${DEBIAN_RELEASE}-slim AS build
