@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the source distribution and the wheel of every subproject except integration-tests into `dist`.
 
-Usage: python dev/build_packages.py
+Usage: python dev/build_release_packages.py
 """
 
 import argparse
