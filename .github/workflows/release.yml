@@ -1,0 +1,115 @@
+name: release
+
+# Start it on main with the version after the pull request of prepare-release.yml is merged: it checks
+# that main has this version, builds, checks and publishes the packages, then creates the tag and the
+# GitHub release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version on main to release, e.g. 1.0.0"
+        required: true
+        type: string
+  # TEMPORARY: a push to pypi-release publishes a dev version of ecosim-common to TestPyPI
+  push:
+    branches: [ pypi-release ]
+
+permissions:
+  contents: read
+
+# only one release at a time is allowed
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  # TEMPORARY: the branch release has no input and publishes a dev version
+  VERSION: ${{ inputs.version || format('0.15.0.dev{0}', github.run_number) }}
+  # the published packages; TEMPORARY: the branch release publishes ecosim-common only
+  PACKAGES: >-
+    ${{ github.event_name == 'push' && 'ecosim-common' || 'ecosim-common ecosim-common-fmpy ecosim-server
+    ecosim-client-fmu-v2 ecosim-client-fmu-v3 ecosim-client-matlab ecosim-client-pyro5
+    ecosim-client-python ecosim-cli ecosim-hpc' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      UV_PYTHON: "3.12" # the MATLAB client supports only Python 3.12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # fetch-depth: 0 = full history (i.e. including tags)
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          # disable all caches to force a fresh build
+          enable-cache: false
+      - name: Check the version on main
+        working-directory: dev
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            # TEMPORARY: the branch release sets its dev version
+            python -m release.bump_version "$VERSION"
+          elif [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::a release is made from main only, not from $GITHUB_REF"
+            exit 1
+          else
+            # shellcheck disable=SC2086 # PACKAGES is a list of names
+            python -m release.check_release "$VERSION" $PACKAGES
+          fi
+      # uv build builds the wheel from the sdist, so this checks the sdist too
+      - name: Build
+        working-directory: dev
+        run: python -m release.build_release_packages $PACKAGES
+      - name: Test build artifacts (install the wheels, import every package and start every command)
+        working-directory: ${{ runner.temp }}
+        env:
+          DIST: ${{ github.workspace }}/dist
+        run: |
+          uv venv wheels
+          uv pip install --python wheels "$DIST"/*.whl
+          for wheel in "$DIST"/*.whl; do
+            module=$(basename "$wheel" | cut -d - -f 1)
+            if [ "$module" = ecosim_cli ]; then module=ecosim; fi
+            echo "import $module" && wheels/bin/python -c "import $module"
+          done
+          for command in wheels/bin/ecosim*; do
+            if [ -e "$command" ]; then echo "$command --help" && "$command" --help > /dev/null; fi
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # TEMPORARY: the branch release goes to TestPyPI
+    environment: ${{ github.event_name == 'push' && 'testpypi' || 'pypi' }}
+    permissions:
+      id-token: write # trusted publishing
+      contents: write # the tag and the GitHub release
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: dist
+      # skip-existing: "Re-run failed jobs" after a partial upload publishes only the rest
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
+        with:
+          skip-existing: true
+          repository-url: ${{ github.event_name == 'push' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+      # the tag comes last: until it exists, the version counts as not released
+      - name: Tag the released commit and create the GitHub release
+        if: github.event_name == 'workflow_dispatch'
+        run: >-
+          gh release create "v$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"
+          --title "eCoSim $VERSION" --generate-notes

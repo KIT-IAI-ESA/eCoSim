@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Set the eCoSim version and the pins between the eCoSim packages, then refresh each uv.lock.
 
-Usage: python dev/bump_version.py 0.15.0
+Usage: cd dev && python -m release.bump_version 0.15.0
 """
 
 import argparse
@@ -11,15 +11,11 @@ import sys
 import tomllib
 from pathlib import Path
 
-from config import REPO_ROOT, SUBPROJECTS, error_print, get_uv_path, run
+from config import REPO_ROOT, error_print, get_uv_path, run
+from release.release_common import ECOSIM_PROJECTS, read_pyproject
 
-ECOSIM_PROJECTS = [Path("."), *(path.relative_to(REPO_ROOT) for path, _ in SUBPROJECTS)]
 # the examples keep their own version but pin the eCoSim packages
 ALL_PROJECTS = [*ECOSIM_PROJECTS, Path("examples")]
-
-
-def read_pyproject(project: Path) -> str:
-    return (project / "pyproject.toml").read_text(encoding="utf-8")
 
 
 def internal_package_names(root: Path) -> list[str]:
