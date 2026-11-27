@@ -106,6 +106,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
           skip-existing: true
+          verbose: true
           repository-url: ${{ github.event_name == 'push' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
       # the tag comes last: until it exists, the version counts as not released
       - name: Tag the released commit and create the GitHub release
