@@ -2,7 +2,7 @@
 name = "ecosim-hpc"
 version = "0.14.0"
 description = "HPC interface for the eCoSim Project"
-readme = "README.md"
+dynamic = ["readme"]
 authors = [
     { name = "Glen Hunter", email = "glen.hunter@kit.edu" }
 ]
@@ -117,3 +117,7 @@ module = [
     "cloudpickle.*",
 ]
 ignore_missing_imports = true
+
+# on PyPI the note is shown above the actual README.md
+[tool.setuptools.dynamic]
+readme = { file = ["PYPI_NOTE.md", "README.md"], content-type = "text/markdown" }

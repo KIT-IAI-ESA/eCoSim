@@ -12,7 +12,7 @@ authors = [
 maintainers = [
     { name = "eASiMOV", email = "easimov@iai.kit.edu" }
 ]
-readme = "README.md"
+dynamic = ["readme"]
 requires-python = ">=3.12"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
@@ -95,3 +95,7 @@ addopts = [
 [tool.coverage.run]
 source = ["ecosim_common"]
 omit = ["*/tests/*"]
+
+# on PyPI the note is shown above the actual README.md
+[tool.setuptools.dynamic]
+readme = { file = ["PYPI_NOTE.md", "README.md"], content-type = "text/markdown" }
