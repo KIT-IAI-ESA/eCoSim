@@ -4,7 +4,8 @@ from itertools import chain
 from pathlib import Path
 from typing import Any
 
-from bump_version import ALL_PROJECTS, ECOSIM_PROJECTS, pin_internal_packages, read_pyproject, set_version
+from release.bump_version import ALL_PROJECTS, pin_internal_packages, set_version
+from release.release_common import ECOSIM_PROJECTS, read_pyproject
 from config import REPO_ROOT
 
 NEW_VERSION = "9.9.9"

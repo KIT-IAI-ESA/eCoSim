@@ -1,0 +1,72 @@
+name: prepare release
+
+# Start it on main from the Actions tab with the new version. It opens a pull request that sets the
+# version of every package and of the pins between them; after the merge, release.yml releases it.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The new version, e.g. 1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release-pull-request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # push the release branch, open the pull request and start the tests on it
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the release tags
+          fetch-depth: 0
+      # the dev scripts run with a plain `python`
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          cache-suffix: prepare-release
+      - name: Check the version
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::a release is prepared on main only, not on $GITHUB_REF"
+            exit 1
+          fi
+          (cd dev && python -m release.check_new_version "$VERSION")
+          if git ls-remote --exit-code --heads origin "release/v$VERSION" > /dev/null; then
+            echo "::error::the branch release/v$VERSION exists already"
+            exit 1
+          fi
+      - name: Set the version of every package and the pins between them
+        working-directory: dev
+        run: python -m release.bump_version "$VERSION"
+      - name: Push the version bump to the release branch
+        run: |
+          # the commit is authored by whoever started the workflow
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com"
+          git switch --create "release/v$VERSION"
+          git commit --all --message "chore(release): $VERSION"
+          git push origin "release/v$VERSION"
+      - name: Open the pull request
+        run: |
+          gh pr create --base main --head "release/v$VERSION" --title "chore(release): $VERSION" --body-file - <<EOF
+          Sets the version $VERSION on every package and on the pins between them.
+
+          - add the notes of $VERSION to \`docs/content/development/release-history.md\` on this branch
+          - after merging, start the \`release\` workflow on \`main\` with the version $VERSION to publish it to PyPI
+          EOF
+      # a pull request opened with the GITHUB_TOKEN starts no workflow, but a workflow_dispatch does
+      - name: Run the tests on the release branch
+        run: gh workflow run tests.yml --ref "release/v$VERSION"

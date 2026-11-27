@@ -9,7 +9,7 @@ description = "Common test utils for the eCoSim project"
 authors = [
     { name = "Maurice Mueller", email = "maurice.mueller@bitraven.de" }
 ]
-readme = "README.md"
+dynamic = ["readme"]
 requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -65,3 +65,7 @@ module = [
     "fmpy.*",
 ]
 ignore_missing_imports = true
+
+# on PyPI the note is shown above the actual README.md
+[tool.setuptools.dynamic]
+readme = { file = ["PYPI_NOTE.md", "README.md"], content-type = "text/markdown" }

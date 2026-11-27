@@ -1,5 +1,8 @@
 # Project setup
 
+eCoSim is developed in this monorepo only. The packages on PyPI are for using eCoSim, not for
+working on it, see [Releasing](releasing.md#development-happens-in-the-monorepo).
+
 - [PyCharm](https://www.jetbrains.com/pycharm/) is the recommended IDE, though it is not required
 - the following commands should be executed in the root directory of the project
 - install [uv](https://docs.astral.sh/uv/) with the [official installer](https://docs.astral.sh/uv/getting-started/installation/)

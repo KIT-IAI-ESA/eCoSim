@@ -25,7 +25,8 @@ ecosim-common = { path = "../ecosim-common", editable = true }
 ```
 
 - the version is pinned exactly, so a version bump changes every `pyproject.toml` at once
-    - `python dev/bump_version.py 0.15.0` sets the version and every pin, then refreshes each `uv.lock`
+    - `cd dev && python -m release.bump_version 0.15.0` sets the version and every pin, then refreshes each `uv.lock`;
+      the pull request of a [release](releasing.md) runs it, so it is not meant to be run by hand
 - for mypy, add the package to `mypy_path` in `[tool.mypy]`: `mypy_path = ["../ecosim-common"]`
 
 ## Libraries without type hints
