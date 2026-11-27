@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'development/adding-a-subproject',
         'development/coding-guidelines',
         'development/tips',
+        'development/releasing',
         'development/release-history',
         {
           type: 'category',
