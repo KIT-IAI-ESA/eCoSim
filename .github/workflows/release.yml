@@ -10,7 +10,7 @@ on:
         description: "The version on main to release, e.g. 1.0.0"
         required: true
         type: string
-  # TEMPORARY: a push to pypi-release publishes a dev version of ecosim-common to TestPyPI
+  # TEMPORARY: a push to pypi-release publishes a dev version of three packages to TestPyPI
   push:
     branches: [ pypi-release ]
 
@@ -25,11 +25,10 @@ concurrency:
 env:
   # TEMPORARY: the branch release has no input and publishes a dev version
   VERSION: ${{ inputs.version || format('0.15.0.dev{0}', github.run_number) }}
-  # the published packages; TEMPORARY: the branch release publishes ecosim-common only
+  # the published packages
   PACKAGES: >-
-    ${{ github.event_name == 'push' && 'ecosim-common' || 'ecosim-common ecosim-common-fmpy ecosim-server
-    ecosim-client-fmu-v2 ecosim-client-fmu-v3 ecosim-client-matlab ecosim-client-pyro5
-    ecosim-client-python ecosim-cli ecosim-hpc' }}
+    ecosim-common ecosim-common-fmpy ecosim-server ecosim-client-fmu-v2 ecosim-client-fmu-v3
+    ecosim-client-matlab ecosim-client-pyro5 ecosim-client-python ecosim-cli ecosim-hpc
 
 jobs:
   build:
@@ -102,6 +101,11 @@ jobs:
         with:
           name: packages
           path: dist
+      # TEMPORARY: the branch release builds and checks every package, but uploads only these three;
+      # ecosim-cli needs the other packages in the same version for the wheel check in `build`
+      - name: Keep the packages of the branch release
+        if: github.event_name == 'push'
+        run: find dist -type f ! -name 'ecosim_common-*' ! -name 'ecosim_common_fmpy-*' ! -name 'ecosim_cli-*' -delete && ls dist
       # skip-existing: "Re-run failed jobs" after a partial upload publishes only the rest
       - uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
